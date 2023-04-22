@@ -1,5 +1,9 @@
 # https://github.com/github/gitignore/blob/master/C.gitignore
 
+# VSCode files
+.vs/
+.vscode/
+
 # Build files
 build/
 
