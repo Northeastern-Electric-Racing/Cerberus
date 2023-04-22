@@ -1,5 +1,8 @@
 # https://github.com/github/gitignore/blob/master/C.gitignore
 
+# Build files
+build/
+
 # Prerequisites
 *.d
 
