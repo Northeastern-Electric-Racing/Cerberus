@@ -8,8 +8,8 @@ For initial installation, visit here: https://nerdocs.atlassian.net/wiki/spaces/
 In any terminal that is in the directory:
 
     # if need to rebuild image
-    sudo docker build -f ./Dockerfile -t ner-gcc-arm .
     docker image prune -a
+    sudo docker build -f ./Dockerfile -t ner-gcc-arm .
 
     sudo docker run --rm -it --privileged -v "$PWD:/home/app" ner-gcc-arm:latest bash
     
@@ -17,8 +17,8 @@ In any terminal that is in the directory:
 In any terminal that is in the directory:
 
     # if need to rebuild image
-    docker build -f ./Dockerfile -t ner-gcc-arm .
     docker image prune -a
+    docker build -f ./Dockerfile -t ner-gcc-arm .
 
     docker run --rm -it --privileged -v "$(PWD):/home/app" ner-gcc-arm:latest bash
 
