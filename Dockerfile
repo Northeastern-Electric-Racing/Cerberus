@@ -40,12 +40,20 @@ RUN cd openocd && make -j4 && make install
 WORKDIR /home/dev
 ADD . /home/dev
 
-RUN echo 'echo "_________             ___.               \n\
+RUN echo 'if [ $n -e /home/app/shepherd.ioc ]; then echo \
+" ______     __  __     ______     ______   __  __     ______     ______     _____\n\
+/\  ___\   /\ \_\ \   /\  ___\   /\  == \ /\ \_\ \   /\  ___\   /\  == \   /\  __-.\n\
+\ \___  \  \ \  __ \  \ \  __\   \ \  _-/ \ \  __ \  \ \  __\   \ \  __<   \ \ \/\ \ \n\
+ \/\_____\  \ \_\ \_\  \ \_____\  \ \_\    \ \_\ \_\  \ \_____\  \ \_\ \_\  \ \____- \n\ 
+  \/_____/   \/_/\/_/   \/_____/   \/_/     \/_/\/_/   \/_____/   \/_/ /_/   \/____/"; fi;' >> ~/.bashrc
+
+RUN echo 'if [ $n -e /home/app/cerberus.ioc ]; then echo \
+"_________             ___.               \n\
 \_   ___ \  __________\_ |__   ___________ __ __  ______\n\
 /    \  \/_/ __ \_  __ \ __ \_/ __ \_  __ \  |  \/  ___/\n\
 \     \___\  ___/|  | \/ \_\ \  ___/|  | \/  |  /\___ \ \n\
  \______  /\___  >__|  |___  /\___  >__|  |____//____  >\n\
-        \/     \/          \/     \/                 \/ "' >> ~/.bashrc
+        \/     \/          \/     \/                 \/ "; fi;' >> ~/.bashrc
 
 # Install cross compiler
 RUN wget -qO- https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 | tar -xvj

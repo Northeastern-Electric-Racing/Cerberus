@@ -9,13 +9,17 @@ In any terminal that is in the directory:
 
     # if need to rebuild image
     sudo docker build -f ./Dockerfile -t ner-gcc-arm .
+    docker image prune -a
+
     sudo docker run --rm -it --privileged -v "$PWD:/home/app" ner-gcc-arm:latest bash
     
 ## Start Container on Windows
 In any terminal that is in the directory:
 
     # if need to rebuild image
-    # docker build -f ./Dockerfile -t ner-gcc-arm .
+    docker build -f ./Dockerfile -t ner-gcc-arm .
+    docker image prune -a
+
     docker run --rm -it --privileged -v "$(PWD):/home/app" ner-gcc-arm:latest bash
 
     # mounting probe
