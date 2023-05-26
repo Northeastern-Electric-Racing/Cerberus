@@ -33,4 +33,4 @@ In any terminal that is in the directory:
     minicom -b 115200 -o -D /dev/ttyACM0
 
     # to flash STM board with Raspberry Pi Probe (WIP)
-    openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c "adapter speed 5000" -c "program ./build
+    openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c "adapter speed 5000" -c "program ./build/cerberus.elf verify reset exit"
