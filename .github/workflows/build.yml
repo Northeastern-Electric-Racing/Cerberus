@@ -1,0 +1,28 @@
+name: STM32 Build Test
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Verify Directory Contents
+      uses: actions/cache@v2
+      with:
+        path: ~/
+        run: |
+          ls .
+    - name: Run Docker Environment
+      uses: actions/cache@v2
+      with:
+        path: ~/
+        run: |
+          sudo docker build -f ./Dockerfile -t ner-gcc-arm .
+          sudo docker run --rm -it -v "$PWD:/home/app" ner-gcc-arm:latest bash
+          ls
+          make all
