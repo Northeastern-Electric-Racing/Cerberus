@@ -11,12 +11,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
-    - name: Verify Directory Contents
-      uses: actions/cache@v2
-      with:
-        path: ~/
-        run: |
-          ls .
     - name: Run Docker Environment
       uses: actions/cache@v2
       with:
