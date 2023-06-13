@@ -10,13 +10,14 @@
 #define IMU_DRIVER_H
 #include "stm32f4xx_hal.h"
 
-#define IMU_I2C_ADDRESS                 0x35 << 1   // Shifted because datasheet said to
+#define IMU_I2C_ADDRESS                 0x35 << 1   /* Shifted because datasheet said to */
 // Not sure if these are all needed, also not sure if more need ot be added
 // For register descriptions reference datasheet pages 47 - 98
-#define LSM6D_REG_FUNC_CFG_ACCESS       0x01    // Enable embedded functions register
-#define LSM6D_REG_INTERRUPT_CTRL_1      0x0D    // INT1 pin control, used for interrupts
-#define LSM6D_REG_INTERRUPT_CTRL_2      0x0E    // INT2 pin control, used for interrupts
-#define LSM6D_REG_ACCEL_CTRL            0x10    // Accelerometer Control Register
+#define LSM6D_REG_FUNC_CFG_ACCESS       0x01    /* Enable embedded functions register */
+#define LSM6D_REG_INTERRUPT_CTRL_1      0x0D    /* INT1 pin control, used for interrupts */
+#define LSM6D_REG_INTERRUPT_CTRL_2      0x0E    /* INT2 pin control, used for interrupts */
+#define LSM6D_REG_WHO_AM_I              0x0F    /* Register for checking communication */
+#define LSM6D_REG_ACCEL_CTRL            0x10    /* Accelerometer Control Register */
 #define LSM6D_REG_GYRO_CTRL             0x11    // Gyroscope Control Register
 #define LSM6D_REG_ALL_INTERRUPT_SRC     0x1A    // Source Register for all interupsts
 #define LSM6D_REG_WAKEUP_INTERRUPT_SRC  0x1B    // Wake up interupt source register

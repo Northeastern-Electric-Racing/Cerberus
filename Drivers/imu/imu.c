@@ -20,9 +20,37 @@ uint8_t imu_init(IMU_DATA *imu, I2C_HandleTypeDef *i2cHandle)
     imu->gyro_data->y_axis = 0;
     imu->gyro_data->z_axis = 0;
 
-
+    
     uint8_t error_num = 0;
     HAL_StatusTypeDef status;
+
+    /* Quick check to make sure I2C is working work */
+    uint8_t* regData;
+    status = imu_read_reg(imu, regData, LSM6D_REG_WHO_AM_I);
+    err_num += (status != HAL_OK);
+    if(*regData != 0x6C)
+    {
+        return 255;
+    }
+    
+    /* Configure IMU Refer to datasheet page 56 - 57 */
+
+    /* Accelerometer configuration settings */
+    int8_t odr_sel_accel = 0x8;
+    int8_t fs_sel_accel = 0x2;
+    int8_t lp_f2_enable_accel = 0x01;
+    int8_t *accel_config = &(((odr_sel_accel << 4) | (fs_sel_accel << 2) | (lp_f2_enable_accel << 1)) << 1);
+    status = imu_write_reg(imu, LSM6D_REG_ACCEL_CTRL, accel_config);
+    err_num += (status != HAL_OK);
+    /* Gyroscope configuration settings */
+    int8_t odr_sel_gryo = 0x8;
+    int8_t fs_sel_gyro = 0x2;
+    int8_t fs_125_gryo = 0x0;
+    int8_t *gyro_config = &(((odr_sel_gyro << 4) | (fs_sel_gyro << 2) | (fs_125_gyro << 1)) << 1);
+    status = imu_write_reg(imu, LSM6D_REG_GYRO_CTRL, gyro_config);
+    err_num += (status != HAL_OK);
+
+    return err_num;
 
 }
 
