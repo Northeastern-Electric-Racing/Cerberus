@@ -37,6 +37,11 @@
 #define LSM6D_REG_ACCEL_Z_AXIS_L        0x2C    // Accelerometer Z axis lower bits
 #define LSM6D_REG_ACCEL_Z_AXIS_H        0x2D    // Accelerometer Z axis upper bits
 
+
+/* Resolution of the sensor registers */
+#define REG_RESOLUTION                  32768   /* Half the range of a 16 bit signed integer */
+#define ACCEL_RANGE                     4       /* The range of values in g's returned from accelerometer */
+#define GYRO_RANGE                      1000    /* The range of values from the gyro in dps */
 // Struct to hold accelerometer data
 typedef struct
 {
