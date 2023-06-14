@@ -61,9 +61,10 @@ uint8_t imu_init(IMU_DATA *imu, I2C_HandleTypeDef *i2cHandle)
 /* Read accelerometer data */
 HAL_StatusTypeDef imu_read_accel(IMU_DATA *imu)
 {
-    /* Getting raw data from registers */
     *int16_t accel_x_raw, accel_y_raw, accel_z_raw;
     HAL_StatusTypeDef status;
+
+    /* Getting raw data from registers */
     status = imu_read_mult_reg(imu, accel_x_raw, LSM6D_REG_ACCEL_X_AXIS_L, 2);
     if(status != HAL_OK) return status;
 
@@ -86,6 +87,8 @@ HAL_StatusTypeDef imu_read_gyro(IMU_DATA *imu)
 {
     *int16_t gyro_x_raw, gyro_y_raw, gyro_z_raw;
     HAL_StatusTypeDef status;
+
+    /* Aquire raw data from registers */
     status = imu_read_mult_reg(imu, gyro_x_raw, LSM6D_REG_GYRO_X_AXIS_L, 2);
     if(status != HAL_OK) return status;
 
@@ -96,9 +99,9 @@ HAL_StatusTypeDef imu_read_gyro(IMU_DATA *imu)
     if(status != HAL_OK) return status;
 
     /* Setting imu struct values to converted measurements */
-    imu->accel_data->x_axis = accel_data_convert(*accel_x_raw);
-    imu->accel_data->y_axis = accel_data_convert(*accel_y_raw);
-    imu->accel_data->z_axis = accel_data_convert(*accel_z_raw);
+    imu->gyro_data->x_axis = accel_data_convert(*gyro_x_raw);
+    imu->gyro_data->y_axis = accel_data_convert(*gyro_y_raw);
+    imu->gyro_data->z_axis = accel_data_convert(*gyro_z_raw);
 
     return status;
 }
@@ -113,30 +116,34 @@ static int16_t accel_data_convert(raw_accel)
     return accel_mps;
 }
 
+/* Converts raw gyro data to degrees per second * 100 */
 static int16_t gyro_data_convert(gyro_accel)
 {
     int8_t upper = (gyro_accel & 0x00FF) << 8;
     int8_t lower = (gyro_accel & 0xFF00) >> 8;
     int16_t gyro_int = upper | lower;
-    int16_t gyro_dps = int16_t((gyro_int * GYRO_RANGE * 1000) / REG_RESOLUTION);
+    int16_t gyro_dps = int16_t((gyro_int * GYRO_RANGE * 100) / REG_RESOLUTION);
     return gyro_dps;
 }
 
-// Low Level Functions for reading and writing to registers
+/* 
+Low Level Functions for reading and writing to registers 
+(basically just abstracts away the HAL)
+*/
 
-// Read from a single register
+/* Read from a single register */
 static HAL_StatusTypeDef imu_read_reg(IMU_DATA *imu, uint8_t *data, uint8_t reg)
 {
     return HAL_I2C_Mem_Read(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY)
 }
 
-// Read from multiple registers
+/* Read from multiple registers */
 static HAL_StatusTypeDef imu_read_mult_reg(IMU_DATA *imu, uint8_t *data, uint8_t reg, uint8_t length)
 {
     return HAL_I2C_Mem_Read(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY)
 }
 
-// Write to a single register
+/* Write to a single register */
 static HAL_StatusTypeDef imu_write_reg(IMU_DATA *imu, uint8_t reg, uint8_t *data)
 {
     return HAL_I2C_Mem_Write(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, )
