@@ -16,7 +16,7 @@
 #define LSM6D_REG_FUNC_CFG_ACCESS       0x01    /* Enable embedded functions register */
 #define LSM6D_REG_INTERRUPT_CTRL_1      0x0D    /* INT1 pin control, used for interrupts */
 #define LSM6D_REG_INTERRUPT_CTRL_2      0x0E    /* INT2 pin control, used for interrupts */
-#define LSM6D_REG_WHO_AM_I              0x0F    /* Register for checking communication */
+#define LSM6D_REG_DEVICE_ID             0x0F    /* Register for checking communication */
 #define LSM6D_REG_ACCEL_CTRL            0x10    /* Accelerometer Control Register */
 #define LSM6D_REG_GYRO_CTRL             0x11    /* Gyroscope Control Register */
 #define LSM6D_REG_ALL_INTERRUPT_SRC     0x1A    /* Source Register for all interupsts */
@@ -44,42 +44,46 @@
 #define GYRO_RANGE                      1000    /* The range of values from the gyro in dps */
 
 
-/* Struct to hold accelerometer data */
-typedef struct
+/* Converts array indices to axes for ease of reading */
+enum
 {
-    int16_t x_axis;
-    int16_t y_axis;
-    int16_t z_axis;
-} accel_t;
-    
+    IMU_X_AXIS = 0;
+    IMU_Y_AXIS = 1;
+    IMU_Z_AXIS = 2;
+}
 
-/* Struct to hold gyroscopic data */
-typedef struct
+/* Fault codes */
+enum
 {
-    int16_t x_axis;
-    int16_t y_axis;
-    int16_t z_axis;
-} gyro_t;
-
+    FAULTED = 255;
+    CLEAR   = 0;
+}
 
 /* SENSOR STRUCT */
 typedef struct 
 {
     
-    I2C_HandleTypeDef *i2cHandle;
+    I2C_HandleTypeDef *i2c_handle;
 
-    accel_t *accel_data;
+    int8_t *accel_config;
 
-    gyro_t *gyro_data;
+    int8_t *gyro_config;
 
-} imu_t;
+    int16_t accel_data[3];
+
+    int16_t gyro_data[3];
+
+} LSM6D_t;
 
 /* Initialization of the IMU / Setup */
-uint8_t imu_init(imu_t *imu);
+uint8_t LSM6D_init(LSM6D_t *imu);
+
+/* IMU Setting Configuration */
+void LSM6D_accelerometer_config(LSM6D_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t lp_f2_enable);
+void LSM6D_gyroscope_config(LSM6D_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t fs_125);
 
 /* Data Aquisition */
-HAL_StatusTypeDef imu_read_accel(imu_t *imu);
-HAL_StatusTypeDef imu_read_gyro(imu_t *imu);
-HAL_StatusTypeDef imu_read_temp(imu_t *imu);
+HAL_StatusTypeDef LSM6D_read_accel(LSM6D_t *imu);
+HAL_StatusTypeDef LSM6D_read_gyro(LSM6D_t *imu);
 
 #endif
