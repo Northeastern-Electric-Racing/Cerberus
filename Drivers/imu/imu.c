@@ -68,7 +68,7 @@ void LSM6D_gyroscope_config(LSM6D_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t 
 */
 
 /* Read accelerometer data */
-HAL_StatusTypeDef LSM6D_read_accel(IMU_DATA *imu)
+HAL_StatusTypeDef LSM6D_read_accel(LSM6D_t *imu)
 {
     *int16_t accel_x_raw, accel_y_raw, accel_z_raw;
     HAL_StatusTypeDef status;
@@ -92,7 +92,7 @@ HAL_StatusTypeDef LSM6D_read_accel(IMU_DATA *imu)
 }
 
 /* Read gyro data */
-HAL_StatusTypeDef LSM6D_read_gyro(IMU_DATA *imu)
+HAL_StatusTypeDef LSM6D_read_gyro(LSM6D_t *imu)
 {
     *int16_t gyro_x_raw, gyro_y_raw, gyro_z_raw;
     HAL_StatusTypeDef status;
@@ -152,20 +152,20 @@ Low Level Functions for reading and writing to registers
 */
 
 /* Read from a single register */
-static HAL_StatusTypeDef LSM6D_read_reg(IMU_DATA *imu, uint8_t *data, uint8_t reg)
+static HAL_StatusTypeDef LSM6D_read_reg(LSM6D_t *imu, uint8_t *data, uint8_t reg)
 {
-    return HAL_I2C_Mem_Read(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY)
+    return HAL_I2C_Mem_Read(imu->i2cHandle, LSM6D_REG_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY)
 }
 
 /* Read from multiple registers */
-static HAL_StatusTypeDef LSM6D_read_mult_reg(IMU_DATA *imu, uint8_t *data, uint8_t reg, uint8_t length)
+static HAL_StatusTypeDef LSM6D_read_mult_reg(LSM6D_t *imu, uint8_t *data, uint8_t reg, uint8_t length)
 {
-    return HAL_I2C_Mem_Read(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY)
+    return HAL_I2C_Mem_Read(imu->i2cHandle, LSM6D_REG_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY)
 }
 
 /* Write to a single register */
-static HAL_StatusTypeDef LSM6D_write_reg(IMU_DATA *imu, uint8_t reg, uint8_t *data)
+static HAL_StatusTypeDef LSM6D_write_reg(LSM6D_t *imu, uint8_t reg, uint8_t *data)
 {
-    return HAL_I2C_Mem_Write(imu->i2cHandle, IMU_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, )
+    return HAL_I2C_Mem_Write(imu->i2cHandle, LSM6D_REG_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data)
 }
 
