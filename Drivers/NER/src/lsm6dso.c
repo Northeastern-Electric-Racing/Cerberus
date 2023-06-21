@@ -5,32 +5,28 @@
 
 	Author: Hamza Iqbal
 */
+
 #include "lsm6dso.h"
 
-/* Resolution of the sensor registers */
 #define REG_RESOLUTION                  32768   /* Half the range of a 16 bit signed integer */
 #define ACCEL_RANGE                     4       /* The range of values in g's returned from accelerometer */
 #define GYRO_RANGE                      1000    /* The range of values from the gyro in dps */
 
-/* Read from a single register */
-static HAL_StatusTypeDef lsm6dso_read_reg(lsm6dso_t *imu, uint8_t *data, uint8_t reg)
+static inline HAL_StatusTypeDef lsm6dso_read_reg(lsm6dso_t *imu, uint8_t *data, uint8_t reg)
 {
 	return HAL_I2C_Mem_Read(imu->i2c_handle, LSM6DSO_I2C_ADDRESS, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY);
 }
 
-/* Read from multiple registers */
-static HAL_StatusTypeDef lsm6dso_read_mult_reg(lsm6dso_t *imu, uint8_t *data, uint8_t reg, uint8_t length)
+static inline HAL_StatusTypeDef lsm6dso_read_mult_reg(lsm6dso_t *imu, uint8_t *data, uint8_t reg, uint8_t length)
 {
 	return HAL_I2C_Mem_Read(imu->i2c_handle, LSM6DSO_I2C_ADDRESS, reg, I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY);
 }
 
-/* Write to a single register */
-static HAL_StatusTypeDef lsm6dso_write_reg(lsm6dso_t *imu, uint8_t reg, uint8_t *data)
+static inline HAL_StatusTypeDef lsm6dso_write_reg(lsm6dso_t *imu, uint8_t reg, uint8_t *data)
 {
 	return HAL_I2C_Mem_Write(imu->i2c_handle, LSM6DSO_I2C_ADDRESS, reg, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY);
 }
 
-/* Converts raw accel data to meters per second * 100 */
 static int16_t accel_data_convert(raw_accel)
 {
 	int8_t msb, lsb;
@@ -42,7 +38,6 @@ static int16_t accel_data_convert(raw_accel)
 	return (int16_t)(((int32_t)val * ACCEL_RANGE * 1000) / REG_RESOLUTION);
 }
 
-/* Converts raw gyro data to degrees per second * 100 */
 static int16_t gyro_data_convert(gyro_accel)
 {
 	int8_t msb, lsb;
@@ -53,7 +48,6 @@ static int16_t gyro_data_convert(gyro_accel)
 	return (int16_t)(((int32_t)val * GYRO_RANGE * 100) / REG_RESOLUTION);
 }
 
-/* Check if the device is online */
 static HAL_StatusTypeDef lsm6dso_ping_imu(lsm6dso_t *imu)
 {
 	uint8_t reg_data;
@@ -69,7 +63,6 @@ static HAL_StatusTypeDef lsm6dso_ping_imu(lsm6dso_t *imu)
 	return HAL_OK;
 }
 
-/* Configures Accelerometer Settings */
 HAL_StatusTypeDef lsm6dso_set_accel_cfg(lsm6dso_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t lp_f2_enable)
 {
 	uint8_t config = (((odr_sel << 4) | (fs_sel << 2) | (lp_f2_enable << 1)) << 1);
@@ -78,7 +71,6 @@ HAL_StatusTypeDef lsm6dso_set_accel_cfg(lsm6dso_t *imu, int8_t odr_sel, int8_t f
 	return lsm6dso_write_reg(imu, LSM6DSO_REG_ACCEL_CTRL, &imu->accel_config);
 }
 
-/* Configures Gyro Settings */
 HAL_StatusTypeDef lsm6dso_gyro_cfg(lsm6dso_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t fs_125)
 {
 	uint8_t config = (((odr_sel << 4) | (fs_sel << 2) | (fs_125 << 1)) << 1);
@@ -87,7 +79,6 @@ HAL_StatusTypeDef lsm6dso_gyro_cfg(lsm6dso_t *imu, int8_t odr_sel, int8_t fs_sel
 	return lsm6dso_write_reg(imu, LSM6DSO_REG_GYRO_CTRL, &imu->gyro_config);
 }
 
-/* IMU Intitialization */
 HAL_StatusTypeDef lsm6dso_init(lsm6dso_t *imu, I2C_HandleTypeDef *i2c_handle)
 {
 	HAL_StatusTypeDef status;
@@ -122,7 +113,6 @@ HAL_StatusTypeDef lsm6dso_init(lsm6dso_t *imu, I2C_HandleTypeDef *i2c_handle)
 	return HAL_OK;
 }
 
-/* Read accelerometer data */
 HAL_StatusTypeDef lsm6dso_read_accel(lsm6dso_t *imu)
 {
 	union {
@@ -152,7 +142,6 @@ HAL_StatusTypeDef lsm6dso_read_accel(lsm6dso_t *imu)
 	return HAL_OK;
 }
 
-/* Read gyro data */
 HAL_StatusTypeDef lsm6dso_read_gyro(lsm6dso_t *imu)
 {
 	union {

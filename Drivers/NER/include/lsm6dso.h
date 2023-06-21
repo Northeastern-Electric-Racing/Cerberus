@@ -39,7 +39,6 @@
 #define LSM6DSO_REG_ACCEL_Z_AXIS_L          0x2C    /* Accelerometer Z axis lower bits */
 #define LSM6DSO_REG_ACCEL_Z_AXIS_H          0x2D    /* Accelerometer Z axis upper bits */
 
-
 /**
  * @brief Enumeration of axes of data available from the LSM6DSO IMU
  * 
