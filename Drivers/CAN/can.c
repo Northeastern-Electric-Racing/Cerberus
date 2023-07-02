@@ -7,11 +7,38 @@
 */
 
 #include "can.h"
+#include "can_config.h"
 
-
-void CAN_Handler_Init(CAN_HandleTypeDef* CAN_Line)
+void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
-    return;
+    switch(line)
+    {
+        case CAN_line_1:
+            can_h->Instance = CAN1;
+            break;
+        case CAN_line_2:
+            can_h->Instance = CAN2;
+            break;
+        case CAN_line_3:
+            can_h->Instance = CAN3;
+            break;
+        default:
+            can_h->Instance = CAN1;
+            break;
+    }
+    can_h->Init.Prescaler              = CAN_PRESCALER;
+    can_h->Init.Mode                   = CAN_MODE;
+    can_h->Init.SyncJumpWidth          = CAN_SYNC_JUMP_WIDTH;
+    can_h->Init.TimeSeg1               = CAN_TIME_SEG_1;
+    can_h->Init.TimeSeg2               = CAN_TIME_SEG_2;
+    can_h->Init.TimeTriggeredMode      = CAN_TIME_TRIGGERED_MODE;
+    can_h->Init.AutoBusOff             = CAN_AUTO_BUS_OFF;
+    can_h->Init.AutoWakeUp             = CAN_AUTO_WAKEUP;
+    can_h->Init.AutoRetransmission     = CAN_AUTO_RETRANSMISSION;
+    can_h->Init.ReceiveFifoLocked      = CAN_RECEIVE_FIFO_LOCKED;
+    can_h->Init.TransmitFifoPriority   = CAN_TRANSMIT_FIFO_PRIORITY;
+
+
 }
 
 

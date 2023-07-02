@@ -14,23 +14,7 @@
 #include "stm32f4xx_hal.h"
 
 
-/*
-    Macro Definitions
-    *************************************************************
-*/
-#define BAUD_RATE           1000000     //Change if needed
-// Todo: Fill with values
-#define CAN_PRESCALER
-#define CAN_MODE
-#define CAN_SYNC_JUMP_WIDTH
-#define CAN_TIME_SEG_1
-#define CAN_TIME_SEG_2
-#define CAN_TIME_TRIGGERED_MODE
-#define CAN_AUTO_BUS_OFF
-#define CAN_AUTO_WAKEUP
-#define CAN_AUTO_RETRANSMISSION
-#define CAN_RECEIVE_FIFO_LOCKED
-#define CAN_TRANSMIT_FIFO_PRIORITY
+
 
 /*
     Type Definitions
@@ -38,7 +22,7 @@
 */
 typedef struct
 {
-    CAN_HandleTypeDef CAN_handler;
+    CAN_HandleTypeDef* CAN_handler;
     uint32_t id = 0;          // can identifier
     uint8_t len = 8;      `   // length of data
     uint8_t data[8] = { 0 };  // data
@@ -51,11 +35,14 @@ typedef struct
     *************************************************************
 */
 
-CAN_HandleTypeDef CAN1;
-CAN_HandleTypeDef CAN2;
-CAN_HandleTypeDef CAN3;
+CAN_HandleTypeDef* CAN1;
+CAN_HandleTypeDef* CAN2;
+CAN_HandleTypeDef* CAN3;
 
- enum
+
+
+
+enum
 {
     CAN_line_1 = 1,
     CAN_line_2 = 2,
