@@ -12,7 +12,7 @@
 #define CAN_DRIVER_H
 
 #include "stm32f4xx_hal.h"
-
+#include "can_config.h"
 
 
 
