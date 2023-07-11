@@ -9,6 +9,75 @@
 #include "can.h"
 #include "can_config.h"
 
+void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    if(can_h->Instance == line)
+    {
+        /* Peripheral clock enable */
+        __HAL_RCC_CAN1_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        
+        switch(line)
+        {
+            case CAN_line_1:
+                /**CAN1 GPIO Configuration
+                PB8     ------> CAN1_RX
+                PB9     ------> CAN1_TX
+                */
+                GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+                GPIO_InitStruct.Pull = GPIO_NOPULL;
+                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+                GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+                break;
+            case CAN_line_2:
+                /**CAN2 GPIO Configuration
+                PB6     ------> CAN2_RX
+                PB7     ------> CAN2_TX
+                */
+                GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+                GPIO_InitStruct.Pull = GPIO_NOPULL;
+                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+                GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
+                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+                break;
+            case CAN_line_3:
+                /**CAN3 GPIO Configuration
+                PB4     ------> CAN3_RX
+                PB5     ------> CAN3_TX
+                */
+                GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+                GPIO_InitStruct.Pull = GPIO_NOPULL;
+                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+                GPIO_InitStruct.Alternate = GPIO_AF9_CAN3;
+                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+                break;
+            default:
+                /**CAN1 GPIO Configuration
+                PB8     ------> CAN1_RX
+                PB9     ------> CAN1_TX
+                */
+                GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+                GPIO_InitStruct.Pull = GPIO_NOPULL;
+                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+                GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+                break;
+        }
+
+        
+
+    /* USER CODE BEGIN CAN1_MspInit 1 */
+
+    /* USER CODE END CAN1_MspInit 1 */
+    }
+}
+
 void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
     switch(line)
@@ -38,6 +107,7 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
     can_h->Init.ReceiveFifoLocked      = CAN_RECEIVE_FIFO_LOCKED;
     can_h->Init.TransmitFifoPriority   = CAN_TRANSMIT_FIFO_PRIORITY;
 
+    CAN_Msp_Init(can_h, line);
 
 }
 
