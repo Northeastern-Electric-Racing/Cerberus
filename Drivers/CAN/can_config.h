@@ -54,3 +54,5 @@
 #define LED_1_GPIO_Port                     GPIOC
 #define LED_2_Pin                           GPIO_PIN_9
 #define LED_2_GPIO_Port                     GPIOC
+#define CAN_STD_ID                          0x0FF
+#define CAN_EXT_ID                          0xFFF

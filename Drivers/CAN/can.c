@@ -69,14 +69,9 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
                 HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
                 break;
         }
-
-        
-
-    /* USER CODE BEGIN CAN1_MspInit 1 */
-
-    /* USER CODE END CAN1_MspInit 1 */
     }
 }
+
 
 void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
@@ -112,29 +107,141 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 }
 
 
-void start_CAN()
+uint8_t start_CAN()
 {
-    return;
+    HAL_StatusTypeDef CAN_Status;
+
+    CAN_Handler_Init(CAN1, CAN_line_1);
+    CAN_Handler_Init(CAN2, CAN_line_2);
+    CAN_Handler_Init(CAN3, CAN_line_3);
+
+
+
+    CAN_Status = HAL_CAN_Start(CAN1);
+    if (CAN_Status!= HAL_OK)
+    {
+        return FAIL;
+    }
+    CAN_Status = HAL_CAN_Start(CAN2);
+    if (CAN_Status!= HAL_OK)
+    {
+        return FAIL;
+    }
+    CAN_Status = HAL_CAN_Start(CAN3);
+    if (CAN_Status!= HAL_OK)
+    {
+        return FAIL;
+    }
+    return SUCCESS;
 }
 
-CAN_msg_t serializeCANMsg(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, CAN_HandleTypeDef can_line)
+CAN_msg_t serializeCANMsg(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, CAN_HandleTypeDef* can_line)
 {
-    return;
+    CAN_msg_t CAN_message;
+    // Set up the message structure with ID and length of payload.
+    CAN_message.id = id;
+    CAN_message.len = len;
+    CAN_message.bus = bus;
+    uint8_t *data_temp;
+    for (int i = 0; i < 8; i++) 
+    {
+        if (i < len)
+        {
+            data_temp = const_cast<uint8_t*>(data + i);
+            CAN_message.data[i] = *data_temp;
+        }
+        else
+        {
+            CAN_message.data[i] = 0; // copies data to message, padding with 0s if length isn't 8
+        }
+    }
+    switch(bus)
+    {
+        case CAN_line_1:
+            CAN_message.CAN_handler = CAN1;
+            break;
+        case CAN_line_2:
+            CAN_message.CAN_handler = CAN2;
+            break;
+        case CAN_line_3:
+            CAN_message.CAN_handler = CAN3;
+            break;
+    }
+    CAN_TxHeaderTypeDef* header = malloc(sizeof(CAN_TxHeaderTypeDef));
+    header->StdId = CAN_STD_ID;
+    header->ExtId = CAN_EXT_ID;
+    header->IDE = CAN_ID_STD;
+    header->RTR = CAN_RTR_data;
+    header->DLC = 8;
+    header->TransmitGlobalTime = DISABLE;
+    
+    return CAN_message;
 }
 
 int sendMessageCAN1(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    return;
+    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_1, CAN1);
+    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
+    if(free_spots != 0)
+    {
+        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX0);
+        if(bruh == HAL_OK)
+        {
+            return SUCCESS;
+        }
+        else
+        {
+            return FAIL;
+        }
+    }
+    else
+    {
+        return FAIL;
+    }
 }
 
 int sendMessageCAN2(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    return;
+    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_2, CAN2);
+    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
+    if(free_spots != 0)
+    {
+        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX1);
+        if(bruh == HAL_OK)
+        {
+            return SUCCESS;
+        }
+        else
+        {
+            return FAIL;
+        }
+    }
+    else
+    {
+        return FAIL;
+    }
 }
 
 int sendMessageCAN3(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    return;
+    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_3, CAN3);
+    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
+    if(free_spots != 0)
+    {
+        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX2);
+        if(bruh == HAL_OK)
+        {
+            return SUCCESS;
+        }
+        else
+        {
+            return FAIL;
+        }
+    }
+    else
+    {
+        return FAIL;
+    }
 }
 
 void incoming_callback_CAN(const CAN_msg_t &msg)
