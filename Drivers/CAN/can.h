@@ -23,6 +23,7 @@
 typedef struct
 {
     CAN_HandleTypeDef* CAN_handler;
+    CAN_TxHeaderTypeDef* CAN_transmit_header;
     uint32_t id = 0;          // can identifier
     uint8_t len = 8;      `   // length of data
     uint8_t data[8] = { 0 };  // data
@@ -38,7 +39,7 @@ typedef struct
 CAN_HandleTypeDef* CAN1;
 CAN_HandleTypeDef* CAN2;
 CAN_HandleTypeDef* CAN3;
-
+CAN_FilterTypeDef* CAN_filter_settings;
 
 
 
@@ -49,13 +50,19 @@ enum
     CAN_line_3 = 3
 };
 
+enum
+{
+    SUCCESS = 1,
+    FAIL    = 0
+};
+
 /*
     Function Definitions
     *************************************************************
 */
 
 // Initializes the can handlers for each line
-void start_CAN();
+uint8_t start_CAN();
 
 int send_message_CAN_1(uint32_t id, uint8_t len, const uint8_t *data);
 
