@@ -132,16 +132,15 @@ uint8_t start_CAN()
     {
         return FAIL;
     }
+    
     return SUCCESS;
 }
 
-CAN_msg_t serializeCANMsg(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, CAN_HandleTypeDef* can_line)
+CAN_t CAN_setup(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, CAN_HandleTypeDef* can_line)
 {
-    CAN_msg_t CAN_message;
+    CAN_t CAN;
     // Set up the message structure with ID and length of payload.
-    CAN_message.id = id;
-    CAN_message.len = len;
-    CAN_message.bus = bus;
+    CAN.bus = bus;
     uint8_t *data_temp;
     for (int i = 0; i < 8; i++) 
     {
@@ -167,20 +166,31 @@ CAN_msg_t serializeCANMsg(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, 
             CAN_message.CAN_handler = CAN3;
             break;
     }
-    CAN_TxHeaderTypeDef* header = malloc(sizeof(CAN_TxHeaderTypeDef));
-    header->StdId = CAN_STD_ID;
-    header->ExtId = CAN_EXT_ID;
-    header->IDE = CAN_ID_STD;
-    header->RTR = CAN_RTR_data;
-    header->DLC = 8;
-    header->TransmitGlobalTime = DISABLE;
-    
-    return CAN_message;
+
+    CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+    tx_header->StdId = id;
+    tx_header->ExtId = CAN_EXT_ID;
+    tx_header->IDE = CAN_ID_STD;
+    tx_header->RTR = CAN_RTR_data;
+    tx_header->DLC = len;
+    tx_header->TransmitGlobalTime = DISABLE;
+    CAN.CAN_tx_header = tx_header;
+
+    CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
+    rx_header->StdId = id;
+    rx_header->ExtId = CAN_EXT_ID;
+    rx_header->IDE = CAN_ID_STD;
+    rx_header->RTR = CAN_RTR_data;
+    rx_header->DLC = len;
+    rx_header->Timestamp = 0;
+    rx_header->FilterMatchIndex = 0;
+    CAN.CAN_rx_header = rx_header;
+    return CAN;
 }
 
 int sendMessageCAN1(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_1, CAN1);
+    CAN_t message = CAN_setup(id, len, data, CAN_line_1, CAN1);
     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
     if(free_spots != 0)
     {
@@ -202,7 +212,7 @@ int sendMessageCAN1(uint32_t id, uint8_t len, const uint8_t *data)
 
 int sendMessageCAN2(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_2, CAN2);
+    CAN_t message = CAN_setup(id, len, data, CAN_line_2, CAN2);
     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
     if(free_spots != 0)
     {
@@ -224,7 +234,7 @@ int sendMessageCAN2(uint32_t id, uint8_t len, const uint8_t *data)
 
 int sendMessageCAN3(uint32_t id, uint8_t len, const uint8_t *data)
 {
-    CAN_msg_t message = serializeCANMsg(id, len, data, CAN_line_3, CAN3);
+    CAN_t message = CAN_setup(id, len, data, CAN_line_3, CAN3);
     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
     if(free_spots != 0)
     {
@@ -244,32 +254,36 @@ int sendMessageCAN3(uint32_t id, uint8_t len, const uint8_t *data)
     }
 }
 
-void incoming_callback_CAN(const CAN_msg_t &msg)
+// TODO: Make a big switch statement of all the handler functions
+uint8_t[8] incoming_callback_CAN(uint8_t bus, uint32_t msg_id)
 {
-    return;
+    switch(msg_id)
+    {
+
+    }
 }
 
 
+// TODO: Define these functions
 
-
-__attribute__((weak)) void CAN_BMS_acc_status             (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_cell_data              (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_current_limits         (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_shutdown               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_DTC_status             (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_acceleration_ctrl          (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_temp_1               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_temp_2               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_temp_3               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_motion               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_current              (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_voltage              (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_MC_vehicle_state           (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_MC_fault                   (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_motor_torque_timer         (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_status_2               (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_charge_discharge       (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_MC_BMS_integration         (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_MC_set_parameter           (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_charging_state         (const CAN_msg_t &msg){return;}
-__attribute__((weak)) void CAN_BMS_currents               (const CAN_msg_t &msg){return;}
+__attribute__((weak)) void CAN_BMS_acc_status             (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_cell_data              (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_current_limits         (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_shutdown               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_DTC_status             (uint8_t bus){return;}
+__attribute__((weak)) void CAN_acceleration_ctrl          (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_temp_1               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_temp_2               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_temp_3               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_motion               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_current              (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_voltage              (uint8_t bus){return;}
+__attribute__((weak)) void CAN_MC_vehicle_state           (uint8_t bus){return;}
+__attribute__((weak)) void CAN_MC_fault                   (uint8_t bus){return;}
+__attribute__((weak)) void CAN_motor_torque_timer         (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_status_2               (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_charge_discharge       (uint8_t bus){return;}
+__attribute__((weak)) void CAN_MC_BMS_integration         (uint8_t bus){return;}
+__attribute__((weak)) void CAN_MC_set_parameter           (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_charging_state         (uint8_t bus){return;}
+__attribute__((weak)) void CAN_BMS_currents               (uint8_t bus){return;}

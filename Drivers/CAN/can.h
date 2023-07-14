@@ -23,13 +23,14 @@
 typedef struct
 {
     CAN_HandleTypeDef* CAN_handler;
-    CAN_TxHeaderTypeDef* CAN_transmit_header;
+    CAN_TxHeaderTypeDef* CAN_tx_header;
+    CAN_RxHeaderTypeDef* CAN_rx_header;
     uint32_t id = 0;          // can identifier
     uint8_t len = 8;      `   // length of data
     uint8_t data[8] = { 0 };  // data
     uint8_t bus = 0;          // used to identify where the message came from when events() is used.
     
-} CAN_msg_t;
+} CAN_t;
 
 /*
     Global Variables and enums
