@@ -443,6 +443,7 @@ typedef  void (*pCAN_CallbackTypeDef)(CAN_HandleTypeDef *hcan); /*!< pointer to 
   */
 #define CAN_RX_FIFO0                (0x00000000U)  /*!< CAN receive FIFO 0 */
 #define CAN_RX_FIFO1                (0x00000001U)  /*!< CAN receive FIFO 1 */
+#define CAN_RX_FIF02                (0x00000002u)
 /**
   * @}
   */
