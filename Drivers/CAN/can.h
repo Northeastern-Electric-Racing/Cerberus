@@ -25,6 +25,7 @@ typedef struct
     CAN_HandleTypeDef* CAN_handler;
     CAN_TxHeaderTypeDef* CAN_tx_header;
     CAN_RxHeaderTypeDef* CAN_rx_header;
+    uint8_t line;
     uint32_t id = 0;          // can identifier
     uint8_t len = 8;      `   // length of data
     uint8_t data[8] = { 0 };  // data
@@ -41,7 +42,7 @@ CAN_HandleTypeDef* CAN1;
 CAN_HandleTypeDef* CAN2;
 CAN_HandleTypeDef* CAN3;
 CAN_FilterTypeDef* CAN_filter_settings;
-
+GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 
 enum

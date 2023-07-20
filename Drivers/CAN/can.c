@@ -11,7 +11,7 @@
 
 void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
     if(can_h->Instance == line)
     {
         /* Peripheral clock enable */
@@ -254,36 +254,9 @@ int sendMessageCAN3(uint32_t id, uint8_t len, const uint8_t *data)
     }
 }
 
-// TODO: Make a big switch statement of all the handler functions
-uint8_t[8] incoming_callback_CAN(uint8_t bus, uint32_t msg_id)
+// TODO: Define this
+__attribute__((weak)) uint8_t[8] incoming_callback_CAN(uint8_t bus, uint32_t msg_id)
 {
-    switch(msg_id)
-    {
-
-    }
+    
 }
 
-
-// TODO: Define these functions
-
-__attribute__((weak)) void CAN_BMS_acc_status             (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_cell_data              (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_current_limits         (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_shutdown               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_DTC_status             (uint8_t bus){return;}
-__attribute__((weak)) void CAN_acceleration_ctrl          (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_temp_1               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_temp_2               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_temp_3               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_motion               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_current              (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_voltage              (uint8_t bus){return;}
-__attribute__((weak)) void CAN_MC_vehicle_state           (uint8_t bus){return;}
-__attribute__((weak)) void CAN_MC_fault                   (uint8_t bus){return;}
-__attribute__((weak)) void CAN_motor_torque_timer         (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_status_2               (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_charge_discharge       (uint8_t bus){return;}
-__attribute__((weak)) void CAN_MC_BMS_integration         (uint8_t bus){return;}
-__attribute__((weak)) void CAN_MC_set_parameter           (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_charging_state         (uint8_t bus){return;}
-__attribute__((weak)) void CAN_BMS_currents               (uint8_t bus){return;}
