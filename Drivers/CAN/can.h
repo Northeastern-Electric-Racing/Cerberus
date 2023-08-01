@@ -2,6 +2,16 @@
  * @file can.h
  * @author Hamza Iqbal (iqbal.ha@northeastern.edu)
  * @brief CAN Driver
+ *        HOW TO USE THIS DRIVER:
+ *          First use the start_CAN function to enable all the CAN lines
+ *          You can send messages using the send_message_CAN function, this function requires a CAN_msg_t struct as the parameter.
+ *          Configure a CAN_msg_t struct with the ID of the message, the Data, the length and what CAN line you want to transmit on.
+ *          
+ *          This driver is interrupt based and as incoming messages are received they are added to a queue per can line
+ *          You can receive the front of the queue by using the get_message_CAN function this will return a CAN_msg_t struct containing all the useful information
+ * 
+ *          In the src file for this driver you will notice a lot of commented out sections pertaining to a third CAN line, ignore these for now as the MPU 
+ *          can only support 2 CAN lines at the moment.  This will come in handy for a third CAN line if we choose to implement one later or for a different system.
  * @date 2023-06-14
  * 
  * https://www.st.com/resource/en/user_manual/um1725-description-of-stm32f4-hal-and-lowlayer-drivers-stmicroelectronics.pdf
@@ -20,18 +30,26 @@
     Type Definitions
     *************************************************************
 */
+
 typedef struct
 {
-    CAN_HandleTypeDef* CAN_handler;
-    CAN_TxHeaderTypeDef* CAN_tx_header;
-    CAN_RxHeaderTypeDef* CAN_rx_header;
     uint8_t line;
-    uint32_t id = 0;          // can identifier
-    uint8_t len = 8;      `   // length of data
-    uint8_t data[8] = { 0 };  // data
-    uint8_t bus = 0;          // used to identify where the message came from when events() is used.
-    
-} CAN_t;
+    uint32_t id = 0;
+    uint8_t len = 8;
+    uint8_t data[8] = 0;
+} CAN_msg_t;
+
+struct node
+{
+    CAN_msg_t msg;
+    struct node* next;
+}
+
+struct msg_queue
+{
+    node* head;
+    node* tail;
+}
 
 /*
     Global Variables and enums
@@ -40,8 +58,10 @@ typedef struct
 
 CAN_HandleTypeDef* CAN1;
 CAN_HandleTypeDef* CAN2;
-CAN_HandleTypeDef* CAN3;
-CAN_FilterTypeDef* CAN_filter_settings;
+//CAN_HandleTypeDef* CAN3;
+msg_queue* CAN1_incoming;
+msg_queue* CAN2_incoming;
+//msg_queue* CAN3_incoming;
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 
@@ -49,13 +69,14 @@ enum
 {
     CAN_line_1 = 1,
     CAN_line_2 = 2,
-    CAN_line_3 = 3
+    //CAN_line_3 = 3
 };
 
 enum
 {
-    SUCCESS = 1,
-    FAIL    = 0
+    MSG_SENT = 1,
+    MSG_FAIL = 2,
+    BUFFER_FULL = 3
 };
 
 /*
@@ -64,41 +85,12 @@ enum
 */
 
 // Initializes the can handlers for each line
-uint8_t start_CAN();
+HAL_StatusTypeDef start_CAN();
 
-int send_message_CAN_1(uint32_t id, uint8_t len, const uint8_t *data);
+// Sends a CAN message on the line specified in the CAN_msg_t struct
+uint8_t send_message_CAN(CAN_msg_t message);
 
-int send_message_CAN_2(uint32_t id, uint8_t len, const uint8_t *data);
+CAN_msg_t get_message_CAN(uint8_t line);
 
-int send_message_CAN_3(uint32_t id, uint8_t len, const uint8_t *data);
-
-void incoming_callback_CAN(const CAN_msg_t &msg);
-
-
-/*
-    CAN Message Handlers
-*/
-
-void CAN_BMS_acc_status             (const CAN_msg_t &msg);
-void CAN_BMS_cell_data              (const CAN_msg_t &msg);
-void CAN_BMS_current_limits         (const CAN_msg_t &msg);
-void CAN_BMS_shutdown               (const CAN_msg_t &msg);
-void CAN_BMS_DTC_status             (const CAN_msg_t &msg);
-void CAN_acceleration_ctrl          (const CAN_msg_t &msg);
-void CAN_motor_temp_1               (const CAN_msg_t &msg);
-void CAN_motor_temp_2               (const CAN_msg_t &msg);
-void CAN_motor_temp_3               (const CAN_msg_t &msg);
-void CAN_motor_motion               (const CAN_msg_t &msg);
-void CAN_motor_current              (const CAN_msg_t &msg);
-void CAN_motor_voltage              (const CAN_msg_t &msg);
-void CAN_MC_vehicle_state           (const CAN_msg_t &msg);
-void CAN_MC_fault                   (const CAN_msg_t &msg);
-void CAN_motor_torque_timer         (const CAN_msg_t &msg);
-void CAN_BMS_status_2               (const CAN_msg_t &msg);
-void CAN_BMS_charge_discharge       (const CAN_msg_t &msg);
-void CAN_MC_BMS_integration         (const CAN_msg_t &msg);
-void CAN_MC_set_parameter           (const CAN_msg_t &msg);
-void CAN_BMS_charging_state         (const CAN_msg_t &msg);
-void CAN_BMS_currents               (const CAN_msg_t &msg);
 
 #endif

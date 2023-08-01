@@ -44,18 +44,18 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
                 GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
                 HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
                 break;
-            case CAN_line_3:
-                /**CAN3 GPIO Configuration
-                PB4     ------> CAN3_RX
-                PB5     ------> CAN3_TX
-                */
-                GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                GPIO_InitStruct.Alternate = GPIO_AF9_CAN3;
-                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-                break;
+            // case CAN_line_3:
+            //     /**CAN3 GPIO Configuration
+            //     PB4     ------> CAN3_RX
+            //     PB5     ------> CAN3_TX
+            //     */
+            //     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+            //     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+            //     GPIO_InitStruct.Pull = GPIO_NOPULL;
+            //     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+            //     GPIO_InitStruct.Alternate = GPIO_AF9_CAN3;
+            //     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+            //     break;
             default:
                 /**CAN1 GPIO Configuration
                 PB8     ------> CAN1_RX
@@ -83,9 +83,9 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
         case CAN_line_2:
             can_h->Instance = CAN2;
             break;
-        case CAN_line_3:
-            can_h->Instance = CAN3;
-            break;
+        // case CAN_line_3:
+        //     can_h->Instance = CAN3;
+        //     break;
         default:
             can_h->Instance = CAN1;
             break;
@@ -107,7 +107,7 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 }
 
 
-uint8_t start_CAN()
+HAL_StatusTypeDef start_CAN()
 {
     HAL_StatusTypeDef CAN_Status;
 
@@ -120,143 +120,236 @@ uint8_t start_CAN()
     CAN_Status = HAL_CAN_Start(CAN1);
     if (CAN_Status!= HAL_OK)
     {
-        return FAIL;
+        return CAN_Status;
     }
     CAN_Status = HAL_CAN_Start(CAN2);
     if (CAN_Status!= HAL_OK)
     {
-        return FAIL;
+        return CAN_Status;
     }
-    CAN_Status = HAL_CAN_Start(CAN3);
-    if (CAN_Status!= HAL_OK)
-    {
-        return FAIL;
-    }
+    // CAN_Status = HAL_CAN_Start(CAN3);
+    // if (CAN_Status!= HAL_OK)
+    // {
+    //     return CAN_Status;
+    // }
     
-    return SUCCESS;
+    HAL_CAN_ActivateNotification(CAN1, CAN_IT_RX_FIFO0_MSG_PENDING);
+    HAL_CAN_ActivateNotification(CAN2, CAN_IT_RX_FIFO1_MSG_PENDING);
+    // HAL_CAN_ActivateNotification(CAN3, CAN_IT_RX_FIFO2_MSG_PENDING);
+    return CAN_Status;
 }
 
-CAN_t CAN_setup(uint32_t id, uint8_t len, uint8_t* data, uint8_t bus, CAN_HandleTypeDef* can_line)
+
+uint8_t send_message_CAN(CAN_msg_t message)
 {
-    CAN_t CAN;
-    // Set up the message structure with ID and length of payload.
-    CAN.bus = bus;
-    uint8_t *data_temp;
-    for (int i = 0; i < 8; i++) 
-    {
-        if (i < len)
-        {
-            data_temp = const_cast<uint8_t*>(data + i);
-            CAN_message.data[i] = *data_temp;
-        }
-        else
-        {
-            CAN_message.data[i] = 0; // copies data to message, padding with 0s if length isn't 8
-        }
-    }
-    switch(bus)
+    switch(message.line)
     {
         case CAN_line_1:
-            CAN_message.CAN_handler = CAN1;
+            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+            tx_header->StdId = message.id;
+            tx_header->ExtId = CAN_EXT_ID;
+            tx_header->IDE = CAN_ID_STD;
+            tx_header->RTR = CAN_RTR_data;
+            tx_header->DLC = message.len;
+            tx_header->TransmitGlobalTime = DISABLE;
+            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN1);
+            if(free_spots != 0)
+            {
+                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN1, tx_header, message.data, CAN_TX_MAILBOX0);
+                if(bruh == HAL_OK)
+                {
+                    free(tx_header);
+                    return MSG_SENT;
+                }
+                else
+                {
+                    free(tx_header);
+                    return MSG_FAIL;
+                }
+                }
+            else
+            {
+                free(tx_header);
+                return BUFFER_FULL;
+            }
             break;
         case CAN_line_2:
-            CAN_message.CAN_handler = CAN2;
+            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+            tx_header->StdId = message.id;
+            tx_header->ExtId = CAN_EXT_ID;
+            tx_header->IDE = CAN_ID_STD;
+            tx_header->RTR = CAN_RTR_data;
+            tx_header->DLC = message.len;
+            tx_header->TransmitGlobalTime = DISABLE;
+            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN2);
+            if(free_spots != 0)
+            {
+                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN2, tx_header, message.data, CAN_TX_MAILBOX1);
+                if(bruh == HAL_OK)
+                {
+                    free(tx_header);
+                    return MSG_SENT;
+                }
+                else
+                {
+                    free(tx_header);
+                    return MSG_FAIL;
+                }
+                }
+            else
+            {
+                free(tx_header);
+                return BUFFER_FULL;
+            }
             break;
-        case CAN_line_3:
-            CAN_message.CAN_handler = CAN3;
+        // case CAN_line_3:
+        //     CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+        //     tx_header->StdId = message.id;
+        //     tx_header->ExtId = CAN_EXT_ID;
+        //     tx_header->IDE = CAN_ID_STD;
+        //     tx_header->RTR = CAN_RTR_data;
+        //     tx_header->DLC = message.len;
+        //     tx_header->TransmitGlobalTime = DISABLE;
+        //     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN3);
+        //     if(free_spots != 0)
+        //     {
+        //         HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN3, tx_header, message.data, CAN_TX_MAILBOX2);
+        //         if(bruh == HAL_OK)
+        //         {
+        //             free(tx_header);
+        //             return SUCCESS;
+        //         }
+        //         else
+        //         {
+        //             free(tx_header);
+        //             return FAIL;
+        //         }
+        //         }
+        //     else
+        //     {
+        //         free(tx_header);
+        //         return FAIL;
+        //     }
+        //     break;
+        default:
+            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+            tx_header->StdId = message.id;
+            tx_header->ExtId = CAN_EXT_ID;
+            tx_header->IDE = CAN_ID_STD;
+            tx_header->RTR = CAN_RTR_data;
+            tx_header->DLC = message.len;
+            tx_header->TransmitGlobalTime = DISABLE;
+            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN1);
+            if(free_spots != 0)
+            {
+                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN1, tx_header, message.data, CAN_TX_MAILBOX0);
+                if(bruh == HAL_OK)
+                {
+                    free(tx_header);
+                    return MSG_SENT;
+                }
+                else
+                {
+                    free(tx_header);
+                    return MSG_FAIL;
+                }
+                }
+            else
+            {
+                free(tx_header);
+                return BUFFER_FULL;
+            }
             break;
     }
 
-    CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-    tx_header->StdId = id;
-    tx_header->ExtId = CAN_EXT_ID;
-    tx_header->IDE = CAN_ID_STD;
-    tx_header->RTR = CAN_RTR_data;
-    tx_header->DLC = len;
-    tx_header->TransmitGlobalTime = DISABLE;
-    CAN.CAN_tx_header = tx_header;
+}
 
+void enqueue(struct queue* queue, CAN_msg_t msg) 
+{
+  struct node *new_node = malloc(sizeof(struct node));
+  new_node->msg = msg;
+  new_node->next = NULL;
+
+  if (queue->head == NULL) 
+  {
+    queue->head = new_node;
+    queue->tail = new_node;
+  } 
+  else 
+  {
+    queue->tail->next = new_node;
+    queue->tail = new_node;
+  }
+}
+
+CAN_msg_t dequeue(struct queue* queue)
+{
+    if (queue->head == NULL) 
+    {
+        return -1;
+    }
+
+    int msg = queue->head->data;
+    struct node *old_head = queue->head;
+    queue->head = queue->head->next;
+    free(old_head);
+
+    return msg;
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
+{
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
-    rx_header->StdId = id;
-    rx_header->ExtId = CAN_EXT_ID;
-    rx_header->IDE = CAN_ID_STD;
-    rx_header->RTR = CAN_RTR_data;
-    rx_header->DLC = len;
-    rx_header->Timestamp = 0;
-    rx_header->FilterMatchIndex = 0;
-    CAN.CAN_rx_header = rx_header;
-    return CAN;
+    CAN_msg_t new_msg;
+    new_msg.line = CAN_line_1;
+    HAL_CAN_GetRxMessage(CAN1, CAN_RX_FIFO0, rx_header, new_msg.data);
+    new_msg.len = rx_header->DLC;
+    new_msg.id = rx_header->StdId;
+    enqueue(CAN1_incoming, new_msg);
+    free(rx_header);
 }
 
-int sendMessageCAN1(uint32_t id, uint8_t len, const uint8_t *data)
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
 {
-    CAN_t message = CAN_setup(id, len, data, CAN_line_1, CAN1);
-    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
-    if(free_spots != 0)
-    {
-        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX0);
-        if(bruh == HAL_OK)
-        {
-            return SUCCESS;
-        }
-        else
-        {
-            return FAIL;
-        }
-    }
-    else
-    {
-        return FAIL;
-    }
+    CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
+    CAN_msg_t new_msg;
+    new_msg.line = CAN_line_2;
+    HAL_CAN_GetRxMessage(CAN2, CAN_RX_FIFO1, rx_header, new_msg.data);
+    new_msg.len = rx_header->DLC;
+    new_msg.id = rx_header->StdId;
+    enqueue(CAN2_incoming, new_msg);
+    free(rx_header);
 }
 
-int sendMessageCAN2(uint32_t id, uint8_t len, const uint8_t *data)
+// void HAL_CAN_RxFifo2MsgPendingCallback(CAN2)
+// {
+//     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
+//     CAN_msg_t new_msg;
+//     new_msg.line = CAN_line_3;
+//     HAL_CAN_GetRxMessage(CAN3, CAN_RX_FIFO2, rx_header, new_msg.data);
+//     new_msg.len = rx_header->DLC;
+//     new_msg.id = rx_header->StdId;
+//     enqueue(CAN3_incoming, new_msg);
+//     free(rx_header);
+// }
+
+CAN_msg_t get_message_CAN(uint8_t line)
 {
-    CAN_t message = CAN_setup(id, len, data, CAN_line_2, CAN2);
-    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
-    if(free_spots != 0)
+    CAN_msg_t message;
+    switch(line)
     {
-        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX1);
-        if(bruh == HAL_OK)
-        {
-            return SUCCESS;
-        }
-        else
-        {
-            return FAIL;
-        }
+        case CAN_line_1:
+            message = dequeue(CAN1_incoming);
+            break;
+        case CAN_line_2:
+            message = dequeue(CAN2_incoming);
+            break;
+        // case CAN_line_3:
+        //     message = dequeue(CAN3_incoming);
+        //     break;
+        default:
+            message = dequeue(CAN1_incoming);
+            break;
     }
-    else
-    {
-        return FAIL;
-    }
+    return message;
 }
-
-int sendMessageCAN3(uint32_t id, uint8_t len, const uint8_t *data)
-{
-    CAN_t message = CAN_setup(id, len, data, CAN_line_3, CAN3);
-    uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(message.CAN_handler);
-    if(free_spots != 0)
-    {
-        HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(message.CAN_handler, message.CAN_transmit_header, message.data, CAN_TX_MAILBOX2);
-        if(bruh == HAL_OK)
-        {
-            return SUCCESS;
-        }
-        else
-        {
-            return FAIL;
-        }
-    }
-    else
-    {
-        return FAIL;
-    }
-}
-
-// TODO: Define this
-__attribute__((weak)) uint8_t[8] incoming_callback_CAN(uint8_t bus, uint32_t msg_id)
-{
-    
-}
-
