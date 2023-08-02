@@ -31,6 +31,7 @@
     *************************************************************
 */
 
+// CAN Message type this holds all useful CAN information
 typedef struct
 {
     uint8_t line;
@@ -39,12 +40,14 @@ typedef struct
     uint8_t data[8] = 0;
 } CAN_msg_t;
 
+// Used in the Queue implementation - you probably dont need to worry about it
 struct node
 {
     CAN_msg_t msg;
     struct node* next;
 }
 
+// This is a queue of messages that are waiting for processing by your application code 
 struct msg_queue
 {
     node* head;
@@ -56,15 +59,25 @@ struct msg_queue
     *************************************************************
 */
 
+// These are the CAN Handlers they hold configuration information and whatnot you can change this information
+// by changing the Macros in can_config.h
 CAN_HandleTypeDef* CAN1;
 CAN_HandleTypeDef* CAN2;
-//CAN_HandleTypeDef* CAN3;
+// Dont worry about this one for now
+// CAN_HandleTypeDef* CAN3;
+
+// These are the queues for each CAN line
 msg_queue* CAN1_incoming;
 msg_queue* CAN2_incoming;
-//msg_queue* CAN3_incoming;
+// Dont worry about this one for now
+// msg_queue* CAN3_incoming;
+
+// This is a structure that holds the PIN configuration information, this configuration can also be changed in
+// can_config.h
 GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 
+// Use this when referencing CAN lines when sending a message
 enum
 {
     CAN_line_1 = 1,
@@ -72,6 +85,7 @@ enum
     //CAN_line_3 = 3
 };
 
+// Fault codes - pretty self explanatory
 enum
 {
     MSG_SENT = 1,
@@ -84,13 +98,28 @@ enum
     *************************************************************
 */
 
-// Initializes the can handlers for each line
-HAL_StatusTypeDef start_CAN();
+/**
+ * @brief Initializes the can handlers for each line
+ * 
+ * @return HAL_StatusTypeDef 
+ */
+HAL_StatusTypeDef can_init();
 
-// Sends a CAN message on the line specified in the CAN_msg_t struct
-uint8_t send_message_CAN(CAN_msg_t message);
+/**
+ * @brief Sends a CAN message on the line specified in the CAN_msg_t struct
+ * 
+ * @param message A CAN_msg_t struct containing the information you want to send
+ * @return uint8_t Error code
+ */
+uint8_t can_send_message(CAN_msg_t message);
 
-CAN_msg_t get_message_CAN(uint8_t line);
+/**
+ * @brief Returns a message from the front of the queue
+ * 
+ * @param line The CAN line that you want to get the message from
+ * @return CAN_msg_t Struct containing important message info
+ */
+CAN_msg_t can_get_message(uint8_t line);
 
 
 #endif

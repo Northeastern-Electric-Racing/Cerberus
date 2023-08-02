@@ -9,6 +9,7 @@
 #include "can.h"
 #include "can_config.h"
 
+// This is a function to initialize low level parameters for the CAN lines
 void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
     
@@ -72,7 +73,7 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
     }
 }
 
-
+// Initializes a CAN handler and its higher level parameters
 void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
     switch(line)
@@ -106,8 +107,8 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
 
 }
 
-
-HAL_StatusTypeDef start_CAN()
+// Function to start the CAN communication lines
+HAL_StatusTypeDef can_init()
 {
     HAL_StatusTypeDef CAN_Status;
 
@@ -139,8 +140,8 @@ HAL_StatusTypeDef start_CAN()
     return CAN_Status;
 }
 
-
-uint8_t send_message_CAN(CAN_msg_t message)
+// Takes a message as an input and abstracts the HAL to send the message
+uint8_t can_send_message(CAN_msg_t message)
 {
     switch(message.line)
     {
@@ -264,6 +265,8 @@ uint8_t send_message_CAN(CAN_msg_t message)
 
 }
 
+// Function to add a node to the message queue it is automatically called in the interrupt triggered 
+// callback
 void enqueue(struct queue* queue, CAN_msg_t msg) 
 {
   struct node *new_node = malloc(sizeof(struct node));
@@ -282,6 +285,7 @@ void enqueue(struct queue* queue, CAN_msg_t msg)
   }
 }
 
+// Removes and returns the front node of the queue
 CAN_msg_t dequeue(struct queue* queue)
 {
     if (queue->head == NULL) 
@@ -297,6 +301,7 @@ CAN_msg_t dequeue(struct queue* queue)
     return msg;
 }
 
+// Interrupt triggered callback for CAN line 1
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
@@ -309,6 +314,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
     free(rx_header);
 }
 
+// Interrupt triggered callback for CAN line 2
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
@@ -321,6 +327,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
     free(rx_header);
 }
 
+// Interrupt triggered callback for CAN line 1
 // void HAL_CAN_RxFifo2MsgPendingCallback(CAN2)
 // {
 //     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
@@ -333,7 +340,8 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
 //     free(rx_header);
 // }
 
-CAN_msg_t get_message_CAN(uint8_t line)
+// Retrieves the message at the front of the queue and dequeues
+CAN_msg_t can_get_message(uint8_t line)
 {
     CAN_msg_t message;
     switch(line)
