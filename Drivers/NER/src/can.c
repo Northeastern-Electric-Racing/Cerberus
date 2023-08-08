@@ -313,7 +313,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
     can_msg_t new_msg;
     new_msg.line = CAN_LINE_1;
-    HAL_CAN_GetRxMessage(can1, CAN_RX_FIFO0, rx_header, new_msg.data);
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
     enqueue(can1_incoming, new_msg);
@@ -326,7 +326,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
     can_msg_t new_msg;
     new_msg.line = CAN_LINE_2;
-    HAL_CAN_GetRxMessage(can2, CAN_RX_FIFO1, rx_header, new_msg.data);
+    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
     enqueue(can2_incoming, new_msg);
@@ -334,12 +334,12 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 }
 
 /* Interrupt triggered callback for CAN line 3 */
-// void HAL_CAN_RxFifo2MsgPendingCallback(CAN2)
+// void HAL_CAN_RxFifo2MsgPendingCallback(CAN_HandleTypeDef *hcan)
 // {
 //     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
 //     CAN_msg_t new_msg;
 //     new_msg.line = CAN_LINE_3;
-//     HAL_CAN_GetRxMessage(can3, CAN_RX_FIFO2, rx_header, new_msg.data);
+//     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO2, rx_header, new_msg.data);
 //     new_msg.len = rx_header->DLC;
 //     new_msg.id = rx_header->StdId;
 //     enqueue(can3_incoming, new_msg);
