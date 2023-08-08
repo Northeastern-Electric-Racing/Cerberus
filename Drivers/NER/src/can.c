@@ -41,68 +41,64 @@ GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* This is a function to initialize low level parameters for the CAN lines */
 static void can_msp_init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
+    /* Peripheral clock enable */
+    __HAL_RCC_CAN1_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
 
-    if(can_h->Instance == line)
+    switch(line)
     {
-        /* Peripheral clock enable */
-        __HAL_RCC_CAN1_CLK_ENABLE();
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-
-        switch(line)
-        {
-            case CAN_LINE_1:
-                /*
-                * CAN1 GPIO Configuration
-                * PB8     ------> CAN1_RX
-                * PB9     ------> CAN1_TX
-                */
-                GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
-                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-                break;
-            case CAN_LINE_2:
-                /*
-                * CAN2 GPIO Configuration
-                * PB6     ------> CAN2_RX
-                * PB7     ------> CAN2_TX
-                */
-                GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
-                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-                break;
-            // case CAN_LINE_3:
-            //     /*
-            //     * CAN3 GPIO Configuration
-            //     * PB4     ------> CAN3_RX
-            //     * PB5     ------> CAN3_TX
-            //     */
-            //     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
-            //     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-            //     GPIO_InitStruct.Pull = GPIO_NOPULL;
-            //     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-            //     GPIO_InitStruct.Alternate = GPIO_AF9_CAN3;
-            //     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-            //     break;
-            default:
-                /*
-                * CAN1 GPIO Configuration
-                * PB8     ------> CAN1_RX
-                * PB9     ------> CAN1_TX
-                */
-                GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
-                GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-                GPIO_InitStruct.Pull = GPIO_NOPULL;
-                GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-                GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
-                HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-                break;
-        }
+        case CAN_LINE_1:
+            /*
+            * CAN1 GPIO Configuration
+            * PB8     ------> CAN1_RX
+            * PB9     ------> CAN1_TX
+            */
+            GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+            GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+            GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+            HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+            break;
+        case CAN_LINE_2:
+            /*
+            * CAN2 GPIO Configuration
+            * PB6     ------> CAN2_RX
+            * PB7     ------> CAN2_TX
+            */
+            GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+            GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+            GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
+            HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+            break;
+        // case CAN_LINE_3:
+        //     /*
+        //     * CAN3 GPIO Configuration
+        //     * PB4     ------> CAN3_RX
+        //     * PB5     ------> CAN3_TX
+        //     */
+        //     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+        //     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+        //     GPIO_InitStruct.Pull = GPIO_NOPULL;
+        //     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+        //     GPIO_InitStruct.Alternate = GPIO_AF9_CAN3;
+        //     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+        //     break;
+        default:
+            /*
+            * CAN1 GPIO Configuration
+            * PB8     ------> CAN1_RX
+            * PB9     ------> CAN1_TX
+            */
+            GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+            GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+            GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+            HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+            break;
     }
 }
 
@@ -111,16 +107,16 @@ static void can_handler_init(CAN_HandleTypeDef* can_h, uint8_t line)
     switch(line)
     {
         case CAN_LINE_1:
-            can_h->Instance = can1;
+            can_h = can1;
             break;
         case CAN_LINE_2:
-            can_h->Instance = can2;
+            can_h = can2;
             break;
         // case CAN_LINE_3:
-        //     can_h->Instance = can3;
+        //     can_h = can3;
         //     break;
         default:
-            can_h->Instance = can1;
+            can_h = can1;
             break;
     }
     can_h->Init.Prescaler              = CAN_PRESCALER;
@@ -295,14 +291,15 @@ static void enqueue(struct msg_queue* queue, can_msg_t msg)
 }
 
 /* Removes and returns the front node of the queue */
-static can_msg_t dequeue(struct msg_queue* queue)
+static can_msg_t* dequeue(struct msg_queue* queue)
 {
     if (queue->head == NULL)
     {
-        return -1;
+        return NULL;
     }
 
-    can_msg_t msg = queue->head->msg;
+    can_msg_t *msg = malloc(sizeof(can_msg_t));
+    *msg = queue->head->msg;
     struct node *old_head = queue->head;
     queue->head = queue->head->next;
     free(old_head);
@@ -311,12 +308,12 @@ static can_msg_t dequeue(struct msg_queue* queue)
 }
 
 // Interrupt triggered callback for CAN line 1
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
     can_msg_t new_msg;
     new_msg.line = CAN_LINE_1;
-    HAL_CAN_GetRxMessage(CAN1, CAN_RX_FIFO0, rx_header, new_msg.data);
+    HAL_CAN_GetRxMessage(can1, CAN_RX_FIFO0, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
     enqueue(can1_incoming, new_msg);
@@ -324,12 +321,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
 }
 
 // Interrupt triggered callback for CAN line 2
-void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
     can_msg_t new_msg;
     new_msg.line = CAN_LINE_2;
-    HAL_CAN_GetRxMessage(CAN2, CAN_RX_FIFO1, rx_header, new_msg.data);
+    HAL_CAN_GetRxMessage(can2, CAN_RX_FIFO1, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
     enqueue(can2_incoming, new_msg);
@@ -350,9 +347,9 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
 // }
 
 /* Retrieves the message at the front of the queue and dequeues */
-can_msg_t can_get_message(uint8_t line)
+can_msg_t *can_get_message(uint8_t line)
 {
-    can_msg_t message;
+    can_msg_t *message;
     switch(line)
     {
         case CAN_LINE_1:

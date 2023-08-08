@@ -77,7 +77,7 @@ CAN_StatusTypedef can_send_message(can_msg_t message);
  * @param line The CAN line that you want to get the message from
  * @return CAN_msg_t Struct containing important message info
  */
-can_msg_t can_get_message(uint8_t line);
+can_msg_t *can_get_message(uint8_t line);
 
 
 #endif
