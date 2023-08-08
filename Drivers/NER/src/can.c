@@ -2,29 +2,59 @@
     CAN DRIVER Source File
     Link to part Datasheet for reference:
     https://www.st.com/resource/en/user_manual/um1725-description-of-stm32f4-hal-and-lowlayer-drivers-stmicroelectronics.pdf
-    
+
     Author: Hamza Iqbal
 */
 
+#include <stdlib.h>
 #include "can.h"
 #include "can_config.h"
 
-// This is a function to initialize low level parameters for the CAN lines
-void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
+/*
+ * These are the CAN Handlers they hold configuration information and whatnot you can change
+ * this information by changing the Macros in can_config.h
+ */
+CAN_HandleTypeDef* can1;
+CAN_HandleTypeDef* can2;
+// CAN_HandleTypeDef* can3;
+
+/* Used in the Queue implementation - you probably dont need to worry about it */
+struct node
 {
-    
+    can_msg_t msg;
+    struct node* next;
+};
+
+/* This is a queue of messages that are waiting for processing by your application code */
+struct msg_queue
+{
+    struct node* head;
+    struct node* tail;
+};
+
+/*
+ * This is a structure that holds the PIN configuration information, this configuration can also
+ * be changed in can_config.h
+ */
+GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+/* This is a function to initialize low level parameters for the CAN lines */
+static void can_msp_init(CAN_HandleTypeDef* can_h, uint8_t line)
+{
+
     if(can_h->Instance == line)
     {
         /* Peripheral clock enable */
         __HAL_RCC_CAN1_CLK_ENABLE();
         __HAL_RCC_GPIOB_CLK_ENABLE();
-        
+
         switch(line)
         {
-            case CAN_line_1:
-                /**CAN1 GPIO Configuration
-                PB8     ------> CAN1_RX
-                PB9     ------> CAN1_TX
+            case CAN_LINE_1:
+                /*
+                * CAN1 GPIO Configuration
+                * PB8     ------> CAN1_RX
+                * PB9     ------> CAN1_TX
                 */
                 GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
                 GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -33,10 +63,11 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
                 GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
                 HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
                 break;
-            case CAN_line_2:
-                /**CAN2 GPIO Configuration
-                PB6     ------> CAN2_RX
-                PB7     ------> CAN2_TX
+            case CAN_LINE_2:
+                /*
+                * CAN2 GPIO Configuration
+                * PB6     ------> CAN2_RX
+                * PB7     ------> CAN2_TX
                 */
                 GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
                 GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -45,10 +76,11 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
                 GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
                 HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
                 break;
-            // case CAN_line_3:
-            //     /**CAN3 GPIO Configuration
-            //     PB4     ------> CAN3_RX
-            //     PB5     ------> CAN3_TX
+            // case CAN_LINE_3:
+            //     /*
+            //     * CAN3 GPIO Configuration
+            //     * PB4     ------> CAN3_RX
+            //     * PB5     ------> CAN3_TX
             //     */
             //     GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
             //     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -58,9 +90,10 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
             //     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
             //     break;
             default:
-                /**CAN1 GPIO Configuration
-                PB8     ------> CAN1_RX
-                PB9     ------> CAN1_TX
+                /*
+                * CAN1 GPIO Configuration
+                * PB8     ------> CAN1_RX
+                * PB9     ------> CAN1_TX
                 */
                 GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
                 GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -73,22 +106,21 @@ void CAN_Msp_Init(CAN_HandleTypeDef* can_h, uint8_t line)
     }
 }
 
-// Initializes a CAN handler and its higher level parameters
-void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
+static void can_handler_init(CAN_HandleTypeDef* can_h, uint8_t line)
 {
     switch(line)
     {
-        case CAN_line_1:
-            can_h->Instance = CAN1;
+        case CAN_LINE_1:
+            can_h->Instance = can1;
             break;
-        case CAN_line_2:
-            can_h->Instance = CAN2;
+        case CAN_LINE_2:
+            can_h->Instance = can2;
             break;
-        // case CAN_line_3:
-        //     can_h->Instance = CAN3;
+        // case CAN_LINE_3:
+        //     can_h->Instance = can3;
         //     break;
         default:
-            can_h->Instance = CAN1;
+            can_h->Instance = can1;
             break;
     }
     can_h->Init.Prescaler              = CAN_PRESCALER;
@@ -103,61 +135,60 @@ void CAN_Handler_Init(CAN_HandleTypeDef* can_h, uint8_t line)
     can_h->Init.ReceiveFifoLocked      = CAN_RECEIVE_FIFO_LOCKED;
     can_h->Init.TransmitFifoPriority   = CAN_TRANSMIT_FIFO_PRIORITY;
 
-    CAN_Msp_Init(can_h, line);
-
+    can_msp_init(can_h, line);
 }
 
-// Function to start the CAN communication lines
 HAL_StatusTypeDef can_init()
 {
-    HAL_StatusTypeDef CAN_Status;
+    HAL_StatusTypeDef can_status;
 
-    CAN_Handler_Init(CAN1, CAN_line_1);
-    CAN_Handler_Init(CAN2, CAN_line_2);
-    CAN_Handler_Init(CAN3, CAN_line_3);
+    can_handler_init(can1, CAN_LINE_1);
+    can_handler_init(can2, CAN_LINE_2);
+    // can_handler_init(can3, CAN_LINE_3);
 
-
-
-    CAN_Status = HAL_CAN_Start(CAN1);
-    if (CAN_Status!= HAL_OK)
+    can_status = HAL_CAN_Start(can1);
+    if (can_status!= HAL_OK)
     {
-        return CAN_Status;
+        return can_status;
     }
-    CAN_Status = HAL_CAN_Start(CAN2);
-    if (CAN_Status!= HAL_OK)
+    can_status = HAL_CAN_Start(can2);
+    if (can_status!= HAL_OK)
     {
-        return CAN_Status;
+        return can_status;
     }
-    // CAN_Status = HAL_CAN_Start(CAN3);
-    // if (CAN_Status!= HAL_OK)
+    // can_status = HAL_CAN_Start(can3);
+    // if (can_status!= HAL_OK)
     // {
-    //     return CAN_Status;
+    //     return can_status;
     // }
-    
-    HAL_CAN_ActivateNotification(CAN1, CAN_IT_RX_FIFO0_MSG_PENDING);
-    HAL_CAN_ActivateNotification(CAN2, CAN_IT_RX_FIFO1_MSG_PENDING);
-    // HAL_CAN_ActivateNotification(CAN3, CAN_IT_RX_FIFO2_MSG_PENDING);
-    return CAN_Status;
+
+    HAL_CAN_ActivateNotification(can1, CAN_IT_RX_FIFO0_MSG_PENDING);
+    HAL_CAN_ActivateNotification(can2, CAN_IT_RX_FIFO1_MSG_PENDING);
+    // HAL_CAN_ActivateNotification(can3, CAN_IT_RX_FIFO2_MSG_PENDING);
+    return can_status;
 }
 
-// Takes a message as an input and abstracts the HAL to send the message
-uint8_t can_send_message(CAN_msg_t message)
+CAN_StatusTypedef can_send_message(can_msg_t message)
 {
+    CAN_TxHeaderTypeDef* tx_header;
+    uint32_t free_spots;
+
+    tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
+    tx_header->StdId = message.id;
+    tx_header->ExtId = CAN_EXT_ID;
+    tx_header->IDE = CAN_ID_STD;
+    tx_header->RTR = CAN_RTR_DATA;
+    tx_header->DLC = message.len;
+    tx_header->TransmitGlobalTime = DISABLE;
+
     switch(message.line)
     {
-        case CAN_line_1:
-            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-            tx_header->StdId = message.id;
-            tx_header->ExtId = CAN_EXT_ID;
-            tx_header->IDE = CAN_ID_STD;
-            tx_header->RTR = CAN_RTR_data;
-            tx_header->DLC = message.len;
-            tx_header->TransmitGlobalTime = DISABLE;
-            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN1);
+        case CAN_LINE_1:
+            free_spots = HAL_CAN_GetTxMailboxesFreeLevel(can1);
             if(free_spots != 0)
             {
-                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN1, tx_header, message.data, CAN_TX_MAILBOX0);
-                if(bruh == HAL_OK)
+                HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(can1, tx_header, message.data, CAN_TX_MAILBOX0);
+                if(status == HAL_OK)
                 {
                     free(tx_header);
                     return MSG_SENT;
@@ -174,19 +205,12 @@ uint8_t can_send_message(CAN_msg_t message)
                 return BUFFER_FULL;
             }
             break;
-        case CAN_line_2:
-            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-            tx_header->StdId = message.id;
-            tx_header->ExtId = CAN_EXT_ID;
-            tx_header->IDE = CAN_ID_STD;
-            tx_header->RTR = CAN_RTR_data;
-            tx_header->DLC = message.len;
-            tx_header->TransmitGlobalTime = DISABLE;
-            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN2);
+        case CAN_LINE_2:
+            free_spots = HAL_CAN_GetTxMailboxesFreeLevel(can2);
             if(free_spots != 0)
             {
-                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN2, tx_header, message.data, CAN_TX_MAILBOX1);
-                if(bruh == HAL_OK)
+                HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(can2, tx_header, message.data, CAN_TX_MAILBOX1);
+                if(status == HAL_OK)
                 {
                     free(tx_header);
                     return MSG_SENT;
@@ -203,19 +227,12 @@ uint8_t can_send_message(CAN_msg_t message)
                 return BUFFER_FULL;
             }
             break;
-        // case CAN_line_3:
-        //     CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-        //     tx_header->StdId = message.id;
-        //     tx_header->ExtId = CAN_EXT_ID;
-        //     tx_header->IDE = CAN_ID_STD;
-        //     tx_header->RTR = CAN_RTR_data;
-        //     tx_header->DLC = message.len;
-        //     tx_header->TransmitGlobalTime = DISABLE;
-        //     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN3);
+        // case CAN_LINE_3:
+        //     uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(can3);
         //     if(free_spots != 0)
         //     {
-        //         HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN3, tx_header, message.data, CAN_TX_MAILBOX2);
-        //         if(bruh == HAL_OK)
+        //         HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(can3, tx_header, message.data, CAN_TX_MAILBOX2);
+        //         if(status == HAL_OK)
         //         {
         //             free(tx_header);
         //             return SUCCESS;
@@ -233,18 +250,11 @@ uint8_t can_send_message(CAN_msg_t message)
         //     }
         //     break;
         default:
-            CAN_TxHeaderTypeDef* tx_header = malloc(sizeof(CAN_TxHeaderTypeDef));
-            tx_header->StdId = message.id;
-            tx_header->ExtId = CAN_EXT_ID;
-            tx_header->IDE = CAN_ID_STD;
-            tx_header->RTR = CAN_RTR_data;
-            tx_header->DLC = message.len;
-            tx_header->TransmitGlobalTime = DISABLE;
-            uint32_t free_spots = HAL_CAN_GetTxMailboxesFreeLevel(CAN1);
+            free_spots = HAL_CAN_GetTxMailboxesFreeLevel(can1);
             if(free_spots != 0)
             {
-                HAL_StatusTypeDef bruh = HAL_CAN_AddTxMessage(CAN1, tx_header, message.data, CAN_TX_MAILBOX0);
-                if(bruh == HAL_OK)
+                HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(can1, tx_header, message.data, CAN_TX_MAILBOX0);
+                if(status == HAL_OK)
                 {
                     free(tx_header);
                     return MSG_SENT;
@@ -265,35 +275,34 @@ uint8_t can_send_message(CAN_msg_t message)
 
 }
 
-// Function to add a node to the message queue it is automatically called in the interrupt triggered 
-// callback
-void enqueue(struct queue* queue, CAN_msg_t msg) 
+/* Function to add a node to the message queue it is automatically called in the interrupt triggered callback */
+static void enqueue(struct msg_queue* queue, can_msg_t msg)
 {
   struct node *new_node = malloc(sizeof(struct node));
   new_node->msg = msg;
   new_node->next = NULL;
 
-  if (queue->head == NULL) 
+  if (queue->head == NULL)
   {
     queue->head = new_node;
     queue->tail = new_node;
-  } 
-  else 
+  }
+  else
   {
     queue->tail->next = new_node;
     queue->tail = new_node;
   }
 }
 
-// Removes and returns the front node of the queue
-CAN_msg_t dequeue(struct queue* queue)
+/* Removes and returns the front node of the queue */
+static can_msg_t dequeue(struct msg_queue* queue)
 {
-    if (queue->head == NULL) 
+    if (queue->head == NULL)
     {
         return -1;
     }
 
-    int msg = queue->head->data;
+    can_msg_t msg = queue->head->msg;
     struct node *old_head = queue->head;
     queue->head = queue->head->next;
     free(old_head);
@@ -305,12 +314,12 @@ CAN_msg_t dequeue(struct queue* queue)
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
-    CAN_msg_t new_msg;
-    new_msg.line = CAN_line_1;
+    can_msg_t new_msg;
+    new_msg.line = CAN_LINE_1;
     HAL_CAN_GetRxMessage(CAN1, CAN_RX_FIFO0, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
-    enqueue(CAN1_incoming, new_msg);
+    enqueue(can1_incoming, new_msg);
     free(rx_header);
 }
 
@@ -318,45 +327,45 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN1)
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN2)
 {
     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
-    CAN_msg_t new_msg;
-    new_msg.line = CAN_line_2;
+    can_msg_t new_msg;
+    new_msg.line = CAN_LINE_2;
     HAL_CAN_GetRxMessage(CAN2, CAN_RX_FIFO1, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
-    enqueue(CAN2_incoming, new_msg);
+    enqueue(can2_incoming, new_msg);
     free(rx_header);
 }
 
-// Interrupt triggered callback for CAN line 1
+/* Interrupt triggered callback for CAN line 3 */
 // void HAL_CAN_RxFifo2MsgPendingCallback(CAN2)
 // {
 //     CAN_RxHeaderTypeDef* rx_header = malloc(sizeof(CAN_RxHeaderTypeDef));
 //     CAN_msg_t new_msg;
-//     new_msg.line = CAN_line_3;
-//     HAL_CAN_GetRxMessage(CAN3, CAN_RX_FIFO2, rx_header, new_msg.data);
+//     new_msg.line = CAN_LINE_3;
+//     HAL_CAN_GetRxMessage(can3, CAN_RX_FIFO2, rx_header, new_msg.data);
 //     new_msg.len = rx_header->DLC;
 //     new_msg.id = rx_header->StdId;
-//     enqueue(CAN3_incoming, new_msg);
+//     enqueue(can3_incoming, new_msg);
 //     free(rx_header);
 // }
 
-// Retrieves the message at the front of the queue and dequeues
-CAN_msg_t can_get_message(uint8_t line)
+/* Retrieves the message at the front of the queue and dequeues */
+can_msg_t can_get_message(uint8_t line)
 {
-    CAN_msg_t message;
+    can_msg_t message;
     switch(line)
     {
-        case CAN_line_1:
-            message = dequeue(CAN1_incoming);
+        case CAN_LINE_1:
+            message = dequeue(can1_incoming);
             break;
-        case CAN_line_2:
-            message = dequeue(CAN2_incoming);
+        case CAN_LINE_2:
+            message = dequeue(can2_incoming);
             break;
-        // case CAN_line_3:
-        //     message = dequeue(CAN3_incoming);
+        // case CAN_LINE_3:
+        //     message = dequeue(can3_incoming);
         //     break;
         default:
-            message = dequeue(CAN1_incoming);
+            message = dequeue(can1_incoming);
             break;
     }
     return message;
