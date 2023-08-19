@@ -18,7 +18,7 @@ HAL_StatusTypeDef pi4ioe_init(pi4ioe_t *gpio, I2C_HandleTypeDef *i2c_handle)
 	return HAL_I2C_Master_Transmit(i2c_handle, PI4IOE_I2C_ADDR, buf, 2, HAL_MAX_DELAY);
 }
 
- HAL_StatusTypeDef PI4IOE_Write(uint8_t device, uint8_t val, I2C_HandleTypeDef *i2c_handle)
+ HAL_StatusTypeDef pio4oe_write(uint8_t device, uint8_t val, I2C_HandleTypeDef *i2c_handle)
  {
 	uint8_t reg;
 
@@ -30,7 +30,7 @@ HAL_StatusTypeDef pi4ioe_init(pi4ioe_t *gpio, I2C_HandleTypeDef *i2c_handle)
 
  }
 
-  HAL_StatusTypeDef PI4IOE_Read(uint8_t *buf, I2C_HandleTypeDef *i2c_handle)
+  HAL_StatusTypeDef pio4oe_read(uint8_t *buf, I2C_HandleTypeDef *i2c_handle)
   {
 	uint8_t reg = INPUT0_REG;
 	
