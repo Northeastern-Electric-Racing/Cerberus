@@ -6,10 +6,10 @@ uint16_t bytes_to_write(uint16_t size, uint16_t offset)
     else return M24C32_PAGE_SIZE - offset;
 }
 
-void EEPROM_Write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
+void eeprom_write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
 {
     uint8_t start_page = page;
-    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE)
+    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
 
     uint8_t data_pos = 0;
@@ -29,10 +29,10 @@ void EEPROM_Write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
     }
 }
 
-void EEPROM_Read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
+void eeprom_read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
 {
     uint8_t start_page = page;
-    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE)
+    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
 
     uint8_t data_pos = 0;
@@ -52,10 +52,10 @@ void EEPROM_Read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
     }
 }
 
-void EEPROM_Delete(uint8_t page, uint16_t offset, uint16_t size)
+void eeprom_delete(uint8_t page, uint16_t offset, uint16_t size)
 {
     uint8_t start_page = page;
-    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE)
+    uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
     uint8_t data = 0;
     uint8_t * ptr = &data;
@@ -74,7 +74,7 @@ void EEPROM_Delete(uint8_t page, uint16_t offset, uint16_t size)
     }
 }
 
-void EEPROM_Page_Erase(uint8_t page)
+void eeprom_page_erase(uint8_t page)
 {
     uint16_t mem_addr = (page << 4) | offset;
     uint8_t data = 0;

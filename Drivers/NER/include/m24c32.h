@@ -1,6 +1,7 @@
 #ifndef M24C32_H
 #define M24C32_H
 
+#include <stdint.h>
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_i2c.h"
 
@@ -10,14 +11,12 @@
 
 I2C_HandleTypeDef *i2c_handle;
 
-void EEPROM_Write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size);
+void eeprom_write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size);
 
-void EEPROM_Read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size);
+void eeprom_read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size);
 
-void EEPROM_Delete(uint8_t page, uint16_t offset, uint16_t size);
+void eeprom_delete(uint8_t page, uint16_t offset, uint16_t size);
 
-void EEPROM_Page_Erase(uint8_t page);
+void eeprom_page_erase(uint8_t page);
 
-
-
-#endif
+#endif // M24C32_H

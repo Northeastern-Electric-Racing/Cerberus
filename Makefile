@@ -69,6 +69,7 @@ Drivers/NER/src/lsm6dso.c \
 Drivers/NER/src/sht30.c \
 Drivers/NER/src/can.c \
 Drivers/NER/src/pi4ioe.c \
+Drivers/NER/src/m24c32.c \
 Core/Src/system_stm32f4xx.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
