@@ -18,16 +18,16 @@
 
 typedef struct
 {
-    int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute */
-    int16_t duty_cycle;     /* SCALE: 10        UNITS: Percentage */
-    int16_t input_voltage;  /* SCALE: 1         UNITS: Volts */
-    int16_t ac_current;     /* SCALE: 10        UNITS: Amps */
-    int16_t dc_current;     /* SCALE: 10        UNITS: Amps */
-    int16_t cont_temp;      /* SCALE: 10        UNITS: Degrees Celsius */
-    int16_t motor_temp;     /* SCALE: 10        UNITS: Degrees Celsius */
+    int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute   */
+    int16_t duty_cycle;     /* SCALE: 10        UNITS: Percentage             */
+    int16_t input_voltage;  /* SCALE: 1         UNITS: Volts                  */
+    int16_t ac_current;     /* SCALE: 10        UNITS: Amps                   */
+    int16_t dc_current;     /* SCALE: 10        UNITS: Amps                   */
+    int16_t cont_temp;      /* SCALE: 10        UNITS: Degrees Celsius        */
+    int16_t motor_temp;     /* SCALE: 10        UNITS: Degrees Celsius        */
     uint8_t fault_code;     /* SCALE: 1         UNITS: No units just a number */
-    int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage */
-    int8_t brake_signal;    /* SCALE: 1         UNITS: Percentage */
+    int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
+    int8_t brake_signal;    /* SCALE: 1         UNITS: Percentage             */
     int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
 } mc_t;
 
@@ -57,8 +57,28 @@ int8_t MC_get_brake_signal(mc_t* mc);
 
 int8_t MC_get_drive_enable(mc_t* mc);
 
-void MC_set_brake_current(mc_t* mc);
+void MC_set_brake_current(int16_t brake_current);                   /* SCALE: 10          UNITS: Amps       */
 
+void MC_set_current(int16_t current);                               /* SCALE: 10          UNITS: Amps       */
 
+void MC_set_speed(int32_t rpm);                                     /* SCALE: 1           UNITS: RPM        */
+
+void MC_set_position(int16_t angle);                                /* SCALE: 10          UNITS: Degrees    */
+
+void MC_set_relative_current(int16_t relative_current);             /* SCALE: 10          UNITS: Percentage */
+
+void MC_set_relative_brake_current(int16_t relative_brake_current); /* SCALE: 10          UNITS: Percentage */
+
+void MC_set_digital_output(uint8_t output, bool value);             /* SCALE: 1           UNITS: No units   */
+
+void MC_set_max_ac_current(int16_t current);                        /* SCALE: 10          UNITS: Amps       */
+
+void MC_set_max_ac_brake_current(int16_t current);                  /* SCALE: 10          UNITS: Amps       */
+
+void MC_set_max_dc_current(int16_t current);                        /* SCALE: 10          UNITS: Amps       */
+
+void MC_set_max_dc_brake_current(int16_t current);                  /* SCALE: 10          UNITS: Amps       */
+
+void MC_set_drive_enable(bool drive_enable);                        /* SCALE: 1           UNITS: No units   */
 
 #endif
