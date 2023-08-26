@@ -36,6 +36,10 @@ RUN cd openocd && ./bootstrap
 RUN cd openocd && ./configure
 RUN cd openocd && make -j4 && make install
 
+RUN wget https://builds.renode.io/renode-1.13.3+20230712gitedfc975b.linux-portable.tar.gz
+RUN mkdir renode_portable && tar -xvf renode-*.linux-portable.tar.gz -C renode_portable --strip-components=1
+ENV PATH $PATH:/renode_portable
+
 # Set up a development tools directory
 WORKDIR /home/dev
 ADD . /home/dev
