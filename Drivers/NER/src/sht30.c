@@ -6,7 +6,7 @@
 
 static HAL_StatusTypeDef sht30_read_reg(sht30_t *sht30, uint8_t *data, uint16_t reg, uint8_t size)
 {
-    return HAL_I2C_Mem_Write(sht30->i2c_handle, SHT30_I2C_ADDR, reg, I2C_MEMADD_SIZE_16BIT, data, size, HAL_MAX_DELAY);
+    return HAL_I2C_Mem_Read(sht30->i2c_handle, SHT30_I2C_ADDR, reg, I2C_MEMADD_SIZE_16BIT, data, size, HAL_MAX_DELAY);
 }
 
 static HAL_StatusTypeDef sht30_write_reg(sht30_t *sht30, uint16_t reg, uint8_t *data, uint8_t size)
@@ -59,9 +59,11 @@ HAL_StatusTypeDef sht30_reset(sht30_t *sht30)
     return sht30_write_reg(sht30, SWITCHBYTES(SHT30_SOFTRESET), 0, 2);
 }
 
-HAL_StatusTypeDef sht30_init(sht30_t *sht30)
+HAL_StatusTypeDef sht30_init(sht30_t *sht30, I2C_HandleTypeDef *hi2c)
 {
     HAL_StatusTypeDef status;
+
+    sht30->i2c_handle = hi2c;
 
     status = sht30_reset(sht30);
     if (status != HAL_OK)

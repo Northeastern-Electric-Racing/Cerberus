@@ -330,6 +330,9 @@ HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef *hcan)
   }
 #endif /* (USE_HAL_CAN_REGISTER_CALLBACKS) */
 
+  /* Exit from sleep mode */
+  CLEAR_BIT(hcan->Instance->MCR, CAN_MCR_SLEEP);
+
   /* Request initialisation */
   SET_BIT(hcan->Instance->MCR, CAN_MCR_INRQ);
 
@@ -350,9 +353,6 @@ HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef *hcan)
       return HAL_ERROR;
     }
   }
-
-  /* Exit from sleep mode */
-  CLEAR_BIT(hcan->Instance->MCR, CAN_MCR_SLEEP);
 
   /* Get tick */
   tickstart = HAL_GetTick();

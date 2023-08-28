@@ -42,7 +42,7 @@ typedef struct
  * @param sht30 
  * @return HAL_StatusTypeDef 
  */
-HAL_StatusTypeDef sht30_init(sht30_t *sht30);
+HAL_StatusTypeDef sht30_init(sht30_t *sht30, I2C_HandleTypeDef *hi2c);
 
 /**
  * @brief Resets the SHT30 chip

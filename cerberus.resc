@@ -1,0 +1,12 @@
+:name: Cerberus Simulation
+:description: This runs the Cerberus FreeRTOS application using a precompiled ELF
+
+using sysbus
+
+mach create
+machine LoadPlatformDescription @test/renode/stm32f405.repl
+sysbus.cpu LogFunctionNames true
+sysbus LogAllPeripheralsAccess true
+
+sysbus LoadELF @build/cerberus.elf
+
