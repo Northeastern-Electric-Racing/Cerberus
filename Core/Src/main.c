@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "sht30.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -48,6 +49,8 @@ I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
+
+sht30_t temp_sensor;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -113,6 +116,9 @@ int main(void)
   MX_SPI1_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+
+  //if(sht30_init(&temp_sensor, &hi2c1))
+    //Error_Handler();
 
   /* USER CODE END 2 */
 

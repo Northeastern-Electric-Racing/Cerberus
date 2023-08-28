@@ -26,8 +26,8 @@ RUN apt-get install -y \
     libusb-1.0-0-dev \
     pkg-config
 
-RUN git clone https://github.com/raspberrypi/openocd.git \
-    --branch rp2040 \
+RUN git clone https://github.com/STMicroelectronics/openocd.git \
+    --branch openocd-cubeide-r6 \
     --depth=1 \
     --no-single-branch
 
