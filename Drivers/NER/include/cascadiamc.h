@@ -16,6 +16,7 @@
 #include "stm32f4xx_hal.h"
 #include "can.h"
 
+#define NUM_POLES
 typedef struct
 {
     int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute   */
@@ -30,6 +31,8 @@ typedef struct
     int8_t brake_signal;    /* SCALE: 1         UNITS: Percentage             */
     int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
 } mc_t;
+
+mc_t* MC;
 
 void MC_init(mc_t* mc);
 

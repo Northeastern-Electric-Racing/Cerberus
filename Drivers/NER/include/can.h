@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
 #include "can_config.h"
+#include "cascadiamc.h"
 
 /* CAN Message type this holds all useful CAN information */
 typedef struct
