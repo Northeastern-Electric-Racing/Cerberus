@@ -319,15 +319,15 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     switch(new_msg.id)
     {
         case 0x2010:   
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2110:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2210:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2310:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2410:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         default:
             enqueue(can1_incoming, new_msg);
     }
@@ -347,15 +347,15 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     switch(new_msg.id)
     {
         case 0x2010:   
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2110:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2210:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2310:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         case 0x2410:    
-            MC_update(MC, new_msg);
+            cascadiamc_update(MC, new_msg);
         default:
             enqueue(can1_incoming, new_msg);
     }
