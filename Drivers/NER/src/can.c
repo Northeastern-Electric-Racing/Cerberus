@@ -346,14 +346,10 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     new_msg.id = rx_header->StdId;
     switch(new_msg.id)
     {
-        case 0x2010:   
-            cascadiamc_update(MC, new_msg);
+        case 0x2010:  
         case 0x2110:    
-            cascadiamc_update(MC, new_msg);
         case 0x2210:    
-            cascadiamc_update(MC, new_msg);
         case 0x2310:    
-            cascadiamc_update(MC, new_msg);
         case 0x2410:    
             cascadiamc_update(MC, new_msg);
         default:
