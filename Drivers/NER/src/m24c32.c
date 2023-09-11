@@ -6,8 +6,10 @@ uint16_t bytes_to_write(uint16_t size, uint16_t offset)
     else return M24C32_PAGE_SIZE - offset;
 }
 
-void eeprom_write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
+HAL_StatusTypeDef eeprom_write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
 {
+    HAL_StatusTypeDef status;
+
     uint8_t start_page = page;
     uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
@@ -19,18 +21,24 @@ void eeprom_write(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
         uint16_t mem_addr = start_page << 4 | offset;
         uint16_t bytes_remaining = bytes_to_write(size, offset);
 
-        HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data[data_pos], bytes_remaining, 1000);
+        status = HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data[data_pos], 
+                                   bytes_remaining, 1000);
+        if (status)
+            return status;
+
         start_page += 1;
         offset = 0;
         size = size - bytes_remaining;
         data_pos = bytes_remaining;
-
-        HAL_Delay(5);
     }
+
+    return HAL_OK;
 }
 
-void eeprom_read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
+HAL_StatusTypeDef eeprom_read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
 {
+    HAL_StatusTypeDef status;
+
     uint8_t start_page = page;
     uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
@@ -42,43 +50,53 @@ void eeprom_read(uint8_t page, uint16_t offset, uint8_t *data, uint16_t size)
         uint16_t mem_addr = start_page << 4 | offset;
         uint16_t bytes_remaining = bytes_to_write(size, offset);
 
-        HAL_I2C_Mem_Read(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data[data_pos], bytes_remaining, 1000);
+        status = HAL_I2C_Mem_Read(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data[data_pos],
+                                  bytes_remaining, 1000);
+        if (status)
+            return status;
+        
         start_page += 1;
         offset = 0;
         size = size - bytes_remaining;
         data_pos = bytes_remaining;
-
-        HAL_Delay(5);
     }
+
+    return HAL_OK;
 }
 
-void eeprom_delete(uint8_t page, uint16_t offset, uint16_t size)
+HAL_StatusTypeDef eeprom_delete(uint8_t page, uint16_t offset, uint16_t size)
 {
+    HAL_StatusTypeDef status;
+
     uint8_t start_page = page;
     uint8_t end_page = page + ((size + offset) / M24C32_PAGE_SIZE);
     uint8_t num_pages = end_page - start_page + 1;
     uint8_t data = 0;
-    uint8_t * ptr = &data;
-
 
     for(int i = 0; i < num_pages; i++)
     {
         uint16_t mem_addr = start_page << 4 | offset;
         uint16_t bytes_remaining = bytes_to_write(size, offset);
 
-        HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &ptr, bytes_remaining, 1000);
+        status = HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data, 
+                                   bytes_remaining, 1000);
+        if (status)
+            return status;
+
         start_page += 1;
         offset = 0;
         size = size - bytes_remaining;
-        HAL_Delay(5);
     }
+
+    return HAL_OK;
 }
 
-void eeprom_page_erase(uint8_t page)
-{
-    uint16_t mem_addr = (page << 4) | offset;
-    uint8_t data = 0;
-    uint8_t * ptr = &data;
 
-    HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &ptr, M24C32_PAGE_SIZE, 1000);
+// TODO: Test this function, not sure if it will work
+HAL_StatusTypeDef eeprom_page_erase(uint8_t page)
+{
+    uint16_t mem_addr = (page << 4);
+    uint8_t data = 0;
+
+    return HAL_I2C_Mem_Write(i2c_handle, M24C32_I2C_ADDR, mem_addr, 2, &data, M24C32_PAGE_SIZE, 1000);
 }
