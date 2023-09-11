@@ -316,21 +316,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
-    switch(new_msg.id)
-    {
-        case 0x2010:   
-            cascadiamc_update(MC, new_msg);
-        case 0x2110:    
-            cascadiamc_update(MC, new_msg);
-        case 0x2210:    
-            cascadiamc_update(MC, new_msg);
-        case 0x2310:    
-            cascadiamc_update(MC, new_msg);
-        case 0x2410:    
-            cascadiamc_update(MC, new_msg);
-        default:
-            enqueue(can1_incoming, new_msg);
-    }
+    enqueue(can1_incoming, new_msg);
     
     free(rx_header);
 }
@@ -344,17 +330,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, rx_header, new_msg.data);
     new_msg.len = rx_header->DLC;
     new_msg.id = rx_header->StdId;
-    switch(new_msg.id)
-    {
-        case 0x2010:  
-        case 0x2110:    
-        case 0x2210:    
-        case 0x2310:    
-        case 0x2410:    
-            cascadiamc_update(MC, new_msg);
-        default:
-            enqueue(can1_incoming, new_msg);
-    }
+    enqueue(can1_incoming, new_msg);
     
     free(rx_header);
 }

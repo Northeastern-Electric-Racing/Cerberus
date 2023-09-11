@@ -4,9 +4,9 @@
  * @brief Source file for Motor Controller Driver
  * @version 0.1
  * @date 2023-08-22
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 
 #include "cascadiamc.h"
@@ -116,7 +116,7 @@ void cascadiamc_set_current(int16_t current)                                /* S
     current_msg.line = msg_line;
     current_msg.len = msg_len;
     current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(current_msg);
 }
 
@@ -142,9 +142,9 @@ void cascadiamc_set_brake_current(int16_t brake_current)                    /* S
     brake_current_msg.line = msg_line;
     brake_current_msg.len = msg_len;
     brake_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(brake_current_msg);
-}                                                  
+}
 
 void cascadiamc_set_speed(int32_t rpm)                                      /* SCALE: 1           UNITS: RPM        */
 {
@@ -168,9 +168,9 @@ void cascadiamc_set_speed(int32_t rpm)                                      /* S
     speed_msg.line = msg_line;
     current_msg.len = msg_len;
     current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(speed_msg);
-}                                     
+}
 
 void cascadiamc_set_position(int16_t angle)                                 /* SCALE: 10          UNITS: Degrees    */
 {
@@ -194,9 +194,9 @@ void cascadiamc_set_position(int16_t angle)                                 /* S
     position_msg.line = msg_line;
     position_msg.len = msg_len;
     position_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(current_msg);
-}                                
+}
 
 void cascadiamc_set_relative_current(int16_t relative_current)              /* SCALE: 10          UNITS: Percentage */
 {
@@ -220,9 +220,9 @@ void cascadiamc_set_relative_current(int16_t relative_current)              /* S
     relative_current_msg.line = msg_line;
     relative_current_msg.len = msg_len;
     relative_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(relative_current_msg);
-}             
+}
 
 void cascadiamc_set_relative_brake_current(int16_t relative_brake_current)  /* SCALE: 10          UNITS: Percentage */
 {
@@ -246,9 +246,9 @@ void cascadiamc_set_relative_brake_current(int16_t relative_brake_current)  /* S
     relative_brake_current_msg.line = msg_line;
     relative_brake_current_msg.len = msg_len;
     relative_brake_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(relative_brake_current_msg);
-} 
+}
 
 void cascadiamc_set_digital_output(uint8_t output, bool value)              /* SCALE: 1           UNITS: No units   */
 {
@@ -272,9 +272,9 @@ void cascadiamc_set_digital_output(uint8_t output, bool value)              /* S
     digital_output_msg.line = msg_line;
     digital_output_msg.len = msg_len;
     digital_output_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(digital_output_msg);
-}            
+}
 
 void cascadiamc_set_max_ac_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
 {
@@ -298,9 +298,9 @@ void cascadiamc_set_max_ac_current(int16_t current)                         /* S
     max_ac_current_msg.line = msg_line;
     max_ac_current_msg.len = msg_len;
     max_ac_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(max_ac_current_msg);
-} 
+}
 
 void cascadiamc_set_max_ac_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
 {
@@ -324,9 +324,9 @@ void cascadiamc_set_max_ac_brake_current(int16_t current)                   /* S
     max_ac_brake_current_msg.line = msg_line;
     max_ac_brake_current_msg.len = msg_len;
     max_ac_brake_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(max_ac_brake_current_msg);
-}                  
+}
 
 void cascadiamc_set_max_dc_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
 {
@@ -350,9 +350,9 @@ void cascadiamc_set_max_dc_current(int16_t current)                         /* S
     max_dc_current_msg.line = msg_line;
     max_dc_current_msg.len = msg_len;
     max_dc_current_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(max_dc_current_msg);
-}                        
+}
 
 void cascadiamc_set_max_dc_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
 {
@@ -376,9 +376,9 @@ void cascadiamc_set_max_dc_brake_current(int16_t current)                   /* S
     max_ac_brake_current_msg.line = msg_line;
     max_ac_brake_current_msg.len = msg_len;
     max_ac_brake_current_msg.id = msg_id;
-    
-    CAN_StatusTypedef status = can_send_message(max_ac_brake_current_msg); 
-}                  
+
+    CAN_StatusTypedef status = can_send_message(max_ac_brake_current_msg);
+}
 
 void cascadiamc_set_drive_enable(bool drive_enable)                         /* SCALE: 1           UNITS: No units   */
 {
@@ -402,6 +402,6 @@ void cascadiamc_set_drive_enable(bool drive_enable)                         /* S
     drive_enable_msg.line = msg_line;
     drive_enable_msg.len = msg_len;
     drive_enable_msg.id = msg_id;
-    
+
     CAN_StatusTypedef status = can_send_message(drive_enable_msg);
-}                        
+}
