@@ -48,7 +48,7 @@ typedef struct
  * @param hi2c
  * @return HAL_StatusTypeDef 
  */
- HAL_StatusTypeDef PI4IOE_Init(pi4ioe_t *gpio, I2C_HandleTypeDef *hi2c);
+ HAL_StatusTypeDef pio4oe_init(pi4ioe_t *gpio, I2C_HandleTypeDef *hi2c);
 
 /**
  * @brief Writes to the PI4IOE5V9535ZDEX GPIO Expander
@@ -58,7 +58,7 @@ typedef struct
  * @param i2c_handle
  * @return HAL_StatusTypeDef 
  */
- HAL_StatusTypeDef PI4IOE_Write(uint8_t device, uint8_t val, I2C_HandleTypeDef *i2c_handle);
+ HAL_StatusTypeDef pio4oe_write(uint8_t device, uint8_t val, I2C_HandleTypeDef *i2c_handle);
 
 /**
  * @brief Reads from the PI4IOE5V9535ZDEX GPIO Expander
@@ -67,7 +67,7 @@ typedef struct
  * @param buf
  * @param i2c_handle 
  */
- HAL_StatusTypeDef PI4IOE_Read(uint8_t *buf, I2C_HandleTypeDef *i2c_handle);
+ HAL_StatusTypeDef pio4oe_read(uint8_t *buf, I2C_HandleTypeDef *i2c_handle);
 
 
 #endif // PI4IOE_H
