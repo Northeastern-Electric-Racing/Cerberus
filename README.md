@@ -13,10 +13,12 @@ docker pull nwdepatie/ner-gcc-arm
 # macOS: 
 docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:latest bash
 
-# Windows
+# Windows:
 docker run --rm -it --privileged -v "%cd%:/home/app" nwdepatie/ner-gcc-arm:latest bash
+# or
+docker run --rm -it --privileged -v "$(PWD):/home/app" ner-gcc-arm:latest bash
 
-# Linux
+# Linux:
 sudo docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:latest bash
 ```
 
