@@ -41,7 +41,7 @@
 
 /**
  * @brief Enumeration of axes of data available from the LSM6DSO IMU
- * 
+ *
  */
 enum lsm6dso_axes
 {
@@ -52,7 +52,7 @@ enum lsm6dso_axes
 
 /**
  * @brief Struct containing data relevant to the LSM6DSO IMU
- * 
+ *
  */
 typedef struct
 {
@@ -70,50 +70,50 @@ typedef struct
 
 /**
  * @brief Initializes the LSM6DSO IMU
- * 
- * @param imu 
- * @param i2c_handle 
- * @return HAL_StatusTypeDef 
+ *
+ * @param imu
+ * @param i2c_handle
+ * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef lsm6dso_init(lsm6dso_t *imu, I2C_HandleTypeDef *i2c_handle);
 
 /* IMU Setting Configuration */
 /**
  * @brief Configures the accelerometer of the LSM6DSO IMU
- * 
- * @param imu 
- * @param odr_sel 
- * @param fs_sel 
- * @param lp_f2_enable 
- * @return HAL_StatusTypeDef 
+ *
+ * @param imu
+ * @param odr_sel
+ * @param fs_sel
+ * @param lp_f2_enable
+ * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef lsm6dso_accelerometer_config(lsm6dso_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t lp_f2_enable);
 
 /**
  * @brief Configures the accelerometer of the LSM6DSO IMU
- * 
- * @param imu 
- * @param odr_sel 
- * @param fs_sel 
- * @param fs_125 
- * @return HAL_StatusTypeDef 
+ *
+ * @param imu
+ * @param odr_sel
+ * @param fs_sel
+ * @param fs_125
+ * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef lsm6dso_gyroscope_config(lsm6dso_t *imu, int8_t odr_sel, int8_t fs_sel, int8_t fs_125);
 
 /* Data Aquisition */
 /**
  * @brief Retrieves accelerometer data from the LSM6DSO IMU
- * 
- * @param imu 
- * @return HAL_StatusTypeDef 
+ *
+ * @param imu
+ * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef lsm6dso_read_accel(lsm6dso_t *imu);
 
 /**
  * @brief Retreives the gyroscope data from the LSM6DSO IMU
- * 
- * @param imu 
- * @return HAL_StatusTypeDef 
+ *
+ * @param imu
+ * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef lsm6dso_read_gyro(lsm6dso_t *imu);
 

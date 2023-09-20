@@ -19,7 +19,7 @@ static HAL_StatusTypeDef sht30_handle_status_reg(sht30_t *sht30)
     HAL_StatusTypeDef status;
     uint8_t data[3];
     uint16_t register_status;
-    
+
     status = sht30_write_reg(sht30, SWITCHBYTES(SHT30_READSTATUS), 0, 2);
     if (status != HAL_OK)
         return status;
@@ -72,7 +72,7 @@ HAL_StatusTypeDef sht30_init(sht30_t *sht30, I2C_HandleTypeDef *hi2c)
     //TODO: Replace with UART debug stream if necessary
     printf("SHT30 is reset.\n");
     printf("Heating element is enabled: %d\n", sht30_is_heater_enabled(sht30));
-    
+
     return HAL_OK;
 }
 
