@@ -33,7 +33,7 @@ typedef struct
     int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
 } cascadiamc_t;
 
-cascadiamc_t* cascadiamc;
+static cascadiamc_t* cascadiamc;
 
 void cascadiamc_init(cascadiamc_t* mc);
 
