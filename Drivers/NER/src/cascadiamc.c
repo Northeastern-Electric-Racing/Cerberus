@@ -16,85 +16,7 @@ void cascadiamc_init(cascadiamc_t* mc)
 
 }
 
-void cascadiamc_update(cascadiamc_t* mc, can_msg_t message)
-{
-    switch(message.id)
-    {
-        case 0x2010:    // The byte furthest to the right is a standin for now, should be the last 2 digits of serial number in hex
-            int32_t ERPM = message.data >> 32;
-            mc->rpm = ERPM / NUM_POLES;
-            mc->duty_cycle = ((message.data >> 16) & 0x00000000FFFF);
-            mc->input_voltage = message.data & 0x00000000FFFF;
-        case 0x2110:    // The byte furthest to the right is a standin for now, should be the last 2 digits of serial number in hex
-            mc->ac_current = message.data >> 48;
-            mc->dc_current = ((message.data >> 32) & 0x00000000FFFF);
-        case 0x2210:    // The byte furthest to the right is a standin for now, should be the last 2 digits of serial number in hex
-            mc->cont_temp = message.data >> 48;
-            mc->motor_temp = ((message.data >> 32) & 0x00000000FFFF);
-            mc->fault_code = ((message.data >> 24) & 0x0000000000FF);
-        case 0x2310:    // The byte furthest to the right is a standin for now, should be the last 2 digits of serial number in hex
-            mc->throttle_signal = message.data >> 56;
-            mc->brake_signal = ((message.data >> 48) & 0x0000000000FF);
-            mc->drive_enable = ((message.data >> 39) & 0x000000000001);
-    }
-}
-
-int32_t cascadiamc_get_rpm(cascadiamc_t* mc)
-{
-    return mc->rpm;
-}
-
-int16_t cascadiamc_get_duty_cycle(cascadiamc_t* mc)
-{
-    return mc->duty_cycle;
-}
-
-int16_t cascadiamc_get_input_voltage(cascadiamc_t* mc)
-{
-    return mc->input_voltage;
-}
-
-int16_t cascadiamc_get_ac_current(cascadiamc_t* mc)
-{
-    return mc->ac_current;
-}
-
-int16_t cascadiamc_get_dc_current(cascadiamc_t* mc)
-{
-    return mc->dc_current;
-}
-
-int16_t cascadiamc_get_controller_temp(cascadiamc_t* mc)
-{
-    return mc->cont_temp;
-}
-
-int16_t cascadiamc_get_motor_temp(cascadiamc_t* mc)
-{
-    return mc->motor_temp;
-}
-
-uint8_t cascadiamc_get_fault_code(cascadiamc_t* mc)
-{
-    return mc->fault_code;
-}
-
-int8_t cascadiamc_get_throttle_signal(cascadiamc_t* mc)
-{
-    return mc->throttle_signal;
-}
-
-int8_t cascadiamc_get_brake_signal(cascadiamc_t* mc)
-{
-    return mc->brake_signal;
-}
-
-int8_t cascadiamc_get_drive_enable(cascadiamc_t* mc)
-{
-    return mc->drive_enable;
-}
-
-void cascadiamc_set_current(int16_t current)                                /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_current(int16_t current)                                /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -118,9 +40,12 @@ void cascadiamc_set_current(int16_t current)                                /* S
     current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_brake_current(int16_t brake_current)                    /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_brake_current(int16_t brake_current)                    /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -144,9 +69,12 @@ void cascadiamc_set_brake_current(int16_t brake_current)                    /* S
     brake_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(brake_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_speed(int32_t rpm)                                      /* SCALE: 1           UNITS: RPM        */
+int8_t cascadiamc_set_speed(int32_t rpm)                                      /* SCALE: 1           UNITS: RPM        */
 {
     union
     {
@@ -170,9 +98,12 @@ void cascadiamc_set_speed(int32_t rpm)                                      /* S
     current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(speed_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_position(int16_t angle)                                 /* SCALE: 10          UNITS: Degrees    */
+int8_t cascadiamc_set_position(int16_t angle)                                 /* SCALE: 10          UNITS: Degrees    */
 {
     union
     {
@@ -196,9 +127,12 @@ void cascadiamc_set_position(int16_t angle)                                 /* S
     position_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_relative_current(int16_t relative_current)              /* SCALE: 10          UNITS: Percentage */
+int8_t cascadiamc_set_relative_current(int16_t relative_current)              /* SCALE: 10          UNITS: Percentage */
 {
     union
     {
@@ -222,9 +156,12 @@ void cascadiamc_set_relative_current(int16_t relative_current)              /* S
     relative_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(relative_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_relative_brake_current(int16_t relative_brake_current)  /* SCALE: 10          UNITS: Percentage */
+int8_t cascadiamc_set_relative_brake_current(int16_t relative_brake_current)  /* SCALE: 10          UNITS: Percentage */
 {
     union
     {
@@ -248,9 +185,12 @@ void cascadiamc_set_relative_brake_current(int16_t relative_brake_current)  /* S
     relative_brake_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(relative_brake_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_digital_output(uint8_t output, bool value)              /* SCALE: 1           UNITS: No units   */
+int8_t cascadiamc_set_digital_output(uint8_t output, bool value)              /* SCALE: 1           UNITS: No units   */
 {
     union
     {
@@ -274,9 +214,12 @@ void cascadiamc_set_digital_output(uint8_t output, bool value)              /* S
     digital_output_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(digital_output_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_max_ac_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_max_ac_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -300,9 +243,12 @@ void cascadiamc_set_max_ac_current(int16_t current)                         /* S
     max_ac_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(max_ac_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_max_ac_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_max_ac_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -326,9 +272,12 @@ void cascadiamc_set_max_ac_brake_current(int16_t current)                   /* S
     max_ac_brake_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(max_ac_brake_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_max_dc_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_max_dc_current(int16_t current)                         /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -352,9 +301,12 @@ void cascadiamc_set_max_dc_current(int16_t current)                         /* S
     max_dc_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(max_dc_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_max_dc_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
+int8_t cascadiamc_set_max_dc_brake_current(int16_t current)                   /* SCALE: 10          UNITS: Amps       */
 {
     union
     {
@@ -378,9 +330,12 @@ void cascadiamc_set_max_dc_brake_current(int16_t current)                   /* S
     max_ac_brake_current_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(max_ac_brake_current_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
 
-void cascadiamc_set_drive_enable(bool drive_enable)                         /* SCALE: 1           UNITS: No units   */
+int8_t cascadiamc_set_drive_enable(bool drive_enable)                         /* SCALE: 1           UNITS: No units   */
 {
     union
     {
@@ -404,4 +359,7 @@ void cascadiamc_set_drive_enable(bool drive_enable)                         /* S
     drive_enable_msg.id = msg_id;
 
     CAN_StatusTypedef status = can_send_message(drive_enable_msg);
+
+    if(status != HAL_OK){return 1;}
+    else {return 0;}
 }
