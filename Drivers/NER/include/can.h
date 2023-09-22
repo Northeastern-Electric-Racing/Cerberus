@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "stm32f4xx_hal.h"
 #include "can_config.h"
+#include "can_handler.h"
 
 /* CAN Message type this holds all useful CAN information */
 typedef struct
@@ -33,11 +34,6 @@ typedef struct
     uint8_t len;
     uint8_t data[8];
 } can_msg_t;
-
-/* These are the queues for each CAN line */
-struct msg_queue* can1_incoming;
-struct msg_queue* can2_incoming;
-// msg_queue* can3_incoming;
 
 
 /* Use this when referencing CAN lines when sending a message */
