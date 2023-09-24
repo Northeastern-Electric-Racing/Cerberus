@@ -2,7 +2,7 @@ import subprocess as sub
 import os
 
 #Function to get BUSID base on device name
-def removal(x):
+def check_for_probe(x):
     if "CMSIS-DAP" in x:
         return True
     else:
@@ -15,7 +15,7 @@ os.system('start /B start cmd.exe @cmd /k wsl -d ubuntu')
 output = str(sub.getoutput("usbipd wsl list"))
 linedvs = output.splitlines() #Split lines of output base on device name
 
-flt_dv = filter(removal, linedvs) 
+flt_dv = filter(check_for_probe, linedvs) 
 for x in flt_dv:
     dvline = x #Obtain the line of specific device
 
