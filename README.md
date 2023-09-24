@@ -11,13 +11,15 @@ docker pull nwdepatie/ner-gcc-arm
 
 # Run Container
 # macOS: 
-docker run --rm -it --privileged -v "$PWD:/home/app" ner-gcc-arm:latest bash
+docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:latest bash
 
-# Windows
-docker run --rm -it --privileged -v "$(PWD):/home/app" ner-gcc-arm:latest bash
+# Windows:
+docker run --rm -it --privileged -v "%cd%:/home/app" nwdepatie/ner-gcc-arm:latest bash
+# or
+docker run --rm -it --privileged -v "$(PWD):/home/app" nwdepatie/ner-gcc-arm:latest bash
 
-# Linux
-sudo docker run --rm -it --privileged -v "$PWD:/home/app" ner-gcc-arm:latest bash
+# Linux:
+sudo docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:latest bash
 ```
 
 ## Container Tools and Utilities

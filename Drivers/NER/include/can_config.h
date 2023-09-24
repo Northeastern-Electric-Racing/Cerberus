@@ -1,13 +1,13 @@
 /**
  * @file can_config.h
- * @author Hamza Iqbal 
+ * @author Hamza Iqbal
  * @brief Configuration File for CAN driver
- * 
+ *
  */
 
 
 #define CAN_BAUD_RATE                       1000000     //Change if needed
-#define CAN_PRESCALER                       1         
+#define CAN_PRESCALER                       1
 #define CAN_MODE                            CAN_MODE_NORMAL
 #define CAN_SYNC_JUMP_WIDTH                 CAN_SJW_3TQ
 #define CAN_TIME_SEG_1                      CAN_BS1_13TQ
