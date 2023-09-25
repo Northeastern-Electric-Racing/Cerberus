@@ -21,8 +21,7 @@ jobs:
 
       - name: Run Docker Container
         run: |
-          sudo docker exec -it --privileged \
-            -v "$PWD:/home/app" \
+          sudo docker exec -it \
             nwdepatie/ner-gcc-arm:latest sh -c
             "if ! make; then
             echo "The application has failed to build."
