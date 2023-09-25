@@ -40,7 +40,7 @@
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
-THIS SHOULD BREAK THE PIPELINE
+
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
