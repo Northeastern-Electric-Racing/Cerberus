@@ -21,7 +21,7 @@ jobs:
 
       - name: Run Docker Container
         run: |
-          sudo docker run nwdepatie/ner-gcc-arm:latest -t ner-gcc-arm
+          sudo docker run nwdepatie/ner-gcc-arm:latest
 
       - name: List Docker Images
         run: |
