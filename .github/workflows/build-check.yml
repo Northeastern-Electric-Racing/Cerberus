@@ -14,9 +14,7 @@ jobs:
 
       - name: Execute Make
         run: |
-            sudo docker exec -it \
-            ner-gcc-arm:latest sh -c
-            "if ! make; then
+            if ! make; then
             echo "The application has failed to build."
             exit 1  # This will cause the workflow to fail
-            fi"
+            fi
