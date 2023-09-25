@@ -21,12 +21,16 @@ jobs:
 
       - name: Run Docker Container
         run: |
-          sudo docker run nwdepatie/ner-gcc-arm:latest
+          sudo docker run nwdepatie/ner-gcc-arm:latest -t ner-gcc-arm
+
+      - name: List Docker Images
+        run: |
+          docker ps
 
       - name: Execute Make
         run: |
             sudo docker exec -it \
-            nwdepatie/ner-gcc-arm:latest sh -c
+            ner-gcc-arm:latest sh -c
             "if ! make; then
             echo "The application has failed to build."
             exit 1  # This will cause the workflow to fail
