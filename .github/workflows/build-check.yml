@@ -3,29 +3,14 @@ on: [push]
 jobs:
   run-build:
     runs-on: ubuntu-latest
+    container:
+        image: nwdepatie/ner-gcc-arm:latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
             submodules: recursive
-
-      - name: Install Docker
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install docker
-
-      - name: Pull Docker Image
-        run: |
-          sudo docker pull nwdepatie/ner-gcc-arm
-
-      - name: Run Docker Container
-        run: |
-          sudo docker run nwdepatie/ner-gcc-arm:latest
-
-      - name: List Docker Images
-        run: |
-          docker ps
 
       - name: Execute Make
         run: |
