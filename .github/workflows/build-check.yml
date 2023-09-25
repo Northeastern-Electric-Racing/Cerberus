@@ -1,0 +1,33 @@
+name: Build
+on: [push]
+jobs:
+  run-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+            submodules: recursive
+
+      - name: Install Docker
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install docker
+
+      - name: Pull Docker Image
+        run: |
+          sudo docker pull nwdepatie/ner-gcc-arm
+
+      - name: Run Docker Container
+        run: |
+          sudo docker run --rm -it --privileged \
+            -v "$PWD:/home/app" \
+            nwdepatie/ner-gcc-arm:latest bash
+
+      - name: Build Application
+        run: |
+          if ! make; then
+            echo "The application has failed to build."
+            exit 1  # This will cause the workflow to fail
+          fi
