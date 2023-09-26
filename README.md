@@ -43,6 +43,10 @@ openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c "adapter speed 5000
 ```
 ### Mounting Hardware to Docker Container in Windows
 > Very specific use case but nonetheless needed, also documented in the above confluence page, on macOS and Linux this happens by default when running privileged docker container
+
+**We now have a Python script to automatically mount hardware! Run:** `python3 mount.py`
+
+For manually mounting, follow the process below:
 ```
 # Connect probe and open two terminals
 
