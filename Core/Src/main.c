@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "sht30.h"
+#include "monitor.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -141,7 +142,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  temp_monitor_handle = osThreadNew(vTempMonitor, NULL, &temp_monitor_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
