@@ -299,24 +299,3 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 //     free(rx_header);
 // }
 
-/* Retrieves the message at the front of the queue and dequeues */
-can_msg_t *can_get_message(uint8_t line)
-{
-    can_msg_t *message;
-    switch(line)
-    {
-        case CAN_LINE_1:
-            message = dequeue(can1_incoming);
-            break;
-        case CAN_LINE_2:
-            message = dequeue(can2_incoming);
-            break;
-        // case CAN_LINE_3:
-        //     message = dequeue(can3_incoming);
-        //     break;
-        default:
-            message = dequeue(can1_incoming);
-            break;
-    }
-    return message;
-}
