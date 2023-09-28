@@ -59,6 +59,9 @@ RUN echo 'if [ $n -e /home/app/cerberus.ioc ]; then echo \
  \______  /\___  >__|  |___  /\___  >__|  |____//____  >\n\
         \/     \/          \/     \/                 \/ "; fi;' >> ~/.bashrc
 
+RUN echo 'alias open_serial="minicom -b 115200 -o -D /dev/ttyACM0"' >> ~/.bashrc
+RUN echo 'alias flash_stm="openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c \"adapter speed 5000\" -c \"program ./build/cerberus.elf verify reset exit\""' >> ~/.bashrc
+
 # Install cross compiler
 RUN wget -qO- https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 | tar -xvj
 
