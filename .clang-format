@@ -1,0 +1,17 @@
+---
+# Use WebKit as a Base
+BasedOnStyle: WebKit
+
+# Use tabs for indentation
+UseTab: Always
+
+# Limit lines to 80 characters
+ColumnLimit: 80
+
+# Set each tab equivalent to 4 spaces
+TabWidth: 4
+
+# Enforce block comments
+CommentPragmas: '/*'
+AlignTrailingComments: True
+---
