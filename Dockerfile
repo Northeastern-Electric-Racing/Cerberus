@@ -24,7 +24,7 @@ ENV PATH $PATH:/renode_portable
 WORKDIR /home/dev
 ADD . /home/dev
 
-RUN echo 'if [ $n -e /home/app/shepherd.ioc ]; then echo \
+RUN echo 'if [ $n -e /home/app/shepherd2.ioc ]; then echo \
 " ______     __  __     ______     ______   __  __     ______     ______     _____\n\
 /\  ___\   /\ \_\ \   /\  ___\   /\  == \ /\ \_\ \   /\  ___\   /\  == \   /\  __-.\n\
 \ \___  \  \ \  __ \  \ \  __\   \ \  _-/ \ \  __ \  \ \  __\   \ \  __<   \ \ \/\ \ \n\
@@ -39,7 +39,7 @@ echo 'if [ $n -e /home/app/cerberus.ioc ]; then echo \
         \/     \/          \/     \/                 \/ "; fi;' >> ~/.bashrc \
 && echo 'alias serial="minicom -b 115200 -o -D /dev/ttyACM0"' >> ~/.bashrc \
 && echo 'alias flash="openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c \"adapter speed 5000\" -c \"program /home/app/build/cerberus.elf verify reset exit\""' >> ~/.bashrc \
-&& echo 'alias emulate="renode /home/app/*.resc"'
+&& echo 'alias emulate="renode /home/app/*.resc"' >> ~/.bashrc
 
 # Install cross compiler
 RUN wget -qO- https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 | tar -xvj
