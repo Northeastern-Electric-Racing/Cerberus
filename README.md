@@ -23,7 +23,7 @@ sudo docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:
 ```
 
 ## Container Tools and Utilities
-> This container is packed with tools that can be utilized by developers to give them more insight into their developed software
+> This container is packed with tools that can be utilized by developers to give them more insight into their developed software, we've used bash aliases to make the commands more compact for ease of use
 ```
 ## Tools / Utils
 
@@ -31,15 +31,20 @@ sudo docker run --rm -it --privileged -v "$PWD:/home/app" nwdepatie/ner-gcc-arm:
 make all
 
 # to run Renode emulation
-renode
-i @cerberus.resc
+emulate
 start
+# Actual command is:
+# renode cerberus.resc
 
 # to open a serial port with Rasberry Pi Probe (make sure /dev/tty0/ACM0 exists first)
-minicom -b 115200 -o -D /dev/ttyACM0
+serial
+# Actual command is:
+# minicom -b 115200 -o -D /dev/ttyACM0
 
 # to flash STM board with Raspberry Pi Probe (WIP)
-openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c "adapter speed 5000" -c "program ./build/cerberus.elf verify reset exit"
+flash
+# Actual command is:
+# openocd -f interface/cmsis-dap.cfg -f target/stm32f4x.cfg -c "adapter speed 5000" -c "program ./build/cerberus.elf verify reset exit"
 ```
 ### Mounting Hardware to Docker Container in Windows
 > Very specific use case but nonetheless needed, also documented in the above confluence page, on macOS and Linux this happens by default when running privileged docker container
