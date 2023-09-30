@@ -51,6 +51,6 @@ void vTempMonitor(void *pv_params)
 		}
 
 		/* Yield to other tasks */
-		osDelayUntil();
+		osDelayUntil(temp_sensor_sample_delay);
 	}
 }
