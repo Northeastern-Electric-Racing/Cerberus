@@ -4,7 +4,7 @@
 using sysbus
 
 mach create
-machine LoadPlatformDescription @test/renode/stm32f405.repl
+machine LoadPlatformDescription @Test/renode/stm32f405.repl
 sysbus.cpu LogFunctionNames true
 sysbus LogAllPeripheralsAccess true
 
