@@ -22,7 +22,6 @@ void can_handler_init()
     can1_outgoing = malloc(sizeof(msg_queue));
     can2_outgoing = malloc(sizeof(msg_queue));
 
-    HashMap callback_map;
     initializeHashMap(&callback_map);
 
     for(int i = 0; i < NUM_CALLBACKS; i++)
@@ -126,7 +125,8 @@ void insertFunction(HashMap* hashMap, int messageID, void (*function)(void)) {
 }
 
 // Get the function associated with a message ID
-void (*getFunction(HashMap* hashMap, int messageID))(void) {
+void (*getFunction(HashMap* hashMap, int messageID))(void) 
+{
     int index = hashFunction(messageID);
     HashNode* current = hashMap->array[index];
 
@@ -138,4 +138,21 @@ void (*getFunction(HashMap* hashMap, int messageID))(void) {
     }
 
     return NULL;  // Function not found
+}
+
+
+uint8_t vRouteCan1Incoming(void *pv_params)
+{
+    *can_msg_t message = can_get_message(CAN_LINE_1);
+    int ID = message->id;
+    void(*callback)(void) = getFunction(&callback_map, ID);
+    if(callback != NULL)
+    {
+        callback();
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
