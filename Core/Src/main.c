@@ -27,6 +27,7 @@
 #include "queues.h"
 #include "fault.h"
 #include "can_handler.h"
+#include "serial_monitor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,6 +157,7 @@ int main(void)
   temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
+  serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
   //TODO: Get correct ADC/GPIO value
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
