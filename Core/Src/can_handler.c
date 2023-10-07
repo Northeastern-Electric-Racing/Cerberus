@@ -19,10 +19,10 @@
 static osMessageQueueId_t can_inbound_queue;
 static osMessageQueueId_t can_outbound_queue;
 osThreadId_t route_can_incoming_handle;
-const osThreadAttr_t route_can_incoming_attributes = { 
+const osThreadAttr_t route_can_incoming_attributes = {
 	.name = "RouteCanIncoming",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityAboveNormal4 
+	.priority = (osPriority_t)osPriorityAboveNormal4
 };
 static CAN_HandleTypeDef *hcan1;
 
@@ -36,24 +36,24 @@ typedef struct
 } function_info_t;
 
 //TODO: Evaluate memory usage here
-static function_info_t can_callbacks[] = { 
+static function_info_t can_callbacks[] = {
 	//TODO: Implement MC_Update and other callbacks
 	//{ .id = 0x2010, .function = (*MC_update)(can_msg_t) },
 	//{ .id = 0x2110, .function = (*MC_update)(can_msg_t) },
 	//{ .id = 0x2210, .function = (*MC_update)(can_msg_t) },
 	//{ .id = 0x2310, .function = (*MC_update)(can_msg_t) },
-	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) } 
+	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) }
 };
 
 void can1_isr()
 {
 	// TODO: Wrap this HAL function into a "get_message" function in the CAN driver
 	CAN_RxHeaderTypeDef rx_header;
-    can_msg_t new_msg;
-    new_msg.line = CAN_LINE_1;
-    HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO1, &rx_header, new_msg.data);
-    new_msg.len = rx_header.DLC;
-    new_msg.id = rx_header.StdId;
+	can_msg_t new_msg;
+	new_msg.line = CAN_LINE_1;
+	HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO1, &rx_header, new_msg.data);
+	new_msg.len = rx_header.DLC;
+	new_msg.id = rx_header.StdId;
 
 	/* Publish to Onboard Temp Queue */
 	osMessageQueuePut(can_inbound_queue, &new_msg, 0U, 0U);
@@ -75,7 +75,7 @@ void vRouteCanIncoming(void* pv_params)
 	can_msg_t* message;
 	osStatus_t status;
 	callback_t callback;
-	
+
 	hcan1 = (CAN_HandleTypeDef *)pv_params;
 
 	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
