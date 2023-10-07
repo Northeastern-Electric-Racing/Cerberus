@@ -24,6 +24,7 @@ const osThreadAttr_t route_can_incoming_attributes = {
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityAboveNormal4
 };
+
 static CAN_HandleTypeDef *hcan1;
 
 typedef void (*callback_t)(can_msg_t);
@@ -45,6 +46,18 @@ static function_info_t can_callbacks[] = {
 	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) }
 };
 
+callback_t getFunction(uint8_t id)
+{
+	int i;
+
+	for (i = 0; i < NUM_CALLBACKS; i++) {
+		if (can_callbacks[i].id == id)
+			return can_callbacks[i].function;
+	}
+	return NULL;
+}
+
+
 void can1_isr()
 {
 	// TODO: Wrap this HAL function into a "get_message" function in the CAN driver
@@ -59,17 +72,6 @@ void can1_isr()
 	osMessageQueuePut(can_inbound_queue, &new_msg, 0U, 0U);
 }
 
-callback_t getFunction(uint8_t id)
-{
-	int i;
-
-	for (i = 0; i < NUM_CALLBACKS; i++) {
-		if (can_callbacks[i].id == id)
-			return can_callbacks[i].function;
-	}
-	return NULL;
-}
-
 void vRouteCanIncoming(void* pv_params)
 {
 	can_msg_t* message;
@@ -77,6 +79,8 @@ void vRouteCanIncoming(void* pv_params)
 	callback_t callback;
 
 	hcan1 = (CAN_HandleTypeDef *)pv_params;
+
+    // TODO: Initialize CAN here? Or at least initialize it somewhere
 
 	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
