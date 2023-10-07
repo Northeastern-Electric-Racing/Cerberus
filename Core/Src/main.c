@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "sht30.h"
 #include "monitor.h"
+#include "queues.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,7 +60,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-
+osMessageQueueId_t onboard_temp_queue;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -134,7 +135,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  onboard_temp_queue = osMessageQueueNew(NUM_ONBOARD_TEMP_QUEUE, sizeof(onboard_temp_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
