@@ -17,7 +17,7 @@ const osThreadAttr_t temp_monitor_attributes = {
 void vTempMonitor(void *pv_params)
 {
 	const uint8_t num_samples = 10;
-	const uint8_t temp_sensor_sample_delay = 500; /* ms */
+	const uint16_t temp_sensor_sample_delay = 500; /* ms */
 	const uint8_t can_msg_len = 4; /* bytes */
 	static onboard_temp_t sensor_data;
 	fault_data_t fault_data = {
@@ -34,8 +34,9 @@ void vTempMonitor(void *pv_params)
 	};
 
 	hi2c1 = (I2C_HandleTypeDef *)pv_params;
+	temp_sensor.i2c_handle = hi2c1;
 
-	if (sht30_init(&temp_sensor, &hi2c1)) {
+	if (sht30_init(&temp_sensor)) {
 		fault_data.diag = "Init Failed";
 		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 	}
