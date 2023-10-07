@@ -136,8 +136,11 @@ void vRouteCanIncoming(void* pv_params)
 {
 	can_msg_t* message;
 	osStatus_t status;
+	CAN_HandleTypeDef* hcan1;
 	void (*callback)(can_msg_t) = NULL;
 	
+	hcan1 = (CAN_HandleTypeDef *)pv_params;
+
 	initializeHashMap(&callback_map);
 
 	for (int i = 0; i < NUM_CALLBACKS; i++) {
@@ -146,7 +149,7 @@ void vRouteCanIncoming(void* pv_params)
 
 	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
-	// TODO: Link CAN1_ISR
+	// TODO: Link CAN1_ISR via hcan1, future ticket needs to enable CAN driver to pass in devoloper ISR
 
 	for(;;) {
 		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 0U);
