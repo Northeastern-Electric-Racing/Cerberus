@@ -13,126 +13,109 @@
 #include "can_config.h"
 #include <stdlib.h>
 
-/* Initializes the CAN handler */
-void can_handler_init()
+#define MAX_MAP_SIZE 50 /* nodes */
+#define CAN_MSG_QUEUE_SIZE 25 /* messages */
+#define NUM_CALLBACKS 5 // Update when adding new callbacks
+
+static osMessageQueueId_t can_inbound_queue;
+static osMessageQueueId_t can_outbound_queue;
+osThreadId_t route_can_incoming_handle;
+const osThreadAttr_t route_can_incoming_attributes = { 
+	.name = "RouteCanIncoming",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityAboveNormal4 
+};
+
+/* Used in the Queue implementation - you probably dont need to worry about it */
+struct node {
+	can_msg_t msg;
+	struct node* next;
+};
+
+/* This is a queue of messages that are waiting for processing by your
+ * application code */
+struct msg_queue {
+	struct node* head;
+	struct node* tail;
+};
+
+/* Struct to couple function with message IDs */
+typedef struct
 {
-	// Assign memory to the queues
-	can1_incoming = malloc(sizeof(msg_queue));
-	can2_incoming = malloc(sizeof(msg_queue));
-	can1_outgoing = malloc(sizeof(msg_queue));
-	can2_outgoing = malloc(sizeof(msg_queue));
+	uint8_t id;
+	void (*function)(void);
+} function_info_t;
 
-	initializeHashMap(&callback_map);
+/* Hashmap node structure */
+typedef struct hash_node_t {
+	function_info_t info;
+	struct hash_node_t* next;
+} hash_node_t;
 
-	for (int i = 0; i < NUM_CALLBACKS; i++) {
-		insertFunction(
-			&calllback_map, can_callbacks[i].messageID, can_callbacks[i].function);
-	}
-}
-
-/* Function to add a node to the message queue it is automatically called in the
- * interrupt triggered callback */
-static void
-enqueue(struct msg_queue* queue, can_msg_t msg)
+/* Hashmap structure */
+typedef struct
 {
-	struct node* new_node = malloc(sizeof(struct node));
-	new_node->msg = msg;
-	new_node->next = NULL;
+	hash_node_t* array[MAX_MAP_SIZE];
+} hash_map_t;
 
-	if (queue->head == NULL) {
-		queue->head = new_node;
-		queue->tail = new_node;
-	} else {
-		queue->tail->next = new_node;
-		queue->tail = new_node;
-	}
-}
 
-/* Removes and returns the front node of the queue */
-static can_msg_t*
-dequeue(struct msg_queue* queue)
-{
-	if (queue->head == NULL) {
-		return NULL;
-	}
+//TODO: Evaluate memory usage here
+static function_info_t can_callbacks[] = { 
+	//TODO: Implement MC_Update and other callbacks
+	//{ .id = 0x2010, .function = (*MC_update)(can_msg_t) },
+	//{ .id = 0x2110, .function = (*MC_update)(can_msg_t) },
+	//{ .id = 0x2210, .function = (*MC_update)(can_msg_t) },
+	//{ .id = 0x2310, .function = (*MC_update)(can_msg_t) },
+	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) } 
+};
 
-	can_msg_t* msg = malloc(sizeof(can_msg_t));
-	*msg = queue->head->msg;
-	struct node* old_head = queue->head;
-	queue->head = queue->head->next;
-	free(old_head);
-
-	return msg;
-}
-
-/* Retrieves the message at the front of the queue and dequeues */
-can_msg_t*
-can_get_message(uint8_t line)
-{
-	can_msg_t* message;
-	switch (line) {
-	case CAN_LINE_1:
-		message = dequeue(can1_incoming);
-		break;
-	case CAN_LINE_2:
-		message = dequeue(can2_incoming);
-		break;
-	// case CAN_LINE_3:
-	//     message = dequeue(can3_incoming);
-	//     break;
-	default:
-		message = dequeue(can1_incoming);
-		break;
-	}
-	return message;
-}
+static struct hash_map_t callback_map;
 
 // Initialize the hashmap
-void initializeHashMap(HashMap* hashMap)
+static void initializeHashMap(hash_map_t* hash_map)
 {
 	for (int i = 0; i < MAX_MAP_SIZE; i++)
-		hashMap->array[i] = NULL;
+		hash_map->array[i] = NULL;
 }
 
 // Hash function
-int hashFunction(int key)
+static int hashFunction(int key)
 {
 	return key % MAX_MAP_SIZE;
 }
 
-// Insert a function info into the hashmap
-void insertFunction(HashMap* hashMap, int messageID, void (*function)(void))
+/* Insert a function info into the hashmap */
+static void insertFunction(hash_map_t* hash_map, int message_id, void (*function)(void))
 {
-	int index = hashFunction(messageID);
+	int index = hashFunction(message_id);
 
-	HashNode* newNode = (HashNode*)malloc(sizeof(HashNode));
+	hash_node_t* newNode = (hash_node_t*)malloc(sizeof(hash_node_t));
 	if (!newNode) {
-		fprintf(stderr, "Memory allocation failed\n");
-		exit(EXIT_FAILURE);
+		// TODO: Send fault
 	}
 
-	newNode->info.messageID = messageID;
+	newNode->info.id = message_id;
 	newNode->info.function = function;
 	newNode->next = NULL;
 
-	if (hashMap->array[index] == NULL) {
-		hashMap->array[index] = newNode;
+	if (hash_map->array[index] == NULL) {
+		hash_map->array[index] = newNode;
 	} else {
-		HashNode* current = hashMap->array[index];
+		hash_node_t* current = hash_map->array[index];
 		while (current->next != NULL)
 			current = current->next;
 		current->next = newNode;
 	}
 }
 
-// Get the function associated with a message ID
-void (*getFunction(HashMap* hashMap, int messageID))(void)
+/* Get the function associated with a message ID */
+static void (*getFunction(hash_map_t* hash_map, int id))(void)
 {
-	int index = hashFunction(messageID);
-	HashNode* current = hashMap->array[index];
+	int index = hashFunction(id);
+	hash_node_t* current = hash_map->array[index];
 
 	while (current != NULL) {
-		if (current->info.messageID == messageID)
+		if (current->info.id == id)
 			return current->info.function;
 
 		current = current->next;
@@ -141,16 +124,41 @@ void (*getFunction(HashMap* hashMap, int messageID))(void)
 	return NULL; // Function not found
 }
 
-uint8_t
-vRouteCan1Incoming(void* pv_params)
+void can1_isr()
 {
-	*can_msg_t message = can_get_message(CAN_LINE_1);
-	int ID = message->id;
-	void (*callback)(void) = getFunction(&callback_map, ID);
-	if (callback != NULL) {
-		callback();
-		return 1;
-	} else {
-		return 0;
+	//TODO: get CAN message
+
+	/* Publish to Onboard Temp Queue */
+	//osMessageQueuePut(can_inbound_queue, &can_msg, 0U, 0U);
+}
+
+void vRouteCanIncoming(void* pv_params)
+{
+	can_msg_t* message;
+	osStatus_t status;
+	void (*callback)(can_msg_t) = NULL;
+	
+	initializeHashMap(&callback_map);
+
+	for (int i = 0; i < NUM_CALLBACKS; i++) {
+		insertFunction(&callback_map, can_callbacks[i].id, can_callbacks[i].function);
+	}
+
+	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+
+	// TODO: Link CAN1_ISR
+
+	for(;;) {
+		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 0U);
+		if (status != osOK) {
+			//TODO: Trigger fault
+		} else {
+			callback = getFunction(&callback_map, message->id);
+			if (callback == NULL) {
+				//TODO: Trigger low priority error
+			} else {
+				callback(*message);
+			}
+		}
 	}
 }
