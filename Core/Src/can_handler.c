@@ -26,19 +26,6 @@ const osThreadAttr_t route_can_incoming_attributes = {
 	.priority = (osPriority_t)osPriorityAboveNormal4 
 };
 
-/* Used in the Queue implementation - you probably dont need to worry about it */
-struct node {
-	can_msg_t msg;
-	struct node* next;
-};
-
-/* This is a queue of messages that are waiting for processing by your
- * application code */
-struct msg_queue {
-	struct node* head;
-	struct node* tail;
-};
-
 /* Struct to couple function with message IDs */
 typedef struct
 {
