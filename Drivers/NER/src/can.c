@@ -18,6 +18,13 @@ CAN_HandleTypeDef* can1;
 CAN_HandleTypeDef* can2;
 // CAN_HandleTypeDef* can3;
 
+/* These are the queues for each CAN line */
+struct msg_queue* can1_incoming;
+struct msg_queue* can2_incoming;
+// struct msg_queue* can3_incoming;
+struct msg_queue* can1_outgoing;
+struct msg_queue* can2_outgoing;
+// struct msg_queue* can3_outgoing;
 
 /*
  * This is a structure that holds the PIN configuration information, this configuration can also
@@ -258,7 +265,38 @@ CAN_StatusTypedef can_send_message(can_msg_t message)
 
 }
 
+/* Function to add a node to the message queue it is automatically called in the
+ * interrupt triggered callback */
+static void enqueue(struct msg_queue* queue, can_msg_t msg)
+{
+	struct node* new_node = malloc(sizeof(struct node));
+	new_node->msg = msg;
+	new_node->next = NULL;
 
+	if (queue->head == NULL) {
+		queue->head = new_node;
+		queue->tail = new_node;
+	} else {
+		queue->tail->next = new_node;
+		queue->tail = new_node;
+	}
+}
+
+/* Removes and returns the front node of the queue */
+static can_msg_t* dequeue(struct msg_queue* queue)
+{
+	if (queue->head == NULL) {
+		return NULL;
+	}
+
+	can_msg_t* msg = malloc(sizeof(can_msg_t));
+	*msg = queue->head->msg;
+	struct node* old_head = queue->head;
+	queue->head = queue->head->next;
+	free(old_head);
+
+	return msg;
+}
 
 // Interrupt triggered callback for CAN line 1
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)

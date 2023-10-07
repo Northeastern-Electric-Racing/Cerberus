@@ -35,6 +35,26 @@ typedef struct
     uint8_t data[8];
 } can_msg_t;
 
+/* Used in the Queue implementation - you probably dont need to worry about it */
+struct node {
+	can_msg_t msg;
+	struct node* next;
+};
+
+/* This is a queue of messages that are waiting for processing by your
+ * application code */
+struct msg_queue {
+	struct node* head;
+	struct node* tail;
+};
+
+/* These are the queues for each CAN line */
+extern struct msg_queue* can1_incoming;
+extern struct msg_queue* can2_incoming;
+// extern struct msg_queue* can3_incoming;
+extern struct msg_queue* can1_outgoing;
+extern struct msg_queue* can2_outgoing;
+// extern struct msg_queue* can3_outgoing;
 
 /* Use this when referencing CAN lines when sending a message */
 enum
