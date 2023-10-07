@@ -4,6 +4,7 @@
 #include "monitor.h"
 #include "task.h"
 #include "can.h"
+#include "fault.h"
 #include "sht30.h"
 
 osThreadId_t temp_monitor_handle;
@@ -19,6 +20,10 @@ void vTempMonitor(void *pv_params)
 	const uint8_t temp_sensor_sample_delay = 500; /* ms */
 	const uint8_t can_msg_len = 4; /* bytes */
 	static onboard_temp_t sensor_data;
+	fault_data_t fault_data = {
+		.id = ONBOARD_TEMP_FAULT,
+		.severity = DEFCON4
+	};
 	sht30_t temp_sensor;
 	I2C_HandleTypeDef *hi2c1;
 	can_msg_t temp_msg = {
@@ -31,14 +36,16 @@ void vTempMonitor(void *pv_params)
 	hi2c1 = (I2C_HandleTypeDef *)pv_params;
 
 	if (sht30_init(&temp_sensor, &hi2c1)) {
-		//TODO: Handle error
+		fault_data.diag = "Init Failed";
+		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 	}
 
 	for(;;) {
 
 		/* Take measurement */
 		if (sht30_get_temp_humid(&temp_sensor)) {
-			//TODO: Handler error
+			fault_data.diag = "Failed to get temp";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 		}
 
 		/* Run values through LPF of sample size  */
@@ -53,7 +60,8 @@ void vTempMonitor(void *pv_params)
 		/* Send CAN message */
 		memcpy(temp_msg.data, &sensor_data, can_msg_len);
 		if (can_send_message(temp_msg)) {
-			//TODO: Handle error
+			fault_data.diag = "Failed to send CAN message";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 		}
 
 		/* Yield to other tasks */

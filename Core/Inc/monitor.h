@@ -1,5 +1,5 @@
-#ifndef MONITOR_H
-#define MONITOR_H
+#ifndef CERBERUS_MONITOR_H
+#define CERBERUS_MONITOR_H
 
 #include "cmsis_os.h"
 

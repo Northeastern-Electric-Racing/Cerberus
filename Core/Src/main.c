@@ -22,6 +22,7 @@
 #include "sht30.h"
 #include "monitor.h"
 #include "queues.h"
+#include "fault.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -135,7 +136,8 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  onboard_temp_queue = osMessageQueueNew(NUM_ONBOARD_TEMP_QUEUE, sizeof(onboard_temp_t), NULL);
+  onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
+  fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
