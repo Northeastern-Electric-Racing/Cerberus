@@ -9,9 +9,10 @@
  *
  */
 
-#include "can.h"
-#include "can_config.h"
 #include <stdlib.h>
+#include "can.h"
+#include "can_handler.h"
+#include "can_config.h"
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 #define NUM_CALLBACKS 5 // Update when adding new callbacks
