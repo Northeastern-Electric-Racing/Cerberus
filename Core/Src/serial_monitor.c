@@ -1,42 +1,54 @@
-#include <stdarg.h>
 #include "serial_monitor.h"
+#include <stdarg.h>
+#include <stdio.h>
 
-#define PRINTF_QUEUE_SIZE   16
+#define PRINTF_QUEUE_SIZE 16  /* Strings */
+#define PRINTF_BUFFER_LEN 128 /* Characters */
+
 osMessageQueueId_t printf_queue;
+osThreadId_t serial_monitor_handle;
+const osThreadAttr_t serial_monitor_attributes;
 
-void serial_print(char* format, ...)
+/*
+ * Referenced https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Print.cpp
+ * Preformat string then put into a buffer
+ */
+int serial_print(const char* format, ...)
 {
-    char* msg;
+	va_list arg;
+	char temp[PRINTF_BUFFER_LEN];
+	size_t len;
+	char* buffer = temp;
 
-    va_list arg_ptr;
+	/* Format Variadic Args into string */
+	va_start(arg, format);
+	len = vsnprintf(temp, sizeof(temp), format, arg);
+	va_end(arg);
 
-    va_start(arg_ptr, void);
+	/* Check to make sure we don't overflow buffer */
+	if (len > sizeof(temp) - 1)
+		return -1;
 
-    // TODO: Loop through and format string accordingly
-    // Is the a structure that can take in a variable number of args and datatypes in C?
-    // snprintf(msg, 50, format, s);
-
-    va_end(arg_ptr);
-
-    osMessageQueuePut(printf_queue, &msg , 0U, 0U);
+	osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
+	return 0;
 }
 
-void vSerialMonitor(void *pv_params)
+void vSerialMonitor(void* pv_params)
 {
-    char* message;
+	char* message;
 	osStatus_t status;
 
-    // TODO: Initialize UART?
-    
-    printf_queue = osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char*), NULL);
+	// TODO: Initialize UART?
 
-    for (;;) {
-        /* Wait until new printf message comes into queue */
+	printf_queue = osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char*), NULL);
+
+	for (;;) {
+		/* Wait until new printf message comes into queue */
 		status = osMessageQueueGet(printf_queue, &message, NULL, 0U);
 		if (status != osOK) {
-			//TODO: Trigger fault ?
+			// TODO: Trigger fault ?
 		} else {
-            printf(*message);
-        }
-    }
+			printf(message);
+		}
+	}
 }
