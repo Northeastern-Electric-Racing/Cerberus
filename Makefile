@@ -46,6 +46,7 @@ Core/Src/main.c \
 Core/Src/freertos.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
+Core/Src/can_handler.c\
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
@@ -65,10 +66,10 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
-Drivers/Embedded-Base/stm32f405/src/lsm6dso.c \
-Drivers/Embedded-Base/stm32f405/src/sht30.c \
-Drivers/Embedded-Base/stm32f405/src/can.c \
-Drivers/Embedded-Base/stm32f405/src/pi4ioe.c \
+Drivers/Embedded-Base/general/src/lsm6dso.c \
+Drivers/Embedded-Base/general/src/sht30.c \
+Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
+Drivers/Embedded-Base/general/src/pi4ioe.c \
 Core/Src/system_stm32f4xx.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
@@ -140,13 +141,13 @@ C_INCLUDES =  \
 -ICore/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
--IDrivers/Embedded-Base/stm32f405/inc \
+-IDrivers/Embedded-Base/general/include \
+-IDrivers/Embedded-Base/platforms/stm32f405/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include
-
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
