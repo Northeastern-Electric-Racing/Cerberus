@@ -47,7 +47,7 @@ static function_info_t can_callbacks[] = {
     //{ .id = 0x2410, .function = (*MC_update)(can_msg_t) }
 };
 
-callback_t getFunction(uint8_t id)
+static callback_t getFunction(uint8_t id)
 {
     int i;
 
