@@ -7,7 +7,7 @@ mach create
 
 machine LoadPlatformDescription @Test/renode/stm32f405.repl
 
-i @LSM6DSO_IMU_I2C.cs
+#i @LSM6DSO_IMU_I2C.cs
 
 sysbus.cpu LogFunctionNames true
 sysbus LogAllPeripheralsAccess true
