@@ -17,26 +17,6 @@ RUN apt-get install -y \
     vim \
     clang-format
 
-# Download setup support for Rasperry Pi Probe
-RUN apt-get install -y \
-    automake \
-    autoconf \
-    texinfo \
-    libtool \
-    libftdi-dev \
-    libusb-1.0-0-dev \
-    pkg-config
-
-RUN git clone https://github.com/STMicroelectronics/openocd.git \
-    --branch openocd-cubeide-r6 \
-    --depth=1 \
-    --no-single-branch
-
-# Build Rasberry Pi Probe Package
-RUN cd openocd && ./bootstrap
-RUN cd openocd && ./configure
-RUN cd openocd && make -j4 && make install
-
 RUN wget https://builds.renode.io/renode-1.14.0+20231003gitf86ac3cf.linux-portable.tar.gz
 RUN mkdir renode_portable && tar -xvf renode-*.linux-portable.tar.gz -C renode_portable --strip-components=1
 ENV PATH $PATH:/renode_portable
