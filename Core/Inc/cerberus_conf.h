@@ -1,0 +1,1 @@
+#define CANID_TEMP_SENSOR 0xBEEF
