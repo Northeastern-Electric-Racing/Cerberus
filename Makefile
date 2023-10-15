@@ -88,6 +88,13 @@ Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
 ASM_SOURCES =  \
 startup_stm32f405xx.s
 
+# Test source files
+TEST_SOURCE_FILES = \
+Test/unity/tests/cerberus_test.c \
+Test/unity/tests/can_handler_test.c
+# Unity source files and includes
+UNITY_DIR = Test/unity/src
+UNITY_SOURCES = $(UNITY_DIR)/unity.c
 
 #######################################
 # binaries
@@ -151,6 +158,19 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include
 
+# test includes
+UNITY_INCLUDES = \
+-I$(UNITY_DIR) \
+-ITest/unity/tests \
+-ICore/Src \
+-ICore/Inc \
+-IDrivers/Embedded-Base/platforms/stm32f405/include \
+-IDrivers/Embedded-Base/general/include \
+-IDrivers/Embedded-Base/middleware/include \
+-IMiddlewares/Third_Party/FreeRTOS/Source/include \
+-IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
+-IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
@@ -208,6 +228,15 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	
 $(BUILD_DIR):
 	mkdir $@		
+
+#######################################
+# run unit tests
+#######################################
+test: $(BUILD_DIR)/test_$(TARGET)
+	./$(BUILD_DIR)/test_$(TARGET)
+$(BUILD_DIR)/test_$(TARGET): $(TEST_SOURCE_FILES) $(UNITY_SOURCES) | $(BUILD_DIR)
+	gcc -D UNIT_TEST $(UNITY_INCLUDES) -o $@ $^
+#######################################
 
 #######################################
 # clean up
