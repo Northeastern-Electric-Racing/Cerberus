@@ -1,3 +1,6 @@
-using "platforms/cpus/stm32f405.repl"
+using "@test/renode/stm32f405.repl"
 
-sht30: SHT30 @ i2c1 0x80
+//sht30: SHT30 @ i2c1 0x80
+
+//sensor2: Sensors.SI70xx @ sysbus 0x80
+sensor1: Sensors.LSM6DSO_IMU @ i2c1 0x6a
