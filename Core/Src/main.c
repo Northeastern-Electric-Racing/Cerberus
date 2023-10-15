@@ -20,6 +20,9 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "sht30.h"
+#include "monitor.h"
+#include "queues.h"
+#include "fault.h"
 #include "can_handler.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -51,8 +54,6 @@ I2C_HandleTypeDef hi2c2;
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
-sht30_t temp_sensor;
-
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -63,7 +64,7 @@ const osThreadAttr_t defaultTask_attributes = {
 
 
 /* USER CODE BEGIN PV */
-
+osMessageQueueId_t onboard_temp_queue;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,9 +120,6 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
-  //if(sht30_init(&temp_sensor, &hi2c1))
-    //Error_Handler();
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -140,7 +138,8 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
+  fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -148,7 +147,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
   route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
   /* USER CODE END RTOS_THREADS */
 
