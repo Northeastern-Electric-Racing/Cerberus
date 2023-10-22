@@ -68,26 +68,11 @@ namespace Antmicro.Renode.Peripherals.I2C
                     break;
                 case Registers.UserRead:
                     break;
-                case Registers.TemperatureHM:
+                case Registers.TemperatureHumidityHM:
                     GetTemperature();
                     break;
-                case Registers.TemperaturePoll:
+                case Registers.TemperatureHumidityPoll:
                     GetTemperature();
-                    // Polling issues Write and then reads directly without writing read command
-                    // so it is necessary to prepare send data here 
-                    result = new byte[3] { 0, 0, 0 };
-                    result[0] = resultArray[0];
-                    result[1] = resultArray[1];
-                    result[2] = GetSTH30CRC(resultArray, 2);
-                    sendData = new byte[result.Length + 1];
-                    result.CopyTo(sendData, 0);
-                    sendData[result.Length] = GetCRC(data, result);
-                    break;
-                case Registers.HumidityHM:
-                    GetHumidity();
-                    break;
-                case Registers.HumidityPoll:
-                    GetHumidity();
                     // Polling issues Write and then reads directly without writing read command
                     // so it is necessary to prepare send data here 
                     result = new byte[3] { 0, 0, 0 };
@@ -118,17 +103,9 @@ namespace Antmicro.Renode.Peripherals.I2C
             case States.SendingData:
                 switch((Registers)registerAddress)
                 {
-                case Registers.TemperaturePoll:
+                case Registers.TemperatureHumidityPoll:
                 // Should not happen - fall through just in case
-                case Registers.TemperatureHM:
-                    result = new byte[3] { 0, 0, 0 };
-                    result[0] = resultArray[0];
-                    result[1] = resultArray[1];
-                    result[2] = GetSTH30CRC(resultArray, 2);
-                    break;
-                case Registers.HumidityPoll:
-                // Should not happen - fall through just in case
-                case Registers.HumidityHM:
+                case Registers.TemperatureHumidityHM:
                     result = new byte[3] { 0, 0, 0 };
                     result[0] = resultArray[0];
                     result[1] = resultArray[1];
@@ -326,18 +303,16 @@ namespace Antmicro.Renode.Peripherals.I2C
         private enum States
         {
             Idle = 0x0,
-            ReceivingData = 0x E0 00,
+            ReceivingData = 0xF32D,
             SendingData = 0xFC
         }
 
         private enum Registers
         {
-            TemperatureHM = 0x2C, // Read-Write
-            HumidityHM = 0x2C, // Read-Write
+            TemperatureHumidityHM = 0x2C, // Read-Write
             UserWrite = 0xE6, // Write-Only
             UserRead = 0xE7, // Read-Only
-            TemperaturePoll = 0x2C06, // Read-Write
-            HumidityPoll = 0x2C06, // Read-Write
+            TemperatureHumidityPoll = 0x2C06, // Read-Write
             OnChipMemory1 = 0xFA, // Read-Only
             OnChipMemory2 = 0xFC, // Read-Only
             SoftReset = 0x30A2  // Write-Only
