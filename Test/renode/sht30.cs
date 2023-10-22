@@ -30,8 +30,10 @@ namespace Antmicro.Renode.Peripherals.I2C
             state = (uint)States.Idle;
             registerAddress = 0;
             registerData = 0;
-            resultArray[0] = 0;
-            resultArray[1] = 0;
+            resultArrayTemp[0] = 0;
+            resultArrayTemp[1] = 0;
+            resultArrayHum[0] = 0;
+            resultArrayHum[1] = 0;
         }
 
         public void Write(byte[] data)
@@ -70,18 +72,28 @@ namespace Antmicro.Renode.Peripherals.I2C
                     break;
                 case Registers.TemperatureHumidityHM:
                     GetTemperature();
+                    GetHumidity();
                     break;
                 case Registers.TemperatureHumidityPoll:
                     GetTemperature();
                     // Polling issues Write and then reads directly without writing read command
                     // so it is necessary to prepare send data here 
-                    result = new byte[3] { 0, 0, 0 };
-                    result[0] = resultArray[0];
-                    result[1] = resultArray[1];
-                    result[2] = GetSTH30CRC(resultArray, 2);
+                    result = new byte[6] { 0, 0, 0, 0, 0, 0 };
+                    result[0] = resultArrayTemp[0];
+                    result[1] = resultArrayTemp[1];
+                    result[2] = GetSTH30CRC(resultArrayTemp, 2);
                     sendData = new byte[result.Length + 1];
                     result.CopyTo(sendData, 0);
                     sendData[result.Length] = GetCRC(data, result);
+
+                    GetHumidity();
+                    result[3] = resultArrayHum[0];
+                    result[4] = resultArrayHum[1];
+                    result[5] = GetSTH30CRC(resultArrayHum, 2);
+                    sendData = new byte[result.Length + 1];
+                    result.CopyTo(sendData, 0);
+                    sendData[result.Length] = GetCRC(data, result);
+
                     break;
                 case Registers.OnChipMemory1:
                     // registerData = 0x0F (on-chip memory address)
@@ -106,10 +118,20 @@ namespace Antmicro.Renode.Peripherals.I2C
                 case Registers.TemperatureHumidityPoll:
                 // Should not happen - fall through just in case
                 case Registers.TemperatureHumidityHM:
-                    result = new byte[3] { 0, 0, 0 };
-                    result[0] = resultArray[0];
-                    result[1] = resultArray[1];
-                    result[2] = GetSTH30CRC(resultArray, 2);
+                    result = new byte[6] { 0, 0, 0, 0, 0, 0 };
+                    result[0] = resultArrayTemp[0];
+                    result[1] = resultArrayTemp[1];
+                    result[2] = GetSTH30CRC(resultArrayTemp, 2);
+                    sendData = new byte[result.Length + 1];
+                    result.CopyTo(sendData, 0);
+                    sendData[result.Length] = GetCRC(data, result);
+
+                    result[3] = resultArrayHum[0];
+                    result[4] = resultArrayHum[1];
+                    result[5] = GetSTH30CRC(resultArrayHum, 2);
+                    sendData = new byte[result.Length + 1];
+                    result.CopyTo(sendData, 0);
+                    sendData[result.Length] = GetCRC(data, result);
                     break;
                 case Registers.UserRead:
                     result = new byte[1] { 0 };
@@ -181,20 +203,20 @@ namespace Antmicro.Renode.Peripherals.I2C
             switch((UserControls)(user & (int)UserControls.ResolutionMask))
             {
             case UserControls.Resolution_12_14BIT:
-                resultArray[0] = (byte)((resultInt >> 6) & 0xFF);
-                resultArray[1] = (byte)((resultInt & 0x3F) << 2);
+                resultArrayTemp[0] = (byte)((resultInt >> 6) & 0xFF);
+                resultArrayTemp[1] = (byte)((resultInt & 0x3F) << 2);
                 break;
             case UserControls.Resolution_8_12BIT:
-                resultArray[0] = (byte)((resultInt >> 4) & 0xFF);
-                resultArray[1] = (byte)((resultInt & 0xF) << 4);
+                resultArrayTemp[0] = (byte)((resultInt >> 4) & 0xFF);
+                resultArrayTemp[1] = (byte)((resultInt & 0xF) << 4);
                 break;
             case UserControls.Resolution_10_13BIT:
-                resultArray[0] = (byte)((resultInt >> 5) & 0xFF);
-                resultArray[1] = (byte)((resultInt & 0x1F) << 3);
+                resultArrayTemp[0] = (byte)((resultInt >> 5) & 0xFF);
+                resultArrayTemp[1] = (byte)((resultInt & 0x1F) << 3);
                 break;
             case UserControls.Resolution_11_11BIT:
-                resultArray[0] = (byte)((resultInt >> 3) & 0xFF);
-                resultArray[1] = (byte)((resultInt & 0x7) << 5);
+                resultArrayTemp[0] = (byte)((resultInt >> 3) & 0xFF);
+                resultArrayTemp[1] = (byte)((resultInt & 0x7) << 5);
                 break;
             default:
                 break;
@@ -225,20 +247,20 @@ namespace Antmicro.Renode.Peripherals.I2C
             switch((UserControls)(user & (int)UserControls.ResolutionMask))
             {
             case UserControls.Resolution_12_14BIT:
-                resultArray[0] = (byte)((resultInt >> 4) & 0xFF);
-                resultArray[1] = (byte)(((resultInt & 0xF) << 4) + 0x2);
+                resultArrayHum[0] = (byte)((resultInt >> 4) & 0xFF);
+                resultArrayHum[1] = (byte)(((resultInt & 0xF) << 4) + 0x2);
                 break;
             case UserControls.Resolution_8_12BIT:
-                resultArray[0] = (byte)((resultInt) & 0xFF);
-                resultArray[1] = 0x2;
+                resultArrayHum[0] = (byte)((resultInt) & 0xFF);
+                resultArrayHum[1] = 0x2;
                 break;
             case UserControls.Resolution_10_13BIT:
-                resultArray[0] = (byte)((resultInt >> 2) & 0xFF);
-                resultArray[1] = (byte)(((resultInt & 0x3) << 6) + 0x2);
+                resultArrayHum[0] = (byte)((resultInt >> 2) & 0xFF);
+                resultArrayHum[1] = (byte)(((resultInt & 0x3) << 6) + 0x2);
                 break;
             case UserControls.Resolution_11_11BIT:
-                resultArray[0] = (byte)(((resultInt) >> 3) & 0xFF);
-                resultArray[1] = (byte)(((resultInt & 0x7) << 5) + 0x2);
+                resultArrayHum[0] = (byte)(((resultInt) >> 3) & 0xFF);
+                resultArrayHum[1] = (byte)(((resultInt & 0x7) << 5) + 0x2);
                 break;
             default:
                 break;
@@ -281,7 +303,8 @@ namespace Antmicro.Renode.Peripherals.I2C
             return crc;
         }
 
-        private byte[] resultArray = new byte[2] { 0, 0 };
+        private byte[] resultArrayTemp = new byte[2] { 0, 0 };
+        private byte[] resultArrayHum = new byte[2] { 0, 0 };
         private byte user;
 
         private uint state;
