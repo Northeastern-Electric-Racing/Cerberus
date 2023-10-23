@@ -85,5 +85,14 @@ void vWatchdogMonitor(void *pv_params)
 	for(;;) {
 		/* Pets Watchdog */
 		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_SET);
+
+		/* Delay for 5ms */
+		osDelay(5);
+
+		/* Set Low Again */
+		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_RESET);
+
+		/* Yield to other RTOS tasks */
+		osThreadYield();
 	}
 }
