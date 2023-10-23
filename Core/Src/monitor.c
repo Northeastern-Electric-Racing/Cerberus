@@ -6,6 +6,7 @@
 #include "can.h"
 #include "fault.h"
 #include "sht30.h"
+#include "stm32f405xx.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -42,7 +43,6 @@ void vTempMonitor(void *pv_params)
 	}
 
 	for(;;) {
-
 		/* Take measurement */
 		if (sht30_get_temp_humid(&temp_sensor)) {
 			fault_data.diag = "Failed to get temp";
@@ -67,5 +67,23 @@ void vTempMonitor(void *pv_params)
 
 		/* Yield to other tasks */
 		osDelayUntil(temp_sensor_sample_delay);
+	}
+}
+
+osThreadId_t watchdog_monitor_handle;
+const osThreadAttr_t watchdog_monitor_attributes = {
+	.name = "WatchdogMonitor",
+	.stack_size = 128 * 4,
+	.priority = (osPriority_t) osPriorityLow,
+};
+
+void vWatchdogMonitor(void *pv_params)
+{
+	GPIO_TypeDef *gpio;
+	gpio = (GPIO_TypeDef *)pv_params;
+
+	for(;;) {
+		/* Pets Watchdog */
+		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_SET);
 	}
 }
