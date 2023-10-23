@@ -96,3 +96,45 @@ void vWatchdogMonitor(void *pv_params)
 		osThreadYield();
 	}
 }
+osThreadId_t pedals_monitor_handle;
+const osThreadAttr_t pedals_monitor_attributes = {
+	.name = "PedalMonitor",
+	.stack_size = 128 * 4,
+	.priority = (osPriority_t) osPriorityHigh,
+};
+
+void vPedalsMonitor(void *pv_params) {
+	const uint8_t num_samples = 10;
+	const accelerator1PinAddr = 1;
+	const accelerator2PinAddr = 2;
+	const brake1PinAddr = 3;
+	const brake2PinAddr = 4;
+
+	static onboard_pedals_t sensor_data;
+	fault_data_t fault_data = {
+		.id = ONBOARD_PEDAL_FAULT,
+		.severity = DEFCON4
+	};
+
+	/* Handle ADC Data for two input accelerator value and two input brake value*/
+	ADC_HandleTypeDef *hadc1 = (ADC_HandleTypeDef *)pv_params;
+	uint32_t adc_data[4];
+
+
+	for (;;) {
+		/* Get the value from the adc at the brake and accelerator pin addresses and average them to the sensor data value */
+		adc_data[0] = HAL_ADC_GetValue(hadc1, accelerator1PinAddr);
+		adc_data[1] = HAL_ADC_GetValue(hadc1, accelerator2PinAddr);
+		adc_data[2] = HAL_ADC_GetValue(hadc1, brake1PinAddr);
+		adc_data[3] = HAL_ADC_GetValue(hadc1, brake2PinAddr);
+
+		sensor_data.acceleratorValue = (sensor_data.acceleratorValue + (adc_data[0] + adc_data[1]) / 2) / num_samples;
+		sensor_data.brakeValue = (sensor_data.brakeValue + (adc_data[2] + adc_data[3]) / 2) / num_samples;
+
+		/* Publish to Onboard Pedals Queue */
+		osMessageQueuePut(onboard_pedals_queue, &sensor_data, 0U, 0U);
+
+		/* Yield to other tasks */
+		osThreadYield();
+	}
+}

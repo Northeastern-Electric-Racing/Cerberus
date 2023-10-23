@@ -16,7 +16,8 @@ typedef enum {
 
 typedef enum {
     FAULTS_CLEAR        = 0x0,
-    ONBOARD_TEMP_FAULT  = 0x1
+    ONBOARD_TEMP_FAULT  = 0x1,
+    ONBOARD_PEDAL_FAULT = 0x2,
 } fault_code_t;
 
 //TODO: Make this queue not accessible to users,

@@ -14,5 +14,11 @@ typedef struct {
 
 extern osMessageQueueId_t onboard_temp_queue;
 
+typedef struct {
+    uint16_t brakeValue;
+    uint16_t acceleratorValue;
+} onboard_pedals_t;
+
+extern osMessageQueueId_t onboard_pedals_queue;
 
 #endif // QUEUES_H
