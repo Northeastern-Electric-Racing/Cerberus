@@ -5,7 +5,8 @@
 #include "cerberus_conf.h"
 
 
-#define ONBOARD_TEMP_QUEUE_SIZE  8
+#define ONBOARD_TEMP_QUEUE_SIZE 8
+#define PEDAL_DATA_QUEUE_SIZE   8
 
 typedef struct {
     uint16_t temperature;
@@ -17,8 +18,8 @@ extern osMessageQueueId_t onboard_temp_queue;
 typedef struct {
     uint16_t brakeValue;
     uint16_t acceleratorValue;
-} onboard_pedals_t;
+} pedals_t;
 
-extern osMessageQueueId_t onboard_pedals_queue;
+extern osMessageQueueId_t pedal_data_queue;
 
 #endif // QUEUES_H
