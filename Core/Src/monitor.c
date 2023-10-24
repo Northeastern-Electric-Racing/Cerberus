@@ -7,6 +7,7 @@
 #include "fault.h"
 #include "sht30.h"
 #include "stm32f405xx.h"
+#include "lsm6dso.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -94,5 +95,99 @@ void vWatchdogMonitor(void *pv_params)
 
 		/* Yield to other RTOS tasks */
 		osThreadYield();
+	}
+}
+
+osThreadId_t imu_monitor_handle;
+const osThreadAttr_t imu_monitor_attributes = {
+	.name = "IMUMonitor",
+	.stack_size = 128 * 4,
+	.priority = (osPriority_t) osPriorityHigh1,
+};
+
+void vIMUMonitor(void *pv_params)
+{
+	const uint8_t num_samples = 10;
+	const uint16_t imu_sample_delay = 500; /* ms */
+	const uint8_t accel_msg_len = 6; /* bytes */
+	const uint8_t gyro_msg_len = 6; /* bytes */
+	static imu_data_t sensor_data;
+	fault_data_t fault_data = {
+		.id = IMU_FAULT,
+		.severity = DEFCON3
+	};
+	lsm6dso_t imu;
+	I2C_HandleTypeDef *hi2c1;
+	can_msg_t imu_accel_msg = {
+		.id = CANID_IMU,
+		.len = accel_msg_len,
+		.line = CAN_LINE_1,
+		.data = {0}
+	};
+	can_msg_t imu_gyro_msg = {
+		.id = CANID_IMU,
+		.len = gyro_msg_len,
+		.line = CAN_LINE_1,
+		.data = {0}
+	};
+
+	hi2c1 = (I2C_HandleTypeDef *)pv_params;
+	imu.i2c_handle = hi2c1;
+
+	/* Initialize IMU */
+	if (lsm6dso_init(&imu, hi2c1)) {
+		fault_data.diag = "Init Failed";
+		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+	}
+
+	//TODO: GET WHATEVER ordr_sel, fs_sel, fs_125 are
+	if (lsm6dso_accelerometer_config(&imu, 1, 2, 0)) {
+		fault_data.diag = "Accelerometer Config Failed";
+		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+	}
+	for(;;) {
+		/* Take measurement */
+		if (lsm6dso_read_accel(&imu)) {
+			fault_data.diag = "Failed to get IMU acceleration";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		}
+
+		if (lsm6dso_read_gyro(&imu)) {
+			fault_data.diag = "Failed to get IMU gyroscope";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		}
+
+		/* Run values through LPF of sample size  */
+		sensor_data.accel_x = (sensor_data.accel_x + imu.accel_data[0])
+							  / num_samples;
+		sensor_data.accel_y = (sensor_data.accel_y + imu.accel_data[1])
+							  / num_samples;
+		sensor_data.accel_z = (sensor_data.accel_z + imu.accel_data[2])
+							  / num_samples;
+		sensor_data.gyro_x = (sensor_data.gyro_x + imu.gyro_data[0])
+							 / num_samples;
+		sensor_data.gyro_y = (sensor_data.gyro_y + imu.gyro_data[1])
+							 / num_samples;
+		sensor_data.gyro_z = (sensor_data.gyro_z + imu.gyro_data[2])
+							 / num_samples;
+
+		/* Publish to IMU Queue */
+		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
+
+		/* Send CAN message */
+		memcpy(imu_accel_msg.data, &sensor_data, accel_msg_len);
+		if (can_send_message(imu_accel_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		}
+		
+		memcpy(imu_gyro_msg.data, &sensor_data, gyro_msg_len);
+		if (can_send_message(imu_gyro_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		}
+
+		/* Yield to other tasks */
+		osDelayUntil(imu_sample_delay);
 	}
 }
