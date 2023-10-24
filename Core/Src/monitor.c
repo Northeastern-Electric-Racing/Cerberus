@@ -106,35 +106,59 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void vPedalsMonitor(void *pv_params) {
 	const uint8_t num_samples = 10;
 	const accelerator1PinAddr = 1;
+	//TODO: Get actual pin addresses
 	const accelerator2PinAddr = 2;
 	const brake1PinAddr = 3;
 	const brake2PinAddr = 4;
+	//TODO: Get actual delay time
+	const delayTime = 500; /* ms */	
+	const uint8_t can_msg_len = 4; /* bytes */
 
 	static onboard_pedals_t sensor_data;
 	fault_data_t fault_data = {
 		.id = ONBOARD_PEDAL_FAULT,
-		.severity = DEFCON4
+		.severity = DEFCON1
+	};
+
+	
+	can_msg_t pedal_msg = {
+		.id = CANID_PEDAL_SENSOR,
+		.len = can_msg_len,
+		.line = CAN_LINE_1,
+		.data = {0}
 	};
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	ADC_HandleTypeDef *hadc1 = (ADC_HandleTypeDef *)pv_params;
-	uint32_t adc_data[4];
+
+	/* STM has a 12 bit resolution so we can mark each value as uint16 */
+	uint16_t accel_adc_data[2];
+	uint16_t brake_adc_data[2];
 
 
 	for (;;) {
 		/* Get the value from the adc at the brake and accelerator pin addresses and average them to the sensor data value */
-		adc_data[0] = HAL_ADC_GetValue(hadc1, accelerator1PinAddr);
-		adc_data[1] = HAL_ADC_GetValue(hadc1, accelerator2PinAddr);
-		adc_data[2] = HAL_ADC_GetValue(hadc1, brake1PinAddr);
-		adc_data[3] = HAL_ADC_GetValue(hadc1, brake2PinAddr);
+		accel_adc_data[0] = HAL_ADC_GetValue(hadc1, accelerator1PinAddr);
+		accel_adc_data[1] = HAL_ADC_GetValue(hadc1, accelerator2PinAddr);
+		brake_adc_data[0] = HAL_ADC_GetValue(hadc1, brake1PinAddr);
+		brake_adc_data[1] = HAL_ADC_GetValue(hadc1, brake2PinAddr);
 
-		sensor_data.acceleratorValue = (sensor_data.acceleratorValue + (adc_data[0] + adc_data[1]) / 2) / num_samples;
-		sensor_data.brakeValue = (sensor_data.brakeValue + (adc_data[2] + adc_data[3]) / 2) / num_samples;
+		sensor_data.acceleratorValue = (sensor_data.acceleratorValue + (accel_adc_data[0] + accel_adc_data[1]) / 2) / num_samples;
+		sensor_data.brakeValue = (sensor_data.brakeValue + (brake_adc_data[0] + brake_adc_data[1]) / 2) / num_samples;
+
+		//TODO: 
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(onboard_pedals_queue, &sensor_data, 0U, 0U);
 
+		/* Send CAN message */
+		memcpy(pedal_msg.data, &sensor_data, can_msg_len);
+		if (can_send_message(pedal_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		}
+
 		/* Yield to other tasks */
-		osThreadYield();
+		osDelayUntil(delayTime);
 	}
 }

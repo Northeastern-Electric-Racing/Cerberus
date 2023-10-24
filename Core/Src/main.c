@@ -149,7 +149,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hi2c2, &pedals_monitor_attributes);
+  //TODO: Get correct ADC/GPIO value
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
   route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
 
   /* USER CODE END RTOS_THREADS */
