@@ -140,11 +140,6 @@ void vIMUMonitor(void *pv_params)
 		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 	}
 
-	//TODO: GET WHATEVER ordr_sel, fs_sel, fs_125 are
-	if (lsm6dso_accelerometer_config(&imu, 1, 2, 0)) {
-		fault_data.diag = "Accelerometer Config Failed";
-		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
-	}
 	for(;;) {
 		/* Take measurement */
 		if (lsm6dso_read_accel(&imu)) {
