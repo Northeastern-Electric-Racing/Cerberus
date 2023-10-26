@@ -12,19 +12,20 @@
 #include "can_handler.h"
 #include "can.h"
 #include "can_config.h"
+#include "cerberus_conf.h"
 #include <stdlib.h>
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 #define NUM_CALLBACKS 5 // Update when adding new callbacks
 
 static osMessageQueueId_t can_inbound_queue;
-static osMessageQueueId_t can_outbound_queue;
 osThreadId_t route_can_incoming_handle;
 const osThreadAttr_t route_can_incoming_attributes = {
     .name = "RouteCanIncoming",
     .stack_size = 128 * 8,
     .priority = (osPriority_t)osPriorityAboveNormal4
 };
+
 
 static CAN_HandleTypeDef* hcan1;
 
@@ -100,4 +101,48 @@ void vRouteCanIncoming(void* pv_params)
             }
         }
     }
+}
+
+osMessageQueueId_t can_outbound_queue;
+osThreadId_t can_dispatch_handle;
+const osThreadAttr_t can_dispatch_attributes = {
+	.name = "CanDispatch",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t) osPriorityAboveNormal4,
+};
+
+// what the hell is this
+//int can_dispatch_delay = ; 
+
+void vCanDispatch(void* pv_params) {
+
+    can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+
+	const uint8_t can_msg_len = 4; /* bytes */
+	can_msg_t msg_data = {
+		.id = CAN_ID_OUTBOUND_MSG,
+		.len = can_msg_len,
+		.line = CAN_LINE_1,
+		.data = {0}  
+	};
+
+    
+    // Wait until a message is in the queue, send messages when they are in the queue
+	for(;;) {
+        // "borrowed" from temp sensor CAN code (PR 58)
+		/* Send CAN message */
+
+        can_msg_t* msg_from_queue;        //queue id           buffer to put data    timeout
+
+        if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 50)) {
+            memcpy(msg_data.data, &msg_from_queue, can_msg_len);
+            if (can_send_message(msg_data)) {
+                fault_data.diag = "Failed to send CAN message";
+                osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+            }
+        }
+
+		/* Yield to other tasks */
+		osDelayUntil(can_dispatch_delay); //me no think can_dispatch_delay exists :P
+	}
 }

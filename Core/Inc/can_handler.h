@@ -20,4 +20,8 @@ void vRouteCanIncoming(void* pv_params);
 extern osThreadId_t route_can_incoming_handle;
 extern const osThreadAttr_t route_can_incoming_attributes;
 
+void vCanDispatch(void* pv_params);
+extern osThreadId_t can_dispatch_handle;
+extern const osThreadAttr_t can_dispatch_attributes;
+
 #endif
