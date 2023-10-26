@@ -1,8 +1,6 @@
 version: "3.7"
 services:
   workspace:
-    build:
-      context: .
     volumes:
       - type: bind
         source: /run/host-services/ssh-auth.sock
