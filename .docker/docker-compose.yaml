@@ -3,8 +3,10 @@ services:
   workspace:
     build:
       context: .
-      ssh:
-        - default
+    volumes:
+      - type: bind
+        source: /run/host-services/ssh-auth.sock
+        target: /run/host-services/ssh-auth.sock
     image: nwdepatie/ner-gcc-arm:latest
     stdin_open: true
     tty: true
