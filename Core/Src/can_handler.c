@@ -14,6 +14,8 @@
 #include "can_config.h"
 #include "cerberus_conf.h"
 #include <stdlib.h>
+#include "fault.h"
+#include <string.h>
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 #define NUM_CALLBACKS 5 // Update when adding new callbacks
@@ -116,11 +118,17 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void* pv_params) {
 
+    const uint16_t can_dispatch_delay = 500; //ms
+    fault_data_t fault_data = {
+		.id = 1, //this is arbitrary
+		.severity = DEFCON4
+	};
+
     can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	const uint8_t can_msg_len = 4; /* bytes */
 	can_msg_t msg_data = {
-		.id = CAN_ID_OUTBOUND_MSG,
+		.id = 1,  //this is arbitrary
 		.len = can_msg_len,
 		.line = CAN_LINE_1,
 		.data = {0}  
@@ -143,6 +151,6 @@ void vCanDispatch(void* pv_params) {
         }
 
 		/* Yield to other tasks */
-		osDelayUntil(can_dispatch_delay); //me no think can_dispatch_delay exists :P
+		osDelayUntil(can_dispatch_delay);
 	}
 }
