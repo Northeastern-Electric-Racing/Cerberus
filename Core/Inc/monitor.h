@@ -18,4 +18,9 @@ void vPedalsMonitor(void *pv_params);
 extern osThreadId_t pedals_monitor_handle;
 extern const osThreadAttr_t pedals_monitor_attributes;
 
+/* Task for Monitoring the IMU */
+void vIMUMonitor(void *pv_params);
+extern osThreadId_t imu_monitor_handle;
+extern const osThreadAttr_t imu_monitor_attributes;
+
 #endif // MONITOR_H
