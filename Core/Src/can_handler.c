@@ -21,7 +21,6 @@
 #define NUM_CALLBACKS 5 // Update when adding new callbacks
 
 static osMessageQueueId_t can_inbound_queue;
-static osMessageQueueId_t can_outbound_queue;
 osThreadId_t route_can_incoming_handle;
 const osThreadAttr_t route_can_incoming_attributes = {
     .name = "RouteCanIncoming",
@@ -105,7 +104,7 @@ void vRouteCanIncoming(void* pv_params)
     }
 }
 
-osMessageQueueId_t can_outbound_queue;
+static osMessageQueueId_t can_outbound_queue;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
