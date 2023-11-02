@@ -52,6 +52,14 @@ CAN_HandleTypeDef hcan1;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
+osMutexId_t mutex_id;
+osMutexAttr_t mutex;
+
+struct {
+  osMutexAttr_t mut;
+  I2C_HandleTypeDef i2c;
+} mutI2Cbus;
+
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
@@ -86,6 +94,9 @@ void StartDefaultTask(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void CreateMutex() {
+    mutex_id = osMutexNew(&mutex);
+}
 /* USER CODE END 0 */
 
 /**
@@ -104,6 +115,9 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
+  mutI2Cbus.mut = mutex;
+  mutI2Cbus.i2c = hi2c1;
 
   /* USER CODE END Init */
 
@@ -131,6 +145,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
