@@ -112,34 +112,28 @@ const osThreadAttr_t can_dispatch_attributes = {
 	.priority = (osPriority_t) osPriorityAboveNormal4,
 };
 
+osMessageQueueId_t can_outbound_queue = 0;
+
 void vCanDispatch(void* pv_params) {
 
 	const uint16_t can_dispatch_delay = 100; //ms
-		fault_data_t fault_data = {
+	fault_data_t fault_data = {
 		.id = 1, /* this is arbitrary */
 		.severity = DEFCON2
 	};
 
 	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
-	const uint8_t can_msg_len = 4; /* bytes */
-	can_msg_t msg_data = {
-		.id = 1,  /* this is arbitrary */
-		.len = can_msg_len,
-		.line = CAN_LINE_1,
-		.data = {0}
-	};
-
-
 	can_msg_t* msg_from_queue;
+	can_msg_t msg_to_send;
 
 	// Wait until a message is in the queue, send messages when they are in the queue
 	for(;;) {
 		// "borrowed" from temp sensor CAN code (PR 58)
 		/* Send CAN message */         //queue id        buffer to put data     timeout
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 50)) {
-			memcpy(msg_data.data, &msg_from_queue, can_msg_len);
-			if (can_send_message(msg_data)) {
+			memcpy(&msg_to_send, &msg_from_queue, sizeof(can_msg_t));
+			if (can_send_message(msg_to_send)) {
 				fault_data.diag = "Failed to send CAN message";
 				osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 			}
@@ -147,5 +141,22 @@ void vCanDispatch(void* pv_params) {
 
 		/* Yield to other tasks */
 		osDelayUntil(can_dispatch_delay);
+	}
+}
+
+void queue_can_msg(can_msg_t msg) {
+	
+	fault_data_t fault_data = {
+		.id = 2, /* this is arbitrary */
+		.severity = DEFCON4
+	};
+
+	if(0 == can_outbound_queue) {
+		can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	}
+
+	if(osOK != osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U)) {
+		fault_data.diag = "Failed to put CAN message in queue";
+		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 	}
 }
