@@ -8,8 +8,11 @@ mach create
 machine LoadPlatformDescription @Test/renode/stm32f405.repl
 
 i @Test/renode/LSM6DSO_IMU_I2C.cs
+i @Test/renode/STM32F4_I2C_NER.cs
+machine LoadPlatformDescription @Test/renode/mpu.repl
 
 sysbus.cpu LogFunctionNames true
 sysbus LogAllPeripheralsAccess true
 
 sysbus LoadELF @build/cerberus.elf
+start

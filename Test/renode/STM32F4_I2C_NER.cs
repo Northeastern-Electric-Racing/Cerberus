@@ -18,9 +18,9 @@ using Antmicro.Renode.Utilities;
 namespace Antmicro.Renode.Peripherals.I2C
 {
     [AllowedTranslations(AllowedTranslation.WordToDoubleWord)]
-    public sealed class STM32F4_I2C : SimpleContainer<II2CPeripheral>, IDoubleWordPeripheral, IBytePeripheral, IKnownSize
+    public sealed class STM32F4_I2C_NER : SimpleContainer<II2CPeripheral>, IDoubleWordPeripheral, IBytePeripheral, IKnownSize
     {
-        public STM32F4_I2C(IMachine machine) : base(machine)
+        public STM32F4_I2C_NER(IMachine machine) : base(machine)
         {
             EventInterrupt = new GPIO();
             ErrorInterrupt = new GPIO();
@@ -75,6 +75,23 @@ namespace Antmicro.Renode.Peripherals.I2C
             data.Reset();
         }
 
+        private void SetPOS(bool oldValue, bool newValue)
+        {
+            // for 2-byte reception
+            if(newValue)
+            {
+                is2ByteMode = true;
+                if(dataRegisterNotEmpty.Value && dataToReceive.Any())
+                {
+                    byteTransferFinished.Value = true;
+                }
+            }
+            else
+            {
+                is2ByteMode = false;
+            }
+        }
+
         public GPIO EventInterrupt
         {
             get;
@@ -97,8 +114,12 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void CreateRegisters()
         {
-            var control1 = new DoubleWordRegister(this).WithFlag(15, writeCallback: SoftwareResetWrite, name:"SWRST").WithFlag(9, FieldMode.Read, name:"StopGen", writeCallback: StopWrite)
-                .WithFlag(8, FieldMode.Read, writeCallback: StartWrite, name:"StartGen").WithFlag(0, writeCallback: PeripheralEnableWrite, name:"PeriEn");
+            var control1 = new DoubleWordRegister(this)
+                .WithFlag(15, writeCallback: SoftwareResetWrite, name:"SWRST")
+                .WithFlag(11, nameof:"POS", writeCallback: SetPOS)
+                .WithFlag(9, FieldMode.Read, name:"StopGen", writeCallback: StopWrite)
+                .WithFlag(8, FieldMode.Read, writeCallback: StartWrite, name:"StartGen")
+                .WithFlag(0, writeCallback: PeripheralEnableWrite, name:"PeriEn");
             var control2 = new DoubleWordRegister(this).WithValueField(0, 6, name:"Freq");
             var status1 = new DoubleWordRegister(this);
             var status2 = new DoubleWordRegister(this);
@@ -272,9 +293,12 @@ namespace Antmicro.Renode.Peripherals.I2C
                 dataToTransfer.Clear();
             }
             //TODO: TRA cleared on repeated Start condition. Is this always here?
-            transmitterReceiver.Value = false;
-            dataRegisterEmpty.Value = false;
-            byteTransferFinished.Value = false;
+            if(!is2ByteMode)
+            {
+                transmitterReceiver.Value = false;
+                dataRegisterEmpty.Value = false;
+                byteTransferFinished.Value = false;
+            }
             startBit.Value = true;
             if(newValue)
             {
