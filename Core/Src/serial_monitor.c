@@ -38,7 +38,9 @@ void vSerialMonitor(void* pv_params)
 	char* message;
 	osStatus_t status;
 
-	// TODO: Initialize UART?
+	while(1){
+		printf("TEST\n");
+	}
 
 	printf_queue = osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char*), NULL);
 
