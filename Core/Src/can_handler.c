@@ -104,15 +104,13 @@ void vRouteCanIncoming(void* pv_params)
 	}
 }
 
-static osMessageQueueId_t can_outbound_queue;
+static osMessageQueueId_t can_outbound_queue = 0;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t) osPriorityAboveNormal4,
 };
-
-osMessageQueueId_t can_outbound_queue = 0;
 
 void vCanDispatch(void* pv_params) {
 
