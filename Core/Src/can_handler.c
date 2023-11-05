@@ -122,16 +122,14 @@ void vCanDispatch(void* pv_params) {
 
 	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
-	can_msg_t* msg_from_queue;
-	can_msg_t msg_to_send;
+	can_msg_t msg_from_queue;
 
 	// Wait until a message is in the queue, send messages when they are in the queue
 	for(;;) {
 		// "borrowed" from temp sensor CAN code (PR 58)
 		/* Send CAN message */         //queue id        buffer to put data     timeout
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 50)) {
-			memcpy(&msg_to_send, &msg_from_queue, sizeof(can_msg_t));
-			if (can_send_message(msg_to_send)) {
+			if (can_send_message(msg_from_queue)) {
 				fault_data.diag = "Failed to send CAN message";
 				osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 			}
