@@ -5,8 +5,6 @@ using sysbus
 
 mach create
 
-machine LoadPlatformDescription @Test/renode/stm32f405.repl
-
 i @Test/renode/LSM6DSO_IMU_I2C.cs
 i @Test/renode/STM32F4_I2C_NER.cs
 machine LoadPlatformDescription @Test/renode/mpu.repl
@@ -16,6 +14,9 @@ sysbus LogAllPeripheralsAccess true
 
 sysbus.cpu PerformanceInMips 1
 emulation SetGlobalQuantum "0.10000"
+
+emulation CreateUartPtyTerminal "term" "/dev/ttyACM0"
+connector Connect sysbus.usart3 term
 
 sysbus LoadELF @build/cerberus.elf
 

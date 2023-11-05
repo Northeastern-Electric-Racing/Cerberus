@@ -1,4 +1,4 @@
-using "@test/renode/stm32f405.repl"
+using "Test/renode/stm32f405.repl"
 
 imu: Sensors.LSM6DSO_IMU_I2C @ i2c1 0x35
 //temp: I2C.SHT21 @ i2c1 0x40
