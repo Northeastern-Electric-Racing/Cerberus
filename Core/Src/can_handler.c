@@ -147,12 +147,15 @@ void queue_can_msg(can_msg_t msg) {
 		.severity = DEFCON4
 	};
 
-	if(0 == can_outbound_queue) {
-		can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	if(!can_outbound_queue) {
+		return 1;
 	}
 
-	if(osOK != osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U)) {
-		fault_data.diag = "Failed to put CAN message in queue";
-		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+	if(osOK == osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U)) {
+		return 0;
 	}
+
+	fault_data.diag = "Failed to put CAN message in queue";
+	osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+	return 1;
 }
