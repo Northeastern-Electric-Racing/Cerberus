@@ -1,6 +1,4 @@
 using "@test/renode/stm32f405.repl"
 
-//sht30: SHT30 @ i2c1 0x80
-
-//sensor2: Sensors.SI70xx @ sysbus 0x80
-sensor1: Sensors.LSM6DSO_IMU @ i2c1 0x6a
+imu: Sensors.LSM6DSO_IMU_I2C @ i2c1 0x35
+//temp: I2C.SHT21 @ i2c1 0x40

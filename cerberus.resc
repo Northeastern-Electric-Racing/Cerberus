@@ -14,5 +14,10 @@ machine LoadPlatformDescription @Test/renode/mpu.repl
 sysbus.cpu LogFunctionNames true
 sysbus LogAllPeripheralsAccess true
 
+sysbus.cpu PerformanceInMips 1
+emulation SetGlobalQuantum "0.10000"
+
 sysbus LoadELF @build/cerberus.elf
-start
+
+# Uncomment for autostart
+#start

@@ -1,3 +1,8 @@
+/*
+ * NOTE: This should not be used in production, this is the module from Renode that
+ *   devs can use to debug the I2C network inside Renode if need be
+ */
+
 //
 // Copyright (c) 2010-2023 Antmicro
 // Copyright (c) 2011-2015 Realtime Embedded
@@ -30,6 +35,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         public byte ReadByte(long offset)
         {
+            Console.Write("ReadByte!\n");
             if((Registers)offset == Registers.Data)
             {
                 byteTransferFinished.Value = false;
@@ -45,6 +51,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         public void WriteByte(long offset, byte value)
         {
+            Console.Write("WriteByte!\n");
             if((Registers)offset == Registers.Data)
             {
                 data.Write(offset, value);
@@ -57,16 +64,19 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         public uint ReadDoubleWord(long offset)
         {
+            Console.Write("ReadDouble!\n");
             return registers.Read(offset);
         }
 
         public void WriteDoubleWord(long offset, uint value)
         {
+            Console.Write("WriteDouble!\n");
             registers.Write(offset, value);
         }
 
         public override void Reset()
         {
+            Console.Write("Reset!\n");
             state = State.Idle;
             EventInterrupt.Unset();
             ErrorInterrupt.Unset();
@@ -116,7 +126,7 @@ namespace Antmicro.Renode.Peripherals.I2C
         {
             var control1 = new DoubleWordRegister(this)
                 .WithFlag(15, writeCallback: SoftwareResetWrite, name:"SWRST")
-                .WithFlag(11, nameof:"POS", writeCallback: SetPOS)
+                //.WithFlag(11, name:"POS", writeCallback: SetPOS)
                 .WithFlag(9, FieldMode.Read, name:"StopGen", writeCallback: StopWrite)
                 .WithFlag(8, FieldMode.Read, writeCallback: StartWrite, name:"StartGen")
                 .WithFlag(0, writeCallback: PeripheralEnableWrite, name:"PeriEn");
@@ -169,6 +179,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void Update()
         {
+            Console.Write("Update!\n");
             EventInterrupt.Set(eventInterruptEnable.Value && (startBit.Value || addressSentOrMatched.Value || byteTransferFinished.Value
                 || (bufferInterruptEnable.Value && (dataRegisterEmpty.Value || dataRegisterNotEmpty.Value))));
             ErrorInterrupt.Set(errorInterruptEnable.Value && acknowledgeFailed.Value);
@@ -176,6 +187,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private uint DataRead(uint oldValue)
         {
+            Console.Write("DataRead!\n");
             var result = 0u;
             if(dataToReceive != null && dataToReceive.Any())
             {
@@ -194,16 +206,17 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void DataWrite(uint oldValue, uint newValue)
         {
+            Console.Write("DataWrite!\n");
             //moved from WriteByte
             byteTransferFinished.Value = false;
             Update();
-
             switch(state)
             {
             case State.AwaitingAddress:
                 startBit.Value = false;
                 willReadOnSelectedSlave = (newValue & 1) == 1; //LSB is 1 for read and 0 for write
                 var address = (int)(newValue >> 1);
+                Console.Write("Selected Slave:\t{0:X}\n", address);
                 if(ChildCollection.ContainsKey(address))
                 {
                     selectedSlave = ChildCollection[address];
@@ -258,6 +271,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void StopWrite(bool oldValue, bool newValue)
         {
+            Console.Write("StopWrite!\n");
             this.NoisyLog("Setting STOP bit to {0}", newValue);
             if(!newValue)
             {
@@ -280,6 +294,8 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void StartWrite(bool oldValue, bool newValue)
         {
+            Console.Write("StartWrite!\n");
+            
             if(!newValue)
             {
                 return;
@@ -316,6 +332,7 @@ namespace Antmicro.Renode.Peripherals.I2C
 
         private void PeripheralEnableWrite(bool oldValue, bool newValue)
         {
+            Console.Write("PeripheralEnableWrite!\n");
             if(!newValue)
             {
                 acknowledgeEnable.Value = false;
@@ -342,6 +359,7 @@ namespace Antmicro.Renode.Peripherals.I2C
         private Queue<byte> dataToReceive;
         private bool willReadOnSelectedSlave;
         private II2CPeripheral selectedSlave;
+        private bool is2ByteMode;
 
         private enum Registers
         {
