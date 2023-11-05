@@ -1,6 +1,7 @@
 #include "serial_monitor.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #define PRINTF_QUEUE_SIZE 16  /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
@@ -22,11 +23,11 @@ int serial_print(const char* format, ...)
 
 	/* Format Variadic Args into string */
 	va_start(arg, format);
-	len = vsnprintf(temp, sizeof(temp), format, arg);
+	len = vsnprintf(temp, PRINTF_BUFFER_LEN, format, arg);
 	va_end(arg);
 
 	/* Check to make sure we don't overflow buffer */
-	if (len > sizeof(temp) - 1)
+	if (len > PRINTF_BUFFER_LEN - 1)
 		return -1;
 
 	osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
@@ -37,10 +38,6 @@ void vSerialMonitor(void* pv_params)
 {
 	char* message;
 	osStatus_t status;
-
-	while(1){
-		printf("TEST\n");
-	}
 
 	printf_queue = osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char*), NULL);
 
