@@ -6,7 +6,7 @@ osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name		= "FaultHandler",
 	.stack_size = 128 * 4,
-	//.priority	= (osPriority_t)osPriorityBelowNormal3,
+	.priority	= (osPriority_t)osPriorityISR,
 };
 
 //Function assign a priority and tell the kernel to schedule on boot
