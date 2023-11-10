@@ -156,7 +156,7 @@ int main(void)
   temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
-  fault_handle = osThreadNew(vFaultHandler, NULL);
+  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
 
   //TODO: Get correct ADC/GPIO value
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
