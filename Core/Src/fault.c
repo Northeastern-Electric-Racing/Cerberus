@@ -20,15 +20,15 @@ void vFaultHandler(void* pv_params) {
         
         // process data
         switch (fault_data.severity) {
-        case 'DEFCON1': //Higest(1st) Priority
+        case DEFCON1: //Higest(1st) Priority
             break;
-        case 'DEFCON2': //2nd Highest Priority
+        case DEFCON2: //2nd Highest Priority
             break;
-        case 'DEFCON3': //3rd Highest Priority
+        case DEFCON3: //3rd Highest Priority
             break;
-        case 'DEFCON4': //Slight Above Lowest Priority
+        case DEFCON4: //Slight Above Lowest Priority
             break;
-        case 'DEFCON5': //Lowest Priority
+        case DEFCON5: //Lowest Priority
             break;
         default: //Unable To Identify 'fault_sev_t'
             break;
