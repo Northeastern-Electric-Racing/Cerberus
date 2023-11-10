@@ -35,4 +35,9 @@ typedef struct {
 //  and then expose _that_ to the user
 extern osMessageQueueId_t fault_handle_queue;
 
+/* Defining Fault Hanlder Task */
+void vFaultHandler(void *pv_params);
+extern osThreadId_t fault_handle;
+extern const osThreadAttr_t fault_handle_attributes;
+
 #endif // FAULT_H
