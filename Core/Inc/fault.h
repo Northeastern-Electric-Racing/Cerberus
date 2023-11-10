@@ -38,6 +38,6 @@ extern osMessageQueueId_t fault_handle_queue;
 /* Defining Fault Hanlder Task */
 void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
-const osThreadAttr_t fault_handle_attributes;
+extern const osThreadAttr_t fault_handle_attributes;
 
 #endif // FAULT_H
