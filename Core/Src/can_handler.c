@@ -140,7 +140,7 @@ void vCanDispatch(void* pv_params) {
 	}
 }
 
-void queue_can_msg(can_msg_t msg) {
+int8_t queue_can_msg(can_msg_t msg) {
 	
 	fault_data_t fault_data = {
 		.id = 2, /* this is arbitrary */
