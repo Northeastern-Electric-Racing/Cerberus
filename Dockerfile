@@ -15,7 +15,8 @@ RUN apt-get install -y \
     gdb-multiarch \
     minicom \
     vim \
-    clang-format
+    clang-format \
+    tmux
 
 RUN wget https://builds.renode.io/renode-1.14.0+20231003gitf86ac3cf.linux-portable.tar.gz
 RUN mkdir renode_portable && tar -xvf renode-*.linux-portable.tar.gz -C renode_portable --strip-components=1
