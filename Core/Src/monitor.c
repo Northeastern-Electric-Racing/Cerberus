@@ -33,14 +33,14 @@ void vTempMonitor(void* pv_params)
 
 	if (sht30_init(&temp_sensor)) {
 		fault_data.diag = "Init Failed";
-		osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
+		queue_fault(&fault_data);
 	}
 
 	for (;;) {
 		/* Take measurement */
 		if (sht30_get_temp_humid(&temp_sensor)) {
 			fault_data.diag = "Failed to get temp";
-			osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		/* Run values through LPF of sample size  */
@@ -54,7 +54,7 @@ void vTempMonitor(void* pv_params)
 		memcpy(temp_msg.data, &sensor_data, can_msg_len);
 		if (can_send_message(temp_msg)) {
 			fault_data.diag = "Failed to send CAN message";
-			osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		/* Yield to other tasks */
@@ -143,7 +143,7 @@ void vPedalsMonitor(void* pv_params)
 		memcpy(pedal_msg.data, &sensor_data, can_msg_len);
 		if (can_send_message(pedal_msg)) {
 			fault_data.diag = "Failed to send CAN message";
-			osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		/* Yield to other tasks */
@@ -190,19 +190,19 @@ void vIMUMonitor(void *pv_params)
 	/* Initialize IMU */
 	if (lsm6dso_init(&imu, hi2c1)) {
 		fault_data.diag = "Init Failed";
-		osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+		queue_fault(&fault_data);
 	}
 
 	for(;;) {
 		/* Take measurement */
 		if (lsm6dso_read_accel(&imu)) {
 			fault_data.diag = "Failed to get IMU acceleration";
-			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		if (lsm6dso_read_gyro(&imu)) {
 			fault_data.diag = "Failed to get IMU gyroscope";
-			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		/* Run values through LPF of sample size  */
@@ -226,13 +226,13 @@ void vIMUMonitor(void *pv_params)
 		memcpy(imu_accel_msg.data, &sensor_data, accel_msg_len);
 		if (can_send_message(imu_accel_msg)) {
 			fault_data.diag = "Failed to send CAN message";
-			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+			queue_fault(&fault_data);
 		}
 		
 		memcpy(imu_gyro_msg.data, &sensor_data, gyro_msg_len);
 		if (can_send_message(imu_gyro_msg)) {
 			fault_data.diag = "Failed to send CAN message";
-			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+			queue_fault(&fault_data);
 		}
 
 		/* Yield to other tasks */
