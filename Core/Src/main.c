@@ -56,7 +56,7 @@ osMutexId_t mutex_id;
 osMutexAttr_t mutex;
 
 struct {
-  osMutexAttr_t mut;
+  osMutexId_t mut;
   I2C_HandleTypeDef i2c;
 } mutI2Cbus;
 
@@ -94,8 +94,9 @@ void StartDefaultTask(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void CreateMutex() {
+osMutexId_t CreateMutex() {
     mutex_id = osMutexNew(&mutex);
+  return *mutex_id;
 }
 /* USER CODE END 0 */
 
@@ -115,8 +116,9 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-  mutI2Cbus.mut = mutex;
+  
+  CreateMutex();
+  mutI2Cbus.mut = mutex_id;
   mutI2Cbus.i2c = hi2c1;
 
   /* USER CODE END Init */
@@ -168,9 +170,9 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
+  temp_monitor_handle = osThreadNew(vTempMonitor, &mutI2Cbus, &temp_monitor_attributes); // replace with structs
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
+  imu_monitor_handle = osThreadNew(vIMUMonitor, &mutI2Cbus, &imu_monitor_attributes);
 
   //TODO: Get correct ADC/GPIO value
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
