@@ -96,7 +96,7 @@ void StartDefaultTask(void *argument);
 
 osMutexId_t CreateMutex() {
     mutex_id = osMutexNew(&mutex);
-  return *mutex_id;
+  return mutex_id;
 }
 /* USER CODE END 0 */
 
