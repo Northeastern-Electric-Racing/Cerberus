@@ -31,24 +31,24 @@ void vTempMonitor(void* pv_params)
 	//hi2c1				   = (I2C_HandleTypeDef*)pv_params;
 	//temp_sensor.i2c_handle = hi2c1;
 	
-	osMutexAcquire(pv_params.mutex_id, NULL); // lock
+	osMutexAcquire(pv_params.mut, 0); // lock
 	
 	if (sht30_init(&temp_sensor)) {
 		fault_data.diag = "Init Failed";
 		osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
 	}
 	
-	osMutexRelease(pv_params.mutex_id); // unlock
+	osMutexRelease(pv_params.mut); // unlock
 
 	for (;;) {
-		osMutexAcquire(pv_params.mutex_id, NULL); // lock
+		osMutexAcquire(pv_params.mut, 0); // lock
 
 		/* Take measurement */
 		if (sht30_get_temp_humid(&temp_sensor)) {
 			fault_data.diag = "Failed to get temp";
 			osMessageQueuePut(fault_handle_queue, &fault_data, 0U, 0U);
 		}
-		osMutexRelease(pv_params.mutex_id); // unlock
+		osMutexRelease(pv_params.mut); // unlock
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp_sensor.temp) / num_samples;
@@ -201,7 +201,7 @@ void vIMUMonitor(void *pv_params)
 	}
 
 	for(;;) {
-		osMutexAcquire(pv_params.mutex_id, NULL); // lock
+		osMutexAcquire(pv_params.mut, 0); // lock
 		/* Take measurement */
 		if (lsm6dso_read_accel(&imu)) {
 			fault_data.diag = "Failed to get IMU acceleration";
@@ -212,7 +212,7 @@ void vIMUMonitor(void *pv_params)
 			fault_data.diag = "Failed to get IMU gyroscope";
 			osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
 		}
-		osMutexRelease(pv_params.mutex_id); // unlock
+		osMutexRelease(pv_params.mut); // unlock
 
 		/* Run values through LPF of sample size  */
 		sensor_data.accel_x = (sensor_data.accel_x + imu.accel_data[0])
