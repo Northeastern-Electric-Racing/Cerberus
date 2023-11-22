@@ -1,6 +1,8 @@
 #include "state_machine.h"
 #include "fault.h"
+#include "serial_monitor.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 #define STATE_TRANS_QUEUE_SIZE  16
 
@@ -39,6 +41,8 @@ int queue_func_state(func_state_t new_state)
 		.functional = new_state
 	};
 
+	serial_print("Queued Functional State!\r\n");
+
 	return osMessageQueuePut(state_trans_queue, &queue_state, 0U, 0U);
 }
 
@@ -60,6 +64,8 @@ int queue_drive_state(drive_state_t new_state)
 		.drive = new_state
 	};
 
+	serial_print("Queued Drive State!\r\n");
+
 	return osMessageQueuePut(state_trans_queue, &queue_state, 0U, 0U);
 }
 
@@ -70,15 +76,23 @@ drive_state_t get_drive_state()
 
 void vStateMachineDirector(void* pv_params)
 {
+	cerberus_state.functional = BOOT;
+	cerberus_state.drive = NOT_DRIVING;
+
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 
 	state_t new_state;
+
+	serial_print("State Machine Init!\r\n");
 
 	for (;;) {
 		if (osOK != osMessageQueueGet(state_trans_queue, &new_state, NULL, 50)) {
 			// TODO queue fault, low criticality
 			continue;
 		}
+		serial_print("BRUH\r\n");
+		//serial_print("New State received:\t%d\r\n", new_state.functional);
+		//serial_print("Current state:\t%d\r\n", cerberus_state.functional);
 
 		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) {
 			// TODO queue fault, low criticality
@@ -86,7 +100,7 @@ void vStateMachineDirector(void* pv_params)
 		}
 
 		//transition state via LUT ?
-
+		serial_print("Transitioned State!\r\n");
 		cerberus_state.functional = new_state.functional;
 		cerberus_state.drive = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
 	}

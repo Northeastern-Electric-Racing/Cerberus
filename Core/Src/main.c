@@ -29,6 +29,7 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "serial_monitor.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -179,15 +180,15 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
-  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
+  //temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
+  //watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
+  //imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  //fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   //TODO: Get correct ADC/GPIO value
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
-  route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
-
+  //pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
+  //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
+  //sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -597,8 +598,10 @@ void StartDefaultTask(void *argument)
   uint8_t i = 0;
   for(;;)
   {
-    serial_print("TEST %i\r\n", i);
+    //queue_func_state(READY);
+    serial_print("TEST\r\n");
     i++;
+    osDelay(5000);
   }
   /* USER CODE END 5 */
 }
