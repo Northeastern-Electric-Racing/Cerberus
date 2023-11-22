@@ -89,7 +89,6 @@ void vWatchdogMonitor(void* pv_params)
 	}
 }
 
-
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
@@ -111,21 +110,23 @@ void vPedalsMonitor(void* pv_params)
 		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .line = CAN_LINE_1, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	ADC_HandleTypeDef* hadc1 = (ADC_HandleTypeDef*)pv_params;
+	pedal_params_t* params = (pedal_params_t*)pv_params;
 
-	/* STM has a 12 bit resolution so we can mark each value as uint16 */
 	uint16_t adc_data[4];
 
-    HAL_ADC_Start(hadc1);
+    HAL_ADC_Start(params->accel_adc1);
+	HAL_ADC_Start(params->accel_adc2);
+	HAL_ADC_Start(params->brake_adc);
 
 	for (;;) {
 		/*
 		 * Get the value from the adc at the brake and accelerator
 		 * pin addresses and average them to the sensor data value
 		 */
-        //TODO: This probably will not work. We need to use DMA better
-		HAL_ADC_PollForConversion(hadc1, HAL_MAX_DELAY);
-		memcpy(adc_data, HAL_ADC_GetValue(hadc1), sizeof(adc_data));
+		adc_data[ACCELPIN_1] = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
+		adc_data[ACCELPIN_2] = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
+		adc_data[BRAKEPIN_1] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		adc_data[BRAKEPIN_2] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 
 		sensor_data.acceleratorValue
 			= (sensor_data.acceleratorValue + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
@@ -148,7 +149,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Yield to other tasks */
 		osDelayUntil(delayTime);
-  }
+	}
 }
 
 osThreadId_t imu_monitor_handle;

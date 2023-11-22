@@ -156,6 +156,8 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
+  pedal_params_t pedal_params = {.accel_adc1 = &hadc1, .accel_adc2 = &hadc2, .brake_adc = &hadc3};
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -190,8 +192,7 @@ int main(void)
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  //TODO: Get correct ADC/GPIO value
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
   route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
 
   /* USER CODE END RTOS_THREADS */
