@@ -21,6 +21,10 @@ typedef struct
     ADC_HandleTypeDef *brake_adc;
 } pedal_params_t;
 
+/* Parameters for the pedal monitoring task */
+#define MAX_ADC_VAL_12B 4096
+#define PEDAL_DIFF_THRESH   10
+#define PEDAL_FAULT_TIME    1000 /* ms */
 
 /* Task for Reading in Pedal Inputs (Brakes + Accelerator) */
 void vPedalsMonitor(void *pv_params);

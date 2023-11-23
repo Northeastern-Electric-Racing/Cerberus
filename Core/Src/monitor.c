@@ -8,6 +8,7 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "lsm6dso.h"
+#include "timer.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -103,6 +104,10 @@ void vPedalsMonitor(void* pv_params)
 	const uint16_t delayTime  = 50; /* ms */
 	const uint8_t can_msg_len = 4;	/* bytes */
 
+	nertimer_t diff_timer;
+	nertimer_t sc_timer;
+	nertimer_t oc_timer;
+
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
@@ -128,14 +133,40 @@ void vPedalsMonitor(void* pv_params)
 		adc_data[BRAKEPIN_1] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		adc_data[BRAKEPIN_2] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 
+		/* Evaluate accelerator faults */
+		if (is_timer_expired(&oc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12B) &&
+			!is_timer_active(&oc_timer))
+			start_timer(&oc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&oc_timer);
+		
+		if (is_timer_expired(&sc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
+			!is_timer_active(&sc_timer))
+			start_timer(&sc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&sc_timer);
+
+		if (is_timer_expired(&diff_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+			!is_timer_active(&diff_timer))
+			start_timer(&diff_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&diff_timer);
+
 		sensor_data.acceleratorValue
 			= (sensor_data.acceleratorValue + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
 			  / num_samples;
 		sensor_data.brakeValue
 			= (sensor_data.brakeValue + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
 			  / num_samples;
-
-		// TODO: detect pedal errors
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);

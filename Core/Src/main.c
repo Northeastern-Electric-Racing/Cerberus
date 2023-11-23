@@ -156,8 +156,6 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
-  pedal_params_t pedal_params = {.accel_adc1 = &hadc1, .accel_adc2 = &hadc2, .brake_adc = &hadc3};
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -179,6 +177,8 @@ int main(void)
   onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
   fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
+
+  pedal_params_t pedal_params = {.accel_adc1 = &hadc1, .accel_adc2 = &hadc2, .brake_adc = &hadc3};
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
