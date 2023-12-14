@@ -26,7 +26,7 @@ void vTempMonitor(void* pv_params)
 	sht30_t temp_sensor;
 	I2C_HandleTypeDef* hi2c1;
 	can_msg_t temp_msg
-		= { .id = CANID_TEMP_SENSOR, .len = can_msg_len, .line = CAN_LINE_1, .data = { 0 } };
+		= { .id = CANID_TEMP_SENSOR, .size = can_msg_len, .data = { 0 } };
 
 	hi2c1				   = (I2C_HandleTypeDef*)pv_params;
 	temp_sensor.i2c_handle = hi2c1;
@@ -108,7 +108,7 @@ void vPedalsMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
 	can_msg_t pedal_msg
-		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .line = CAN_LINE_1, .data = { 0 } };
+		= { .id = CANID_PEDAL_SENSOR, .size = can_msg_len, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	ADC_HandleTypeDef* hadc1 = (ADC_HandleTypeDef*)pv_params;
@@ -173,14 +173,12 @@ void vIMUMonitor(void *pv_params)
 	I2C_HandleTypeDef *hi2c1;
 	can_msg_t imu_accel_msg = {
 		.id = CANID_IMU,
-		.len = accel_msg_len,
-		.line = CAN_LINE_1,
+		.size = accel_msg_len,
 		.data = {0}
 	};
 	can_msg_t imu_gyro_msg = {
 		.id = CANID_IMU,
-		.len = gyro_msg_len,
-		.line = CAN_LINE_1,
+		.size = gyro_msg_len,
 		.data = {0}
 	};
 

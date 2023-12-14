@@ -11,7 +11,6 @@
 
 #include "can_handler.h"
 #include "can.h"
-#include "can_config.h"
 #include <stdlib.h>
 #include "fault.h"
 #include <string.h>
@@ -53,6 +52,7 @@ static callback_t getFunction(uint8_t id)
 {
 	int i;
 
+	//TODO: optimization of create algo to more efficiently find handler
 	for (i = 0; i < NUM_CALLBACKS; i++) {
 		if (can_callbacks[i].id == id)
 			return can_callbacks[i].function;
@@ -60,14 +60,16 @@ static callback_t getFunction(uint8_t id)
 	return NULL;
 }
 
-void can1_isr()
+void can1_callback(CAN_HandleTypeDef *hcan)
 {
-	// TODO: Wrap this HAL function into a "get_message" function in the CAN driver
 	CAN_RxHeaderTypeDef rx_header;
+
 	can_msg_t new_msg;
-	new_msg.line = CAN_LINE_1;
-	HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO1, &rx_header, new_msg.data);
-	new_msg.len = rx_header.DLC;
+
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, RxData) != HAL_OK) {
+        
+    }
+	new_msg.size = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
 	/* Publish to Onboard Temp Queue */
@@ -79,10 +81,11 @@ void vRouteCanIncoming(void* pv_params)
 	can_msg_t* message;
 	osStatus_t status;
 	callback_t callback;
+	int err;
 
 	hcan1 = (CAN_HandleTypeDef*)pv_params;
 
-	// TODO: Initialize CAN here? Or at least initialize it somewhere
+	err = can_init(hcan1, can1_callback);
 
 	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
