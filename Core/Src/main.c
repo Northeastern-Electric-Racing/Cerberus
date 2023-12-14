@@ -157,6 +157,14 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  HAL_Delay(500);
+  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  HAL_Delay(500);
+  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  HAL_Delay(500);
+  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -188,14 +196,14 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
-  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
+  //watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   //TODO: Get correct ADC/GPIO value
-  route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
-  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
+  //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
+  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -716,14 +724,13 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  int i = 0;
   /* Infinite loop */
-  uint8_t i = 0;
-  for(;;)
-  {
-    //queue_func_state(READY);
-    serial_print("TEST\r\n");
+  for(;;) {
+    serial_print("Default Task:\t%d\r\n", i);
+    HAL_GPIO_TogglePin(GPIOC, LED_1_Pin); // Toggle on LED2
     i++;
-    osDelay(5000);
+    osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
 }
