@@ -14,7 +14,7 @@ const osThreadAttr_t fault_handle_attributes = {
 int queue_fault(fault_data_t *fault_data)
 {
     if(!fault_handle_queue)
-		return 1;
+		return -1;
 
     osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
 }

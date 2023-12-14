@@ -26,7 +26,7 @@ void vTempMonitor(void* pv_params)
 	sht30_t temp_sensor;
 	I2C_HandleTypeDef* hi2c1;
 	can_msg_t temp_msg
-		= { .id = CANID_TEMP_SENSOR, .size = can_msg_len, .data = { 0 } };
+		= { .id = CANID_TEMP_SENSOR, .len = can_msg_len, .data = { 0 } };
 
 	hi2c1				   = (I2C_HandleTypeDef*)pv_params;
 	temp_sensor.i2c_handle = hi2c1;
@@ -52,7 +52,7 @@ void vTempMonitor(void* pv_params)
 
 		/* Send CAN message */
 		memcpy(temp_msg.data, &sensor_data, can_msg_len);
-		if (can_send_message(temp_msg)) {
+		if (queue_can_msg(temp_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
@@ -108,7 +108,7 @@ void vPedalsMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
 	can_msg_t pedal_msg
-		= { .id = CANID_PEDAL_SENSOR, .size = can_msg_len, .data = { 0 } };
+		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	ADC_HandleTypeDef* hadc1 = (ADC_HandleTypeDef*)pv_params;
@@ -141,7 +141,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Send CAN message */
 		memcpy(pedal_msg.data, &sensor_data, can_msg_len);
-		if (can_send_message(pedal_msg)) {
+		if (queue_can_msg(pedal_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
@@ -173,12 +173,12 @@ void vIMUMonitor(void *pv_params)
 	I2C_HandleTypeDef *hi2c1;
 	can_msg_t imu_accel_msg = {
 		.id = CANID_IMU,
-		.size = accel_msg_len,
+		.len = accel_msg_len,
 		.data = {0}
 	};
 	can_msg_t imu_gyro_msg = {
 		.id = CANID_IMU,
-		.size = gyro_msg_len,
+		.len = gyro_msg_len,
 		.data = {0}
 	};
 
@@ -222,13 +222,13 @@ void vIMUMonitor(void *pv_params)
 
 		/* Send CAN message */
 		memcpy(imu_accel_msg.data, &sensor_data, accel_msg_len);
-		if (can_send_message(imu_accel_msg)) {
+		if (queue_can_msg(imu_accel_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 		
 		memcpy(imu_gyro_msg.data, &sensor_data, gyro_msg_len);
-		if (can_send_message(imu_gyro_msg)) {
+		if (queue_can_msg(imu_gyro_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
