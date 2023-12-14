@@ -8,6 +8,7 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "lsm6dso.h"
+#include "timer.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -89,7 +90,6 @@ void vWatchdogMonitor(void* pv_params)
 	}
 }
 
-
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
@@ -104,6 +104,10 @@ void vPedalsMonitor(void* pv_params)
 	const uint16_t delayTime  = 50; /* ms */
 	const uint8_t can_msg_len = 4;	/* bytes */
 
+	nertimer_t diff_timer;
+	nertimer_t sc_timer;
+	nertimer_t oc_timer;
+
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
@@ -111,21 +115,51 @@ void vPedalsMonitor(void* pv_params)
 		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .line = CAN_LINE_1, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	ADC_HandleTypeDef* hadc1 = (ADC_HandleTypeDef*)pv_params;
+	pedal_params_t* params = (pedal_params_t*)pv_params;
 
-	/* STM has a 12 bit resolution so we can mark each value as uint16 */
 	uint16_t adc_data[4];
 
-    HAL_ADC_Start(hadc1);
+    HAL_ADC_Start(params->accel_adc1);
+	HAL_ADC_Start(params->accel_adc2);
+	HAL_ADC_Start(params->brake_adc);
 
 	for (;;) {
 		/*
 		 * Get the value from the adc at the brake and accelerator
 		 * pin addresses and average them to the sensor data value
 		 */
-        //TODO: This probably will not work. We need to use DMA better
-		HAL_ADC_PollForConversion(hadc1, HAL_MAX_DELAY);
-		memcpy(adc_data, HAL_ADC_GetValue(hadc1), sizeof(adc_data));
+		adc_data[ACCELPIN_1] = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
+		adc_data[ACCELPIN_2] = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
+		adc_data[BRAKEPIN_1] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		adc_data[BRAKEPIN_2] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+
+		/* Evaluate accelerator faults */
+		if (is_timer_expired(&oc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12B) &&
+			!is_timer_active(&oc_timer))
+			start_timer(&oc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&oc_timer);
+		
+		if (is_timer_expired(&sc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
+			!is_timer_active(&sc_timer))
+			start_timer(&sc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&sc_timer);
+
+		if (is_timer_expired(&diff_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+			!is_timer_active(&diff_timer))
+			start_timer(&diff_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&diff_timer);
 
 		sensor_data.acceleratorValue
 			= (sensor_data.acceleratorValue + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
@@ -133,8 +167,6 @@ void vPedalsMonitor(void* pv_params)
 		sensor_data.brakeValue
 			= (sensor_data.brakeValue + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
 			  / num_samples;
-
-		// TODO: detect pedal errors
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
@@ -148,7 +180,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Yield to other tasks */
 		osDelayUntil(delayTime);
-  }
+	}
 }
 
 osThreadId_t imu_monitor_handle;
