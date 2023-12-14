@@ -4,8 +4,6 @@
 #include "cmsis_os.h"
 #include "cerberus_conf.h"
 
-#define FAULT_HANDLE_QUEUE_SIZE 16
-
 typedef enum {
     DEFCON1 = 1,
     DEFCON2,
@@ -21,19 +19,14 @@ typedef enum {
     IMU_FAULT           = 0x4,
 } fault_code_t;
 
-//TODO: Make this queue not accessible to users,
-//  Make this into a wrapped function for "trigger_fault"
-//  and then expose _that_ to the user
 typedef struct {
     fault_code_t id;
     fault_sev_t severity;
     char *diag;
 } fault_data_t;
 
-//TODO: Make this queue not accessible to users,
-//  Make this into a wrapped function for "trigger_fault"
-//  and then expose _that_ to the user
-extern osMessageQueueId_t fault_handle_queue;
+/* Function to queue a fault */
+int queue_fault(fault_data_t *fault_data);
 
 /* Defining Fault Hanlder Task */
 void vFaultHandler(void *pv_params);
