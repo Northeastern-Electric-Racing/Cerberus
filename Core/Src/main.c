@@ -200,8 +200,7 @@ int main(void)
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  //TODO: Get correct ADC/GPIO value
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &hadc1, &pedals_monitor_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
   //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
 
