@@ -131,7 +131,7 @@ void vCanDispatch(void* pv_params) {
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 50)) {
 			if (can_send_message(msg_from_queue)) {
 				fault_data.diag = "Failed to send CAN message";
-				osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
+				queue_fault(&fault_data);
 			}
 		}
 
@@ -140,7 +140,8 @@ void vCanDispatch(void* pv_params) {
 	}
 }
 
-int8_t queue_can_msg(can_msg_t msg) {
+int8_t queue_can_msg(can_msg_t msg) 
+{
 	
 	fault_data_t fault_data = {
 		.id = 2, /* this is arbitrary */
@@ -149,13 +150,6 @@ int8_t queue_can_msg(can_msg_t msg) {
 
 	if(!can_outbound_queue) {
 		return 1;
-	}
 
-	if(osOK == osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U)) {
-		return 0;
-	}
-
-	fault_data.diag = "Failed to put CAN message in queue";
-	osMessageQueuePut(fault_handle_queue, &fault_data , 0U, 0U);
-	return 1;
+	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
 }
