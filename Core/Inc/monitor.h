@@ -2,6 +2,7 @@
 #define CERBERUS_MONITOR_H
 
 #include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
 
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void *pv_params);
@@ -12,6 +13,18 @@ extern const osThreadAttr_t temp_monitor_attributes;
 void vWatchdogMonitor(void *pv_params);
 extern osThreadId_t watchdog_monitor_handle;
 extern const osThreadAttr_t watchdog_monitor_attributes;
+
+typedef struct
+{
+    ADC_HandleTypeDef *accel_adc1;
+    ADC_HandleTypeDef *accel_adc2;
+    ADC_HandleTypeDef *brake_adc;
+} pedal_params_t;
+
+/* Parameters for the pedal monitoring task */
+#define MAX_ADC_VAL_12B 4096
+#define PEDAL_DIFF_THRESH   10
+#define PEDAL_FAULT_TIME    1000 /* ms */
 
 /* Task for Reading in Pedal Inputs (Brakes + Accelerator) */
 void vPedalsMonitor(void *pv_params);
