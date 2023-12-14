@@ -29,6 +29,7 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "serial_monitor.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -202,6 +203,7 @@ int main(void)
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
   //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
