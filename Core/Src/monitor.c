@@ -90,7 +90,7 @@ void vWatchdogMonitor(void* pv_params)
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
-	.stack_size = 128 * 8,
+	.stack_size = 128 * 12,
 	.priority	= (osPriority_t)osPriorityHigh,
 };
 
@@ -116,9 +116,9 @@ void vPedalsMonitor(void* pv_params)
 
 	uint16_t adc_data[4];
 
-    HAL_ADC_Start(params->accel_adc1);
-	HAL_ADC_Start(params->accel_adc2);
-	HAL_ADC_Start(params->brake_adc);
+    //HAL_ADC_Start(params->accel_adc1);
+	//HAL_ADC_Start(params->accel_adc2);
+	//HAL_ADC_Start(params->brake_adc);
 
 	for (;;) {
 		serial_print("Pedals Task\r\n");
@@ -126,9 +126,38 @@ void vPedalsMonitor(void* pv_params)
 		 * Get the value from the adc at the brake and accelerator
 		 * pin addresses and average them to the sensor data value
 		 */
-        //TODO: This probably will not work. We need to use DMA better
-		//HAL_ADC_PollForConversion(hadc1, HAL_MAX_DELAY);
-		//memcpy(adc_data, HAL_ADC_GetValue(hadc1), sizeof(adc_data));
+		//adc_data[ACCELPIN_1] = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
+		//adc_data[ACCELPIN_2] = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
+		//adc_data[BRAKEPIN_1] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		//adc_data[BRAKEPIN_2] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+
+		/* Evaluate accelerator faults */
+		//if (is_timer_expired(&oc_timer))
+			//todo queue fault
+		//	continue;
+		//else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12B) &&
+		//	!is_timer_active(&oc_timer))
+		//	start_timer(&oc_timer, PEDAL_FAULT_TIME);
+		//else
+		//	cancel_timer(&oc_timer);
+		
+		//if (is_timer_expired(&sc_timer))
+			//todo queue fault
+		//	continue;
+		//else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
+		//	!is_timer_active(&sc_timer))
+		//	start_timer(&sc_timer, PEDAL_FAULT_TIME);
+		//else
+		//	cancel_timer(&sc_timer);
+
+		//if (is_timer_expired(&diff_timer))
+			//todo queue fault
+		//	continue;
+		//else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+		//	!is_timer_active(&diff_timer))
+		//	start_timer(&diff_timer, PEDAL_FAULT_TIME);
+		//else
+		//	cancel_timer(&diff_timer);
 
 		//sensor_data.acceleratorValue
 		//	= (sensor_data.acceleratorValue + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
