@@ -29,6 +29,7 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "serial_monitor.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -191,8 +192,10 @@ int main(void)
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
+  //TODO: Get correct ADC/GPIO value
   route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -717,8 +720,10 @@ void StartDefaultTask(void *argument)
   uint8_t i = 0;
   for(;;)
   {
-    serial_print("TEST %i\r\n", i);
+    //queue_func_state(READY);
+    serial_print("TEST\r\n");
     i++;
+    osDelay(5000);
   }
   /* USER CODE END 5 */
 }
