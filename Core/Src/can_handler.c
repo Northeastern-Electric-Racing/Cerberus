@@ -127,8 +127,7 @@ void vRouteCanIncoming(void* pv_params)
 	}
 }
 
-/* Outbound Task-specific Info */
-static osMessageQueueId_t can_outbound_queue = 0;
+static osMessageQueueId_t can_outbound_queue;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
