@@ -17,6 +17,8 @@ typedef enum {
     ONBOARD_TEMP_FAULT  = 0x1,
     ONBOARD_PEDAL_FAULT = 0x2,
     IMU_FAULT           = 0x4,
+    CAN_DISPATCH_FAULT  = 0x8,
+    CAN_ROUTING_FAULT   = 0x10,
 } fault_code_t;
 
 typedef struct {
