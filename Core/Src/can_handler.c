@@ -19,6 +19,9 @@
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 #define NUM_INBOUND_CAN_IDS 1 /* Update when adding new callbacks */
 
+/* Queue for Inbound CAN Messages */
+static osMessageQueueId_t can_inbound_queue;
+
 /* Relevant Info for Initializing CAN 1 */
 static can_t *can1;
 
@@ -26,7 +29,6 @@ static const uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
 	//CANID_X,
 	NULL
 };
-
 
 /* Relevant Info for Cerberus CAN LUT */
 typedef void (*callback_t)(can_msg_t);
@@ -81,7 +83,6 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 }
 
 /* Inbound Task-specific Info */
-static osMessageQueueId_t can_inbound_queue;
 osThreadId_t route_can_incoming_handle;
 const osThreadAttr_t route_can_incoming_attributes = {
 	.name = "RouteCanIncoming",
@@ -101,7 +102,7 @@ void vRouteCanIncoming(void* pv_params)
 
 	can1->hcan = (CAN_HandleTypeDef *)pv_params;
 
-	if (can_init(can1, can1_callback)) {
+	if (can_init(can1)) {
 		fault_data.diag = "Failed to init CAN handler";
 		queue_fault(&fault_data);
 	}
