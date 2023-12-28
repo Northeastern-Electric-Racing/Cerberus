@@ -161,7 +161,7 @@ void vCanDispatch(void* pv_params) {
 	}
 }
 
-int queue_can_msg(can_msg_t msg) 
+int8_t queue_can_msg(can_msg_t msg) 
 {
 	if(!can_outbound_queue)
 		return -1;
