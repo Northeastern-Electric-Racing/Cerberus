@@ -50,6 +50,7 @@ Core/Src/monitor.c \
 Core/Src/fault.c \
 Core/Src/can_handler.c \
 Core/Src/serial_monitor.c \
+Core/Src/dti.c \
 Core/Src/state_machine.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
