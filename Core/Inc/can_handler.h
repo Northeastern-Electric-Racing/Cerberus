@@ -25,6 +25,6 @@ void vCanDispatch(void* pv_params);
 extern osThreadId_t can_dispatch_handle;
 extern const osThreadAttr_t can_dispatch_attributes;
 
-int queue_can_msg(can_msg_t msg);
+int8_t queue_can_msg(can_msg_t msg);
 
 #endif
