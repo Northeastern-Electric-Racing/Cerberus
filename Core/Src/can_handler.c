@@ -113,7 +113,7 @@ void vRouteCanIncoming(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 0U);
 		if (status != osOK) {
-			fault_data.diag = "Init Failed";
+			fault_data.diag = "CAN Router Init Failed";
 			queue_fault(&fault_data);
 		} else {
 			callback = getFunction(message->id);
