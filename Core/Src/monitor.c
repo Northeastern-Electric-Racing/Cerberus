@@ -33,14 +33,14 @@ void vTempMonitor(void* pv_params)
 	hi2c1				   = (I2C_HandleTypeDef*)pv_params;
 	temp_sensor.i2c_handle = hi2c1;
 
-	if (sht30_init(&temp_sensor)) {
-		fault_data.diag = "Init Failed";
-		queue_fault(&fault_data);
-	}
+	//if (sht30_init(&temp_sensor)) {
+	//	fault_data.diag = "Temp Monitor Init Failed";
+	//	queue_fault(&fault_data);
+	//}
 
 	for (;;) {
 		/* Take measurement */
-		serial_print("Temp Sensor Task\r\n");
+		//serial_print("Temp Sensor Task\r\n");
 		//if (sht30_get_temp_humid(&temp_sensor)) {
 		//	fault_data.diag = "Failed to get temp";
 		//	queue_fault(&fault_data);
@@ -69,7 +69,7 @@ osThreadId_t watchdog_monitor_handle;
 const osThreadAttr_t watchdog_monitor_attributes = {
 	.name		= "WatchdogMonitor",
 	.stack_size = 128 * 4,
-	.priority	= (osPriority_t)osPriorityNormal1,
+	.priority	= (osPriority_t)osPriorityNormal,
 };
 
 void vWatchdogMonitor(void* pv_params)
@@ -98,7 +98,8 @@ void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
-	const uint16_t delayTime  = 2; /* ms */
+	const uint16_t delay_time  = 15; /* ms */
+	const uint16_t adc_sample_time = 2; /* ms */
 	const uint8_t can_msg_len = 4;	/* bytes */
 
 	nertimer_t diff_timer;
@@ -116,20 +117,40 @@ void vPedalsMonitor(void* pv_params)
 
 	uint16_t adc_data[4];
 
-    //HAL_ADC_Start(params->accel_adc1);
-	//HAL_ADC_Start(params->accel_adc2);
-	//HAL_ADC_Start(params->brake_adc);
-
 	for (;;) {
 		serial_print("Pedals Task\r\n");
+
 		/*
 		 * Get the value from the adc at the brake and accelerator
 		 * pin addresses and average them to the sensor data value
 		 */
-		//adc_data[ACCELPIN_1] = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
-		//adc_data[ACCELPIN_2] = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
-		//adc_data[BRAKEPIN_1] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
-		//adc_data[BRAKEPIN_2] = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		HAL_ADC_Start(params->accel_adc1);
+		HAL_ADC_Start(params->accel_adc2);
+		HAL_ADC_Start(params->brake_adc);
+
+		/* Yield to other tasks */
+		osDelay(delay_time);
+
+		//uint32_t adc_err;
+
+		//adc_errs = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
+		//adc_err <<= 2;
+
+		HAL_StatusTypeDef err = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
+		if (!err)
+		  serial_print("Accel 1: %d\r\n", HAL_ADC_GetValue(params->accel_adc1));
+
+		err = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
+		if (!err)
+		  serial_print("Accel 2: %d\r\n", HAL_ADC_GetValue(params->accel_adc2));
+		
+		err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		if (!err)
+		  serial_print("Brake 1: %d\r\n", HAL_ADC_GetValue(params->brake_adc));
+
+		//err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
+		//if (!err)
+		  //serial_print("Brake 2: %d\r\n", HAL_ADC_GetValue(params->brake_adc));
 
 		/* Evaluate accelerator faults */
 		//if (is_timer_expired(&oc_timer))
@@ -167,7 +188,7 @@ void vPedalsMonitor(void* pv_params)
 		//	  / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
-		//osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
+		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
 		/* Send CAN message */
 		//memcpy(pedal_msg.data, &sensor_data, can_msg_len);
@@ -175,9 +196,6 @@ void vPedalsMonitor(void* pv_params)
 		//	fault_data.diag = "Failed to send CAN message";
 		//	queue_fault(&fault_data);
 		//}
-
-		/* Yield to other tasks */
-		osDelay(delayTime);
   }
 }
 
@@ -215,13 +233,13 @@ void vIMUMonitor(void *pv_params)
 	imu.i2c_handle = hi2c1;
 
 	/* Initialize IMU */
-	if (lsm6dso_init(&imu, hi2c1)) {
-		fault_data.diag = "Init Failed";
-		queue_fault(&fault_data);
-	}
+	//if (lsm6dso_init(&imu, hi2c1)) {
+	//	fault_data.diag = "IMU Monitor Init Failed";
+	//	queue_fault(&fault_data);
+	//}
 
 	for(;;) {
-		serial_print("IMU Task\r\n");
+		//serial_print("IMU Task\r\n");
 		/* Take measurement */
 		//if (lsm6dso_read_accel(&imu)) {
 		//	fault_data.diag = "Failed to get IMU acceleration";
