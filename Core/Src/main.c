@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "sht30.h"
+#include "lsm6dso.h"
 #include "monitor.h"
 #include "queues.h"
 #include "fault.h"
@@ -186,7 +187,12 @@ int main(void)
   onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
 
-  pedal_params_t pedal_params = {.accel_adc1 = &hadc1, .accel_adc2 = &hadc2, .brake_adc = &hadc3};
+  // A bit sloppy since I don't free this, but it will be allocated for lifetime
+  pedal_params_t *pedal_params = malloc(sizeof(pedal_params_t));
+  pedal_params->accel_adc1 = &hadc1;
+  pedal_params->accel_adc2 = &hadc2;
+  pedal_params->brake_adc = &hadc3;
+
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
@@ -195,15 +201,15 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
-  //watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
+  //temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
+  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
+  //imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, &pedal_params, &pedals_monitor_attributes);
+  //fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, pedal_params, &pedals_monitor_attributes);
   //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
-  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  //sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -725,9 +731,29 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   int i = 0;
+  uint8_t data;
+  HAL_StatusTypeDef err;
   /* Infinite loop */
   for(;;) {
-    serial_print("Default Task:\t%d\r\n", i);
+    /* Testing getting data from I2C devices */
+    //serial_print("Register Address\tContents\r\n");
+    //serial_print("----------------\t--------\r\n");
+    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
+      //uint8_t reg = 0x0F;
+      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
+      //  if (err)
+      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
+      //  else
+      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
+    //}
+    
+    /* Basics of manually getting ADC reading (no DMA) */
+    //HAL_ADC_Start(&hadc1);
+    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    //if (!err)
+    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
+      
+    /* Toggle LED at certain frequency */
     HAL_GPIO_TogglePin(GPIOC, LED_1_Pin); // Toggle on LED2
     i++;
     osDelay(YELLOW_LED_BLINK_DELAY);
