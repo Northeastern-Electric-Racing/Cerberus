@@ -8,7 +8,7 @@
 #define BATBOXFAN_CTRL 		0x03
 #define TSMS_CTRL 			0x04
 #define SMBALERT	 		0x05
-#define MUTEX_TIMEOUT       10  /* ms */
+#define MUTEX_TIMEOUT       osWaitForever  /* ms */
 
 static osMutexAttr_t pdu_mutex_attributes;
 
@@ -53,7 +53,7 @@ int8_t write_pump(pdu_t *pdu, bool status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, osWaitForever);
     if (stat)
         return stat;
 
@@ -68,7 +68,7 @@ int8_t write_fan_radiator(pdu_t *pdu, bool status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
         
@@ -83,7 +83,7 @@ int8_t write_brakelight(pdu_t *pdu, bool status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
         
@@ -98,7 +98,7 @@ int8_t write_fan_battbox(pdu_t *pdu, bool status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
         
@@ -113,7 +113,7 @@ int8_t read_fuse(pdu_t *pdu, fuse_t fuse, bool *status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
     
@@ -129,7 +129,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
     
@@ -144,7 +144,7 @@ int8_t read_shutdown(pdu_t *pdu, shutdown_stage_t stage, bool *status)
     if (!pdu)
         return -1;
 
-    osStatus_t stat = osMutexAcquire(pdu->mutex, 10);
+    osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
     if (stat)
         return stat;
     
