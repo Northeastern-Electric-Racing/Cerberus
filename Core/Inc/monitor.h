@@ -41,4 +41,9 @@ void vFusingMonitor(void *pv_params);
 extern osThreadId_t fusing_monitor_handle;
 extern const osThreadAttr_t fusing_monitor_attributes;
 
+/* Task for Monitoring the Shutdown Loop */
+void vShutdownMonitor(void *pv_params);
+extern osThreadId_t shutdown_monitor_handle;
+extern const osThreadAttr_t shutdown_monitor_attributes;
+
 #endif // MONITOR_H

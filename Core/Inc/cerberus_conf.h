@@ -4,6 +4,7 @@
 #define IMU_SAMPLE_DELAY        50  /* ms */
 #define PEDALS_SAMPLE_DELAY     5   /* ms */
 #define FUSES_SAMPLE_DELAY      200 /* ms */
+#define SHUTDOWN_MONITOR_DELAY  200 /* ms */
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
 #define CAN_DISPATCH_DELAY
@@ -45,3 +46,4 @@
 #define CANID_OUTBOUND_MSG 0xA55
 #define CANID_TORQUE_MSG 0xBA115
 #define CANID_FUSE  0x111
+#define CANID_SHUTDOWN_LOOP 0x123
