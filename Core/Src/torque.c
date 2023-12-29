@@ -9,52 +9,60 @@
  *
  */
 
+#include <assert.h>
 #include "can_handler.h"
 #include "queues.h"
 #include "cerberus_conf.h"
+#include "dti.h"
 
-#define max_torque 10
-#define max_pedal_val 2      //upper bound of pedal range
-#define min_pedal_val 69     //minimum pedal value at which the car should accelerate
+#define MAX_TORQUE		10 /* Nm */
 
-osThreadId_t send_torque_handle;
-const osThreadAttr_t send_torque_handle_attributes = {
+//TODO: Might want to make these more dynamic to account for MechE tuning
+#define MIN_PEDAL_VAL	2 /* Raw ADC */
+#define MAX_PEDAL_VAL	2 /* Raw ADC */
+
+/* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
+#define MIN_COMMAND_FREQ	60 /* Hz */
+#define MAX_COMMAND_DELAY	1000 / MIN_COMMAND_FREQ /* ms */
+
+osThreadId_t torque_calc_handle;
+const osThreadAttr_t torque_calc_attributes = {
 	.name = "SendTorque",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityAboveNormal4
 };
 
-void vSendTorque(void* pv_params) {
-    
-	const uint16_t delayTime  = 50; /* ms */
-	const uint8_t can_msg_len = 4;	/* bytes */
+void vCalcTorque(void* pv_params) {
 
-	can_msg_t torque_msg = {
-		.id = CANID_TORQUE_MSG,
-		.line = CAN_LINE_1,
-		.len = can_msg_len,
-		.data = {0}
-	};
+	const uint16_t delay_time  = 5; /* ms */
+
+	/* End application if we try to update motor at freq below this value */
+	assert(delay_time < MAX_COMMAND_DELAY);
 
 	pedals_t pedal_data;
+	uint16_t torque;
+	osStatus_t stat;
+	dti_t mc;
 
-	while (69 < 420) {
+	dti_init(&mc);
 
-		osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, 0U);
-		uint16_t accel = pedal_data.acceleratorValue;
-		
-		uint16_t torque;
-		if (accel > min_pedal_val) {
-			torque = (max_torque / max_pedal_val) * accel - min_pedal_val;
-		} else {
-			torque = 0;
+	for (;;) {
+		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
+
+		/* If we receive a new message within the time frame, calc new torque */
+		if (stat == osOK) {
+			// TODO: Add state based torque calculation
+
+			uint16_t accel = pedal_data.accelerator_value;
+			
+			if (accel < MIN_PEDAL_VAL)
+				torque = 0;
+			else
+				/* Linear scale of torque */
+				torque = (MAX_TORQUE / MAX_PEDAL_VAL) * accel - MIN_PEDAL_VAL;
 		}
-		
-		memcpy(torque_msg.data, &torque, can_msg_len);
 
-		// TODO: Use actual motor interface
-		queue_can_msg(torque_msg);
-
-		osDelayUntil(delayTime);
+		/* Send whatever torque command we have on record */
+		//dti_set_torque(torque);
 	}
 }

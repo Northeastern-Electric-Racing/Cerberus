@@ -14,8 +14,8 @@
 
 #include "cmsis_os.h"
 
-void vSendTorque(void* pv_params);
-extern osThreadId_t send_torque_handle;
-extern const osThreadAttr_t  send_torque_handle_attributes;
+void vCalcTorque(void* pv_params);
+extern osThreadId_t torque_calc_handle;
+extern const osThreadAttr_t  torque_calc_attributes;
 
 #endif
