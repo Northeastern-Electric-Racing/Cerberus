@@ -63,6 +63,6 @@ void vCalcTorque(void* pv_params) {
 		}
 
 		/* Send whatever torque command we have on record */
-		//dti_set_torque(torque);
+		dti_set_torque(torque);
 	}
 }

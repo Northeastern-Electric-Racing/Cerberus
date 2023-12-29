@@ -23,7 +23,7 @@
 static osMessageQueueId_t can_inbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
-static can_t *can1;
+static can_t can1;
 
 static const uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
 	//CANID_X,
@@ -96,13 +96,13 @@ void vRouteCanIncoming(void* pv_params)
 	osStatus_t status;
 	callback_t callback;
 	fault_data_t fault_data = { .id = CAN_ROUTING_FAULT, .severity = DEFCON2 };
-	can1->callback = can1_callback;
-	can1->id_list = id_list;
-	can1->id_list_len = NUM_INBOUND_CAN_IDS;
+	can1.callback = can1_callback;
+	can1.id_list = id_list;
+	can1.id_list_len = NUM_INBOUND_CAN_IDS;
 
-	can1->hcan = (CAN_HandleTypeDef *)pv_params;
+	can1.hcan = (CAN_HandleTypeDef *)pv_params;
 
-	if (can_init(can1)) {
+	if (can_init(&can1)) {
 		fault_data.diag = "Failed to init CAN handler";
 		queue_fault(&fault_data);
 	}
@@ -111,11 +111,8 @@ void vRouteCanIncoming(void* pv_params)
 
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 0U);
-		if (status != osOK) {
-			fault_data.diag = "CAN Router Init Failed";
-			queue_fault(&fault_data);
-		} else {
+		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 10);
+		if (status == osOK){
 			callback = getFunction(message->id);
 			if (callback == NULL) {
 				fault_data.diag = "No callback found";
@@ -124,6 +121,9 @@ void vRouteCanIncoming(void* pv_params)
 				callback(*message);
 			}
 		}
+
+		/* Yield to other tasks */
+		osThreadYield();
 	}
 }
 
@@ -135,9 +135,9 @@ const osThreadAttr_t can_dispatch_attributes = {
 	.priority = (osPriority_t) osPriorityAboveNormal4,
 };
 
-void vCanDispatch(void* pv_params) {
-
-	const uint16_t can_dispatch_delay = 100; //ms
+void vCanDispatch(void* pv_params)
+{
+	const uint16_t can_dispatch_delay = 1; //ms
 	fault_data_t fault_data = {
 		.id = CAN_DISPATCH_FAULT,
 		.severity = DEFCON1
@@ -147,17 +147,24 @@ void vCanDispatch(void* pv_params) {
 
 	can_msg_t msg_from_queue;
 
+	HAL_StatusTypeDef msg_status;
+
 	for(;;) {
 		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 50)) {
-			if (can_send_msg(can1, &msg_from_queue)) {
+		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 1)) {
+			msg_status = can_send_msg(&can1, &msg_from_queue);
+			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
+			}
+			else if (msg_status == HAL_BUSY) {
+				//fault_data.diag = "Outbound mailbox full!";
+				//queue_fault(&fault_data);
 			}
 		}
 
 		/* Yield to other tasks */
-		osDelayUntil(can_dispatch_delay);
+		osThreadYield();
 	}
 }
 
