@@ -40,7 +40,7 @@ void vTempMonitor(void* pv_params)
 
 	for (;;) {
 		/* Take measurement */
-		//serial_print("Temp Sensor Task\r\n");
+		serial_print("Temp Sensor Task\r\n");
 		//if (sht30_get_temp_humid(&temp_sensor)) {
 		//	fault_data.diag = "Failed to get temp";
 		//	queue_fault(&fault_data);
@@ -98,7 +98,7 @@ void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
-	const uint16_t delay_time  = 15; /* ms */
+	const uint16_t delay_time  = 5; /* ms */
 	const uint16_t adc_sample_time = 2; /* ms */
 	const uint8_t can_msg_len = 4;	/* bytes */
 
@@ -117,9 +117,10 @@ void vPedalsMonitor(void* pv_params)
 
 	uint16_t adc_data[4];
 
-	for (;;) {
-		serial_print("Pedals Task\r\n");
+	uint32_t curr_tick = HAL_GetTick();
 
+	for (;;) {
+		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
 		/*
 		 * Get the value from the adc at the brake and accelerator
 		 * pin addresses and average them to the sensor data value
@@ -131,22 +132,17 @@ void vPedalsMonitor(void* pv_params)
 		/* Yield to other tasks */
 		osDelay(delay_time);
 
-		//uint32_t adc_err;
-
-		//adc_errs = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
-		//adc_err <<= 2;
-
 		HAL_StatusTypeDef err = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
 		if (!err)
-		  serial_print("Accel 1: %d\r\n", HAL_ADC_GetValue(params->accel_adc1));
+			HAL_ADC_GetValue(params->accel_adc1);
 
 		err = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
 		if (!err)
-		  serial_print("Accel 2: %d\r\n", HAL_ADC_GetValue(params->accel_adc2));
+			HAL_ADC_GetValue(params->accel_adc2);
 		
 		err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		if (!err)
-		  serial_print("Brake 1: %d\r\n", HAL_ADC_GetValue(params->brake_adc));
+			HAL_ADC_GetValue(params->brake_adc);
 
 		//err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		//if (!err)
@@ -239,7 +235,7 @@ void vIMUMonitor(void *pv_params)
 	//}
 
 	for(;;) {
-		//serial_print("IMU Task\r\n");
+		serial_print("IMU Task\r\n");
 		/* Take measurement */
 		//if (lsm6dso_read_accel(&imu)) {
 		//	fault_data.diag = "Failed to get IMU acceleration";
