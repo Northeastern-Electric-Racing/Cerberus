@@ -29,7 +29,7 @@ void vFaultHandler(void* pv_params)
 
 	for(;;) {
         /* Wait until a message is in the queue, send messages when they are in the queue */
-        status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, 0U);
+        status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, 50);
         if (status == osOK) {
             serial_print("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
             switch (fault_data.severity) {
@@ -47,6 +47,8 @@ void vFaultHandler(void* pv_params)
                     break;
             }
         }
-        osDelay(1);
+        
+        /* Yield to other tasks */
+        osThreadYield();
     }
 }

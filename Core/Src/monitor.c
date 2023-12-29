@@ -21,7 +21,7 @@ const osThreadAttr_t temp_monitor_attributes = {
 void vTempMonitor(void* pv_params)
 {
 	const uint8_t num_samples				= 10;
-	const uint16_t temp_sensor_sample_delay = 200; /* ms */
+	const uint16_t temp_sensor_sample_delay = TEMP_SENS_SAMPLE_DELAY;
 	const uint8_t can_msg_len				= 4;   /* bytes */
 	static onboard_temp_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
@@ -40,7 +40,7 @@ void vTempMonitor(void* pv_params)
 
 	for (;;) {
 		/* Take measurement */
-		serial_print("Temp Sensor Task\r\n");
+		//serial_print("Temp Sensor Task\r\n");
 		//if (sht30_get_temp_humid(&temp_sensor)) {
 		//	fault_data.diag = "Failed to get temp";
 		//	queue_fault(&fault_data);
@@ -98,7 +98,7 @@ void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
-	const uint16_t delay_time  = 5; /* ms */
+	const uint16_t delay_time  = PEDALS_SAMPLE_DELAY;
 	const uint16_t adc_sample_time = 2; /* ms */
 	const uint8_t can_msg_len = 4;	/* bytes */
 
@@ -205,7 +205,7 @@ const osThreadAttr_t imu_monitor_attributes = {
 void vIMUMonitor(void *pv_params)
 {
 	const uint8_t num_samples = 10;
-	const uint16_t imu_sample_delay = 50; /* ms */
+	const uint16_t imu_sample_delay = IMU_SAMPLE_DELAY;
 	const uint8_t accel_msg_len = 6; /* bytes */
 	const uint8_t gyro_msg_len = 6; /* bytes */
 	static imu_data_t sensor_data;
@@ -235,7 +235,7 @@ void vIMUMonitor(void *pv_params)
 	//}
 
 	for(;;) {
-		serial_print("IMU Task\r\n");
+		//serial_print("IMU Task\r\n");
 		/* Take measurement */
 		//if (lsm6dso_read_accel(&imu)) {
 		//	fault_data.diag = "Failed to get IMU acceleration";
