@@ -17,20 +17,28 @@ const osThreadAttr_t serial_monitor_attributes;
 int serial_print(const char* format, ...)
 {
 	va_list arg;
-	char temp[PRINTF_BUFFER_LEN];
-	size_t len;
-	char* buffer = temp;
+	char *buffer = malloc(sizeof(char) * PRINTF_BUFFER_LEN);
+	if (buffer == NULL)
+		return -1;
 
 	/* Format Variadic Args into string */
 	va_start(arg, format);
-	len = vsnprintf(temp, PRINTF_BUFFER_LEN, format, arg);
+	size_t len = vsnprintf(buffer, PRINTF_BUFFER_LEN, format, arg);
 	va_end(arg);
 
 	/* Check to make sure we don't overflow buffer */
-	if (len > PRINTF_BUFFER_LEN - 1)
-		return -1;
+	if (len > PRINTF_BUFFER_LEN - 1) {
+		free(buffer);
+		return -2;
+	}
 
-	osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
+	/* If string can't be queued */
+	osStatus_t stat = osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
+	if (stat) {
+		free(buffer);
+		return -3;
+	}
+
 	return 0;
 }
 
@@ -48,6 +56,7 @@ void vSerialMonitor(void* pv_params)
 			// TODO: Trigger fault ?
 		} else {
 			printf(message);
+			free(message);
 		}
 	}
 }

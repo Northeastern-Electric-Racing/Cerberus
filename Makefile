@@ -51,6 +51,9 @@ Core/Src/fault.c \
 Core/Src/can_handler.c \
 Core/Src/serial_monitor.c \
 Core/Src/pdu.c \
+Core/Src/dti.c \
+Core/Src/state_machine.c \
+Core/Src/torque.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
@@ -74,6 +77,7 @@ Drivers/Embedded-Base/general/src/lsm6dso.c \
 Drivers/Embedded-Base/general/src/sht30.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/pi4ioe.c \
+Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
@@ -151,6 +155,7 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/Embedded-Base/general/include \
 -IDrivers/Embedded-Base/platforms/stm32f405/include \
+-IDrivers/Embedded-Base/middleware/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
