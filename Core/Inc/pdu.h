@@ -29,15 +29,16 @@ int8_t read_fuse_lvbox(pdu_t *pdu);
 int8_t read_fuse_dashboard(pdu_t *pdu);
 int8_t read_fuse_brakelight(pdu_t *pdu);
 int8_t read_fuse_brb(pdu_t *pdu);
+int8_t read_tsms_sense(pdu_t *pdu);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 int8_t read_ckpt_brb_clr(pdu_t *pdu);   /* Cockpit BRB */
+int8_t read_side_brb_clr(pdu_t *pdu);   /* Side BRB */
 int8_t read_inertia_sw_ok(pdu_t *pdu);  /* Inertia Switch */
-int8_t read_bots_ok(pdu_t *pdu);        /* BOTS */
+int8_t read_bots_ok(pdu_t *pdu);        /* Brake Over Travel Switch */
 int8_t read_bspd_ok(pdu_t *pdu);        /* Brake System Plausbility Device */
 int8_t read_imd_ok(pdu_t *pdu);         /* Insulation Monitoring Device */
 int8_t read_bms_ok(pdu_t *pdu);         /* Battery Management System (Shepherd) */
-int8_t read_side_brb_clr(pdu_t *pdu);   /* Side BRB */
 int8_t read_tsms(pdu_t *pdu);           /* Tractive System Main Switch */
 int8_t read_hvd_intlk_ok(pdu_t *pdu);   /* HVD Interlock */
 int8_t read_hvc_intlk_ok(pdu_t *pdu);   /* HV C Interlock*/
