@@ -27,8 +27,8 @@ typedef struct {
 extern osMessageQueueId_t imu_queue;
 
 typedef struct {
-    uint16_t brakeValue;
-    uint16_t acceleratorValue;
+    uint16_t brake_value;
+    uint16_t accelerator_value;
 } pedals_t;
 
 extern osMessageQueueId_t pedal_data_queue;
