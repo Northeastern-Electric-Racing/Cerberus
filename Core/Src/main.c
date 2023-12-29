@@ -212,6 +212,7 @@ int main(void)
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, pedal_params, &pedals_monitor_attributes);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
 
   /* Hardware Messaging */
   /* Note that CAN Router initializes CAN */

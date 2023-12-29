@@ -50,7 +50,8 @@ typedef enum {
     BMS_OK,         /* Battery Management System (Shepherd) */
     TSMS,           /* Tractive System Main Switch */
     HVD_INTLK_OK,   /* HVD Interlock */
-    HVC_INTLK_OK    /* HV C Interlock*/
+    HVC_INTLK_OK,   /* HV C Interlock*/
+    MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
 int8_t read_shutdown(pdu_t *pdu, shutdown_stage_t stage, bool *status);

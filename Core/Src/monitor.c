@@ -326,3 +326,42 @@ void vFusingMonitor(void *pv_params)
 		osDelay(FUSES_SAMPLE_DELAY);
 	}
 }
+
+osThreadId_t shutdown_monitor_handle;
+const osThreadAttr_t shutdown_monitor_attributes = {
+	.name = "ShutdownMonitor",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t) osPriorityNormal5,
+};
+
+void vShutdownMonitor(void *pv_params)
+{
+	fault_data_t fault_data = {
+		.id = SHUTDOWN_MONITOR_FAULT,
+		.severity = DEFCON2
+	};
+
+	can_msg_t shutdown_msg = {
+		.id = CANID_SHUTDOWN_LOOP,
+		.len = 8,
+		.data = { 0 }
+	};
+
+	pdu_t *pdu = (pdu_t *)pv_params;
+
+	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
+
+	for (;;) {
+		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
+			read_shutdown(pdu, stage, &shutdown_loop[stage]);
+		}
+
+		//memcpy(fuse_msg.data, &fuses, shutdown_msg.len);
+		//if (queue_can_msg(fuse_msg)) {
+		//	fault_data.diag = "Failed to send CAN message";
+		//	queue_fault(&fault_data);
+		//}
+
+		osDelay(SHUTDOWN_MONITOR_DELAY);
+	}
+}
