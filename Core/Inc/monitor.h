@@ -36,4 +36,9 @@ void vIMUMonitor(void *pv_params);
 extern osThreadId_t imu_monitor_handle;
 extern const osThreadAttr_t imu_monitor_attributes;
 
+/* Task for Monitoring the Fuses on PDU */
+void vFusingMonitor(void *pv_params);
+extern osThreadId_t fusing_monitor_handle;
+extern const osThreadAttr_t fusing_monitor_attributes;
+
 #endif // MONITOR_H

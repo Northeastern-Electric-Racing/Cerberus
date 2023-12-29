@@ -19,6 +19,8 @@ typedef enum {
     IMU_FAULT           = 0x4,
     CAN_DISPATCH_FAULT  = 0x8,
     CAN_ROUTING_FAULT   = 0x10,
+    FUSE_MONITOR_FAULT  = 0x20,
+    MAX_FAULTS
 } fault_code_t;
 
 typedef struct {
