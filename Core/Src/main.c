@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdlib.h>
 #include "sht30.h"
 #include "lsm6dso.h"
 #include "monitor.h"
@@ -32,6 +33,7 @@
 #include "serial_monitor.h"
 #include "state_machine.h"
 #include "torque.h"
+#include "pdu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -194,6 +196,8 @@ int main(void)
   pedal_params->accel_adc2 = &hadc2;
   pedal_params->brake_adc = &hadc3;
 
+  pdu_t *pdu = init_pdu(&hi2c1);
+
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
@@ -207,7 +211,8 @@ int main(void)
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, pedal_params, &pedals_monitor_attributes);
-  
+  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+
   /* Hardware Messaging */
   /* Note that CAN Router initializes CAN */
   route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);

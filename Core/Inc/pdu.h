@@ -31,7 +31,8 @@ typedef enum {
     FUSE_LVBOX,
     FUSE_DASHBOARD,
     FUSE_BRAKELIGHT,
-    FUSE_BRB
+    FUSE_BRB,
+    MAX_FUSES
 } fuse_t;
 
 int8_t read_fuse(pdu_t *pdu, fuse_t fuse, bool *status);

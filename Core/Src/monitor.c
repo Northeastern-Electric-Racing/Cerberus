@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include "monitor.h"
 #include "can.h"
 #include "cerberus_conf.h"
@@ -10,6 +11,7 @@
 #include "lsm6dso.h"
 #include "timer.h"
 #include "serial_monitor.h"
+#include "pdu.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -279,5 +281,48 @@ void vIMUMonitor(void *pv_params)
 
 		/* Yield to other tasks */
 		osDelay(imu_sample_delay);
+	}
+}
+
+osThreadId_t fusing_monitor_handle;
+const osThreadAttr_t fusing_monitor_attributes = {
+	.name = "FusingMonitor",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t) osPriorityNormal3,
+};
+
+void vFusingMonitor(void *pv_params)
+{
+	const uint8_t fuse_msg_len = 8;
+
+	fault_data_t fault_data = {
+		.id = FUSE_MONITOR_FAULT,
+		.severity = DEFCON3
+	};
+
+	can_msg_t fuse_msg = {
+		.id = CANID_FUSE,
+		.len = 8,
+		.data = {0}
+	};
+
+	I2C_HandleTypeDef *hi2c1 = (I2C_HandleTypeDef *)pv_params;
+
+	pdu_t *pdu = init_pdu(hi2c1);
+
+	bool fuses[MAX_FUSES] = { 0 };
+
+	for (;;) {
+		for (fuse_t fuse; fuse < MAX_FUSES; fuse++) {
+			read_fuse(pdu, fuse, &fuses[fuse]);
+		}
+
+		memcpy(fuse_msg.data, &fuses, 8);
+		if (queue_can_msg(fuse_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
+
+		osDelay(FUSES_SAMPLE_DELAY);
 	}
 }
