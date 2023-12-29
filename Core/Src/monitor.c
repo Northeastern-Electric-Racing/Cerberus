@@ -293,8 +293,6 @@ const osThreadAttr_t fusing_monitor_attributes = {
 
 void vFusingMonitor(void *pv_params)
 {
-	const uint8_t fuse_msg_len = 8;
-
 	fault_data_t fault_data = {
 		.id = FUSE_MONITOR_FAULT,
 		.severity = DEFCON3
@@ -306,18 +304,16 @@ void vFusingMonitor(void *pv_params)
 		.data = {0}
 	};
 
-	I2C_HandleTypeDef *hi2c1 = (I2C_HandleTypeDef *)pv_params;
-
-	pdu_t *pdu = init_pdu(hi2c1);
+	pdu_t *pdu = (pdu_t *)pv_params;
 
 	bool fuses[MAX_FUSES] = { 0 };
 
 	for (;;) {
-		for (fuse_t fuse; fuse < MAX_FUSES; fuse++) {
+		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
 			read_fuse(pdu, fuse, &fuses[fuse]);
 		}
 
-		memcpy(fuse_msg.data, &fuses, 8);
+		memcpy(fuse_msg.data, &fuses, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
