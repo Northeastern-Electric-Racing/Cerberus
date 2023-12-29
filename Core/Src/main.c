@@ -31,6 +31,7 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "torque.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -201,15 +202,16 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  //temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
+  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  //imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
+  imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  //fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, pedal_params, &pedals_monitor_attributes);
   //route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
-  //sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  torque_calc_handle = osThreadNew(vCalcTorque, NULL, &torque_calc_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

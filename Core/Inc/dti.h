@@ -16,8 +16,6 @@
 #include <stdbool.h>
 #include "can_handler.h"
 
-#define NUM_POLES   4 // TODO: Find num poles?
-
 typedef struct {
     int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute   */
     int16_t duty_cycle;     /* SCALE: 10        UNITS: Percentage             */
@@ -32,7 +30,15 @@ typedef struct {
     int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
 } dti_t;
 
+//TODO: Expand GET interface
+
 void dti_init(dti_t* mc);
+
+/*
+ * SCALE: 10
+ * UNITS: Nm
+ */
+void dti_set_torque(int16_t torque);
 
 /*
  * SCALE: bool
@@ -81,30 +87,6 @@ void dti_set_relative_brake_current(int16_t relative_brake_current);
  * UNITS: No units
  */
 void dti_set_digital_output(uint8_t output, bool value);
-
-/*
- * SCALE: 10
- * UNITS: Amps
- */
-void dti_set_max_ac_current(int16_t current);
-
-/*
- * SCALE: 10
- * UNITS: Amps
- */
-void dti_set_max_ac_brake_current(int16_t current);
-
-/*
- * SCALE: 10
- * UNITS: Amps
- */
-void dti_set_max_dc_current(int16_t current);
-
-/*
- * SCALE: 10
- * UNITS: Amps
- */
-void dti_set_max_dc_brake_current(int16_t current);
 
 /*
  * SCALE: bool
