@@ -1,5 +1,16 @@
+/* Sampling Intervals */
 #define YELLOW_LED_BLINK_DELAY  500 /* ms */
+#define TEMP_SENS_SAMPLE_DELAY  200 /* ms */
+#define IMU_SAMPLE_DELAY        50  /* ms */
+#define PEDALS_SAMPLE_DELAY     5   /* ms */
+#define SERIAL_MONITOR_DELAY
+#define CAN_ROUTER_DELAY
+#define CAN_DISPATCH_DELAY
+#define STATE_MACHINE_DELAY
+#define TORQUE_CALC_DELAY
+#define FAULT_HANDLE_DELAY
 
+/* Pin Assignments */
 #define FAULT_MCU_Pin                       GPIO_PIN_3
 #define FAULT_MCU_GPIO_Port                 GPIOC
 #define BSE_1_Pin                           GPIO_PIN_0
