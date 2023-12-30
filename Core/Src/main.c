@@ -165,6 +165,7 @@ int main(void)
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
   pdu_t *pdu = init_pdu(&hi2c2);
+  can_t *can1 = init_can1(&hcan1);
 
   toggle_yled(mpu); // Toggle on LED2
   HAL_Delay(500);
@@ -212,8 +213,8 @@ int main(void)
 
   /* Hardware Messaging */
   /* Note that CAN Router initializes CAN */
-  route_can_incoming_handle = osThreadNew(vRouteCanIncoming, &hcan1, &route_can_incoming_attributes);
-  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
+  route_can_incoming_handle = osThreadNew(vRouteCanIncoming, NULL, &route_can_incoming_attributes);
+  can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
   /* Control Logic */

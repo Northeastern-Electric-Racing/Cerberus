@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include "fault.h"
 #include <string.h>
+#include <assert.h>
+#include <stdlib.h>
 #include "cerberus_conf.h"
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
@@ -23,8 +25,6 @@
 static osMessageQueueId_t can_inbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
-static can_t can1;
-
 static uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
 	//CANID_X,
 	0
@@ -47,6 +47,26 @@ static function_info_t can_callbacks[NUM_INBOUND_CAN_IDS] = {
 	//{ .id = 0x2310, .function = (*MC_update)(can_msg_t) },
 	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) }
 };
+
+void can1_callback(CAN_HandleTypeDef *hcan);
+
+can_t *init_can1(CAN_HandleTypeDef *hcan)
+{
+	assert(hcan);
+
+	/* Create PDU struct */
+    can_t *can1 = malloc(sizeof(can_t));
+    assert(can1);
+
+    can1->hcan = hcan;
+	can1->callback = can1_callback;
+	can1->id_list = id_list;
+	can1->id_list_len = NUM_INBOUND_CAN_IDS;
+
+	assert(can_init(can1));
+
+    return can1;
+}
 
 static callback_t getFunction(uint8_t id)
 {
@@ -96,16 +116,6 @@ void vRouteCanIncoming(void* pv_params)
 	osStatus_t status;
 	callback_t callback;
 	fault_data_t fault_data = { .id = CAN_ROUTING_FAULT, .severity = DEFCON2 };
-	can1.callback = can1_callback;
-	can1.id_list = id_list;
-	can1.id_list_len = NUM_INBOUND_CAN_IDS;
-
-	can1.hcan = (CAN_HandleTypeDef *)pv_params;
-
-	if (can_init(&can1)) {
-		fault_data.diag = "Failed to init CAN handler";
-		queue_fault(&fault_data);
-	}
 
 	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
@@ -148,10 +158,12 @@ void vCanDispatch(void* pv_params)
 
 	HAL_StatusTypeDef msg_status;
 
+	can_t *can1 = (can_t *)pv_params;
+
 	for(;;) {
 		/* Send CAN message */
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, 1)) {
-			msg_status = can_send_msg(&can1, &msg_from_queue);
+			msg_status = can_send_msg(can1, &msg_from_queue);
 			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
