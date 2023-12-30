@@ -177,10 +177,38 @@ int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
 
 int8_t read_accel(mpu_t *mpu, uint16_t accel[3])
 {
+    if (!mpu)
+        return -1;
+
+    osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+    if (mut_stat)
+        return mut_stat;
+    
+    HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
+    if (hal_stat)
+        return hal_stat;
+
+    memcpy(accel, mpu->imu->accel_data, 3);
+
+    osMutexRelease(mpu->i2c_mutex);
     return 0;
 }
 
 int8_t read_gyro(mpu_t *mpu, uint16_t gyro[3])
 {
+    if (!mpu)
+        return -1;
+
+    osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+    if (mut_stat)
+        return mut_stat;
+    
+    HAL_StatusTypeDef hal_stat = lsm6dso_read_gyro(mpu->imu);
+    if (hal_stat)
+        return hal_stat;
+
+    memcpy(gyro, mpu->imu->gyro_data, 3);
+
+    osMutexRelease(mpu->i2c_mutex);
     return 0;
 }
