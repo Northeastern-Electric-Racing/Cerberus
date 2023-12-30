@@ -19,6 +19,7 @@ int queue_fault(fault_data_t *fault_data)
 		return -1;
 
     osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
+    return 0;
 }
 
 void vFaultHandler(void* pv_params) 
