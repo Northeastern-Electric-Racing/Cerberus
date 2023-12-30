@@ -34,6 +34,7 @@
 #include "state_machine.h"
 #include "torque.h"
 #include "pdu.h"
+#include "mpu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -161,13 +162,17 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  /* Create Interfaces to Represent Relevant Hardware */
+  mpu_t *mpu = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
+  pdu_t *pdu = init_pdu(&hi2c2);
+
+  toggle_yled(mpu); // Toggle on LED2
   HAL_Delay(500);
-  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  toggle_yled(mpu); // Toggle on LED2
   HAL_Delay(500);
-  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  toggle_yled(mpu); // Toggle on LED2
   HAL_Delay(500);
-  HAL_GPIO_TogglePin(GPIOC, LED_2_Pin); // Toggle on LED2
+  toggle_yled(mpu); // Toggle on LED2
 
   /* USER CODE END 2 */
 
@@ -189,15 +194,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
-
-  // A bit sloppy since I don't free this, but it will be allocated for lifetime
-  pedal_params_t *pedal_params = malloc(sizeof(pedal_params_t));
-  pedal_params->accel_adc1 = &hadc1;
-  pedal_params->accel_adc2 = &hadc2;
-  pedal_params->brake_adc = &hadc3;
-
-  pdu_t *pdu = init_pdu(&hi2c1);
-
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
@@ -207,10 +203,10 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
-  temp_monitor_handle = osThreadNew(vTempMonitor, &hi2c1, &temp_monitor_attributes);
+  temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  imu_monitor_handle = osThreadNew(vIMUMonitor, &hi2c1, &imu_monitor_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, pedal_params, &pedals_monitor_attributes);
+  imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
 
@@ -766,9 +762,9 @@ void StartDefaultTask(void *argument)
     //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
     //if (!err)
     //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
-      
+
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, LED_1_Pin); // Toggle on LED2
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
     i++;
 
     if (i % 2 == 1)

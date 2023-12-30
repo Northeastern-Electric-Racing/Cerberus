@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "monitor.h"
-#include "can.h"
+#include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "queues.h"
@@ -12,6 +12,7 @@
 #include "serial_monitor.h"
 #include "timer.h"
 #include "pdu.h"
+#include "mpu.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -27,18 +28,10 @@ void vTempMonitor(void* pv_params)
 	const uint8_t can_msg_len				= 4;   /* bytes */
 	static onboard_temp_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
-	sht30_t temp_sensor;
-	I2C_HandleTypeDef* hi2c1;
 	can_msg_t temp_msg
 		= { .id = CANID_TEMP_SENSOR, .len = can_msg_len, .data = { 0 } };
 
-	hi2c1				   = (I2C_HandleTypeDef*)pv_params;
-	temp_sensor.i2c_handle = hi2c1;
-
-	//if (sht30_init(&temp_sensor)) {
-	//	fault_data.diag = "Temp Monitor Init Failed";
-	//	queue_fault(&fault_data);
-	//}
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
@@ -115,36 +108,16 @@ void vPedalsMonitor(void* pv_params)
 		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	pedal_params_t* params = (pedal_params_t*)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
-	uint16_t adc_data[4];
-
-	uint32_t curr_tick = HAL_GetTick();
+	uint16_t adc_data[3];
 
 	for (;;) {
 		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
-		/*
-		 * Get the value from the adc at the brake and accelerator
-		 * pin addresses and average them to the sensor data value
-		 */
-		HAL_ADC_Start(params->accel_adc1);
-		HAL_ADC_Start(params->accel_adc2);
-		HAL_ADC_Start(params->brake_adc);
-
-		/* Yield to other tasks */
-		osDelay(delay_time);
-
-		HAL_StatusTypeDef err = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->accel_adc1);
-
-		err = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->accel_adc2);
-		
-		err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->brake_adc);
+		if (read_adc(mpu, adc_data)) {
+			fault_data.diag = "Failed to collect ADC Data!";
+			queue_fault(&fault_data);
+		}
 
 		//err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		//if (!err)
