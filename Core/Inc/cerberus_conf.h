@@ -33,10 +33,6 @@
 #define GPIO_4_GPIO_Port                    GPIOB
 #define WATCHDOG_Pin                        GPIO_PIN_15
 #define WATCHDOG_GPIO_Port                  GPIOB
-#define LED_1_Pin                           GPIO_PIN_8
-#define LED_1_GPIO_Port                     GPIOC
-#define LED_2_Pin                           GPIO_PIN_9
-#define LED_2_GPIO_Port                     GPIOC
 
 #define CANID_TEMP_SENSOR 0xBEEF
 #define CANID_PEDAL_SENSOR 0xDEAD
