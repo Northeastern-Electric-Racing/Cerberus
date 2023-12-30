@@ -34,6 +34,8 @@ int8_t write_yled(mpu_t *mpu, bool status);
 
 int8_t toggle_yled(mpu_t *mpu);
 
+int8_t pet_watchdog(mpu_t *mpu);
+
 /* Note: this should be called from within a thread since it yields to scheduler */
 int8_t read_adc(mpu_t *mpu, uint16_t raw[3]);
 

@@ -68,13 +68,11 @@ const osThreadAttr_t watchdog_monitor_attributes = {
 
 void vWatchdogMonitor(void* pv_params)
 {
-	GPIO_TypeDef* gpio;
-	gpio = (GPIO_TypeDef*)pv_params;
+	mpu_t *mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		/* Pets Watchdog */
-		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_RESET);
+		pet_watchdog(mpu);
 
 		/* Yield to other RTOS tasks */
 		osThreadYield();

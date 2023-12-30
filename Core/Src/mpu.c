@@ -1,11 +1,13 @@
 #include "mpu.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include "stm32f405xx.h"
 
-#define YLED_PIN    GPIO_PIN_8
-#define RLED_PIN    GPIO_PIN_9
-#define ADC_TIMEOUT 2   /* ms */
+#define YLED_PIN        GPIO_PIN_8
+#define RLED_PIN        GPIO_PIN_9
+#define WATCHDOG_PIN    GPIO_PIN_15
+#define ADC_TIMEOUT     2   /* ms */
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
@@ -86,6 +88,16 @@ int8_t toggle_yled(mpu_t *mpu)
         return -1;
 
     HAL_GPIO_TogglePin(mpu->led_gpio, YLED_PIN);
+    return 0;
+}
+
+int8_t pet_watchdog(mpu_t *mpu)
+{
+    if (!mpu)
+        return -1;
+
+    HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_RESET);
     return 0;
 }
 
