@@ -37,4 +37,10 @@ int8_t toggle_yled(mpu_t *mpu);
 /* Note: this should be called from within a thread since it yields to scheduler */
 int8_t read_adc(mpu_t *mpu, uint16_t raw[3]);
 
+int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity);
+
+int8_t read_accel(mpu_t *mpu, uint16_t accel[3]);
+
+int8_t read_gyro(mpu_t *mpu, uint16_t gyro[3]);
+
 #endif /* MPU */

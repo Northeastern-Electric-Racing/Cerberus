@@ -150,7 +150,37 @@ int8_t read_adc(mpu_t *mpu, uint16_t raw[3])
     raw[1] = HAL_ADC_GetValue(mpu->accel_adc2);
     raw[2] = HAL_ADC_GetValue(mpu->brake_adc);
 
+    osMutexRelease(mpu->adc_mutex);
+
     return 0;
 }
 
+int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
+{
+    if (!mpu)
+        return -1;
 
+    osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+    if (mut_stat)
+        return mut_stat;
+    
+    HAL_StatusTypeDef hal_stat = sht30_get_temp_humid(mpu->temp_sensor);
+    if (hal_stat)
+        return hal_stat;
+
+    *temp = mpu->temp_sensor->temp;
+    *humidity = mpu->temp_sensor->humidity;
+
+    osMutexRelease(mpu->i2c_mutex);
+    return 0;
+}
+
+int8_t read_accel(mpu_t *mpu, uint16_t accel[3])
+{
+    return 0;
+}
+
+int8_t read_gyro(mpu_t *mpu, uint16_t gyro[3])
+{
+    return 0;
+}
