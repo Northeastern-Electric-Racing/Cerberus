@@ -25,9 +25,9 @@ static osMessageQueueId_t can_inbound_queue;
 /* Relevant Info for Initializing CAN 1 */
 static can_t can1;
 
-static const uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
+static uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
 	//CANID_X,
-	NULL
+	0
 };
 
 /* Relevant Info for Cerberus CAN LUT */
@@ -137,7 +137,6 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void* pv_params)
 {
-	const uint16_t can_dispatch_delay = 1; //ms
 	fault_data_t fault_data = {
 		.id = CAN_DISPATCH_FAULT,
 		.severity = DEFCON1
@@ -174,4 +173,5 @@ int8_t queue_can_msg(can_msg_t msg)
 		return -1;
 
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
+	return 0;
 }

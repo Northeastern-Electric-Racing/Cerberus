@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define PRINTF_QUEUE_SIZE 16  /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */

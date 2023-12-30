@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "monitor.h"
-#include "can.h"
+#include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "queues.h"
@@ -12,6 +12,7 @@
 #include "serial_monitor.h"
 #include "timer.h"
 #include "pdu.h"
+#include "mpu.h"
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -23,47 +24,38 @@ const osThreadAttr_t temp_monitor_attributes = {
 void vTempMonitor(void* pv_params)
 {
 	const uint8_t num_samples				= 10;
-	const uint16_t temp_sensor_sample_delay = TEMP_SENS_SAMPLE_DELAY;
-	const uint8_t can_msg_len				= 4;   /* bytes */
 	static onboard_temp_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
-	sht30_t temp_sensor;
-	I2C_HandleTypeDef* hi2c1;
 	can_msg_t temp_msg
-		= { .id = CANID_TEMP_SENSOR, .len = can_msg_len, .data = { 0 } };
+		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	hi2c1				   = (I2C_HandleTypeDef*)pv_params;
-	temp_sensor.i2c_handle = hi2c1;
-
-	//if (sht30_init(&temp_sensor)) {
-	//	fault_data.diag = "Temp Monitor Init Failed";
-	//	queue_fault(&fault_data);
-	//}
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		//serial_print("Temp Sensor Task\r\n");
-		//if (sht30_get_temp_humid(&temp_sensor)) {
-		//	fault_data.diag = "Failed to get temp";
-		//	queue_fault(&fault_data);
-		//}
+		uint16_t temp, humidity;
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
-		//sensor_data.temperature = (sensor_data.temperature + temp_sensor.temp) / num_samples;
-		//sensor_data.humidity	= (sensor_data.humidity + temp_sensor.humidity) / num_samples;
+		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
+		sensor_data.humidity	= (sensor_data.humidity + humidity) / num_samples;
 
 		/* Publish to Onboard Temp Queue */
-		//osMessageQueuePut(onboard_temp_queue, &sensor_data, 0U, 0U);
+		osMessageQueuePut(onboard_temp_queue, &sensor_data, 0U, 0U);
 
 		/* Send CAN message */
-		//memcpy(temp_msg.data, &sensor_data, can_msg_len);
-		//if (queue_can_msg(temp_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		memcpy(temp_msg.data, &sensor_data, temp_msg.len);
+		if (queue_can_msg(temp_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
 
 		/* Yield to other tasks */
-		osDelay(temp_sensor_sample_delay);
+		osDelay(TEMP_SENS_SAMPLE_DELAY);
 	}
 }
 
@@ -76,13 +68,11 @@ const osThreadAttr_t watchdog_monitor_attributes = {
 
 void vWatchdogMonitor(void* pv_params)
 {
-	GPIO_TypeDef* gpio;
-	gpio = (GPIO_TypeDef*)pv_params;
+	mpu_t *mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		/* Pets Watchdog */
-		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(gpio, GPIO_PIN_15, GPIO_PIN_RESET);
+		pet_watchdog(mpu);
 
 		/* Yield to other RTOS tasks */
 		osThreadYield();
@@ -98,53 +88,30 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 void vPedalsMonitor(void* pv_params)
 {
-	const uint8_t num_samples = 10;
+	//const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
-	const uint16_t delay_time  = PEDALS_SAMPLE_DELAY;
-	const uint16_t adc_sample_time = 2; /* ms */
-	const uint8_t can_msg_len = 4;	/* bytes */
 
-	nertimer_t diff_timer;
-	nertimer_t sc_timer;
-	nertimer_t oc_timer;
+	//nertimer_t diff_timer;
+	//nertimer_t sc_timer;
+	//nertimer_t oc_timer;
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
-	can_msg_t pedal_msg
-		= { .id = CANID_PEDAL_SENSOR, .len = can_msg_len, .data = { 0 } };
+	//can_msg_t pedal_msg
+	//	= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	pedal_params_t* params = (pedal_params_t*)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
-	uint16_t adc_data[4];
-
-	uint32_t curr_tick = HAL_GetTick();
+	uint16_t adc_data[3];
 
 	for (;;) {
 		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
-		/*
-		 * Get the value from the adc at the brake and accelerator
-		 * pin addresses and average them to the sensor data value
-		 */
-		HAL_ADC_Start(params->accel_adc1);
-		HAL_ADC_Start(params->accel_adc2);
-		HAL_ADC_Start(params->brake_adc);
-
-		/* Yield to other tasks */
-		osDelay(delay_time);
-
-		HAL_StatusTypeDef err = HAL_ADC_PollForConversion(params->accel_adc1, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->accel_adc1);
-
-		err = HAL_ADC_PollForConversion(params->accel_adc2, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->accel_adc2);
-		
-		err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
-		if (!err)
-			HAL_ADC_GetValue(params->brake_adc);
+		if (read_adc(mpu, adc_data)) {
+			fault_data.diag = "Failed to collect ADC Data!";
+			queue_fault(&fault_data);
+		}
 
 		//err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		//if (!err)
@@ -194,7 +161,8 @@ void vPedalsMonitor(void* pv_params)
 		//	fault_data.diag = "Failed to send CAN message";
 		//	queue_fault(&fault_data);
 		//}
-  }
+		osDelay(PEDALS_SAMPLE_DELAY);
+	}
 }
 
 osThreadId_t imu_monitor_handle;
@@ -207,80 +175,71 @@ const osThreadAttr_t imu_monitor_attributes = {
 void vIMUMonitor(void *pv_params)
 {
 	const uint8_t num_samples = 10;
-	const uint16_t imu_sample_delay = IMU_SAMPLE_DELAY;
-	const uint8_t accel_msg_len = 6; /* bytes */
-	const uint8_t gyro_msg_len = 6; /* bytes */
 	static imu_data_t sensor_data;
 	fault_data_t fault_data = {
 		.id = IMU_FAULT,
 		.severity = DEFCON3
 	};
-	lsm6dso_t imu;
 	can_msg_t imu_accel_msg = {
 		.id = CANID_IMU,
-		.len = accel_msg_len,
+		.len = 6,
 		.data = {0}
 	};
 	can_msg_t imu_gyro_msg = {
 		.id = CANID_IMU,
-		.len = gyro_msg_len,
+		.len = 6,
 		.data = {0}
 	};
 
-	I2C_HandleTypeDef *hi2c1 = (I2C_HandleTypeDef *)pv_params;
-	imu.i2c_handle = hi2c1;
-
-	/* Initialize IMU */
-	//if (lsm6dso_init(&imu, hi2c1)) {
-	//	fault_data.diag = "IMU Monitor Init Failed";
-	//	queue_fault(&fault_data);
-	//}
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for(;;) {
 		//serial_print("IMU Task\r\n");
 		/* Take measurement */
-		//if (lsm6dso_read_accel(&imu)) {
-		//	fault_data.diag = "Failed to get IMU acceleration";
-		//	queue_fault(&fault_data);
-		//}
+		uint16_t accel_data[3];
+		uint16_t gyro_data[3];
+		if (read_accel(mpu,accel_data)) {
+			fault_data.diag = "Failed to get IMU acceleration";
+			queue_fault(&fault_data);
+		}
 
-		//if (lsm6dso_read_gyro(&imu)) {
-		//	fault_data.diag = "Failed to get IMU gyroscope";
-		//	queue_fault(&fault_data);
-		//}
+		if (read_gyro(mpu, gyro_data)) {
+			fault_data.diag = "Failed to get IMU gyroscope";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
-		//sensor_data.accel_x = (sensor_data.accel_x + imu.accel_data[0])
-		//					  / num_samples;
-		//sensor_data.accel_y = (sensor_data.accel_y + imu.accel_data[1])
-		//					  / num_samples;
-		//sensor_data.accel_z = (sensor_data.accel_z + imu.accel_data[2])
-		//					  / num_samples;
-		//sensor_data.gyro_x = (sensor_data.gyro_x + imu.gyro_data[0])
-		//					 / num_samples;
-		//sensor_data.gyro_y = (sensor_data.gyro_y + imu.gyro_data[1])
-		//					 / num_samples;
-		//sensor_data.gyro_z = (sensor_data.gyro_z + imu.gyro_data[2])
-		//					 / num_samples;
+		sensor_data.accel_x = (sensor_data.accel_x + accel_data[0])
+							   / num_samples;
+		sensor_data.accel_y = (sensor_data.accel_y + accel_data[1])
+							   / num_samples;
+		sensor_data.accel_z = (sensor_data.accel_z + accel_data[2])
+							   / num_samples;
+		sensor_data.gyro_x = (sensor_data.gyro_x + gyro_data[0])
+							  / num_samples;
+		sensor_data.gyro_y = (sensor_data.gyro_y + gyro_data[1])
+							  / num_samples;
+		sensor_data.gyro_z = (sensor_data.gyro_z + gyro_data[2])
+							  / num_samples;
 
 		/* Publish to IMU Queue */
-		//osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
+		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
 
 		/* Send CAN message */
-		//memcpy(imu_accel_msg.data, &sensor_data, accel_msg_len);
-		//if (queue_can_msg(imu_accel_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
+		if (queue_can_msg(imu_accel_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
 		
-		//memcpy(imu_gyro_msg.data, &sensor_data, gyro_msg_len);
-		//if (queue_can_msg(imu_gyro_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
+		if (queue_can_msg(imu_gyro_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
 
 		/* Yield to other tasks */
-		osDelay(imu_sample_delay);
+		osDelay(IMU_SAMPLE_DELAY);
 	}
 }
 
@@ -332,16 +291,16 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	fault_data_t fault_data = {
-		.id = SHUTDOWN_MONITOR_FAULT,
-		.severity = DEFCON2
-	};
+	//fault_data_t fault_data = {
+	//	.id = SHUTDOWN_MONITOR_FAULT,
+	//	.severity = DEFCON2
+	//};
 
-	can_msg_t shutdown_msg = {
-		.id = CANID_SHUTDOWN_LOOP,
-		.len = 8,
-		.data = { 0 }
-	};
+	//can_msg_t shutdown_msg = {
+	//	.id = CANID_SHUTDOWN_LOOP,
+	//	.len = 8,
+	//	.data = { 0 }
+	//};
 
 	pdu_t *pdu = (pdu_t *)pv_params;
 
