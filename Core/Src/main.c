@@ -741,8 +741,8 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   int i = 0;
-  uint8_t data;
-  HAL_StatusTypeDef err;
+  //uint8_t data;
+  //HAL_StatusTypeDef err;
   /* Infinite loop */
   for(;;) {
     /* Testing getting data from I2C devices */

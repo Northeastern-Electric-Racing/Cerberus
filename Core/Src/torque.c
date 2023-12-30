@@ -40,7 +40,7 @@ void vCalcTorque(void* pv_params) {
 	assert(delay_time < MAX_COMMAND_DELAY);
 
 	pedals_t pedal_data;
-	uint16_t torque;
+	uint16_t torque = 0;
 	osStatus_t stat;
 	dti_t mc;
 
