@@ -1,104 +1,37 @@
-Button::Button(){}
+#ifndef STEERING_H
+#define STEERING_H
 
-Button::~Button(){}
+#include <stdint.h>
+#include <stdbool.h>
+#include "ringbuffer.h"
+#include "cmsis_os.h"
 
-void Button::checkButtonPin()
-{
-    if(isPressed == true && state == NOT_PRESSED)
-    {
-        state = DEBOUNCING;
-        debounce.startTimer(BUTTON_DEBOUNCE_TIME);
-    }
-    else if(isPressed == false)
-    {
-        debounce.cancelTimer();
-        state = NOT_PRESSED;
-    }
-}
+typedef enum {
+	STEERING_PADDLE_LEFT,
+	STEERING_PADDLE_RIGHT,
+	NERO_BUTTON_UP,
+	NERO_BUTTON_DOWN,
+	NERO_BUTTON_LEFT,
+	NERO_BUTTON_RIGHT,
+	NERO_BUTTON_SELECT,
+	MAX_STEERING_BUTTONS
+} steeringio_button_t;
 
-bool Button::isButtonPressed()
-{
-    if(state == PRESSED) return true;
+typedef struct {
+	osMutexId_t *button_mutex; /* Necessary to allow multiple threads to access same data */
+	osMutexId_t *ringbuffer_mutex;
+	osTimerId_t debounce_timers[MAX_STEERING_BUTTONS];
+	ringbuffer_t* debounce_buffer;
+	bool raw_buttons[MAX_STEERING_BUTTONS];
+	bool debounced_buttons[MAX_STEERING_BUTTONS];
+} steeringio_t;
 
-    /**
-     * Returns true if
-     * 1. The button has successfully passed the debounce period
-     * 2. The debounce timer has not been canceled/reset
-     * 3. The button is still being held
-     */
-    if(isPressed && debounce.isTimerExpired() && !debounce.isTimerReset())
-    {
-        state = PRESSED;
-        return true;
-    }
-    return false;
-}
+/* Creates a new Steering Wheel interface */
+steeringio_t *steeringio_init();
 
-bool Button::isButtonPressed_Pulse()
-{
-    if(state == PRESSED) return false;
+bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button);
 
-    /**
-     * Returns true if
-     * 1. The button has successfully passed the debounce period
-     * 2. The debounce timer has not been canceled/reset
-     * 3. The button is still being held
-     * 
-     * AND
-     * 
-     * 4. The state of the button has not been read since the button has passed the debounce
-     */
-    if(isPressed && debounce.isTimerExpired() && !debounce.isTimerReset())
-    {
-        state = PRESSED;
-        return true;
-    }
+/* For updating values via the wheel's CAN message */
+void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[], uint8_t len);
 
-    return false;
-}
-
-void Button::setButtonState(bool buttonState)
-{
-    isPressed = buttonState;
-}
-
-void DriverIO::wheelIO_cb(const CAN_message_t &msg)
-{
-    union
-    {
-        uint8_t msg[8];
-
-        struct
-        {
-            uint16_t pot_l;
-            uint16_t pot_r;
-            bool button5 : 1;
-            bool button6 : 1;
-            bool button3 : 1;
-            uint8_t x1   : 1;
-            bool paddle_r : 1;
-            bool paddle_l : 1;
-            bool button4 : 1;
-            bool button2 : 1;
-            uint8_t x2;
-            uint8_t x3;
-            uint8_t x4;
-        } io;
-    } wheelio;
-
-    for(uint8_t byte = 0; byte < 8; byte++)
-    {
-        wheelio.msg[byte] = msg.buf[byte];
-    }
-
-    wheelio.io.pot_l = SWITCHBYTES(wheelio.io.pot_l);
-    wheelio.io.pot_r = SWITCHBYTES(wheelio.io.pot_r);
-
-    decrButton.setButtonState(wheelio.io.button2);
-    incrButton.setButtonState(wheelio.io.button4);
-    regenButton.setButtonState(wheelio.io.button5);
-    torqueIncreasePaddle.setButtonState(wheelio.io.paddle_r);
-    torqueDecreasePaddle.setButtonState(wheelio.io.paddle_l);
-    accumulatorFanDial.setDialValue(wheelio.io.pot_l);
-    motorFanDial.setDialValue(wheelio.io.pot_r);
-}
+#endif /* STEERING_H */
