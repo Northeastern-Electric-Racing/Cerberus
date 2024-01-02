@@ -4,4 +4,7 @@ services:
     image: nwdepatie/ner-gcc-arm:latest
     stdin_open: true
     tty: true
-    privileged: true
+    volumes:
+        - type: bind
+          source: /dev/ttyACM0
+          target: /dev/ttyACM0
