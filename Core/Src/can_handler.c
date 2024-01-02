@@ -1,6 +1,6 @@
 /**
  * @file can_handler.c
- * @author Hamza Iqbal
+ * @author Hamza Iqbal and Nick DePatie
  * @brief Source file for CAN handler.
  * @version 0.1
  * @date 2023-09-22
@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "cerberus_conf.h"
+#include "dti.h"
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 #define NUM_INBOUND_CAN_IDS 1 /* Update when adding new callbacks */
@@ -26,8 +27,11 @@ static osMessageQueueId_t can_inbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
-	//CANID_X,
-	0
+	DTI_CANID_ERPM,
+	DTI_CANID_CURRENTS,
+	DTI_CANID_TEMPS_FAULT,
+	DTI_CANID_ID_IQ,
+	DTI_CANID_SIGNALS
 };
 
 /* Relevant Info for Cerberus CAN LUT */
@@ -40,12 +44,11 @@ typedef struct
 } function_info_t;
 
 static function_info_t can_callbacks[NUM_INBOUND_CAN_IDS] = {
-	// TODO: Implement MC_Update and other callbacks
-	//{ .id = 0x2010, .function = (*MC_update)(can_msg_t) },
-	//{ .id = 0x2110, .function = (*MC_update)(can_msg_t) },
-	//{ .id = 0x2210, .function = (*MC_update)(can_msg_t) },
-	//{ .id = 0x2310, .function = (*MC_update)(can_msg_t) },
-	//{ .id = 0x2410, .function = (*MC_update)(can_msg_t) }
+	{ .id = DTI_CANID_ERPM, .function = (*dti_update)(can_msg_t) },
+	{ .id = DTI_CANID_CURRENTS, .function = (*dti_update)(can_msg_t) },
+	{ .id = DTI_CANID_TEMPS_FAULT, .function = (*dti_update)(can_msg_t) },
+	{ .id = DTI_CANID_ID_IQ, .function = (*dti_update)(can_msg_t) },
+	{ .id = DTI_CANID_SIGNALS, .function = (*dti_update)(can_msg_t) }
 };
 
 void can1_callback(CAN_HandleTypeDef *hcan);
@@ -61,16 +64,16 @@ can_t *init_can1(CAN_HandleTypeDef *hcan)
     can1->hcan = hcan;
 	can1->callback = can1_callback;
 	can1->id_list = id_list;
-	can1->id_list_len = NUM_INBOUND_CAN_IDS;
+	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
 	assert(can_init(can1));
 
     return can1;
 }
 
-static callback_t getFunction(uint8_t id)
+static callback_t get_function(uint8_t id)
 {
-	//TODO: optimization of create algo to more efficiently find handler
+	//TODO: optimization of algo to more efficiently find handler
 	for (uint8_t i = 0; i < NUM_INBOUND_CAN_IDS; i++) {
 		if (can_callbacks[i].id == id)
 			return can_callbacks[i].function;
@@ -123,7 +126,7 @@ void vRouteCanIncoming(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 10);
 		if (status == osOK){
-			callback = getFunction(message->id);
+			callback = get_function(message->id);
 			if (callback == NULL) {
 				fault_data.diag = "No callback found";
 				queue_fault(&fault_data);
@@ -179,7 +182,7 @@ void vCanDispatch(void* pv_params)
 	}
 }
 
-int8_t queue_can_msg(can_msg_t msg) 
+int8_t queue_can_msg(can_msg_t msg)
 {
 	if(!can_outbound_queue)
 		return -1;

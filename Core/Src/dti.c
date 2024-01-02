@@ -10,12 +10,22 @@
  */
 
 #include <string.h>
+#include <assert.h>
 #include "dti.h"
 #include "can.h"
 #include "emrax.h"
 
-void dti_init(dti_t* mc)
+static osMutexAttr_t dti_mutex_attributes;
+
+dti_t *dti_init()
 {
+	dti_t *mc = malloc(sizeof(dti_t));
+	assert(mc);
+
+	/* Create Mutex */
+    mc->mutex = osMutexNew(&dti_mutex_attributes);
+    assert(mc->mutex);
+
 	//TODO: Set safety parameters for operation (maxes, mins, etc)
 	//dti_set_max_ac_brake_current();
 	//dti_set_max_ac_current();
@@ -151,4 +161,20 @@ void dti_set_drive_enable(bool drive_enable)
 	/* Send CAN message */
 	memcpy(msg.data, &drive_enable, msg.len);
 	queue_can_msg(msg);
+}
+
+void dti_update(dti_t* mc, can_msg_t *msg)
+{
+	switch(msg->id) {
+		case DTI_CANID_ERPM:
+			break;
+		case DTI_CANID_CURRENTS:
+			break;
+		case DTI_CANID_TEMPS_FAULT:
+			break;
+		case DTI_CANID_SIGNALS:
+			break;
+		default:
+			break;
+	}
 }
