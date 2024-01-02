@@ -12,6 +12,8 @@
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
 
+#define STEERING_WHEEL_DEBOUNCE 100  /* ms */
+
 /* Pin Assignments */
 #define FAULT_MCU_Pin                       GPIO_PIN_3
 #define FAULT_MCU_GPIO_Port                 GPIOC
