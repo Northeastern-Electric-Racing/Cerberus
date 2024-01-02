@@ -55,6 +55,7 @@ Core/Src/state_machine.c \
 Core/Src/torque.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
+Core/Src/steeringio.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
@@ -79,6 +80,7 @@ Drivers/Embedded-Base/general/src/sht30.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/pi4ioe.c \
 Drivers/Embedded-Base/middleware/src/timer.c \
+Drivers/Embedded-Base/middleware/src/ringbuffer.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
