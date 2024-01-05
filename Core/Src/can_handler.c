@@ -21,9 +21,6 @@
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 
-/* Queue for Inbound CAN Messages */
-static osMessageQueueId_t can_inbound_queue;
-
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,
