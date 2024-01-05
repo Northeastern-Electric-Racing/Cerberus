@@ -267,12 +267,19 @@ void vFusingMonitor(void *pv_params)
 
 	bool fuses[MAX_FUSES] = { 0 };
 
+	uint16_t fuse_buf;
+
 	for (;;) {
+		fuse_buf = 0;
+
 		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-			read_fuse(pdu, fuse, &fuses[fuse]);
+			if (read_fuse(pdu, fuse, &fuses[fuse]))	/* Actually read the fuse */
+				fuse_buf |= 1 << MAX_FUSES; /* Set error bit */
+
+			fuse_buf |= fuses[fuse] << fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
-		memcpy(fuse_msg.data, &fuses, fuse_msg.len);
+		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
@@ -291,31 +298,38 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	//fault_data_t fault_data = {
-	//	.id = SHUTDOWN_MONITOR_FAULT,
-	//	.severity = DEFCON2
-	//};
+	fault_data_t fault_data = {
+		.id = SHUTDOWN_MONITOR_FAULT,
+		.severity = DEFCON2
+	};
 
-	//can_msg_t shutdown_msg = {
-	//	.id = CANID_SHUTDOWN_LOOP,
-	//	.len = 8,
-	//	.data = { 0 }
-	//};
+	can_msg_t shutdown_msg = {
+		.id = CANID_SHUTDOWN_LOOP,
+		.len = 8,
+		.data = { 0 }
+	};
 
 	pdu_t *pdu = (pdu_t *)pv_params;
 
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 
+	uint16_t shutdown_buf;
+
 	for (;;) {
+		shutdown_buf = 0;
+
 		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
-			read_shutdown(pdu, stage, &shutdown_loop[stage]);
+			if (read_shutdown(pdu, stage, &shutdown_loop[stage])) /* Actually read the shutdown loop stage state */
+				shutdown_buf |= 1 << MAX_SHUTDOWN_STAGES; /* Set error bit */
+
+			shutdown_buf |= shutdown_loop[stage] << stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
-		//memcpy(fuse_msg.data, &fuses, shutdown_msg.len);
-		//if (queue_can_msg(fuse_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
+		if (queue_can_msg(shutdown_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
 
 		osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
