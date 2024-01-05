@@ -13,15 +13,16 @@ typedef enum {
 } fault_sev_t;
 
 typedef enum {
-    FAULTS_CLEAR        = 0x0,
-    ONBOARD_TEMP_FAULT  = 0x1,
-    ONBOARD_PEDAL_FAULT = 0x2,
-    IMU_FAULT           = 0x4,
-    CAN_DISPATCH_FAULT  = 0x8,
-    CAN_ROUTING_FAULT   = 0x10,
-    FUSE_MONITOR_FAULT  = 0x20,
-    SHUTDOWN_MONITOR_FAULT = 0x40,
-    DTI_ROUTING_FAULT   = 0x80,
+    FAULTS_CLEAR                = 0x0,
+    ONBOARD_TEMP_FAULT          = 0x1,
+    ONBOARD_PEDAL_FAULT         = 0x2,
+    IMU_FAULT                   = 0x4,
+    CAN_DISPATCH_FAULT          = 0x8,
+    CAN_ROUTING_FAULT           = 0x10,
+    FUSE_MONITOR_FAULT          = 0x20,
+    SHUTDOWN_MONITOR_FAULT      = 0x40,
+    DTI_ROUTING_FAULT           = 0x80,
+    STEERINGIO_ROUTING_FAULT    = 0x100
     MAX_FAULTS
 } fault_code_t;
 

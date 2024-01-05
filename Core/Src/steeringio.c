@@ -127,7 +127,7 @@ void vSteeringIORouter(void* pv_params)
 {
 	can_msg_t message;
 	osStatus_t status;
-	//fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+	//fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
 
 	steeringio_t *wheel = (steeringio_t *)pv_params;
 
