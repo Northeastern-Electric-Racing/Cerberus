@@ -20,35 +20,17 @@
 #include "dti.h"
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
-#define NUM_INBOUND_CAN_IDS 1 /* Update when adding new callbacks */
 
 /* Queue for Inbound CAN Messages */
 static osMessageQueueId_t can_inbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint16_t id_list[NUM_INBOUND_CAN_IDS] = {
+static uint16_t id_list[] = {
 	DTI_CANID_ERPM,
 	DTI_CANID_CURRENTS,
 	DTI_CANID_TEMPS_FAULT,
 	DTI_CANID_ID_IQ,
 	DTI_CANID_SIGNALS
-};
-
-/* Relevant Info for Cerberus CAN LUT */
-typedef void (*callback_t)(can_msg_t);
-
-typedef struct
-{
-	uint8_t id;
-	callback_t function;
-} function_info_t;
-
-static function_info_t can_callbacks[NUM_INBOUND_CAN_IDS] = {
-	{ .id = DTI_CANID_ERPM, .function = (*dti_update)(can_msg_t) },
-	{ .id = DTI_CANID_CURRENTS, .function = (*dti_update)(can_msg_t) },
-	{ .id = DTI_CANID_TEMPS_FAULT, .function = (*dti_update)(can_msg_t) },
-	{ .id = DTI_CANID_ID_IQ, .function = (*dti_update)(can_msg_t) },
-	{ .id = DTI_CANID_SIGNALS, .function = (*dti_update)(can_msg_t) }
 };
 
 void can1_callback(CAN_HandleTypeDef *hcan);
@@ -71,16 +53,6 @@ can_t *init_can1(CAN_HandleTypeDef *hcan)
     return can1;
 }
 
-static callback_t get_function(uint8_t id)
-{
-	//TODO: optimization of algo to more efficiently find handler
-	for (uint8_t i = 0; i < NUM_INBOUND_CAN_IDS; i++) {
-		if (can_callbacks[i].id == id)
-			return can_callbacks[i].function;
-	}
-	return NULL;
-}
-
 /* Callback to be called when we get a CAN message */
 void can1_callback(CAN_HandleTypeDef *hcan)
 {
@@ -97,46 +69,23 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
         fault_data.diag = "Failed to read CAN Msg";
 		queue_fault(&fault_data);
+		return;
     }
 	new_msg.len = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
-	/* Publish to CAN processing queue */
-	osMessageQueuePut(can_inbound_queue, &new_msg, 0U, 0U);
-}
-
-/* Inbound Task-specific Info */
-osThreadId_t route_can_incoming_handle;
-const osThreadAttr_t route_can_incoming_attributes = {
-	.name = "RouteCanIncoming",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityAboveNormal4
-};
-
-void vRouteCanIncoming(void* pv_params)
-{
-	can_msg_t* message;
-	osStatus_t status;
-	callback_t callback;
-	fault_data_t fault_data = { .id = CAN_ROUTING_FAULT, .severity = DEFCON2 };
-
-	can_inbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-
-	for (;;) {
-		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(can_inbound_queue, &message, NULL, 10);
-		if (status == osOK){
-			callback = get_function(message->id);
-			if (callback == NULL) {
-				fault_data.diag = "No callback found";
-				queue_fault(&fault_data);
-			} else {
-				callback(*message);
-			}
-		}
-
-		/* Yield to other tasks */
-		osThreadYield();
+	//TODO: Switch to hash map
+	switch(new_msg.len) {
+		/* Messages Relevant to Motor Controller */
+		case DTI_CANID_ERPM:
+		case DTI_CANID_CURRENTS:
+		case DTI_CANID_TEMPS_FAULT:
+		case DTI_CANID_ID_IQ:
+		case DTI_CANID_SIGNALS:
+			osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+			break;
+		default:
+			break;
 	}
 }
 

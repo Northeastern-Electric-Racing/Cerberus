@@ -32,8 +32,8 @@ const osThreadAttr_t torque_calc_attributes = {
 	.priority = (osPriority_t)osPriorityAboveNormal4
 };
 
-void vCalcTorque(void* pv_params) {
-
+void vCalcTorque(void* pv_params)
+{
 	const uint16_t delay_time  = 5; /* ms */
 
 	/* End application if we try to update motor at freq below this value */
@@ -54,7 +54,7 @@ void vCalcTorque(void* pv_params) {
 			// TODO: Add state based torque calculation
 
 			uint16_t accel = pedal_data.accelerator_value;
-			
+
 			if (accel < MIN_PEDAL_VAL)
 				torque = 0;
 			else

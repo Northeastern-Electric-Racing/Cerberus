@@ -41,7 +41,13 @@ typedef struct {
 
 //TODO: Expand GET interface
 
-dti_t *dti_init()
+/* Utilities for Decoding CAN message */
+extern osThreadId_t dti_router_handle;
+extern const osThreadAttr_t dti_router_attributes;
+extern osMessageQueueId_t dti_router_queue;
+void vDTIRouter(void* pv_params);
+
+dti_t *dti_init();
 
 /*
  * SCALE: 10
@@ -81,8 +87,5 @@ void dti_set_relative_current(int16_t relative_current);
  * UNITS: No units
  */
 void dti_set_drive_enable(bool drive_enable);
-
-/* Used to update local fields of MC Interface */
-void dti_update(dti_t* mc, can_msg_t *msg);
 
 #endif

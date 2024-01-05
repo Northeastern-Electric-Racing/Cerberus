@@ -35,6 +35,7 @@
 #include "torque.h"
 #include "pdu.h"
 #include "mpu.h"
+#include "dti.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -213,7 +214,7 @@ int main(void)
 
   /* Hardware Messaging */
   /* Note that CAN Router initializes CAN */
-  route_can_incoming_handle = osThreadNew(vRouteCanIncoming, NULL, &route_can_incoming_attributes);
+  dti_router_handle = osThreadNew(vDTIRouter, NULL, &dti_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 

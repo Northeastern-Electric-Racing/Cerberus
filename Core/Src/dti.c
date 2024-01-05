@@ -11,11 +11,16 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "dti.h"
 #include "can.h"
 #include "emrax.h"
+#include "fault.h"
+
+#define CAN_QUEUE_SIZE      5   /* messages */
 
 static osMutexAttr_t dti_mutex_attributes;
+osMessageQueueId_t dti_router_queue;
 
 dti_t *dti_init()
 {
@@ -31,6 +36,12 @@ dti_t *dti_init()
 	//dti_set_max_ac_current();
 	//dti_set_max_dc_brake_current();
 	//dti_set_max_dc_current();
+
+	/* Create Queue for CAN signaling */
+    dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+    assert(dti_router_queue);
+
+	return mc;
 }
 
 void dti_set_torque(int16_t torque)
@@ -163,18 +174,38 @@ void dti_set_drive_enable(bool drive_enable)
 	queue_can_msg(msg);
 }
 
-void dti_update(dti_t* mc, can_msg_t *msg)
+/* Inbound Task-specific Info */
+osThreadId_t dti_router_handle;
+const osThreadAttr_t dti_router_attributes = {
+	.name = "DTIRouter",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityNormal3
+};
+
+void vDTIRouter(void* pv_params)
 {
-	switch(msg->id) {
-		case DTI_CANID_ERPM:
-			break;
-		case DTI_CANID_CURRENTS:
-			break;
-		case DTI_CANID_TEMPS_FAULT:
-			break;
-		case DTI_CANID_SIGNALS:
-			break;
-		default:
-			break;
+	can_msg_t message;
+	osStatus_t status;
+	//fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+
+	for (;;) {
+		/* Wait until new CAN message comes into queue */
+		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
+		if (status == osOK){
+			switch(message.id) {
+				case DTI_CANID_ERPM:
+					break;
+				case DTI_CANID_CURRENTS:
+					break;
+				case DTI_CANID_TEMPS_FAULT:
+					break;
+				case DTI_CANID_ID_IQ:
+					break;
+				case DTI_CANID_SIGNALS:
+					break;
+				default:
+					break;
+			}
+		}
 	}
 }
