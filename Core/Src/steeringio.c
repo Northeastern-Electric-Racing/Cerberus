@@ -12,8 +12,7 @@ static osMutexAttr_t steeringio_data_mutex_attributes;
 static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
 osMessageQueueId_t steeringio_router_queue;
 
-static void debounce_cb(void const *arg);
-osTimerDef(debounce_timer, debounce_cb);
+static void debounce_cb(void *arg);
 
 enum {
 	NOT_PRESSED,
@@ -35,7 +34,7 @@ steeringio_t *steeringio_init()
 
 	/* Create debounce utilities */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		steeringio->debounce_timers[i] = osTimerCreate(osTimer(debounce_timer), osTimerOnce, steeringio);
+		steeringio->debounce_timers[i] = osTimerNew(debounce_cb, osTimerOnce, steeringio, NULL);
 		assert(steeringio->debounce_timers[i]);
 	}
 	steeringio->debounce_buffer = ringbuffer_create(MAX_STEERING_BUTTONS, sizeof(uint8_t));
@@ -63,7 +62,7 @@ bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
 }
 
 /* Callback to see if we have successfully debounced */
-static void debounce_cb(void const *arg)
+static void debounce_cb(void *arg)
 {
 	steeringio_t *wheel = (steeringio_t *)arg;
 	if (!wheel)
