@@ -163,9 +163,18 @@ int main(void)
   MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
+  /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* I'm not defining mutexes here lol */
+
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  pdu_t *pdu = init_pdu(&hi2c2);
+  mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
+  pdu_t *pdu  = init_pdu(&hi2c2);
+  dti_t *mc   = dti_init();
   can_t *can1 = init_can1(&hcan1);
 
   toggle_yled(mpu); // Toggle on LED2
@@ -176,13 +185,6 @@ int main(void)
   HAL_Delay(500);
   toggle_yled(mpu); // Toggle on LED2
 
-  /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -220,7 +222,7 @@ int main(void)
 
   /* Control Logic */
   sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
-  torque_calc_handle = osThreadNew(vCalcTorque, NULL, &torque_calc_attributes);
+  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
 
   /* USER CODE END RTOS_THREADS */

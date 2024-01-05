@@ -42,9 +42,9 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	uint16_t torque = 0;
 	osStatus_t stat;
-	dti_t mc;
 
-	dti_init(&mc);
+	//TODO: Get important data from MC
+	//dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
