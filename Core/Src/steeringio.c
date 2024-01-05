@@ -4,9 +4,13 @@
 #include <stdlib.h>
 #include "cmsis_os.h"
 #include "cerberus_conf.h"
+#include "can.h"
+
+#define CAN_QUEUE_SIZE      5   /* messages */
 
 static osMutexAttr_t steeringio_data_mutex_attributes;
 static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
+osMessageQueueId_t steeringio_router_queue;
 
 static void debounce_cb(void const *arg);
 osTimerDef(debounce_timer, debounce_cb);
@@ -29,13 +33,17 @@ steeringio_t *steeringio_init()
 	steeringio->button_mutex = osMutexNew(&steeringio_ringbuffer_mutex_attributes);
 	assert(steeringio->button_mutex);
 
+	/* Create debounce utilities */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
 		steeringio->debounce_timers[i] = osTimerCreate(osTimer(debounce_timer), osTimerOnce, steeringio);
 		assert(steeringio->debounce_timers[i]);
 	}
-
 	steeringio->debounce_buffer = ringbuffer_create(MAX_STEERING_BUTTONS, sizeof(uint8_t));
 	assert(steeringio->debounce_buffer);
+
+	/* Create Queue for CAN signaling */
+    steeringio_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+    assert(steeringio_router_queue);
 
 	return steeringio;
 }
@@ -106,4 +114,29 @@ void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[], uint8_t len)
 		}
 	}
 	osMutexRelease(wheel->button_mutex);
+}
+
+/* Inbound Task-specific Info */
+osThreadId_t steeringio_router_handle;
+const osThreadAttr_t steeringio_router_attributes = {
+	.name = "SteeringIORouter",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityNormal3
+};
+
+void vSteeringIORouter(void* pv_params)
+{
+	can_msg_t message;
+	osStatus_t status;
+	//fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+
+	steeringio_t *wheel = (steeringio_t *)pv_params;
+
+	for (;;) {
+		/* Wait until new CAN message comes into queue */
+		status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
+		if (status == osOK){
+			steeringio_update(wheel, message.data, message.len);
+		}
+	}
 }

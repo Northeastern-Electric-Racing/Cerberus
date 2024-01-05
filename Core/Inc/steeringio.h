@@ -26,6 +26,12 @@ typedef struct {
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
 } steeringio_t;
 
+/* Utilities for Decoding CAN message */
+extern osThreadId_t steeringio_router_handle;
+extern const osThreadAttr_t steeringio_router_attributes;
+extern osMessageQueueId_t steeringio_router_queue;
+void vSteeringIORouter(void* pv_params);
+
 /* Creates a new Steering Wheel interface */
 steeringio_t *steeringio_init();
 

@@ -188,6 +188,8 @@ void vDTIRouter(void* pv_params)
 	osStatus_t status;
 	//fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
 
+	//dti_t *mc = (dti_t *)pv_params;
+
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
