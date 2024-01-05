@@ -22,7 +22,7 @@ typedef enum {
     FUSE_MONITOR_FAULT          = 0x20,
     SHUTDOWN_MONITOR_FAULT      = 0x40,
     DTI_ROUTING_FAULT           = 0x80,
-    STEERINGIO_ROUTING_FAULT    = 0x100
+    STEERINGIO_ROUTING_FAULT    = 0x100,
     MAX_FAULTS
 } fault_code_t;
 
