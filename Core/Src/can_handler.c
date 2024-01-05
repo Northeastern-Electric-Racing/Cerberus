@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include "cerberus_conf.h"
 #include "dti.h"
+#include "steeringio.h"
 
 #define CAN_MSG_QUEUE_SIZE 25 /* messages */
 
@@ -27,7 +28,8 @@ static uint16_t id_list[] = {
 	DTI_CANID_CURRENTS,
 	DTI_CANID_TEMPS_FAULT,
 	DTI_CANID_ID_IQ,
-	DTI_CANID_SIGNALS
+	DTI_CANID_SIGNALS,
+	STEERING_CANID_IO,
 };
 
 void can1_callback(CAN_HandleTypeDef *hcan);
@@ -72,7 +74,7 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	new_msg.id = rx_header.StdId;
 
 	//TODO: Switch to hash map
-	switch(new_msg.len) {
+	switch(new_msg.id) {
 		/* Messages Relevant to Motor Controller */
 		case DTI_CANID_ERPM:
 		case DTI_CANID_CURRENTS:
@@ -80,6 +82,9 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 		case DTI_CANID_ID_IQ:
 		case DTI_CANID_SIGNALS:
 			osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+			break;
+		case STEERING_CANID_IO:
+			osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
 			break;
 		default:
 			break;

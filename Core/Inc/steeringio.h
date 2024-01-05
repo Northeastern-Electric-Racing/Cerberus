@@ -6,6 +6,8 @@
 #include "ringbuffer.h"
 #include "cmsis_os.h"
 
+#define STEERING_CANID_IO	0x400
+
 typedef enum {
 	STEERING_PADDLE_LEFT,
 	STEERING_PADDLE_RIGHT,
