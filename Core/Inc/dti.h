@@ -16,23 +16,38 @@
 #include <stdbool.h>
 #include "can_handler.h"
 
+/* Message IDs from DTI CAN Datasheet */
+#define DTI_CANID_ERPM          0x20 /* ERPM, Duty, Input Voltage */
+#define DTI_CANID_CURRENTS      0x21 /* AC Current, DC Current */
+#define DTI_CANID_TEMPS_FAULT   0x22 /* Controller Temp, Motor Temp, Faults */
+#define DTI_CANID_ID_IQ         0x23 /* Id, Iq values */
+#define DTI_CANID_SIGNALS       0x24 /* Throttle signal, Brake signal, IO, Drive enable */
+
+
 typedef struct {
     int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute   */
     int16_t duty_cycle;     /* SCALE: 10        UNITS: Percentage             */
     int16_t input_voltage;  /* SCALE: 1         UNITS: Volts                  */
     int16_t ac_current;     /* SCALE: 10        UNITS: Amps                   */
     int16_t dc_current;     /* SCALE: 10        UNITS: Amps                   */
-    int16_t cont_temp;      /* SCALE: 10        UNITS: Degrees Celsius        */
+    int16_t contr_temp;      /* SCALE: 10        UNITS: Degrees Celsius        */
     int16_t motor_temp;     /* SCALE: 10        UNITS: Degrees Celsius        */
     uint8_t fault_code;     /* SCALE: 1         UNITS: No units just a number */
     int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
     int8_t brake_signal;    /* SCALE: 1         UNITS: Percentage             */
     int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
+    osMutexId_t *mutex;
 } dti_t;
 
 //TODO: Expand GET interface
 
-void dti_init(dti_t* mc);
+/* Utilities for Decoding CAN message */
+extern osThreadId_t dti_router_handle;
+extern const osThreadAttr_t dti_router_attributes;
+extern osMessageQueueId_t dti_router_queue;
+void vDTIRouter(void* pv_params);
+
+dti_t *dti_init();
 
 /*
  * SCALE: 10
@@ -40,11 +55,8 @@ void dti_init(dti_t* mc);
  */
 void dti_set_torque(int16_t torque);
 
-/*
- * SCALE: bool
- * UNITS: No units
- */
-void dti_get_drive_enable(dti_t* mc);
+//TODO: Regen interface
+//void dti_set_regen(int16_t regen);
 
 /*
  * SCALE: 10
@@ -54,39 +66,21 @@ void dti_set_brake_current(int16_t brake_current);
 
 /*
  * SCALE: 10
+ * UNITS: Percentage of max
+ */
+void dti_set_relative_brake_current(int16_t relative_brake_current);
+
+/*
+ * SCALE: 10
  * UNITS: Amps
  */
 void dti_set_current(int16_t current);
 
 /*
- * SCALE: 1
- * UNITS: RPM
- */
-void dti_set_speed(int32_t rpm);
-
-/*
  * SCALE: 10
- * UNITS: Degrees
- */
-void dti_set_position(int16_t angle);
-
-/*
- * SCALE: 10
- * UNITS: Percentage
+ * UNITS: Percentage of max
  */
 void dti_set_relative_current(int16_t relative_current);
-
-/*
- * SCALE: 10
- * UNITS: Percentage
- */
-void dti_set_relative_brake_current(int16_t relative_brake_current);
-
-/*
- * SCALE: 1
- * UNITS: No units
- */
-void dti_set_digital_output(uint8_t output, bool value);
 
 /*
  * SCALE: bool
