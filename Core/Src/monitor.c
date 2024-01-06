@@ -29,16 +29,17 @@ void vTempMonitor(void* pv_params)
 	can_msg_t temp_msg
 		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	//mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		//serial_print("Temp Sensor Task\r\n");
-		uint16_t temp, humidity;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
-			fault_data.diag = "Failed to get temp";
-			queue_fault(&fault_data);
-		}
+		uint16_t temp = 0;
+		uint16_t humidity = 0;
+		//if (read_temp_sensor(mpu, &temp, &humidity)) {
+		//	fault_data.diag = "Failed to get temp";
+		//	queue_fault(&fault_data);
+		//}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
@@ -73,7 +74,6 @@ void vWatchdogMonitor(void* pv_params)
 	for (;;) {
 		/* Pets Watchdog */
 		pet_watchdog(mpu);
-
 		/* Yield to other RTOS tasks */
 		osThreadYield();
 	}
@@ -98,20 +98,20 @@ void vPedalsMonitor(void* pv_params)
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 
-	//can_msg_t pedal_msg
-	//	= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
+	can_msg_t pedal_msg
+		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	mpu_t *mpu = (mpu_t *)pv_params;
+	//mpu_t *mpu = (mpu_t *)pv_params;
 
-	uint16_t adc_data[3];
+	//uint16_t adc_data[3];
 
 	for (;;) {
 		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
-		if (read_adc(mpu, adc_data)) {
-			fault_data.diag = "Failed to collect ADC Data!";
-			queue_fault(&fault_data);
-		}
+		//if (read_adc(mpu, adc_data)) {
+		//	fault_data.diag = "Failed to collect ADC Data!";
+		//	queue_fault(&fault_data);
+		//}
 
 		//err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
 		//if (!err)
@@ -156,11 +156,11 @@ void vPedalsMonitor(void* pv_params)
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
 		/* Send CAN message */
-		//memcpy(pedal_msg.data, &sensor_data, can_msg_len);
-		//if (queue_can_msg(pedal_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		memcpy(pedal_msg.data, &sensor_data, pedal_msg.len);
+		if (queue_can_msg(pedal_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
@@ -191,14 +191,14 @@ void vIMUMonitor(void *pv_params)
 		.data = {0}
 	};
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	//mpu_t *mpu = (mpu_t *)pv_params;
 
 	for(;;) {
 		//serial_print("IMU Task\r\n");
 		/* Take measurement */
-		uint16_t accel_data[3];
-		uint16_t gyro_data[3];
-		if (read_accel(mpu,accel_data)) {
+		uint16_t accel_data[3] = { 0 };
+		uint16_t gyro_data[3] = { 0 };
+		/* if (read_accel(mpu,accel_data)) {
 			fault_data.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
@@ -206,7 +206,7 @@ void vIMUMonitor(void *pv_params)
 		if (read_gyro(mpu, gyro_data)) {
 			fault_data.diag = "Failed to get IMU gyroscope";
 			queue_fault(&fault_data);
-		}
+		} */
 
 		/* Run values through LPF of sample size  */
 		sensor_data.accel_x = (sensor_data.accel_x + accel_data[0])
@@ -247,7 +247,7 @@ osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name = "FusingMonitor",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t) osPriorityNormal3,
+	.priority = (osPriority_t) osPriorityNormal5,
 };
 
 void vFusingMonitor(void *pv_params)
@@ -293,7 +293,7 @@ osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
 	.name = "ShutdownMonitor",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t) osPriorityNormal5,
+	.priority = (osPriority_t) osPriorityNormal3,
 };
 
 void vShutdownMonitor(void *pv_params)

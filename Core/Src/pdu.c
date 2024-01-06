@@ -25,11 +25,11 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
     /* Initialize Shutdown GPIO Expander */
     pdu->shutdown_expander = malloc(sizeof(pi4ioe_t));
     assert(pdu->shutdown_expander);
-    if (pi4ioe_init(pdu->shutdown_expander, pdu->hi2c)) {
-        free(pdu->shutdown_expander);
-        free(pdu);
-        return NULL;
-    }
+    //if (pi4ioe_init(pdu->shutdown_expander, pdu->hi2c)) {
+    //    free(pdu->shutdown_expander);
+    //    free(pdu);
+    //    return NULL;
+    //}
     
     /* Initialize Control GPIO Expander */
     //pdu->ctrl_expander = malloc(sizeof(max7431_t));
