@@ -16,6 +16,6 @@
 
 void vCalcTorque(void* pv_params);
 extern osThreadId_t torque_calc_handle;
-extern const osThreadAttr_t  torque_calc_attributes;
+extern const osThreadAttr_t torque_calc_attributes;
 
 #endif
