@@ -52,7 +52,7 @@ void vSerialMonitor(void* pv_params)
 
 	for (;;) {
 		/* Wait until new printf message comes into queue */
-		status = osMessageQueueGet(printf_queue, &message, NULL, 0U);
+		status = osMessageQueueGet(printf_queue, &message, NULL, osWaitForever);
 		if (status != osOK) {
 			// TODO: Trigger fault ?
 		} else {
