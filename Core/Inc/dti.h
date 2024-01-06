@@ -12,34 +12,33 @@
 #ifndef DTI_H
 #define DTI_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "can_handler.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Message IDs from DTI CAN Datasheet */
-#define DTI_CANID_ERPM          0x20 /* ERPM, Duty, Input Voltage */
-#define DTI_CANID_CURRENTS      0x21 /* AC Current, DC Current */
-#define DTI_CANID_TEMPS_FAULT   0x22 /* Controller Temp, Motor Temp, Faults */
-#define DTI_CANID_ID_IQ         0x23 /* Id, Iq values */
-#define DTI_CANID_SIGNALS       0x24 /* Throttle signal, Brake signal, IO, Drive enable */
-
+#define DTI_CANID_ERPM		  0x20 /* ERPM, Duty, Input Voltage */
+#define DTI_CANID_CURRENTS	  0x21 /* AC Current, DC Current */
+#define DTI_CANID_TEMPS_FAULT 0x22 /* Controller Temp, Motor Temp, Faults */
+#define DTI_CANID_ID_IQ		  0x23 /* Id, Iq values */
+#define DTI_CANID_SIGNALS	  0x24 /* Throttle signal, Brake signal, IO, Drive enable */
 
 typedef struct {
-    int32_t rpm;            /* SCALE: 1         UNITS: Rotations per Minute   */
-    int16_t duty_cycle;     /* SCALE: 10        UNITS: Percentage             */
-    int16_t input_voltage;  /* SCALE: 1         UNITS: Volts                  */
-    int16_t ac_current;     /* SCALE: 10        UNITS: Amps                   */
-    int16_t dc_current;     /* SCALE: 10        UNITS: Amps                   */
-    int16_t contr_temp;      /* SCALE: 10        UNITS: Degrees Celsius        */
-    int16_t motor_temp;     /* SCALE: 10        UNITS: Degrees Celsius        */
-    uint8_t fault_code;     /* SCALE: 1         UNITS: No units just a number */
-    int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
-    int8_t brake_signal;    /* SCALE: 1         UNITS: Percentage             */
-    int8_t drive_enable;    /* SCALE: 1         UNITS: No units just a number */
-    osMutexId_t *mutex;
+	int32_t rpm;			/* SCALE: 1         UNITS: Rotations per Minute   */
+	int16_t duty_cycle;		/* SCALE: 10        UNITS: Percentage             */
+	int16_t input_voltage;	/* SCALE: 1         UNITS: Volts                  */
+	int16_t ac_current;		/* SCALE: 10        UNITS: Amps                   */
+	int16_t dc_current;		/* SCALE: 10        UNITS: Amps                   */
+	int16_t contr_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
+	int16_t motor_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
+	uint8_t fault_code;		/* SCALE: 1         UNITS: No units just a number */
+	int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
+	int8_t brake_signal;	/* SCALE: 1         UNITS: Percentage             */
+	int8_t drive_enable;	/* SCALE: 1         UNITS: No units just a number */
+	osMutexId_t* mutex;
 } dti_t;
 
-//TODO: Expand GET interface
+// TODO: Expand GET interface
 
 /* Utilities for Decoding CAN message */
 extern osThreadId_t dti_router_handle;
@@ -47,7 +46,7 @@ extern const osThreadAttr_t dti_router_attributes;
 extern osMessageQueueId_t dti_router_queue;
 void vDTIRouter(void* pv_params);
 
-dti_t *dti_init();
+dti_t* dti_init();
 
 /*
  * SCALE: 10
@@ -55,8 +54,8 @@ dti_t *dti_init();
  */
 void dti_set_torque(int16_t torque);
 
-//TODO: Regen interface
-//void dti_set_regen(int16_t regen);
+// TODO: Regen interface
+// void dti_set_regen(int16_t regen);
 
 /*
  * SCALE: 10

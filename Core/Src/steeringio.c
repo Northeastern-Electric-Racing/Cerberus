@@ -1,28 +1,25 @@
 #include "steeringio.h"
-#include <string.h>
+#include "can.h"
+#include "cerberus_conf.h"
+#include "cmsis_os.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "cmsis_os.h"
-#include "cerberus_conf.h"
-#include "can.h"
+#include <string.h>
 
-#define CAN_QUEUE_SIZE      5   /* messages */
+#define CAN_QUEUE_SIZE 5 /* messages */
 
 static osMutexAttr_t steeringio_data_mutex_attributes;
 static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
 osMessageQueueId_t steeringio_router_queue;
 
-static void debounce_cb(void *arg);
+static void debounce_cb(void* arg);
 
-enum {
-	NOT_PRESSED,
-	PRESSED
-};
+enum { NOT_PRESSED, PRESSED };
 
 /* Creates a new Steering Wheel interface */
-steeringio_t *steeringio_init()
+steeringio_t* steeringio_init()
 {
-	steeringio_t *steeringio = malloc(sizeof(steeringio_t));
+	steeringio_t* steeringio = malloc(sizeof(steeringio_t));
 	assert(steeringio);
 
 	/* Create Mutexes */
@@ -41,13 +38,13 @@ steeringio_t *steeringio_init()
 	assert(steeringio->debounce_buffer);
 
 	/* Create Queue for CAN signaling */
-    steeringio_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-    assert(steeringio_router_queue);
+	steeringio_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	assert(steeringio_router_queue);
 
 	return steeringio;
 }
 
-bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
+bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button)
 {
 	if (!wheel)
 		return 0;
@@ -62,9 +59,9 @@ bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
 }
 
 /* Callback to see if we have successfully debounced */
-static void debounce_cb(void *arg)
+static void debounce_cb(void* arg)
 {
-	steeringio_t *wheel = (steeringio_t *)arg;
+	steeringio_t* wheel = (steeringio_t*)arg;
 	if (!wheel)
 		return;
 
@@ -89,26 +86,24 @@ static void debounce_cb(void *arg)
 }
 
 /* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[], uint8_t len)
+void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 {
 	if (!wheel || !wheel_data)
 		return;
 
-	//TODO: Revisit how new wheel's data is formatted
+	// TODO: Revisit how new wheel's data is formatted
 	/* Copy message data to wheelio buffer */
-	//memcpy(&io, wheel_data, len);
+	// memcpy(&io, wheel_data, len);
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
 		if (wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
 			wheel->debounced_buttons[i] = PRESSED;
-		}
-		else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
+		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
 			osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
 			ringbuffer_enqueue(wheel->debounce_buffer, &i);
-		}
-		else {
+		} else {
 			wheel->debounced_buttons[i] = NOT_PRESSED;
 		}
 	}
@@ -117,26 +112,24 @@ void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[], uint8_t len)
 
 /* Inbound Task-specific Info */
 osThreadId_t steeringio_router_handle;
-const osThreadAttr_t steeringio_router_attributes = {
-	.name = "SteeringIORouter",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityNormal4
-};
+const osThreadAttr_t steeringio_router_attributes = { .name		  = "SteeringIORouter",
+													  .stack_size = 128 * 8,
+													  .priority = (osPriority_t)osPriorityNormal4 };
 
 void vSteeringIORouter(void* pv_params)
 {
-	//can_msg_t message;
-	//osStatus_t status;
-	//fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
+	// can_msg_t message;
+	// osStatus_t status;
+	// fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
 
-	//steeringio_t *wheel = (steeringio_t *)pv_params;
+	// steeringio_t *wheel = (steeringio_t *)pv_params;
 
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
-		//status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
-		//if (status == osOK){
+		// status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
+		// if (status == osOK){
 		//	steeringio_update(wheel, message.data, message.len);
-		//}
+		// }
 		osThreadYield();
 	}
 }
