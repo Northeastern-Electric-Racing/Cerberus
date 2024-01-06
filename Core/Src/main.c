@@ -170,7 +170,7 @@ int main(void)
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* I'm not defining mutexes here lol */
+  /* I'm kinda defining mutexes here lol */
 
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
@@ -178,14 +178,6 @@ int main(void)
   dti_t *mc   = dti_init();
   steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
-
-  toggle_yled(mpu); // Toggle on LED2
-  HAL_Delay(500);
-  toggle_yled(mpu); // Toggle on LED2
-  HAL_Delay(500);
-  toggle_yled(mpu); // Toggle on LED2
-  HAL_Delay(500);
-  toggle_yled(mpu); // Toggle on LED2
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -216,7 +208,7 @@ int main(void)
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
 
-  /* Hardware Messaging */
+  /* Messaging */
   /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
