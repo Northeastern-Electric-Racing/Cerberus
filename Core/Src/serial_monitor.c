@@ -1,8 +1,8 @@
 #include "serial_monitor.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define PRINTF_QUEUE_SIZE 16  /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
@@ -18,7 +18,7 @@ const osThreadAttr_t serial_monitor_attributes;
 int serial_print(const char* format, ...)
 {
 	va_list arg;
-	char *buffer = malloc(sizeof(char) * PRINTF_BUFFER_LEN);
+	char* buffer = malloc(sizeof(char) * PRINTF_BUFFER_LEN);
 	if (buffer == NULL)
 		return -1;
 

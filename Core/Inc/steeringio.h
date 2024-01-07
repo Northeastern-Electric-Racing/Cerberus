@@ -1,12 +1,12 @@
 #ifndef STEERING_H
 #define STEERING_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "ringbuffer.h"
 #include "cmsis_os.h"
+#include "ringbuffer.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-#define STEERING_CANID_IO	0x400
+#define STEERING_CANID_IO 0x400
 
 typedef enum {
 	STEERING_PADDLE_LEFT,
@@ -20,8 +20,8 @@ typedef enum {
 } steeringio_button_t;
 
 typedef struct {
-	osMutexId_t *button_mutex; /* Necessary to allow multiple threads to access same data */
-	osMutexId_t *ringbuffer_mutex;
+	osMutexId_t* button_mutex; /* Necessary to allow multiple threads to access same data */
+	osMutexId_t* ringbuffer_mutex;
 	osTimerId_t debounce_timers[MAX_STEERING_BUTTONS];
 	ringbuffer_t* debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
@@ -35,11 +35,11 @@ extern osMessageQueueId_t steeringio_router_queue;
 void vSteeringIORouter(void* pv_params);
 
 /* Creates a new Steering Wheel interface */
-steeringio_t *steeringio_init();
+steeringio_t* steeringio_init();
 
-bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button);
+bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button);
 
 /* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[], uint8_t len);
+void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len);
 
 #endif /* STEERING_H */

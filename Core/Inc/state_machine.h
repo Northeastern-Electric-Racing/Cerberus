@@ -3,13 +3,7 @@
 
 #include "cmsis_os.h"
 
-typedef enum {
-	BOOT,
-	READY,
-	DRIVING,
-	FAULTED,
-	MAX_FUNC_STATES
-} func_state_t;
+typedef enum { BOOT, READY, DRIVING, FAULTED, MAX_FUNC_STATES } func_state_t;
 
 typedef enum {
 	NOT_DRIVING = -1,
