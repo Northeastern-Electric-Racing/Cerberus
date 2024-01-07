@@ -14,8 +14,8 @@
 #ifndef CAN_HANDLER_H
 #define CAN_HANDLER_H
 
-#include "cmsis_os.h"
 #include "can.h"
+#include "cmsis_os.h"
 
 void vRouteCanIncoming(void* pv_params);
 extern osThreadId_t route_can_incoming_handle;
@@ -26,6 +26,6 @@ extern osThreadId_t can_dispatch_handle;
 extern const osThreadAttr_t can_dispatch_attributes;
 
 int8_t queue_can_msg(can_msg_t msg);
-can_t *init_can1(CAN_HandleTypeDef *hcan);
+can_t* init_can1(CAN_HandleTypeDef* hcan);
 
 #endif

@@ -9,37 +9,37 @@
  *
  */
 
-#include <string.h>
-#include <assert.h>
-#include <stdlib.h>
 #include "dti.h"
 #include "can.h"
 #include "emrax.h"
 #include "fault.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define CAN_QUEUE_SIZE      5   /* messages */
+#define CAN_QUEUE_SIZE 5 /* messages */
 
 static osMutexAttr_t dti_mutex_attributes;
 osMessageQueueId_t dti_router_queue;
 
-dti_t *dti_init()
+dti_t* dti_init()
 {
-	dti_t *mc = malloc(sizeof(dti_t));
+	dti_t* mc = malloc(sizeof(dti_t));
 	assert(mc);
 
 	/* Create Mutex */
-    mc->mutex = osMutexNew(&dti_mutex_attributes);
-    assert(mc->mutex);
+	mc->mutex = osMutexNew(&dti_mutex_attributes);
+	assert(mc->mutex);
 
-	//TODO: Set safety parameters for operation (maxes, mins, etc)
-	//dti_set_max_ac_brake_current();
-	//dti_set_max_ac_current();
-	//dti_set_max_dc_brake_current();
-	//dti_set_max_dc_current();
+	// TODO: Set safety parameters for operation (maxes, mins, etc)
+	// dti_set_max_ac_brake_current();
+	// dti_set_max_ac_current();
+	// dti_set_max_dc_brake_current();
+	// dti_set_max_dc_current();
 
 	/* Create Queue for CAN signaling */
-    dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-    assert(dti_router_queue);
+	dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	assert(dti_router_queue);
 
 	return mc;
 }
@@ -52,8 +52,7 @@ void dti_set_torque(int16_t torque)
 
 void dti_set_current(int16_t current)
 {
-	can_msg_t msg
-		= { .id = 0x00000110, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000110, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -62,8 +61,7 @@ void dti_set_current(int16_t current)
 
 void dti_set_brake_current(int16_t brake_current)
 {
-	can_msg_t msg
-		= { .id = 0x00000210, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000210, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &brake_current, msg.len);
@@ -72,8 +70,7 @@ void dti_set_brake_current(int16_t brake_current)
 
 void dti_set_speed(int32_t rpm)
 {
-	can_msg_t msg
-		= { .id = 0x00000310, .len = 4, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000310, .len = 4, .data = { 0 } };
 
 	rpm = rpm * EMRAX_NUM_POLE_PAIRS;
 
@@ -84,8 +81,7 @@ void dti_set_speed(int32_t rpm)
 
 void dti_set_position(int16_t angle)
 {
-	can_msg_t msg
-		= { .id = 0x00000410, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000410, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &angle, msg.len);
@@ -94,8 +90,7 @@ void dti_set_position(int16_t angle)
 
 void dti_set_relative_current(int16_t relative_current)
 {
-	can_msg_t msg
-		= { .id = 0x00000510, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000510, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_current, msg.len);
@@ -104,8 +99,7 @@ void dti_set_relative_current(int16_t relative_current)
 
 void dti_set_relative_brake_current(int16_t relative_brake_current)
 {
-	can_msg_t msg
-		= { .id = 0x00000610, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000610, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_brake_current, msg.len);
@@ -114,8 +108,7 @@ void dti_set_relative_brake_current(int16_t relative_brake_current)
 
 void dti_set_digital_output(uint8_t output, bool value)
 {
-	can_msg_t msg
-		= { .id = 0x00000710, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000710, .len = 1, .data = { 0 } };
 
 	uint8_t ctrl = value >> output;
 
@@ -126,8 +119,7 @@ void dti_set_digital_output(uint8_t output, bool value)
 
 void dti_set_max_ac_current(int16_t current)
 {
-	can_msg_t msg
-		= { .id = 0x00000810, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000810, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -136,8 +128,7 @@ void dti_set_max_ac_current(int16_t current)
 
 void dti_set_max_ac_brake_current(int16_t current)
 {
-	can_msg_t msg
-		= { .id = 0x00000910, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000910, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -146,8 +137,7 @@ void dti_set_max_ac_brake_current(int16_t current)
 
 void dti_set_max_dc_current(int16_t current)
 {
-	can_msg_t msg
-		= { .id = 0x00000A10, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000A10, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -156,8 +146,7 @@ void dti_set_max_dc_current(int16_t current)
 
 void dti_set_max_dc_brake_current(int16_t current)
 {
-	can_msg_t msg
-		= { .id = 0x00000B10, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000B10, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -166,8 +155,7 @@ void dti_set_max_dc_brake_current(int16_t current)
 
 void dti_set_drive_enable(bool drive_enable)
 {
-	can_msg_t msg
-		= { .id = 0x00000C10, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x00000C10, .len = 1, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &drive_enable, msg.len);
@@ -176,37 +164,34 @@ void dti_set_drive_enable(bool drive_enable)
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
-const osThreadAttr_t dti_router_attributes = {
-	.name = "DTIRouter",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityNormal3
-};
+const osThreadAttr_t dti_router_attributes
+	= { .name = "DTIRouter", .stack_size = 128 * 8, .priority = (osPriority_t)osPriorityNormal3 };
 
 void vDTIRouter(void* pv_params)
 {
 	can_msg_t message;
 	osStatus_t status;
-	//fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
 
-	//dti_t *mc = (dti_t *)pv_params;
+	// dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
-		if (status == osOK){
-			switch(message.id) {
-				case DTI_CANID_ERPM:
-					break;
-				case DTI_CANID_CURRENTS:
-					break;
-				case DTI_CANID_TEMPS_FAULT:
-					break;
-				case DTI_CANID_ID_IQ:
-					break;
-				case DTI_CANID_SIGNALS:
-					break;
-				default:
-					break;
+		if (status == osOK) {
+			switch (message.id) {
+			case DTI_CANID_ERPM:
+				break;
+			case DTI_CANID_CURRENTS:
+				break;
+			case DTI_CANID_TEMPS_FAULT:
+				break;
+			case DTI_CANID_ID_IQ:
+				break;
+			case DTI_CANID_SIGNALS:
+				break;
+			default:
+				break;
 			}
 		}
 	}
