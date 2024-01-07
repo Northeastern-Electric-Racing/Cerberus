@@ -176,7 +176,7 @@ int main(void)
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
   pdu_t *pdu  = init_pdu(&hi2c2);
   dti_t *mc   = dti_init();
-  steeringio_t *wheel = steeringio_init();
+  //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
 
   /* USER CODE END RTOS_MUTEX */
@@ -211,7 +211,7 @@ int main(void)
   /* Messaging */
   /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  //steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
