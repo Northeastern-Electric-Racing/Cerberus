@@ -28,17 +28,17 @@ void vTempMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	// mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		// serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
-		// if (read_temp_sensor(mpu, &temp, &humidity)) {
-		//	fault_data.diag = "Failed to get temp";
-		//	queue_fault(&fault_data);
-		// }
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
@@ -167,14 +167,14 @@ void vIMUMonitor(void* pv_params)
 	can_msg_t imu_accel_msg = { .id = CANID_IMU, .len = 6, .data = { 0 } };
 	can_msg_t imu_gyro_msg	= { .id = CANID_IMU, .len = 6, .data = { 0 } };
 
-	// mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		// serial_print("IMU Task\r\n");
 		/* Take measurement */
 		uint16_t accel_data[3] = { 0 };
 		uint16_t gyro_data[3]  = { 0 };
-		/* if (read_accel(mpu,accel_data)) {
+		if (read_accel(mpu,accel_data)) {
 			fault_data.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
@@ -182,7 +182,7 @@ void vIMUMonitor(void* pv_params)
 		if (read_gyro(mpu, gyro_data)) {
 			fault_data.diag = "Failed to get IMU gyroscope";
 			queue_fault(&fault_data);
-		} */
+		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.accel_x = (sensor_data.accel_x + accel_data[0]) / num_samples;
