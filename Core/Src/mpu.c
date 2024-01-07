@@ -52,7 +52,7 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 	mpu->adc_mutex = osMutexNew(&mpu_adc_mutex_attr);
 	assert(mpu->adc_mutex);
 
-	return 0;
+	return mpu;
 }
 
 int8_t write_rled(mpu_t* mpu, bool status)

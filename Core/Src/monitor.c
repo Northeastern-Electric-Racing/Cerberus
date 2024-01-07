@@ -92,7 +92,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 void vPedalsMonitor(void* pv_params)
 {
-	// const uint8_t num_samples = 10;
+	const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 	// nertimer_t diff_timer;
 	// nertimer_t sc_timer;
@@ -100,21 +100,17 @@ void vPedalsMonitor(void* pv_params)
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 	can_msg_t pedal_msg		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
-	// uint16_t adc_data[3];
+	uint16_t adc_data[3];
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	// mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		// serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
-		// if (read_adc(mpu, adc_data)) {
-		//	fault_data.diag = "Failed to collect ADC Data!";
-		//	queue_fault(&fault_data);
-		// }
-
-		// err = HAL_ADC_PollForConversion(params->brake_adc, HAL_MAX_DELAY);
-		// if (!err)
-		// serial_print("Brake 2: %d\r\n", HAL_ADC_GetValue(params->brake_adc));
+		if (read_adc(mpu, adc_data)) {
+			fault_data.diag = "Failed to collect ADC Data!";
+			queue_fault(&fault_data);
+		}
 
 		/* Evaluate accelerator faults */
 		// if (is_timer_expired(&oc_timer))
@@ -140,12 +136,13 @@ void vPedalsMonitor(void* pv_params)
 		// MAX_ADC_VAL_12B) && 	!is_timer_active(&diff_timer)) 	start_timer(&diff_timer,
 		// PEDAL_FAULT_TIME); else 	cancel_timer(&diff_timer);
 
-		// sensor_data.acceleratorValue
-		//	= (sensor_data.acceleratorValue + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
-		//	  / num_samples;
-		// sensor_data.brakeValue
-		//	= (sensor_data.brakeValue + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
-		//	  / num_samples;
+		/* Low Pass Filter */
+		sensor_data.accelerator_value
+			= (sensor_data.accelerator_value + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
+			  / num_samples;
+		 sensor_data.brake_value
+			= (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
+			  / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
