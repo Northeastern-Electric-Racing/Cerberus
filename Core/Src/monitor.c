@@ -33,17 +33,17 @@ void vTempMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	//mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		// serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
-			fault_data.diag = "Failed to get temp";
-			queue_fault(&fault_data);
-		}
+		//if (read_temp_sensor(mpu, &temp, &humidity)) {
+		//	fault_data.diag = "Failed to get temp";
+		//	queue_fault(&fault_data);
+		//}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
@@ -105,8 +105,11 @@ void vPedalsMonitor(void* pv_params)
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
+	//uint32_t curr_tick = HAL_GetTick();
+
 	for (;;) {
-		// serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
+		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
+		//curr_tick = HAL_GetTick();
 		if (read_adc(mpu, adc_data)) {
 			fault_data.diag = "Failed to collect ADC Data!";
 			queue_fault(&fault_data);
@@ -146,7 +149,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
-
+		serial_print("Pedal Data: %d\r\n", sensor_data.accelerator_value);
 		/* Send CAN message */
 		memcpy(pedal_msg.data, &sensor_data, pedal_msg.len);
 		if (queue_can_msg(pedal_msg)) {
