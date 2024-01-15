@@ -112,13 +112,13 @@ void vCanDispatch(void* pv_params)
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
 			} else if (msg_status == HAL_BUSY) {
-				// fault_data.diag = "Outbound mailbox full!";
-				// queue_fault(&fault_data);
+				fault_data.diag = "Outbound mailbox full!";
+				queue_fault(&fault_data);
 			}
 		}
 
 		/* Yield to other tasks */
-		osThreadYield();
+		osDelay(50);
 	}
 }
 

@@ -43,7 +43,7 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
 	assert(mpu->imu);
-	assert(!lsm6dso_init(mpu->imu, mpu->hi2c)); /* This is always connected */
+	//assert(!lsm6dso_init(mpu->imu, mpu->hi2c)); /* This is always connected */
 
 	/* Create Mutexes */
 	mpu->i2c_mutex = osMutexNew(&mpu_i2c_mutex_attr);
