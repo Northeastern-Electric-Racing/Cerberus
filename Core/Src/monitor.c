@@ -94,7 +94,7 @@ void vPedalsMonitor(void* pv_params)
 	// nertimer_t oc_timer;
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
-	can_msg_t pedal_msg		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
+	//can_msg_t pedal_msg		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
 	uint16_t adc_data[3];
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
@@ -144,13 +144,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Publish to Onboard Pedals Queue */
 		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
-		serial_print("Pedal Data: %d\r\n", sensor_data.accelerator_value);
-		/* Send CAN message */
-		memcpy(pedal_msg.data, &sensor_data, pedal_msg.len);
-		if (queue_can_msg(pedal_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
+
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
@@ -200,10 +194,10 @@ void vIMUMonitor(void* pv_params)
 
 		/* Send CAN message */
 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
-		if (queue_can_msg(imu_accel_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
+		//if (queue_can_msg(imu_accel_msg)) {
+		//	fault_data.diag = "Failed to send CAN message";
+		//	queue_fault(&fault_data);
+		//}
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
 		if (queue_can_msg(imu_gyro_msg)) {
