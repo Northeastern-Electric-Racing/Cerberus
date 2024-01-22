@@ -200,7 +200,7 @@ int main(void)
   /* Monitors */
   temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
