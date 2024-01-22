@@ -15,16 +15,18 @@
 #include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
+#include "serial_monitor.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define CAN_MSG_QUEUE_SIZE 25 /* messages */
+#define CAN_MSG_QUEUE_SIZE 	25 /* messages */
+#define CAN_TEST_MSG		0x069 /* CAN TEST MSG */
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO,
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG
 };
 
 void can1_callback(CAN_HandleTypeDef* hcan);
@@ -81,6 +83,8 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case STEERING_CANID_IO:
 		osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
 		break;
+	case CAN_TEST_MSG:
+		serial_print("UR MOM \n");
 	default:
 		break;
 	}
@@ -114,11 +118,14 @@ void vCanDispatch(void* pv_params)
 			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
+			} else{
+				fault_data.diag = "Bing Bong";
+				queue_fault(&fault_data);
 			}
 		}
 
 		/* Yield to other tasks */
-		osDelay(50);
+		osDelay(3);
 	}
 }
 
