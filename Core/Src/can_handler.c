@@ -125,7 +125,7 @@ void vCanDispatch(void* pv_params)
 		}
 
 		/* Yield to other tasks */
-		osDelay(3);
+		osDelay(CAN_DISPATCH_DELAY);
 	}
 }
 
