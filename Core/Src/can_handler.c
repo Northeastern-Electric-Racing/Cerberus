@@ -15,6 +15,7 @@
 #include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
+#include "serial_monitor.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,29 +97,36 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void* pv_params)
 {
-	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
+	//fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
 
 	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
-	can_msg_t msg_from_queue;
-	HAL_StatusTypeDef msg_status;
+	//can_msg_t msg_from_queue;
+	//HAL_StatusTypeDef msg_status;
 	can_t* can1 = (can_t*)pv_params;
 
 	for (;;) {
 		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
-			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) {
-				fault_data.diag = "Failed to send CAN message";
-				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
-				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			}
+		//if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
+		//	msg_status = can_send_msg(can1, &msg_from_queue);
+		//	if (msg_status == HAL_ERROR) {
+		//		fault_data.diag = "Failed to send CAN message";
+		//		queue_fault(&fault_data);
+		//	} else if (msg_status == HAL_BUSY) {
+		//		fault_data.diag = "Outbound mailbox full!";
+		//		queue_fault(&fault_data);
+		//	}
+		//}
+		
+		CAN_RxHeaderTypeDef rx_header;
+		can_msg_t new_msg;
+		if(HAL_CAN_GetRxMessage(can1->hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK)
+		{
+			serial_print("IM SCARED \r\n");
 		}
 
 		/* Yield to other tasks */
-		osDelay(50);
+		osDelay(500);
 	}
 }
 
