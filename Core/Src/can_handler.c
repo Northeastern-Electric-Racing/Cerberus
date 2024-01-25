@@ -124,6 +124,9 @@ void vCanDispatch(void* pv_params)
 		{
 			serial_print("IM SCARED \r\n");
 		}
+		else {
+			serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X\r\n", rx_header.StdId, new_msg.data);
+		}
 
 		/* Yield to other tasks */
 		osDelay(500);
