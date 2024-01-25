@@ -125,7 +125,7 @@ void vCanDispatch(void* pv_params)
 			serial_print("IM SCARED \r\n");
 		}
 		else {
-			serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X\r\n", rx_header.StdId, new_msg.data);
+			serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X%X%X%X\r\n", rx_header.StdId, new_msg.data[0], new_msg.data[1], new_msg.data[2], new_msg.data[3]);
 		}
 
 		/* Yield to other tasks */
