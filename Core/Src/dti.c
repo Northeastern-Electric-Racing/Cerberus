@@ -52,10 +52,10 @@ void dti_set_torque(int16_t torque)
 
 void dti_set_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x00000110, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = CANID_TEST, .len = 4, .data = { 0xBA, 0x11 , 0x5A, 0xCC } };
 
 	/* Send CAN message */
-	memcpy(msg.data, &current, msg.len);
+	//memcpy(msg.data, &current, msg.len);
 	queue_can_msg(msg);
 }
 

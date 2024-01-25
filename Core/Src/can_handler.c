@@ -110,18 +110,47 @@ void vCanDispatch(void* pv_params)
 
 	for (;;) {
 		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
-			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) {
-				fault_data.diag = "Failed to send CAN message";
-				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
-				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			} else{
-				fault_data.diag = "Bing Bong";
-				queue_fault(&fault_data);
+		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) 
+		{
+			// TODO: Get rid of this swtich when it works
+			switch(msg_from_queue.id)
+			{
+				case CANID_TEMP_SENSOR:
+					break;
+				case CANID_PEDAL_SENSOR:
+					break;
+				case CANID_IMU:
+					break;
+				case CANID_OUTBOUND_MSG:
+					break;
+				case CANID_TORQUE_MSG:
+					break;
+				case CANID_FUSE:
+					break;
+				case CANID_SHUTDOWN_LOOP:
+					break;
+				case CANID_TEST:
+					msg_status = can_send_msg(can1, &msg_from_queue);
+					if (msg_status == HAL_ERROR) 
+					{
+						fault_data.diag = "Failed to send CAN message";
+						queue_fault(&fault_data);
+					} 
+					else if (msg_status == HAL_BUSY) 
+					{
+						fault_data.diag = "Outbound mailbox full!";
+						queue_fault(&fault_data);
+					} 
+					else
+					{
+						fault_data.diag = "Bing Bong";
+						queue_fault(&fault_data);
+					}
+					break;
+				default:
+					break;
 			}
+			
 		}
 
 		/* Yield to other tasks */
