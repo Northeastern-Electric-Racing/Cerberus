@@ -209,7 +209,7 @@ int main(void)
   /* Messaging */
   /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
