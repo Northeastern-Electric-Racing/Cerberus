@@ -159,6 +159,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
+ 
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -208,7 +209,7 @@ int main(void)
   /* Messaging */
   /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  //steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
@@ -460,17 +461,17 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 1;
+  hcan1.Init.Prescaler = 3;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_3TQ;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
+  hcan1.Init.AutoWakeUp = ENABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
+  hcan1.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
@@ -478,6 +479,9 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	HAL_CAN_IRQHandler(&hcan1);
 
 }
 

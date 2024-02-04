@@ -123,6 +123,16 @@ void vCanDispatch(void* pv_params)
 				queue_fault(&fault_data);
 			}
 		}
+		/* Uncomment this if needed for debugging */
+		// CAN_RxHeaderTypeDef rx_header;
+		// can_msg_t new_msg;
+		// if(HAL_CAN_GetRxMessage(can1->hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK)
+		// {
+		// 	serial_print("IM SCARED \r\n");
+		// }
+		// else {
+		// 	serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X%X%X%X\r\n", rx_header.StdId, new_msg.data[0], new_msg.data[1], new_msg.data[2], new_msg.data[3]);
+		// }
 
 		/* Yield to other tasks */
 		osDelay(CAN_DISPATCH_DELAY);
