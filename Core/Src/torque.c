@@ -14,12 +14,13 @@
 #include "dti.h"
 #include "queues.h"
 #include <assert.h>
+#include "serial_monitor.h"
 
-#define MAX_TORQUE 10 /* Nm */
+#define MAX_TORQUE 10.0 /* Nm */
 
 // TODO: Might want to make these more dynamic to account for MechE tuning
-#define MIN_PEDAL_VAL 2 /* Raw ADC */
-#define MAX_PEDAL_VAL 2 /* Raw ADC */
+#define MIN_PEDAL_VAL 2380.0 /* Raw ADC */
+#define MAX_PEDAL_VAL 2562.0 /* Raw ADC */
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60					  /* Hz */
@@ -38,27 +39,41 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	uint16_t torque = 0;
 	osStatus_t stat;
+	float accel = 0;
 
 	// TODO: Get important data from MC
 	// dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
-
+		
 		/* If we receive a new message within the time frame, calc new torque */
-		if (stat == osOK) {
+		if (stat == osOK) 
+		{
 			// TODO: Add state based torque calculation
 
-			uint16_t accel = pedal_data.accelerator_value;
+			accel = (float)pedal_data.accelerator_value;
 
 			if (accel < MIN_PEDAL_VAL)
+			{
 				torque = 0;
+			}
+				
 			else
+			{
 				/* Linear scale of torque */
-				torque = (MAX_TORQUE / MAX_PEDAL_VAL) * accel - MIN_PEDAL_VAL;
+				float bingbong = (MAX_TORQUE / MAX_PEDAL_VAL);
+				torque = bingbong * (accel - MIN_PEDAL_VAL) * 10.0;
+				
+			}
+		}
+		else
+		{
+			serial_print("I'm scared.");
 		}
 
 		/* Send whatever torque command we have on record */
 		dti_set_torque(torque);
 	}
 }
+ 
