@@ -93,7 +93,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
+	enum {BRAKEPIN_1, BRAKEPIN_2, ACCELPIN_1, ACCELPIN_2 };
 	// nertimer_t diff_timer;
 	// nertimer_t sc_timer;
 	// nertimer_t oc_timer;
@@ -148,8 +148,13 @@ void vPedalsMonitor(void* pv_params)
 			  / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
-		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
-
+		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
+		
+		if(check != 0)
+		{
+			fault_data.diag = "Failed to push pedal data to queue";
+			queue_fault(&fault_data);
+		}
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
