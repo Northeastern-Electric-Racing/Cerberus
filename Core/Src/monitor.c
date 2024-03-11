@@ -98,6 +98,14 @@ void vPedalsMonitor(void* pv_params)
 	// nertimer_t diff_timer;
 	// nertimer_t sc_timer;
 	// nertimer_t oc_timer;
+
+	/*diff_timer: timer for difference between pedal sensor values*/
+	nertimer_t diff_timer;
+	/*sc: short circuit tiimer*/
+	nertimer_t sc_timer;
+	/*oc: open circuit timer*/
+	nertimer_t oc_timer; 
+
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 	//can_msg_t pedal_msg		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
@@ -139,6 +147,71 @@ void vPedalsMonitor(void* pv_params)
 		// else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH *
 		// MAX_ADC_VAL_12B) && 	!is_timer_active(&diff_timer)) 	start_timer(&diff_timer,
 		// PEDAL_FAULT_TIME); else 	cancel_timer(&diff_timer);
+
+
+		/* Evaluate accelerator faults */
+		if (is_timer_expired(&oc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12B) &&
+			!is_timer_active(&oc_timer))
+			start_timer(&oc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&oc_timer);
+		
+		if (is_timer_expired(&sc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
+			!is_timer_active(&sc_timer))
+			start_timer(&sc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&sc_timer);
+
+		if (is_timer_expired(&diff_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+			!is_timer_active(&diff_timer))
+			start_timer(&diff_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&diff_timer);
+
+		/*Evaluate brake faults*/
+
+		/*Open circuit*/
+
+		if(is_timer_expired(&oc_timer))
+			// todo queue fault
+			continue:
+		else if ((adc_data[BRAKEPIN_1] == MAX_ADC_VAL_12B || adc_data[BRAKEPIN_2] == MAX_ADC_VAL_12B) &&
+			!is_timer_active(&oc_timer))
+			start_timer(&oc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&oc_timer);
+
+		/*Short circuit*/
+
+		if (is_timer_expired(&sc_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[BRAKEPIN_1] == 0 || adc_data[BRAKEPIN_2] == 0) &&
+			!is_timer_active(&sc_timer))
+			start_timer(&sc_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&sc_timer);
+
+		/*Diff between generated values > 100 ms*/
+		if (is_timer_expired(&diff_timer))
+			//todo queue fault
+			continue;
+		else if ((adc_data[BRAKEPIN_1] - adc_data[BRAKEPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+			!is_timer_active(&diff_timer))
+			start_timer(&diff_timer, PEDAL_FAULT_TIME);
+		else
+			cancel_timer(&diff_timer);
+
+
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
