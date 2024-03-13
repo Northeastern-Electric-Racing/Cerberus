@@ -43,7 +43,7 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	can1->id_list	  = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
-	assert(can_init(can1));
+	assert(!can_init(can1));
 
 	return can1;
 }
@@ -79,6 +79,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case DTI_CANID_TEMPS_FAULT:
 	case DTI_CANID_ID_IQ:
 	case DTI_CANID_SIGNALS:
+		serial_print("BingBongBingChilling \n \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case STEERING_CANID_IO:
@@ -123,7 +124,7 @@ void vCanDispatch(void* pv_params)
 			}
 			else
 			{
-				serial_print("Bing bong its ya boi");
+				serial_print("Bing bong its ya boi \r\n");
 			}
 		}
 		

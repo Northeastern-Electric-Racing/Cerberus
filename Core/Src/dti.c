@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -52,10 +53,10 @@ void dti_set_torque(int16_t torque)
 
 void dti_set_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x00000110, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x019, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
-	memcpy(msg.data, &current, msg.len);
+	memcpy(&msg.data, &current, msg.len);
 	queue_can_msg(msg);
 }
 
@@ -64,7 +65,7 @@ void dti_set_brake_current(int16_t brake_current)
 	can_msg_t msg = { .id = 0x00000210, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
-	memcpy(msg.data, &brake_current, msg.len);
+	memcpy(&msg.data, &brake_current, msg.len);
 	queue_can_msg(msg);
 }
 
