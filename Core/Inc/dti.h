@@ -17,13 +17,14 @@
 #include <stdint.h>
 
 /* Message IDs from DTI CAN Datasheet */
-#define DTI_CANID_ERPM		  0x20 /* ERPM, Duty, Input Voltage */
-#define DTI_CANID_CURRENTS	  0x21 /* AC Current, DC Current */
-#define DTI_CANID_TEMPS_FAULT 0x22 /* Controller Temp, Motor Temp, Faults */
-#define DTI_CANID_ID_IQ		  0x23 /* Id, Iq values */
-#define DTI_CANID_SIGNALS	  0x24 /* Throttle signal, Brake signal, IO, Drive enable */
+#define DTI_CANID_ERPM		  0x2008 /* ERPM, Duty, Input Voltage */
+#define DTI_CANID_CURRENTS	  0x2108 /* AC Current, DC Current */
+#define DTI_CANID_TEMPS_FAULT 0x2208 /* Controller Temp, Motor Temp, Faults */
+#define DTI_CANID_ID_IQ		  0x2308 /* Id, Iq values */
+#define DTI_CANID_SIGNALS	  0x2408 /* Throttle signal, Brake signal, IO, Drive enable */
 
-typedef struct {
+typedef struct 
+{
 	int32_t rpm;			/* SCALE: 1         UNITS: Rotations per Minute   */
 	int16_t duty_cycle;		/* SCALE: 10        UNITS: Percentage             */
 	int16_t input_voltage;	/* SCALE: 1         UNITS: Volts                  */
@@ -45,6 +46,10 @@ extern osThreadId_t dti_router_handle;
 extern const osThreadAttr_t dti_router_attributes;
 extern osMessageQueueId_t dti_router_queue;
 void vDTIRouter(void* pv_params);
+
+extern osThreadId_t dti_ping_handle;
+extern const osThreadAttr_t dti_ping_attributes;
+void vDTIPing(void* pv_params);
 
 dti_t* dti_init();
 
