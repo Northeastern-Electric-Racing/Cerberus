@@ -18,6 +18,7 @@
 #include "timer.h"
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -33,21 +34,24 @@ void vTempMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	//mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		// serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
-		//if (read_temp_sensor(mpu, &temp, &humidity)) {
-		//	fault_data.diag = "Failed to get temp";
-		//	queue_fault(&fault_data);
-		//}
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			//printf("FAILED TO READ");
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
 		sensor_data.humidity	= (sensor_data.humidity + humidity) / num_samples;
+
+		printf("%d\n", temp);
 
 		/* Publish to Onboard Temp Queue */
 		osMessageQueuePut(onboard_temp_queue, &sensor_data, 0U, 0U);
