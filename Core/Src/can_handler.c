@@ -72,14 +72,27 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	new_msg.id	= rx_header.StdId;
 
 	// TODO: Switch to hash map
-	switch (new_msg.id) {
+	switch (new_msg.id) 
+	{
 	/* Messages Relevant to Motor Controller */
 	case DTI_CANID_ERPM:
+		serial_print("DTI_ERPM_RECEIVED \n \n");
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		break;
 	case DTI_CANID_CURRENTS:
+		serial_print("DTI_CURRENTS_RECEIVED \n \n");
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		break;
 	case DTI_CANID_TEMPS_FAULT:
+		serial_print("DTI_TEMPS/FAULT_RECEIVED \n \n");
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		break;
 	case DTI_CANID_ID_IQ:
+		serial_print("DTI_ID_IQ_RECEIVED \n \n");
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		break;
 	case DTI_CANID_SIGNALS:
-		serial_print("BingBongBingChilling \n \n");
+		serial_print("DTI_GENERAL_DATA_RECEIVED \n \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case STEERING_CANID_IO:
