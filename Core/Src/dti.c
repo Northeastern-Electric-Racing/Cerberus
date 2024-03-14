@@ -54,7 +54,7 @@ void dti_set_torque(int16_t torque)
 void dti_set_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x0108, .len = 2, .data = { 0 } };
-
+	dti_set_drive_enable(true);
 	/* Send CAN message */
 	memcpy(&msg.data, &current, msg.len);
 	queue_can_msg(msg);
@@ -200,18 +200,3 @@ void vDTIRouter(void* pv_params)
 	}
 }
 
-/* Inbound Task-specific Info */
-osThreadId_t dti_ping_handle;
-const osThreadAttr_t dti_ping_attributes
-	= { .name = "DTIPinger", .stack_size = 128 * 2, .priority = (osPriority_t)osPriorityAboverNormal2 };
-
-void vDTIPing(void* pv_params)
-{
-	for(;;)
-	{
-		// TODO: Add state dependency, dont wanna send enable message 
-		// if in non driving mode
-		dti_set_drive_enable(true);
-		
-	}
-}

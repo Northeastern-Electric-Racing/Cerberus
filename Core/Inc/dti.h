@@ -47,9 +47,7 @@ extern const osThreadAttr_t dti_router_attributes;
 extern osMessageQueueId_t dti_router_queue;
 void vDTIRouter(void* pv_params);
 
-extern osThreadId_t dti_ping_handle;
-extern const osThreadAttr_t dti_ping_attributes;
-void vDTIPing(void* pv_params);
+
 
 dti_t* dti_init();
 
