@@ -77,6 +77,7 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
 Drivers/Embedded-Base/general/src/lsm6dso.c \
 Drivers/Embedded-Base/general/src/sht30.c \
+Drivers/Embedded-Base/general/src/max7314.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/pi4ioe.c \
 Drivers/Embedded-Base/middleware/src/timer.c \

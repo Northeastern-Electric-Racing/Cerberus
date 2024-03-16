@@ -32,14 +32,25 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	// }
 
 	/* Initialize Control GPIO Expander */
-	// pdu->ctrl_expander = malloc(sizeof(max7431_t));
-	// assert(pdu->ctrl_expander);
-	// if (max7341_init(pdu->ctrl_expander, pdu->hi2c)) {
-	//   free(pdu->ctrl_expander);
-	//   free(pdu->shutdown_expander);
-	//   free(pdu);
-	//   return NULL;
-	// }
+	pdu->ctrl_expander = malloc(sizeof(max7314_t));
+	assert(pdu->ctrl_expander);
+	if (max7314_init(pdu->ctrl_expander, pdu->hi2c)) {
+	   free(pdu->ctrl_expander);
+	   free(pdu->shutdown_expander);
+	   free(pdu);
+	   return NULL;
+	}
+
+    //set pins 0-3 to outputs
+    max7314_pin_modes_t out = MAX7314_PIN_MODE_OUTPUT;
+    max7314_pin_modes_t in = MAX7314_PIN_MODE_INPUT;
+    uint8_t pin_configs[8] = {out, out, out, out, in, in, in, in} ;
+    if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, pin_configs)) {
+        free(pdu->ctrl_expander);
+        free(pdu->shutdown_expander);
+        free(pdu);
+        return NULL;
+    }
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
@@ -58,6 +69,7 @@ int8_t write_pump(pdu_t* pdu, bool status)
 		return stat;
 
 	// write pump over i2c
+    max7314_set_pin_state(pdu->ctrl_expander, PUMP_CTRL, (max7314_pin_states_t) status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -73,6 +85,7 @@ int8_t write_fan_radiator(pdu_t* pdu, bool status)
 		return stat;
 
 	// write radiator over i2c
+    max7314_set_pin_state(pdu->ctrl_expander, RADFAN_CTRL, (max7314_pin_states_t) status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -88,6 +101,7 @@ int8_t write_brakelight(pdu_t* pdu, bool status)
 		return stat;
 
 	// write brakelight over i2c
+    max7314_set_pin_state(pdu->ctrl_expander, BRKLIGHT_CTRL, (max7314_pin_states_t) status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -103,6 +117,7 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
 		return stat;
 
 	// write fan over i2c
+    max7314_set_pin_state(pdu->ctrl_expander, BATBOXFAN_CTRL, (max7314_pin_states_t) status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;

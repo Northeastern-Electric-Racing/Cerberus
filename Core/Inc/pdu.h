@@ -3,6 +3,7 @@
 
 #include "cmsis_os.h"
 #include "pi4ioe.h"
+#include "max7314.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -10,7 +11,7 @@ typedef struct {
 	I2C_HandleTypeDef* hi2c;
 	osMutexId_t* mutex;
 	pi4ioe_t* shutdown_expander;
-	// max7341 *ctrl_expander;
+	max7314_t* ctrl_expander;
 } pdu_t;
 
 /* Creates a new PDU interface */
