@@ -23,13 +23,14 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	pdu->hi2c = hi2c;
 
 	/* Initialize Shutdown GPIO Expander */
-	pdu->shutdown_expander = malloc(sizeof(pi4ioe_t));
+	pdu->shutdown_expander = malloc(sizeof(max7314_t));
+    pdu->shutdown_expander->dev_addr = 0x20;
 	assert(pdu->shutdown_expander);
-	// if (pi4ioe_init(pdu->shutdown_expander, pdu->hi2c)) {
-	//     free(pdu->shutdown_expander);
-	//     free(pdu);
-	//     return NULL;
-	// }
+	if (max7314_init(pdu->shutdown_expander, pdu->hi2c)) {
+	    free(pdu->shutdown_expander);
+	    free(pdu);
+	    return NULL;
+	}
 
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
@@ -167,7 +168,7 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 		return stat;
 
 	// read pin over i2c
-    max7314_read_pin_state(pdu->ctrl_expander, stage, status);
+    max7314_read_pin_state(pdu->shutdown_expander, stage, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;

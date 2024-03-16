@@ -10,7 +10,7 @@
 typedef struct {
 	I2C_HandleTypeDef* hi2c;
 	osMutexId_t* mutex;
-	pi4ioe_t* shutdown_expander;
+	max7314_t* shutdown_expander;
 	max7314_t* ctrl_expander;
 } pdu_t;
 
