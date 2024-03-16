@@ -134,8 +134,42 @@ int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status)
 	if (stat)
 		return stat;
 
+	uint16_t pin;
+	switch (fuse) 
+	{
+		case FUSE_BATTBOX:
+			pin = 4;
+			break;
+		case FUSE_LVBOX:
+			pin = 5;
+			break;
+		case FUSE_FAN_RADIATOR:
+			pin = 6;
+			break;
+		case FUSE_MC:
+			pin = 7;
+			break;
+		case FUSE_FAN_BATTBOX:
+			pin = 8;
+			break;
+		case FUSE_PUMP:
+			pin = 9;
+			break;
+		case FUSE_DASHBOARD:
+			pin = 10;
+			break;
+		case FUSE_BRAKELIGHT:
+			pin = 11;
+			break;
+		case FUSE_BRB:
+			pin = 12;
+			break;
+		default:
+			return -1;
+	}
+	
 	// write fan over i2c
-    max7314_read_pin_state(pdu->ctrl_expander, fuse, status);
+    max7314_read_pin_state(pdu->ctrl_expander, pin, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -167,8 +201,42 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 	if (stat)
 		return stat;
 
+	uint16_t pin;
+	switch (stage) 
+	{
+		case CKPT_BRB_CLR:
+			pin = 0;
+			break;
+		case BMS_OK:
+			pin = 2;
+			break;
+		case INTERTIA_SW_OK:
+			pin = 3;
+			break;
+		case SPARE_GPIO1_OK:
+			pin = 4;
+			break;
+		case IMD_OK:
+			pin = 5;
+			break;
+		case BPSD_OK:
+			pin = 8;
+			break;
+		case BOTS_OK:
+			pin = 13;
+			break;
+		case HVD_INTLK_OK:
+			pin = 14;
+			break;
+		case HVC_INTLK_OK:
+			pin = 15;
+			break;
+		default:
+			return -1;
+	}
+	
 	// read pin over i2c
-    max7314_read_pin_state(pdu->shutdown_expander, stage, status);
+    max7314_read_pin_state(pdu->shutdown_expander, pin, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
