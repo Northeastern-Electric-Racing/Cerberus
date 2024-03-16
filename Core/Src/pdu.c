@@ -33,6 +33,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
+    pdu->ctrl_expander->dev_addr = 0x24;
 	assert(pdu->ctrl_expander);
 	if (max7314_init(pdu->ctrl_expander, pdu->hi2c)) {
 	   free(pdu->ctrl_expander);
@@ -69,7 +70,7 @@ int8_t write_pump(pdu_t* pdu, bool status)
 		return stat;
 
 	// write pump over i2c
-    max7314_set_pin_state(pdu->ctrl_expander, PUMP_CTRL, (max7314_pin_states_t) status);
+    max7314_set_pin_state(pdu->ctrl_expander, PUMP_CTRL, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -85,7 +86,7 @@ int8_t write_fan_radiator(pdu_t* pdu, bool status)
 		return stat;
 
 	// write radiator over i2c
-    max7314_set_pin_state(pdu->ctrl_expander, RADFAN_CTRL, (max7314_pin_states_t) status);
+    max7314_set_pin_state(pdu->ctrl_expander, RADFAN_CTRL, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -101,7 +102,7 @@ int8_t write_brakelight(pdu_t* pdu, bool status)
 		return stat;
 
 	// write brakelight over i2c
-    max7314_set_pin_state(pdu->ctrl_expander, BRKLIGHT_CTRL, (max7314_pin_states_t) status);
+    max7314_set_pin_state(pdu->ctrl_expander, BRKLIGHT_CTRL, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -117,7 +118,7 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
 		return stat;
 
 	// write fan over i2c
-    max7314_set_pin_state(pdu->ctrl_expander, BATBOXFAN_CTRL, (max7314_pin_states_t) status);
+    max7314_set_pin_state(pdu->ctrl_expander, BATBOXFAN_CTRL, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -132,8 +133,8 @@ int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status)
 	if (stat)
 		return stat;
 
-	// figure out which fuse to use
 	// write fan over i2c
+    max7314_read_pin_state(pdu->ctrl_expander, fuse, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -149,6 +150,8 @@ int8_t read_tsms_sense(pdu_t* pdu, bool* status)
 		return stat;
 
 	// read pin over i2c
+    uint8_t tsms_pin = 14;
+    max7314_read_pin_state(pdu->ctrl_expander, tsms_pin, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -163,8 +166,8 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 	if (stat)
 		return stat;
 
-	// figure out which pin to read
 	// read pin over i2c
+    max7314_read_pin_state(pdu->ctrl_expander, stage, status);
 
 	osMutexRelease(pdu->mutex);
 	return 0;
