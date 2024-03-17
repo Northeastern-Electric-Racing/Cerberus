@@ -157,13 +157,10 @@ void vBMSCANMonitor(void* pv_params)
 {
 
 	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*Ask about severity*/
-
-	bms_can_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	
+	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	can_msg_t msg_from_queue;
-	HAL_StatusTypeDef msg_status;
-	can_t* can1 = (can_t*)pv_params;
-
 	nertimer_t timer;
 	
 	if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
@@ -175,7 +172,6 @@ void vBMSCANMonitor(void* pv_params)
 			}
 		}
 	}
-
 	if (is_timer_expired(&timer)) {
 		fault_data.diag = "Failing To Receive CAN Messages from Sheperd";
 		queue_fault(&fault_data);
