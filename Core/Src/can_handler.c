@@ -16,17 +16,23 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
+#include "timer.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define CAN_MSG_QUEUE_SIZE 	25 /* messages */
 #define CAN_TEST_MSG		0x069 /* CAN TEST MSG */
+#define CAN_BMS_MONITOR		0x070 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
+
+#define BMS_WATCHDOG_DURATION 10 /*Duration of btween petting bms monitor watchdog*/
+
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG,
+	CAN_BMS_MONITOR
 };
 
 void can1_callback(CAN_HandleTypeDef* hcan);
@@ -85,6 +91,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		break;
 	case CAN_TEST_MSG:
 		serial_print("UR MOM \n");
+	case CAN_BMS_MONITOR:
 	default:
 		break;
 	}
@@ -136,6 +143,42 @@ void vCanDispatch(void* pv_params)
 
 		/* Yield to other tasks */
 		osDelay(CAN_DISPATCH_DELAY);
+	}
+}
+
+osThreadId_t bms_can_monitor_handle;
+osThreadAttr_t bms_can_monitor_attributes = {
+	.name = "BMSCANMonitor",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityLow1 /*Adjust priority*/
+}
+
+void vBMSCANMonitor(void* pv_params) 
+{
+
+	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*Ask about severity*/
+
+	bms_can_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+
+	can_msg_t msg_from_queue;
+	HAL_StatusTypeDef msg_status;
+	can_t* can1 = (can_t*)pv_params;
+
+	nertimer_t* timer;
+	
+	if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
+		if (msg_from_queue.id == CAN_BMS_MONITOR) {
+			if (!is_timer_active(&timer)) {
+				start_timer(&timer, BMS_WATCHDOG_DURATION);
+			} else {
+				cancel_timer(&timer);
+			}
+		}
+	}
+
+	if (is_timer_expired(&timer)) {
+		fault_data.diag = "Failing To Receive CAN Messages from Sheperd";
+		queue_fault(&fault_data);
 	}
 }
 
