@@ -211,7 +211,7 @@ int main(void)
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
-  bms_can_monitor_handle = osThreadNew(vBMSCANMonitor, can1 &bms_can_monitor_attributes);
+  bms_can_monitor_handle = osThreadNew(vBMSCANMonitor, can1, &bms_can_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
   /* Control Logic */
