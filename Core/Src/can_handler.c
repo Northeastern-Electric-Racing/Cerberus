@@ -226,15 +226,11 @@ void vBMSCANMonitor(void* pv_params)
 }
 
 int8_t queue_can_msg(can_msg_t msg)
-int8_t queue_can_msg(can_msg_t msg)
 {
-	if (!can_outbound_queue)
-		return -1;
 	if (!can_outbound_queue)
 		return -1;
 
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
-	return 0;
 	return 0;
 }
 
