@@ -24,7 +24,9 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdlib.h>
 #include "sht30.h"
+#include "lsm6dso.h"
 #include "lsm6dso.h"
 #include "monitor.h"
 #include "queues.h"
@@ -32,6 +34,11 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "torque.h"
+#include "pdu.h"
+#include "mpu.h"
+#include "dti.h"
+#include "steeringio.h"
 #include "torque.h"
 #include "pdu.h"
 #include "mpu.h"
@@ -160,6 +167,7 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
  
+ 
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -168,6 +176,15 @@ int main(void)
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
+  /* I'm kinda defining mutexes here lol */
+
+  /* Create Interfaces to Represent Relevant Hardware */
+  mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
+  pdu_t *pdu  = init_pdu(&hi2c2);
+  dti_t *mc   = dti_init();
+  //steeringio_t *wheel = steeringio_init();
+  can_t *can1 = init_can1(&hcan1);
+
   /* I'm kinda defining mutexes here lol */
 
   /* Create Interfaces to Represent Relevant Hardware */
@@ -200,6 +217,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
   temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  /* Monitors */
+  temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
@@ -215,7 +234,11 @@ int main(void)
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
   /* Control Logic */
+
+  /* Control Logic */
   sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
+  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
 
@@ -227,6 +250,7 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
+
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -463,15 +487,20 @@ static void MX_CAN1_Init(void)
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 3;
+  hcan1.Init.Prescaler = 3;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = ENABLE;
+  hcan1.Init.AutoWakeUp = ENABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
+  hcan1.Init.TransmitFifoPriority = ENABLE;
   hcan1.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
@@ -480,6 +509,9 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	HAL_CAN_IRQHandler(&hcan1);
   HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
 	HAL_CAN_IRQHandler(&hcan1);
@@ -651,6 +683,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PC3 PC8 PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC4 PC5 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
@@ -707,7 +747,39 @@ void StartDefaultTask(void *argument)
   int i = 0;
   //uint8_t data;
   //HAL_StatusTypeDef err;
+  int i = 0;
+  //uint8_t data;
+  //HAL_StatusTypeDef err;
   /* Infinite loop */
+  for(;;) {
+    /* Testing getting data from I2C devices */
+    //serial_print("Register Address\tContents\r\n");
+    //serial_print("----------------\t--------\r\n");
+    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
+      //uint8_t reg = 0x0F;
+      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
+      //  if (err)
+      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
+      //  else
+      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
+    //}
+    
+    /* Basics of manually getting ADC reading (no DMA) */
+    //HAL_ADC_Start(&hadc1);
+    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    //if (!err)
+    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
+
+    /* Toggle LED at certain frequency */
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
+    i++;
+
+    if (i % 2 == 1)
+      serial_print(".\r\n");
+    else
+      serial_print("..\r\n");
+
+    osDelay(YELLOW_LED_BLINK_DELAY);
   for(;;) {
     /* Testing getting data from I2C devices */
     //serial_print("Register Address\tContents\r\n");
