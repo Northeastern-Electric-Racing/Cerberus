@@ -146,12 +146,12 @@ void vCanDispatch(void* pv_params)
 	}
 }
 
-osThreadId_t bms_can_monitor_handle;
+static osThreadId_t bms_can_monitor_handle;
 osThreadAttr_t bms_can_monitor_attributes = {
 	.name = "BMSCANMonitor",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityLow1 /*Adjust priority*/
-}
+};
 
 void vBMSCANMonitor(void* pv_params) 
 {
