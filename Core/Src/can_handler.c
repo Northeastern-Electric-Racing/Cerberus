@@ -173,7 +173,7 @@ void vBMSCANMonitor(void* pv_params)
 		}
 	}
 	if (is_timer_expired(&timer)) {
-		fault_data.diag = "Failing To Receive CAN Messages from Sheperd";
+		fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
 		queue_fault(&fault_data);
 	}
 }
