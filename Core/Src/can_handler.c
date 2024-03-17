@@ -146,8 +146,8 @@ void vCanDispatch(void* pv_params)
 	}
 }
 
-static osThreadId_t bms_can_monitor_handle;
-osThreadAttr_t bms_can_monitor_attributes = {
+osThreadId_t bms_can_monitor_handle;
+const osThreadAttr_t bms_can_monitor_attributes = {
 	.name = "BMSCANMonitor",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityLow1 /*Adjust priority*/
@@ -164,7 +164,7 @@ void vBMSCANMonitor(void* pv_params)
 	HAL_StatusTypeDef msg_status;
 	can_t* can1 = (can_t*)pv_params;
 
-	nertimer_t* timer;
+	nertimer_t timer;
 	
 	if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
 		if (msg_from_queue.id == CAN_BMS_MONITOR) {
