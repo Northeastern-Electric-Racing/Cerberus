@@ -124,55 +124,58 @@ void vPedalsMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
-		/* Evaluate accelerator faults */
-		// if (is_timer_expired(&oc_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] ==
-		// MAX_ADC_VAL_12B) && 	!is_timer_active(&oc_timer)) 	start_timer(&oc_timer,
-		// PEDAL_FAULT_TIME); else 	cancel_timer(&oc_timer);
+		
+		static void eval_pedal_fault(PIN_Value_1) {
 
-		// if (is_timer_expired(&sc_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
-		//	!is_timer_active(&sc_timer))
-		//	start_timer(&sc_timer, PEDAL_FAULT_TIME);
-		// else
-		//	cancel_timer(&sc_timer);
-
-		// if (is_timer_expired(&diff_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH *
-		// MAX_ADC_VAL_12B) && 	!is_timer_active(&diff_timer)) 	start_timer(&diff_timer,
-		// PEDAL_FAULT_TIME); else 	cancel_timer(&diff_timer);
-
+		}
 
 		/* Evaluate accelerator faults */
+
+		// checking if the timer has expired for the oc:open circuit timer
 		if (is_timer_expired(&oc_timer))
-			//todo queue fault
-			continue;
-		else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12B) &&
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+
+		// checking if the values given by sensor - 1/sensor - 2 are
+		// the "max ADC"  values possible. Signalling a open - circuit
+		else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12b || adc_data[ACCELPIN_2] == MAX_ADC_VAL_12b) &&
 			!is_timer_active(&oc_timer))
+
+			// starting the open circuit timer
 			start_timer(&oc_timer, PEDAL_FAULT_TIME);
 		else
+		// if there is no pedal faulting condition 
+		// cancel the timer
 			cancel_timer(&oc_timer);
+
 		
+		// checking if the timer has expired for the sc:short circuit timer
 		if (is_timer_expired(&sc_timer))
 			//todo queue fault
 			continue;
+		
+		// checking if the values given by sensor - 1/sensor - 2 are
+		// the "min ADC" values possible. Signalling a short - circuit
+
 		else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
 			!is_timer_active(&sc_timer))
 			start_timer(&sc_timer, PEDAL_FAULT_TIME);
 		else
 			cancel_timer(&sc_timer);
 
+		
+		// check if diff timer:difference between generated values is > 100ms
+		// has expired
 		if (is_timer_expired(&diff_timer))
 			//todo queue fault
 			continue;
-		else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+
+		// checking if the values given by sensor - 1/sensor - 2 are
+		// the "min ADC" values possible. Signalling a short - circuit
+		else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) &&
 			!is_timer_active(&diff_timer))
+
+		// starting diff timer
 			start_timer(&diff_timer, PEDAL_FAULT_TIME);
 		else
 			cancel_timer(&diff_timer);
@@ -184,7 +187,7 @@ void vPedalsMonitor(void* pv_params)
 		if(is_timer_expired(&oc_timer))
 			// todo queue fault
 			continue:
-		else if ((adc_data[BRAKEPIN_1] == MAX_ADC_VAL_12B || adc_data[BRAKEPIN_2] == MAX_ADC_VAL_12B) &&
+		else if ((adc_data[BRAKEPIN_1] == MAX_ADC_VAL_12b || adc_data[BRAKEPIN_2] == MAX_ADC_VAL_12b) &&
 			!is_timer_active(&oc_timer))
 			start_timer(&oc_timer, PEDAL_FAULT_TIME);
 		else
@@ -205,7 +208,7 @@ void vPedalsMonitor(void* pv_params)
 		if (is_timer_expired(&diff_timer))
 			//todo queue fault
 			continue;
-		else if ((adc_data[BRAKEPIN_1] - adc_data[BRAKEPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12B) &&
+		else if ((adc_data[BRAKEPIN_1] - adc_data[BRAKEPIN_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) &&
 			!is_timer_active(&diff_timer))
 			start_timer(&diff_timer, PEDAL_FAULT_TIME);
 		else
