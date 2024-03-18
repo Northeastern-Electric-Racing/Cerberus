@@ -3,7 +3,6 @@
 
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
-#include "cmsis_os.h"
 
 typedef enum { DEFCON1 = 1, DEFCON2, DEFCON3, DEFCON4, DEFCON5 } fault_sev_t;
 
