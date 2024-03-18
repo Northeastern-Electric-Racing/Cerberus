@@ -185,15 +185,6 @@ int main(void)
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
 
-  /* I'm kinda defining mutexes here lol */
-
-  /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  pdu_t *pdu  = init_pdu(&hi2c2);
-  dti_t *mc   = dti_init();
-  //steeringio_t *wheel = steeringio_init();
-  can_t *can1 = init_can1(&hcan1);
-
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -747,39 +738,7 @@ void StartDefaultTask(void *argument)
   int i = 0;
   //uint8_t data;
   //HAL_StatusTypeDef err;
-  int i = 0;
-  //uint8_t data;
-  //HAL_StatusTypeDef err;
   /* Infinite loop */
-  for(;;) {
-    /* Testing getting data from I2C devices */
-    //serial_print("Register Address\tContents\r\n");
-    //serial_print("----------------\t--------\r\n");
-    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
-      //uint8_t reg = 0x0F;
-      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
-      //  if (err)
-      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
-      //  else
-      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
-    //}
-    
-    /* Basics of manually getting ADC reading (no DMA) */
-    //HAL_ADC_Start(&hadc1);
-    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    //if (!err)
-    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
-
-    /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
-    i++;
-
-    if (i % 2 == 1)
-      serial_print(".\r\n");
-    else
-      serial_print("..\r\n");
-
-    osDelay(YELLOW_LED_BLINK_DELAY);
   for(;;) {
     /* Testing getting data from I2C devices */
     //serial_print("Register Address\tContents\r\n");
