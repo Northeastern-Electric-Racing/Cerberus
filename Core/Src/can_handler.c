@@ -68,11 +68,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		.severity = DEFCON2,
 	};
 
-	fault_data_t fault_data = {
-		.id		  = CAN_ROUTING_FAULT,
-		.severity = DEFCON2,
-	};
-
 	CAN_RxHeaderTypeDef rx_header;
 	can_msg_t new_msg;
 
