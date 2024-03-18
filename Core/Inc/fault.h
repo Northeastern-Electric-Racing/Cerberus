@@ -26,9 +26,6 @@ typedef struct {
 	fault_code_t id;
 	fault_sev_t severity;
 	char* diag;
-	fault_code_t id;
-	fault_sev_t severity;
-	char* diag;
 } fault_data_t;
 
 /* Function to queue a fault */
