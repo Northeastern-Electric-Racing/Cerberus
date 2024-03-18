@@ -74,8 +74,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
-
-
 	can_msg_t new_msg;
 
 	/* Read in CAN message */
@@ -92,7 +90,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		return;
 	}
 	new_msg.len = rx_header.DLC;
-	new_msg.id	= rx_header.StdId;
 	new_msg.id	= rx_header.StdId;
 
 	// TODO: Switch to hash map
