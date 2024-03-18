@@ -36,6 +36,8 @@ static uint16_t id_list[] = {
 	CAN_BMS_MONITOR
 };
 
+osMessageQueueId_t bms_can_monitor_queue;
+
 void can1_callback(CAN_HandleTypeDef* hcan);
 
 can_t* init_can1(CAN_HandleTypeDef* hcan)
@@ -52,6 +54,8 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
 	assert(can_init(can1));
+
+	bms_can_monitor_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	return can1;
 }
@@ -107,25 +111,21 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case CAN_TEST_MSG:
 		serial_print("UR MOM \n");
 	case CAN_BMS_MONITOR:
+		osMessageQueuePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
+		break;
 	default:
 		break;
 	}
 }
 
 static osMessageQueueId_t can_outbound_queue;
-static osMessageQueueId_t can_outbound_queue;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name		= "CanDispatch",
-	.name		= "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal4,
 	.priority	= (osPriority_t)osPriorityAboveNormal4,
 };
 
-void vCanDispatch(void* pv_params)
-{
-	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
 void vCanDispatch(void* pv_params)
 {
 	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
@@ -141,34 +141,8 @@ void vCanDispatch(void* pv_params)
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
 			msg_status = can_send_msg(can1, &msg_from_queue);
 			if (msg_status == HAL_ERROR) {
-	HAL_StatusTypeDef msg_status;
-	can_t* can1 = (can_t*)pv_params;
-
-	for (;;) {
-		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
-			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
-				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			} else{
-				fault_data.diag = "Bing Bong";
-				queue_fault(&fault_data);
-			}
-		}
-		/* Uncomment this if needed for debugging */
-		// CAN_RxHeaderTypeDef rx_header;
-		// can_msg_t new_msg;
-		// if(HAL_CAN_GetRxMessage(can1->hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK)
-		// {
-		// 	serial_print("IM SCARED \r\n");
-		// }
-		// else {
-		// 	serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X%X%X%X\r\n", rx_header.StdId, new_msg.data[0], new_msg.data[1], new_msg.data[2], new_msg.data[3]);
-		// }
 			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
@@ -204,13 +178,11 @@ void vBMSCANMonitor(void* pv_params)
 {
 
 	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*Ask about severity*/
-	
-	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	can_msg_t msg_from_queue;
 	nertimer_t timer;
 	
-	if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
+	if (osOK == osMessageQueueGet(bms_can_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
 		if (msg_from_queue.id == CAN_BMS_MONITOR) {
 			if (!is_timer_active(&timer)) {
 				start_timer(&timer, BMS_WATCHDOG_DURATION);
