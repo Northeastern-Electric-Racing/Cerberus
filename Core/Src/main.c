@@ -24,9 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdlib.h>
 #include "sht30.h"
-#include "lsm6dso.h"
 #include "lsm6dso.h"
 #include "monitor.h"
 #include "queues.h"
@@ -34,11 +32,6 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
-#include "torque.h"
-#include "pdu.h"
-#include "mpu.h"
-#include "dti.h"
-#include "steeringio.h"
 #include "torque.h"
 #include "pdu.h"
 #include "mpu.h"
@@ -69,7 +62,6 @@ ADC_HandleTypeDef hadc3;
 CAN_HandleTypeDef hcan1;
 
 I2C_HandleTypeDef hi2c1;
-I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi1;
 
@@ -93,7 +85,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_I2C2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
@@ -208,8 +199,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
   temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
-  /* Monitors */
-  temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
@@ -230,9 +219,6 @@ int main(void)
   sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -478,20 +464,15 @@ static void MX_CAN1_Init(void)
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 3;
-  hcan1.Init.Prescaler = 3;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = ENABLE;
-  hcan1.Init.AutoWakeUp = ENABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = ENABLE;
   hcan1.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {

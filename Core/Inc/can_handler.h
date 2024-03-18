@@ -15,7 +15,6 @@
 #define CAN_HANDLER_H
 
 #include "can.h"
-#include "can.h"
 #include "cmsis_os.h"
 
 void vRouteCanIncoming(void* pv_params);
