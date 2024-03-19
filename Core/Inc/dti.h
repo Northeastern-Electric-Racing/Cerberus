@@ -17,11 +17,11 @@
 #include <stdint.h>
 
 /* Message IDs from DTI CAN Datasheet */
-#define DTI_CANID_ERPM		  0x2008 /* ERPM, Duty, Input Voltage */
-#define DTI_CANID_CURRENTS	  0x2108 /* AC Current, DC Current */
-#define DTI_CANID_TEMPS_FAULT 0x2208 /* Controller Temp, Motor Temp, Faults */
-#define DTI_CANID_ID_IQ		  0x2308 /* Id, Iq values */
-#define DTI_CANID_SIGNALS	  0x2408 /* Throttle signal, Brake signal, IO, Drive enable */
+#define DTI_CANID_ERPM		  0x416 /* ERPM, Duty, Input Voltage */
+#define DTI_CANID_CURRENTS	  0x436 /* AC Current, DC Current */
+#define DTI_CANID_TEMPS_FAULT 0x456 /* Controller Temp, Motor Temp, Faults */
+#define DTI_CANID_ID_IQ		  0x476 /* Id, Iq values */
+#define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 
 typedef struct 
 {

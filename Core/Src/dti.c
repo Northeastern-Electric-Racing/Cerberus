@@ -53,7 +53,7 @@ void dti_set_torque(int16_t torque)
 
 void dti_set_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x0108, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x036, .len = 2, .data = { 0 } };
 	dti_set_drive_enable(true);
 	/* Send CAN message */
 	memcpy(&msg.data, &current, msg.len);
@@ -62,7 +62,7 @@ void dti_set_current(int16_t current)
 
 void dti_set_brake_current(int16_t brake_current)
 {
-	can_msg_t msg = { .id = 0x0208, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x056, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(&msg.data, &brake_current, msg.len);
@@ -71,7 +71,7 @@ void dti_set_brake_current(int16_t brake_current)
 
 void dti_set_speed(int32_t rpm)
 {
-	can_msg_t msg = { .id = 0x0308, .len = 4, .data = { 0 } };
+	can_msg_t msg = { .id = 0x076, .len = 4, .data = { 0 } };
 
 	rpm = rpm * EMRAX_NUM_POLE_PAIRS;
 
@@ -82,7 +82,7 @@ void dti_set_speed(int32_t rpm)
 
 void dti_set_position(int16_t angle)
 {
-	can_msg_t msg = { .id = 0x0408, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x096, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &angle, msg.len);
@@ -91,7 +91,7 @@ void dti_set_position(int16_t angle)
 
 void dti_set_relative_current(int16_t relative_current)
 {
-	can_msg_t msg = { .id = 0x0508, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0B6, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_current, msg.len);
@@ -100,7 +100,7 @@ void dti_set_relative_current(int16_t relative_current)
 
 void dti_set_relative_brake_current(int16_t relative_brake_current)
 {
-	can_msg_t msg = { .id = 0x0608, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0D6, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_brake_current, msg.len);
@@ -109,7 +109,7 @@ void dti_set_relative_brake_current(int16_t relative_brake_current)
 
 void dti_set_digital_output(uint8_t output, bool value)
 {
-	can_msg_t msg = { .id = 0x0708, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0F6, .len = 1, .data = { 0 } };
 
 	uint8_t ctrl = value >> output;
 
@@ -120,7 +120,7 @@ void dti_set_digital_output(uint8_t output, bool value)
 
 void dti_set_max_ac_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x0808, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x116, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -129,7 +129,7 @@ void dti_set_max_ac_current(int16_t current)
 
 void dti_set_max_ac_brake_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x0908, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x136, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -138,7 +138,7 @@ void dti_set_max_ac_brake_current(int16_t current)
 
 void dti_set_max_dc_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x0A08, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x156, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -147,7 +147,7 @@ void dti_set_max_dc_current(int16_t current)
 
 void dti_set_max_dc_brake_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x0B08, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x176, .len = 2, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -156,7 +156,7 @@ void dti_set_max_dc_brake_current(int16_t current)
 
 void dti_set_drive_enable(bool drive_enable)
 {
-	can_msg_t msg = { .id = 0x0C08, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x196, .len = 1, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &drive_enable, msg.len);
