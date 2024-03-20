@@ -32,12 +32,12 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "bms_can_monitor.h"
 #include "torque.h"
 #include "pdu.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
-#include "bms_can_monitor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
