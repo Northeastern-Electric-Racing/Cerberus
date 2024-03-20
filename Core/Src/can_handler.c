@@ -17,23 +17,19 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
-#include "timer.h"
+#include "bms_can_monitor.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define CAN_MSG_QUEUE_SIZE 	25 /* messages */
 #define CAN_TEST_MSG		0x069 /* CAN TEST MSG */
-#define CAN_BMS_MONITOR		0x070 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
-
-#define BMS_WATCHDOG_DURATION 10 /*Duration of btween petting bms monitor watchdog*/
-
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
 	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG,
-	CAN_BMS_MONITOR
+	CANID_BMS_MONITOR
 };
 
 osMessageQueueId_t bms_can_monitor_queue;
@@ -54,8 +50,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
 	assert(can_init(can1));
-
-	bms_can_monitor_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	return can1;
 }
@@ -102,9 +96,9 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		break;
 	case CAN_TEST_MSG:
 		serial_print("UR MOM \n");
-	case CAN_BMS_MONITOR:
-		osMessageQueuePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
 		break;
+	case CANID_BMS_MONITOR:
+		osMessagePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
@@ -156,36 +150,6 @@ void vCanDispatch(void* pv_params)
 
 		/* Yield to other tasks */
 		osDelay(CAN_DISPATCH_DELAY);
-	}
-}
-
-osThreadId_t bms_can_monitor_handle;
-const osThreadAttr_t bms_can_monitor_attributes = {
-	.name = "BMSCANMonitor",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityLow1 /*Adjust priority*/
-};
-
-void vBMSCANMonitor(void* pv_params) 
-{
-
-	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*Ask about severity*/
-
-	can_msg_t msg_from_queue;
-	nertimer_t timer;
-	
-	if (osOK == osMessageQueueGet(bms_can_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
-		if (msg_from_queue.id == CAN_BMS_MONITOR) {
-			if (!is_timer_active(&timer)) {
-				start_timer(&timer, BMS_WATCHDOG_DURATION);
-			} else {
-				cancel_timer(&timer);
-			}
-		}
-	}
-	if (is_timer_expired(&timer)) {
-		fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
-		queue_fault(&fault_data);
 	}
 }
 

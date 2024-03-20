@@ -37,6 +37,7 @@
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
+#include "bms_can_monitor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -177,6 +178,7 @@ int main(void)
   dti_t *mc   = dti_init();
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
+  bms_can_monitor_t* bms_can_monitor = bms_can_monitor_init();
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -212,7 +214,7 @@ int main(void)
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
-  bms_can_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_can_monitor_attributes);
+  bms_can_monitor_handle = osThreadNew(vBMSCANMonitor, bms_can_monitor, &bms_can_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
 
   /* Control Logic */
