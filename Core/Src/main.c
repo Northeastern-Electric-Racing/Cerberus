@@ -178,7 +178,7 @@ int main(void)
   dti_t *mc   = dti_init();
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
-  bms_can_monitor_t* bms_can_monitor = bms_can_monitor_init();
+  bms_can_monitor_t *bms_can_monitor = bms_can_monitor_init();
 
   /* USER CODE END RTOS_MUTEX */
 
