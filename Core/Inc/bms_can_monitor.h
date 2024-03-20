@@ -9,7 +9,7 @@
 
 typedef struct 
 {
-    nertimer timer;
+    nertimer_t timer;
 } bms_can_monitor_t;
 
 
