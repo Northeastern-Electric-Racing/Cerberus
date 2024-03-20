@@ -20,4 +20,4 @@ extern osThreadId_t bms_can_monitor_handle;
 extern const osThreadAttr_t bms_can_monitor_attributes;
 extern osMessageQueueId_t bms_can_monitor_queue;
 
-#endif BMS_CAN_MONITOR_H
+#endif /*BMS_CAN_MONITOR_H*/
