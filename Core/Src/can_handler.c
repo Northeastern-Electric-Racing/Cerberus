@@ -98,7 +98,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		serial_print("UR MOM \n");
 		break;
 	case CANID_BMS_MONITOR:
-		osMessagePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
+		osMessageQueuePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
