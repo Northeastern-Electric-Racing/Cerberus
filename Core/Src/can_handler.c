@@ -76,23 +76,23 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	{
 	/* Messages Relevant to Motor Controller */
 	case DTI_CANID_ERPM:
-		serial_print("DTI_ERPM_RECEIVED \n \n");
+		//serial_print("DTI_ERPM_RECEIVED \r \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case DTI_CANID_CURRENTS:
-		serial_print("DTI_CURRENTS_RECEIVED \n \n");
+		//serial_print("DTI_CURRENTS_RECEIVED \r \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case DTI_CANID_TEMPS_FAULT:
-		serial_print("DTI_TEMPS/FAULT_RECEIVED \n \n");
+		//serial_print("DTI_TEMPS/FAULT_RECEIVED \r \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case DTI_CANID_ID_IQ:
-		serial_print("DTI_ID_IQ_RECEIVED \n \n");
+		//serial_print("DTI_ID_IQ_RECEIVED \r \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case DTI_CANID_SIGNALS:
-		serial_print("DTI_GENERAL_DATA_RECEIVED \n \n");
+		//serial_print("DTI_GENERAL_DATA_RECEIVED \r \n");
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case STEERING_CANID_IO:
@@ -125,31 +125,16 @@ void vCanDispatch(void* pv_params)
 		/* Send CAN message */
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
 			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) 
+			if (msg_status == HAL_ERROR)
 			{
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
-			} 
-			else if (msg_status == HAL_BUSY) 
+			}
+			else if (msg_status == HAL_BUSY)
 			{
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
 			}
-			else
-			{
-				serial_print("Bing bong its ya boi \r\n");
-			}
-		}
-		
-		CAN_RxHeaderTypeDef rx_header;
-		can_msg_t new_msg;
-		if(HAL_CAN_GetRxMessage(can1->hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK)
-		{
-			serial_print("IM SCARED \r\n");
-		}
-		else 
-		{
-			serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X%X%X%X\r\n", rx_header.StdId, new_msg.data[0], new_msg.data[1], new_msg.data[2], new_msg.data[3]);
 		}
 
 		/* Yield to other tasks */
