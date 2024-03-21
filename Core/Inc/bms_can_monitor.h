@@ -6,6 +6,7 @@
 #include "timer.h"
 
 #define CANID_BMS_MONITOR		0x070 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
+#define BMS_CAN_MONITOR_DELAY   5000 /*ms*/
 
 typedef struct 
 {

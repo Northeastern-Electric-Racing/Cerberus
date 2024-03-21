@@ -32,16 +32,19 @@ void vBMSCANMonitor(void* pv_params)
     
     bms_can_monitor_t* bms_can_monitor = (bms_can_monitor_t*)pv_params;
 	can_msg_t msg_from_queue;
-	
-	if (osOK == osMessageQueueGet(bms_can_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
-        if (!is_timer_active(&bms_can_monitor->timer)) {
-            start_timer(&bms_can_monitor->timer, BMS_WATCHDOG_DURATION);
-        } else {
-            cancel_timer(&bms_can_monitor->timer);
-        }
-	}
-	if (is_timer_expired(&bms_can_monitor->timer)) {
-		fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
-		queue_fault(&fault_data);
+
+	for (;;) {
+		if (osOK == osMessageQueueGet(bms_can_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
+			if (!is_timer_active(&bms_can_monitor->timer)) {
+				start_timer(&bms_can_monitor->timer, BMS_WATCHDOG_DURATION);
+			} else {
+				cancel_timer(&bms_can_monitor->timer);
+			}
+		}
+		if (is_timer_expired(&bms_can_monitor->timer)) {
+			fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
+			queue_fault(&fault_data);
+		}
+		osDelay(BMS_CAN_MONITOR_DELAY)
 	}
 }
