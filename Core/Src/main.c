@@ -483,7 +483,7 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
   HAL_CAN_IRQHandler(&hcan1);
 	
