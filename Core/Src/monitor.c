@@ -2,7 +2,6 @@
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-#include "lsm6dso.h"
 #include "mpu.h"
 #include "pdu.h"
 #include "queues.h"
@@ -13,9 +12,6 @@
 #include "lsm6dso.h"
 #include "timer.h"
 #include "serial_monitor.h"
-#include "pdu.h"
-#include "mpu.h"
-#include "timer.h"
 #include <stdbool.h>
 #include <string.h>
 

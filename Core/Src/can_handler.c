@@ -1,6 +1,7 @@
 /**
  * @file can_handler.c
  * @author Hamza Iqbal and Nick DePatie
+ * @author Hamza Iqbal and Nick DePatie
  * @brief Source file for CAN handler.
  * @version 0.1
  * @date 2023-09-22
@@ -16,6 +17,7 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
+#include "bms_can_monitor.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,8 +28,11 @@
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG,
+	CANID_BMS_MONITOR
 };
+
+osMessageQueueId_t bms_can_monitor_queue;
 
 void can1_callback(CAN_HandleTypeDef* hcan);
 
@@ -58,8 +63,14 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
-
 	can_msg_t new_msg;
+
+	/* Read in CAN message */
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
+		fault_data.diag = "Failed to read CAN Msg";
+		queue_fault(&fault_data);
+		return;
+	}
 
 	/* Read in CAN message */
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
@@ -85,6 +96,9 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		break;
 	case CAN_TEST_MSG:
 		serial_print("UR MOM \n");
+		break;
+	case CANID_BMS_MONITOR:
+		osMessageQueuePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
@@ -147,3 +161,4 @@ int8_t queue_can_msg(can_msg_t msg)
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
 	return 0;
 }
+
