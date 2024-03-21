@@ -46,6 +46,6 @@ void vBMSCANMonitor(void* pv_params)
 			fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
 			queue_fault(&fault_data);
 		}
-		osDelay(BMS_CAN_MONITOR_DELAY)
+		osDelay(BMS_CAN_MONITOR_DELAY);
 	}
 }
