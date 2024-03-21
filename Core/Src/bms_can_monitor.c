@@ -2,6 +2,7 @@
 #include "timer.h"
 #include "fault.h"
 #include "can.h"
+#include "cerberus_conf.h"
 #include <assert.h>
 #include <stdlib.h>
 
