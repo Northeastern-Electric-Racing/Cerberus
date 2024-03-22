@@ -79,6 +79,7 @@ void vWatchdogMonitor(void* pv_params)
 		/* Pets Watchdog */
 		pet_watchdog(mpu);
 		/* Yield to other RTOS tasks */
+		pet_watchdog(mpu);
 		osThreadYield();
 	}
 }
@@ -87,7 +88,7 @@ osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
 	.stack_size = 128 * 12,
-	.priority	= (osPriority_t)osPriorityHigh,
+	.priority	= (osPriority_t)osPriorityAboveNormal6,
 };
 
 void vPedalsMonitor(void* pv_params)

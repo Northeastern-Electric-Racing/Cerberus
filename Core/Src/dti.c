@@ -47,7 +47,7 @@ dti_t* dti_init()
 
 void dti_set_torque(int16_t torque)
 {
-	int16_t ac_current = (torque / EMRAX_KT); /* times 10 */
+	int16_t ac_current = ((float)torque / EMRAX_KT) * 10; /* times 10 */
 	dti_set_current(ac_current);
 }
 
