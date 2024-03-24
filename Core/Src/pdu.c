@@ -11,7 +11,7 @@
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
 
 static osMutexAttr_t pdu_mutex_attributes;
-
+#include <stdio.h>
 pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 {
 	assert(hi2c);
@@ -27,32 +27,35 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     pdu->shutdown_expander->dev_addr = 0x20;
 	assert(pdu->shutdown_expander);
 	if (max7314_init(pdu->shutdown_expander, pdu->hi2c)) {
+		printf("\n\rshutdown init fail\n\r");
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
 	}
 
-	/* Initialize Control GPIO Expander */
+	// /* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
     pdu->ctrl_expander->dev_addr = 0x24;
 	assert(pdu->ctrl_expander);
 	if (max7314_init(pdu->ctrl_expander, pdu->hi2c)) {
-	   free(pdu->ctrl_expander);
-	   free(pdu->shutdown_expander);
-	   free(pdu);
-	   return NULL;
+	 	printf("\n\rctrl exp fail\n\r");
+		free(pdu->ctrl_expander);
+		free(pdu->shutdown_expander);
+		free(pdu);
+		return NULL;
 	}
 
-    //set pins 0-3 to outputs
-    max7314_pin_modes_t out = MAX7314_PIN_MODE_OUTPUT;
-    max7314_pin_modes_t in = MAX7314_PIN_MODE_INPUT;
-    uint8_t pin_configs[8] = {out, out, out, out, in, in, in, in} ;
-    if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, pin_configs)) {
+    // set pins 0-3 to outputs
+    uint8_t pin_configs = 0b11110000;
+    if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, &pin_configs)) {
+		printf("set pin modes fail");
         free(pdu->ctrl_expander);
         free(pdu->shutdown_expander);
         free(pdu);
         return NULL;
     }
+
+	
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
@@ -167,10 +170,11 @@ int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status)
 		default:
 			return -1;
 	}
-	
-	// write fan over i2c
-    max7314_read_pin_state(pdu->ctrl_expander, pin, status);
 
+	HAL_StatusTypeDef sta = max7314_read_pin_state(pdu->ctrl_expander, pin, status);
+	if (sta)
+		return sta;
+	
 	osMutexRelease(pdu->mutex);
 	return 0;
 }

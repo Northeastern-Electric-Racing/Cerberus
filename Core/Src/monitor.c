@@ -286,6 +286,6 @@ void vShutdownMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
-		osDelay(SHUTDOWN_MONITOR_DELAY);
+	 	osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
 }

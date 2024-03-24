@@ -130,7 +130,7 @@ int _write(int file, char* ptr, int len) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -176,7 +176,6 @@ int main(void)
   dti_t *mc   = dti_init();
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
-
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
