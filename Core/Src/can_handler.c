@@ -20,13 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CAN_MSG_QUEUE_SIZE 	25 /* messages */
-#define CAN_TEST_MSG		0x069 /* CAN TEST MSG */
+#define CAN_MSG_QUEUE_SIZE 25 /* messages */
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO,
 };
 
 void can1_callback(CAN_HandleTypeDef* hcan);
@@ -44,10 +43,12 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	can1->id_list	  = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
-	assert(can_init(can1));
+	assert(!can_init(can1));
 
 	return can1;
 }
+
+
 
 /* Callback to be called when we get a CAN message */
 void can1_callback(CAN_HandleTypeDef* hcan)
@@ -83,8 +84,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case STEERING_CANID_IO:
 		osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
 		break;
-	case CAN_TEST_MSG:
-		serial_print("UR MOM \n");
 	default:
 		break;
 	}
@@ -112,30 +111,20 @@ void vCanDispatch(void* pv_params)
 		/* Send CAN message */
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
 			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) {
+			if (msg_status == HAL_ERROR)
+			{
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
+			}
+			else if (msg_status == HAL_BUSY)
+			{
 				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			} else{
-				fault_data.diag = "Bing Bong";
 				queue_fault(&fault_data);
 			}
 		}
-		/* Uncomment this if needed for debugging */
-		// CAN_RxHeaderTypeDef rx_header;
-		// can_msg_t new_msg;
-		// if(HAL_CAN_GetRxMessage(can1->hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK)
-		// {
-		// 	serial_print("IM SCARED \r\n");
-		// }
-		// else {
-		// 	serial_print("MESSAGE CONTENTS\r\nHeader\t%X\r\nData\t%X%X%X%X\r\n", rx_header.StdId, new_msg.data[0], new_msg.data[1], new_msg.data[2], new_msg.data[3]);
-		// }
 
 		/* Yield to other tasks */
-		osDelay(CAN_DISPATCH_DELAY);
+		osDelay(2);
 	}
 }
 

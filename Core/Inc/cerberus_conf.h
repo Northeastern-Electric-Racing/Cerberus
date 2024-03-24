@@ -2,7 +2,7 @@
 #define YELLOW_LED_BLINK_DELAY 500  /* ms */
 #define TEMP_SENS_SAMPLE_DELAY 200  /* ms */
 #define IMU_SAMPLE_DELAY	   5    /* ms */
-#define PEDALS_SAMPLE_DELAY	   1    /* ms */
+#define PEDALS_SAMPLE_DELAY	   5    /* ms */
 #define FUSES_SAMPLE_DELAY	   50   /* ms */
 #define SHUTDOWN_MONITOR_DELAY 50   /* ms */
 #define SERIAL_MONITOR_DELAY
