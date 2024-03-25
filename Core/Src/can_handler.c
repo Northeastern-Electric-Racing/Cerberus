@@ -28,8 +28,6 @@ static uint16_t id_list[] = {
 	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO,
 };
 
-void can1_callback(CAN_HandleTypeDef* hcan);
-
 can_t* init_can1(CAN_HandleTypeDef* hcan)
 {
 	assert(hcan);
@@ -39,7 +37,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	assert(can1);
 
 	can1->hcan		  = hcan;
-	can1->callback	  = can1_callback;
 	can1->id_list	  = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
@@ -47,8 +44,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 
 	return can1;
 }
-
-
 
 /* Callback to be called when we get a CAN message */
 void can1_callback(CAN_HandleTypeDef* hcan)
