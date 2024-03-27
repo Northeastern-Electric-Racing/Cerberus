@@ -125,6 +125,8 @@ void vPedalsMonitor(void* pv_params)
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
+	int new = int * var;
+
 	//uint32_t curr_tick = HAL_GetTick();
 
 	for (;;) {
@@ -149,7 +151,7 @@ void vPedalsMonitor(void* pv_params)
 
 
 // definition of function to evaluate pedal faulting conditions
-		void eval_pedal_fault(Sensor_1, Sensor_2) {
+		void eval_pedal_fault(Sensor_1, Sensor_2, diff_timer, sc_timer, oc_timer ) {
         
         // state machine
             // Evaluating fault
@@ -165,7 +167,7 @@ void vPedalsMonitor(void* pv_params)
 
 		// if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&checking if the values given by sensor - 1/sensor - 2 are
 		// the "max ADC"  values possible. Signalling a open - circuit
-		if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&oc_timeroc_timer)) {
+		if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&oc_timer)) {
         	// starting the open circuit timer
 			start_timer(&oc_timer, PEDAL_FAULT_TIME);
             if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b ) &&  is_timer_active(&oc_timer)) {
