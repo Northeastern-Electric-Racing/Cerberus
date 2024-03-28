@@ -96,10 +96,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum {BRAKEPIN_1, BRAKEPIN_2, ACCELPIN_1, ACCELPIN_2 };
-	// nertimer_t diff_timer;
-	// nertimer_t sc_timer;
-	// nertimer_t oc_timer;
+	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 	/*set of timers for accelerator fault conditions*/
 	/*diff_timer: timer for difference between pedal sensor values*/
@@ -138,20 +135,10 @@ void vPedalsMonitor(void* pv_params)
 		} 
 
 		
+	// Helper function for accelero and brake
+	// definition of function to evaluate pedal faulting conditions
 
-		// declaration of funtion to evaluate pedal faulting conditions
-		void eval_pedal_fault (int ACCELPIN_1, int ACCELPIN_2);
-
-
-	
-    
-		
-	/*Helper function for accelero and brake*/
-	/*****************/
-
-
-// definition of function to evaluate pedal faulting conditions
-		void eval_pedal_fault(Sensor_1, Sensor_2, diff_timer, sc_timer, oc_timer ) {
+		void eval_pedal_fault(Sensor_1, Sensor_2, diff_timer, sc_timer, oc_timer) {
         
         // state machine
             // Evaluating fault
@@ -162,11 +149,15 @@ void vPedalsMonitor(void* pv_params)
 		
         /* Evaluate accelerator faults */
 
-		// checking if the timer has expired for the oc:open circuit timer
-        // when no values are being read
+		// logic - open circuit
+		//  if the values given by sensor - 1/sensor - 2 are
+		//  the "max ADC"  values possible. Signalling a open - circuit
+			// if yes start timer
+            // while the timer is progressing check for the fault condition again
+            // if the timer is expired in the process print fault
+                // else cancel the timer and start checking for faults again
 
-		// if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&checking if the values given by sensor - 1/sensor - 2 are
-		// the "max ADC"  values possible. Signalling a open - circuit
+		
 		if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&oc_timer)) {
         	// starting the open circuit timer
 			start_timer(&oc_timer, PEDAL_FAULT_TIME);
@@ -184,15 +175,9 @@ void vPedalsMonitor(void* pv_params)
             }
         }
 
-		
-
-        // continue to evaluation faults
-		
+        // logic - short circuit
 		// checking if the values given by sensor - 1/sensor - 2 are
 		// the "min ADC" values possible. Signalling a short - circuit
-
-        // logic - short circuit
-        // check for fault conditions
             // if yes start timer
             // while the timer is progressing check for the fault condition again
             // if the timer is expired in the process print fault
@@ -217,7 +202,7 @@ void vPedalsMonitor(void* pv_params)
             }
         }
 		
-
+		// logic - diff_timer
 		// checking if the values given by sensor - 1/sensor - 2 are
 		// the "min ADC" values possible. Signalling a short - circuit
 		else if ((adc_data[Sensor_1] - adc_data[Sensor_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(&diff_timer)) {
@@ -237,7 +222,6 @@ void vPedalsMonitor(void* pv_params)
 		} 
         }
     }
-	/****************/
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
