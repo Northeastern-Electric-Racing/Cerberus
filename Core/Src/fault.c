@@ -33,12 +33,16 @@ void vFaultHandler(void* pv_params)
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
 		if (status == osOK) {
 			serial_print("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
-			switch (fault_data.severity) {
+			switch (fault_data.severity) 
+			{
 			case DEFCON1: /* Highest(1st) Priority */
+				assert(osOK == queue_func_state(FAULTED));
 				break;
 			case DEFCON2:
+				assert(osOK == queue_func_state(FAULTED));
 				break;
 			case DEFCON3:
+				assert(osOK == queue_func_state(FAULTED));
 				break;
 			case DEFCON4:
 				break;

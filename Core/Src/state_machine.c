@@ -6,7 +6,8 @@
 
 #define STATE_TRANS_QUEUE_SIZE 16
 
-typedef struct {
+typedef struct 
+{
 	func_state_t functional;
 	drive_state_t drive;
 } state_t;
@@ -15,7 +16,8 @@ typedef struct {
 static state_t cerberus_state;
 
 /* State Transition Map */
-static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
+static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = 
+{
 	/*BOOT  READY   DRIVING FAULTED*/
 	{ true, true, false, true },  /* BOOT */
 	{ false, true, true, true },  /* READY */
@@ -24,13 +26,15 @@ static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 };
 
 osThreadId_t sm_director_handle;
-const osThreadAttr_t sm_director_attributes = {
+const osThreadAttr_t sm_director_attributes = 
+{
 	.name		= "State Machine Director",
 	.stack_size = 128 * 4,
 	.priority	= (osPriority_t)osPriorityAboveNormal3,
 };
 
-static osMessageQueueId_t state_trans_queue;
+static osMessageQueueId_t func_state_trans_queue;
+static osMessageQueueId_t drive_state_trans_queue;
 
 int queue_func_state(func_state_t new_state)
 {
@@ -41,7 +45,7 @@ int queue_func_state(func_state_t new_state)
 
 	serial_print("Queued Functional State!\r\n");
 
-	return osMessageQueuePut(state_trans_queue, &queue_state, 0U, 0U);
+	return osMessageQueuePut(func_state_trans_queue, &queue_state, 0U, 0U);
 }
 
 func_state_t get_func_state()
@@ -61,7 +65,7 @@ int queue_drive_state(drive_state_t new_state)
 
 	serial_print("Queued Drive State!\r\n");
 
-	return osMessageQueuePut(state_trans_queue, &queue_state, 0U, 0U);
+	return osMessageQueuePut(drive_state_trans_queue, &queue_state, 0U, 0U);
 }
 
 drive_state_t get_drive_state()
@@ -74,28 +78,52 @@ void vStateMachineDirector(void* pv_params)
 	cerberus_state.functional = BOOT;
 	cerberus_state.drive	  = NOT_DRIVING;
 
-	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
+	func_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
+	drive_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 
 	state_t new_state;
 
 	serial_print("State Machine Init!\r\n");
 
-	for (;;) {
-		if (osOK != osMessageQueueGet(state_trans_queue, &new_state, NULL, 50)) {
-			// TODO queue fault, low criticality
-			continue;
-		}
-		serial_print("BRUH\r\n");
-		// serial_print("New State received:\t%d\r\n", new_state.functional);
-		// serial_print("Current state:\t%d\r\n", cerberus_state.functional);
-
-		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) {
-			// TODO queue fault, low criticality
+	for (;;) 
+	{
+		if (osOK != osMessageQueueGet(func_state_trans_queue, &new_state, NULL, 50)) 
+		{
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			if(queue_fault(&state_trans_fault) == -1)
+			{
+				serial_print("Fill this in later");
+			}
 			continue;
 		}
 
-		// transition state via LUT ?
-		serial_print("Transitioned State!\r\n");
+		if (osOk != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, 50))
+		{
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			if(queue_fault(&state_trans_fault) == -1)
+			{
+				serial_print("Fill this in later");
+			}
+			continue;
+		}
+		
+		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) 
+		{
+			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Failed to transition state"};
+			if(queue_fault(&state_trans_fault) == -1)
+			{
+				serial_print("Fill this in later")
+			}
+			continue;
+		}
+		
+		if(cerberus_state.functional == BOOT)
+		{
+			// TODO: Add some more checks here to make sure we are good to go into ready
+			// Dont actually know exactly what we should be checking for
+			queue_func_state(READY);
+		}
+
 		cerberus_state.functional = new_state.functional;
 		cerberus_state.drive	  = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
 	}
