@@ -2,6 +2,7 @@
 #define STATE_MACHINE_H
 
 #include "cmsis_os.h"
+#include "fault.h"
 
 typedef enum { BOOT, READY, DRIVING, FAULTED, MAX_FUNC_STATES } func_state_t;
 
