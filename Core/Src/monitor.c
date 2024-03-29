@@ -282,12 +282,12 @@ void vIMUMonitor(void* pv_params)
 		uint16_t accel_data[3] = { 0 };
 		uint16_t gyro_data[3]  = { 0 };
 		if (read_accel(mpu,accel_data)) {
-			fault_data_t.diag = "Failed to get IMU acceleration";
+			fault_data.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
 
 		if (read_gyro(mpu, gyro_data)) {
-			fault_data_t.diag = "Failed to get IMU gyroscope";
+			fault_data.diag = "Failed to get IMU gyroscope";
 			queue_fault(&fault_data);
 		}
 
@@ -311,7 +311,7 @@ void vIMUMonitor(void* pv_params)
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
 		if (queue_can_msg(imu_gyro_msg)) {
-			fault_data_t.diag = "Failed to send CAN message";
+			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -348,7 +348,7 @@ void vFusingMonitor(void* pv_params)
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
-			fault_data_t.diag = "Failed to send CAN message";
+			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -387,7 +387,7 @@ void vShutdownMonitor(void* pv_params)
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
-			fault_data_t.diag = "Failed to send CAN message";
+			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
