@@ -98,7 +98,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 
 
-void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data) 
+void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
 		/* Fault - open circuit */
 		if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
@@ -107,8 +107,8 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 
 			if (is_timer_expired(oc_timer)) {
 				if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b )) {
-			    	fault_data->diag = "Open circuit fault - max acceleration value ";
-			    	queue_fault(fault_data);
+					fault_data->diag = "Open circuit fault - max acceleration value ";
+					queue_fault(fault_data);
 				}
 				else {
 					/*
@@ -116,19 +116,19 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 					* timer and return to not faulted condition
 					*/
 					cancel_timer(oc_timer);
-            	}
+				}
 			}
 		}
 
-        /* Fault - short circuit */
+		/* Fault - short circuit */
 		if ((val_1 == 0 || val_2 == 0) &&  !is_timer_active(sc_timer)) {
 			/*starting the short circuit timer*/
 			start_timer(sc_timer, PEDAL_FAULT_TIME);
 
 			if (is_timer_expired(sc_timer)) {
 				if ((val_1 == 0 || val_2 == 0 )) {
-			    	fault_data->diag = "Short circuit fault - no acceleration value ";
-			    	queue_fault(fault_data);
+					fault_data->diag = "Short circuit fault - no acceleration value ";
+					queue_fault(fault_data);
 				}
 				else {
 					/*
@@ -136,7 +136,7 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 					* timer and return to not faulted condition
 					*/
 					cancel_timer(sc_timer);
-            	}
+				}
 			}
 
 		}
@@ -158,8 +158,8 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 					cancel_timer(diff_timer);
 				}
 			}
-        }
-    }
+		}
+	}
 
 void vPedalsMonitor(void* pv_params)
 {
@@ -189,7 +189,7 @@ void vPedalsMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
-		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data); 
+		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		// TODO: Actually read in second brake ADC
 		eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
@@ -203,7 +203,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Publish to Onboard Pedals Queue */
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
-		
+
 		if(check != 0)
 		{
 			fault_data.diag = "Failed to push pedal data to queue";
