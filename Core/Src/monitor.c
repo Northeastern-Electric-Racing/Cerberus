@@ -99,73 +99,80 @@ void eval_pedal_fault(int Sensor_1, int Sensor_2, nertimer_t *diff_timer, nertim
         /* Evaluate accelerator faults */
 
 		/* Fault - open circuit */
+
+		
 		if ((Sensor_1 == MAX_ADC_VAL_12b || Sensor_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
 			/* starting the open circuit timer*/ 
 			start_timer(oc_timer, PEDAL_FAULT_TIME);
-            if ((Sensor_1 == MAX_ADC_VAL_12b || Sensor_2 == MAX_ADC_VAL_12b ) &&  is_timer_active(oc_timer)) {
-                if (is_timer_expired(oc_timer)) {
 
-			    //todo queue fault
-
+			/*
+			 * queuing fault if the timer expires and the sensor
+			 * values continue to read max acceleration values
+			*/
+			if (is_timer_expired(oc_timer)) {
+				if ((Sensor_1 == MAX_ADC_VAL_12b || Sensor_2 == MAX_ADC_VAL_12b )) {
+				/* todo queue fault */
 			    fault_data->diag = "Open circuit fault - max acceleration value ";
 			    queue_fault(fault_data);
-            } 
-		    else {
-		    /*
-			 * if there is no pedal faulting condition cancel
-			 * timer and return to not faulted condition
-			 */ 
-			cancel_timer(oc_timer);
-            }
-            }
-        }
+				}
+				else {
+				/*
+					* if there is no pedal faulting condition cancel
+					* timer and return to not faulted condition
+					*/ 
+				cancel_timer(oc_timer);
+            	}
+			}
+		}
 
         /* fault - short circuit */
 		else if ((Sensor_1 == 0 || Sensor_2 == 0) &&  !is_timer_active(sc_timer)) {
 			/*starting the short circuit timer*/
 			start_timer(sc_timer, PEDAL_FAULT_TIME);
 			/*
-			 * checking for the short circuit condition again
-			 * by giving it a time limit to debounce
-			 */
-            if ((Sensor_1 == 0 || Sensor_2 == 0) &&  is_timer_active(sc_timer)) {
-				/*check for timer expiry*/
-                if (is_timer_expired(sc_timer)) {
-			    
-				/*todo queue fault*/
-			    fault_data->diag = "Short circuit fault - no acceleration value";
+			 * queuing fault if the timer expires and the sensor
+			 * values continue to read max acceleration values
+			*/
+			if (is_timer_expired(sc_timer)) {
+				if ((Sensor_1 == 0 || Sensor_2 == 0 )) {
+				/* todo queue fault */
+			    fault_data->diag = "Short circuit fault - no acceleration value ";
 			    queue_fault(fault_data);
-            } 
-            }
-            else {
-			   /*
-			 	* if there is no faulting condition cancel
-			 	* timer and return to not faulted condition
-			 	*/ 
-                cancel_timer(sc_timer);
-            }
-        }
+				}
+				else {
+				/*
+					* if there is no pedal faulting condition cancel
+					* timer and return to not faulted condition
+					*/ 
+				cancel_timer(sc_timer);
+            	}
+			}
+
+		}
 		
 		/* fault - difference between pedal sensing values > 100 ms */
 		
 		else if ((Sensor_1 - Sensor_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
-		/*starting diff timer*/
+		/* starting diff timer */
 		start_timer(diff_timer, PEDAL_FAULT_TIME);
-        if ((Sensor_1 - Sensor_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && is_timer_active(diff_timer)) {
-            /*diff timer:difference between generated values is > 100ms */
-		    if (is_timer_expired(diff_timer)) {
-			//todo queue fault
+        if (is_timer_expired(diff_timer)) {
+			/*
+			 * queuing fault if the timer expires and the time difference
+			 * between sensor values is > 100 ms
+			 */
+			if (Sensor_1 - Sensor_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) {
+			/* todo queue fault */
 			    fault_data->diag = "Diff timer fault - sensor readings more than 100 ms apart";
 			    queue_fault(fault_data);
             }
-        }
-		else {
+			else {
 			/*
 			 * if there is no faulting condition cancel
 			 * timer and return to not faulted condition
 			 */ 
 			cancel_timer(diff_timer);
-		} 
+			} 
+		}
         }
     }
 
