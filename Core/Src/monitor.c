@@ -19,6 +19,12 @@
 #include <stdbool.h>
 #include <string.h>
 
+// sc - DEFCON - 1
+// oc - DEFCON - 1
+// *diff_timer - DEFCON - 1
+
+// // non-critical - pedal moved to fast - changes of values too quickly
+
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
 	.name		= "TempMonitor",
@@ -93,6 +99,95 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 // state-machine based code for pedal faulting
 
+/* int is_timer_active (int timer)
+{
+return 0;
+}; */
+
+void eval_pedal_fault(int Sensor_1, int Sensor_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data) {
+        
+        // state machine
+            // Evaluating fault
+            // Faulted
+            // Not Faulted
+        // in every cycle of the function all the three timers are triggered 
+
+		
+        /* Evaluate accelerator faults */
+
+		// logic - open circuit
+		//  if the values given by sensor - 1/sensor - 2 are
+		//  the "max ADC"  values possible. Signalling a open - circuit
+			// if yes start timer
+            // while the timer is progressing check for the fault condition again
+            // if the timer is expired in the process print fault
+                // else cancel the timer and start checking for faults again
+
+		
+		if ((Sensor_1 == MAX_ADC_VAL_12b || Sensor_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
+        	// starting the open circuit timer
+			start_timer(oc_timer, PEDAL_FAULT_TIME);
+            if ((Sensor_1 == MAX_ADC_VAL_12b || Sensor_2 == MAX_ADC_VAL_12b ) &&  is_timer_active(oc_timer)) {
+                if (is_timer_expired(oc_timer)) {
+			    //todo queue fault
+			    fault_data->diag = "Failed to send CAN message";
+			    queue_fault(fault_data);
+            } 
+		    else {
+		    // if there is no pedal faulting condition cancel
+		    // timer and return to not faulted condition
+			cancel_timer(oc_timer);
+            }
+            }
+        }
+
+        // logic - short circuit
+		// checking if the values given by sensor - 1/sensor - 2 are
+		// the "min ADC" values possible. Signalling a short - circuit
+            // if yes start timer
+            // while the timer is progressing check for the fault condition again
+            // if the timer is expired in the process print fault
+                // else cancel the timer and start checking for faults again
+
+
+		else if ((Sensor_1 == 0 || Sensor_2 == 0) &&  !is_timer_active(sc_timer)) {
+			start_timer(sc_timer, PEDAL_FAULT_TIME);
+            
+            if ((Sensor_1 == 0 || Sensor_2 == 0) &&  is_timer_active(sc_timer)) {
+                if (is_timer_expired(sc_timer)) {
+			    //todo queue fault
+			    fault_data->diag = "Failed to send CAN message";
+			    queue_fault(fault_data);
+            } 
+            }
+            // checking if the timer has expired for the sc:short circuit timer
+		    
+            else {
+            // moving to not faulted conditions
+                cancel_timer(sc_timer);
+            }
+        }
+		
+		// logic -*diff_timer
+		// checking if the values given by sensor - 1/sensor - 2 are
+		// the "min ADC" values possible. Signalling a short - circuit
+		else if ((Sensor_1 - Sensor_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
+		// starting diff timer
+		start_timer(diff_timer, PEDAL_FAULT_TIME);
+        if ((Sensor_1 - Sensor_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && is_timer_active(diff_timer)) {
+            // check if diff timer:difference between generated values is > 100ms // has expired
+		    if (is_timer_expired(diff_timer)) {
+			//todo queue fault
+			    fault_data->diag = "Failed to send CAN message";
+			    queue_fault(fault_data);
+            }
+        }
+		else {
+			cancel_timer(diff_timer);
+		} 
+        }
+    }
+
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
@@ -122,7 +217,7 @@ void vPedalsMonitor(void* pv_params)
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
-	int new = int * var;
+	//int new = int * var;
 
 	//uint32_t curr_tick = HAL_GetTick();
 
@@ -138,90 +233,9 @@ void vPedalsMonitor(void* pv_params)
 	// Helper function for accelero and brake
 	// definition of function to evaluate pedal faulting conditions
 
-		void eval_pedal_fault(Sensor_1, Sensor_2, diff_timer, sc_timer, oc_timer) {
-        
-        // state machine
-            // Evaluating fault
-            // Faulted
-            // Not Faulted
-        // in every cycle of the function all the three timers are triggered 
+		eval_pedal_fault(adc_data[0], adc_data[1], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data); 
+		eval_pedal_fault(adc_data[3], adc_data[3], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
-		
-        /* Evaluate accelerator faults */
-
-		// logic - open circuit
-		//  if the values given by sensor - 1/sensor - 2 are
-		//  the "max ADC"  values possible. Signalling a open - circuit
-			// if yes start timer
-            // while the timer is progressing check for the fault condition again
-            // if the timer is expired in the process print fault
-                // else cancel the timer and start checking for faults again
-
-		
-		if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b) && !is_timer_active(&oc_timer)) {
-        	// starting the open circuit timer
-			start_timer(&oc_timer, PEDAL_FAULT_TIME);
-            if ((adc_data[Sensor_1] == MAX_ADC_VAL_12b || adc_data[Sensor_2] == MAX_ADC_VAL_12b ) &&  is_timer_active(&oc_timer)) {
-                if (is_timer_expired(&oc_timer)) {
-			    //todo queue fault
-			    fault_data.diag = "Failed to send CAN message";
-			    queue_fault(&fault_data);
-            } 
-		    else {
-		    // if there is no pedal faulting condition cancel
-		    // timer and return to not faulted condition
-			cancel_timer(&oc_timer);
-            }
-            }
-        }
-
-        // logic - short circuit
-		// checking if the values given by sensor - 1/sensor - 2 are
-		// the "min ADC" values possible. Signalling a short - circuit
-            // if yes start timer
-            // while the timer is progressing check for the fault condition again
-            // if the timer is expired in the process print fault
-                // else cancel the timer and start checking for faults again
-
-
-		else if ((adc_data[Sensor_1] == 0 || adc_data[Sensor_2] == 0) &&  !is_timer_active(&sc_timer)) {
-			start_timer(&sc_timer, PEDAL_FAULT_TIME);
-            
-            if ((adc_data[Sensor_1] == 0 || adc_data[Sensor_2] == 0) &&  is_timer_active(&sc_timer)) {
-                if (is_timer_expired(&sc_timer)) {
-			    //todo queue fault
-			    fault_data.diag = "Failed to send CAN message";
-			    queue_fault(&fault_data);
-            } 
-            }
-            // checking if the timer has expired for the sc:short circuit timer
-		    
-            else {
-            // moving to not faulted conditions
-                cancel_timer(&sc_timer);
-            }
-        }
-		
-		// logic - diff_timer
-		// checking if the values given by sensor - 1/sensor - 2 are
-		// the "min ADC" values possible. Signalling a short - circuit
-		else if ((adc_data[Sensor_1] - adc_data[Sensor_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(&diff_timer)) {
-		// starting diff timer
-		start_timer(&diff_timer, PEDAL_FAULT_TIME);
-        if ((adc_data[Sensor_1] - adc_data[Sensor_2] > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && is_timer_active(&diff_timer)) {
-            // check if diff timer:difference between generated values is > 100ms // has expired
-		    if (is_timer_expired(&diff_timer)) {
-			//todo queue fault
-			    fault_data.diag = "Failed to send CAN message";
-			    queue_fault(&fault_data);
-			    continue;
-            }
-        }
-		else {
-			cancel_timer(&diff_timer);
-		} 
-        }
-    }
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
@@ -242,6 +256,8 @@ void vPedalsMonitor(void* pv_params)
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
+
+
 
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
@@ -266,12 +282,12 @@ void vIMUMonitor(void* pv_params)
 		uint16_t accel_data[3] = { 0 };
 		uint16_t gyro_data[3]  = { 0 };
 		if (read_accel(mpu,accel_data)) {
-			fault_data.diag = "Failed to get IMU acceleration";
+			fault_data_t.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
 
 		if (read_gyro(mpu, gyro_data)) {
-			fault_data.diag = "Failed to get IMU gyroscope";
+			fault_data_t.diag = "Failed to get IMU gyroscope";
 			queue_fault(&fault_data);
 		}
 
@@ -295,7 +311,7 @@ void vIMUMonitor(void* pv_params)
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
 		if (queue_can_msg(imu_gyro_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+			fault_data_t.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -332,7 +348,7 @@ void vFusingMonitor(void* pv_params)
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+			fault_data_t.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -371,7 +387,7 @@ void vShutdownMonitor(void* pv_params)
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+			fault_data_t.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
