@@ -6,7 +6,7 @@
 
 #define BMS_CANID		0x070 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
 
-typedef struct 
+typedef struct
 {
     osTimerId bms_monitor_timer;
 } bms_t;
