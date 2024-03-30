@@ -1,7 +1,6 @@
 /**
  * @file can_handler.c
  * @author Hamza Iqbal and Nick DePatie
- * @author Hamza Iqbal and Nick DePatie
  * @brief Source file for CAN handler.
  * @version 0.1
  * @date 2023-09-22
