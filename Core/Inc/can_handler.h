@@ -17,9 +17,7 @@
 #include "can.h"
 #include "cmsis_os.h"
 
-void vRouteCanIncoming(void* pv_params);
-extern osThreadId_t route_can_incoming_handle;
-extern const osThreadAttr_t route_can_incoming_attributes;
+void can1_callback(CAN_HandleTypeDef* hcan);
 
 void vCanDispatch(void* pv_params);
 extern osThreadId_t can_dispatch_handle;
