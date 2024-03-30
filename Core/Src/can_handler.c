@@ -27,8 +27,7 @@
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG,
-	BMS_CANID
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, BMS_CANID
 };
 
 can_t* init_can1(CAN_HandleTypeDef* hcan)
@@ -87,9 +86,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		break;
 	case STEERING_CANID_IO:
 		osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
-		break;
-	case CAN_TEST_MSG:
-		serial_print("UR MOM \n");
 		break;
 	case BMS_CANID:
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);

@@ -15,7 +15,7 @@ osThreadId_t bms_can_monitor_handle;
 const osThreadAttr_t bms_can_monitor_attributes = {
 	.name = "BMSCANMonitor",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityLow1 /*Adjust priority*/
+	.priority = (osPriority_t)osPriorityLow1 /*TO-DO: Adjust priority*/
 };
 
 void bms_fault_callback() {
