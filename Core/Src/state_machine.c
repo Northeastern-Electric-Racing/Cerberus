@@ -15,10 +15,13 @@ typedef struct
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
+static int nero_index = 0;
+
+static bool home_mode = false;
+
 /* State Transition Map */
-static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = 
-{
-	/*BOOT  READY   DRIVING FAULTED*/
+static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
+	/*BOOT  READY DRIVING FAULTED*/
 	{ true, true, false, true },  /* BOOT */
 	{ false, true, true, true },  /* READY */
 	{ false, true, true, true },  /* DRIVING */
@@ -66,6 +69,50 @@ int queue_drive_state(drive_state_t new_state)
 	serial_print("Queued Drive State!\r\n");
 
 	return osMessageQueuePut(drive_state_trans_queue, &queue_state, 0U, 0U);
+}
+
+void increment_nero_index() {
+	if (!home_mode) {
+		// Do Nothing because we are not in home mode and therefore not tracking the nero index
+		return;
+	}
+
+	if (nero_index += 1 < MAX_DRIVE_STATES) {
+		nero_index += 1;
+	} else {
+		// Do Nothing because theres no additional states or we dont care about the additional states;
+	}
+}
+
+void decrement_nero_index() {
+	if (!home_mode) {
+		// Do Nothing because we are not in home mode and therefore not tracking the nero index
+		return;
+	}
+
+	if (nero_index -= 1 >= 0) {
+		nero_index -= 1;
+	} else {
+		// Do Nothing because theres no negative states
+	}
+}
+
+void select_nero_index() {
+	if (!home_mode) {
+		// Do Nothing because we are not in home mode and therefore not tracking the nero index
+		return;
+	}
+
+	if (nero_index >= 0 && nero_index < MAX_DRIVE_STATES) {
+		home_mode = false;
+		queue_drive_state(nero_index);
+	} else {
+		// Do Nothing because the index is out of bounds
+	}
+}
+
+void set_home_mode() {
+	home_mode = true;
 }
 
 drive_state_t get_drive_state()

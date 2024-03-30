@@ -7,11 +7,12 @@
 typedef enum { BOOT, READY, DRIVING, FAULTED, MAX_FUNC_STATES } func_state_t;
 
 typedef enum {
-	NOT_DRIVING = -1,
+	NOT_DRIVING,
 	REVERSE,
 	PIT,
 	EFFICIENCY,
 	PERFORMANCE,
+   	NERO_ONLY,
 	MAX_DRIVE_STATES
 } drive_state_t;
 
@@ -31,6 +32,16 @@ func_state_t get_func_state();
  * Will return negative if functional state is not DRIVING
  */
 int queue_drive_state(drive_state_t new_state);
+
+/*
+ * Attempts to increment the nero index and handles any exceptions 
+*/
+void inrement_nero_index();
+
+/*
+ * Attempts to decrement the nero index and handles any exceptions
+*/
+void decrement_nero_index();
 
 /*
  * Retrieves the current drive state

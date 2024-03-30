@@ -48,8 +48,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	return can1;
 }
 
-
-
 /* Callback to be called when we get a CAN message */
 void can1_callback(CAN_HandleTypeDef* hcan)
 {
