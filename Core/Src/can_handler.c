@@ -17,7 +17,7 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
-#include "bms_can_monitor.h"
+#include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,10 +29,8 @@
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
 	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, CAN_TEST_MSG,
-	CANID_BMS_MONITOR
+	BMS_CANID
 };
-
-osMessageQueueId_t bms_can_monitor_queue;
 
 void can1_callback(CAN_HandleTypeDef* hcan);
 
@@ -97,8 +95,8 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case CAN_TEST_MSG:
 		serial_print("UR MOM \n");
 		break;
-	case CANID_BMS_MONITOR:
-		osMessageQueuePut(bms_can_monitor_queue, &new_msg, 0U, 0U);
+	case BMS_CANID:
+		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
