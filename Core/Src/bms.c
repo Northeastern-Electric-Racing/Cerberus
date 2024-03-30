@@ -9,10 +9,12 @@
 #define BMS_CAN_MONITOR_DURATION 100 /*Duration of between petting bms monitor watchdog (in ticks)*/
 #define CAN_QUEUE_SIZE 5
 
+osMessageQueueId_t bms_monitor_queue;
+
 void bms_fault_callback();
 
-osThreadId_t bms_can_monitor_handle;
-const osThreadAttr_t bms_can_monitor_attributes = {
+osThreadId_t bms_monitor_handle;
+const osThreadAttr_t bms_monitor_attributes = {
 	.name = "BMSCANMonitor",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityLow1 /*TO-DO: Adjust priority*/
@@ -47,7 +49,7 @@ void vBMSCANMonitor(void* pv_params)
 	for (;;) {
 		if (osOK == osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
 			/*TO-DO: fix duration (ticks)*/
-			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DURATION)
+			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DURATION);
 		}
 		osThreadYield();
 	}	
