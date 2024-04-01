@@ -1,5 +1,6 @@
 #include "state_machine.h"
 #include "fault.h"
+#include "can_handler.h"
 #include "serial_monitor.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,9 +16,9 @@ typedef struct
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-static int nero_index = 0;
+static uint8_t nero_index = 0;
 
-static bool home_mode = false;
+static bool home_mode = true;
 
 /* State Transition Map */
 static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
@@ -39,9 +40,17 @@ const osThreadAttr_t sm_director_attributes =
 static osMessageQueueId_t func_state_trans_queue;
 static osMessageQueueId_t drive_state_trans_queue;
 
+static void send_mode_status() {
+	can_msg_t msg = { .id = 0x501, .len = 5, .data = { home_mode, nero_index, 0, 0, 0 } };
+	printf("sending mode status, mode index: %d, home_mode: %d \r\n", nero_index, home_mode);
+	/* Send CAN message */
+	queue_can_msg(msg);
+}
+
+
 int queue_func_state(func_state_t new_state)
 {
-	if (!state_trans_queue)
+	if (!func_state_trans_queue)
 		return 1;
 
 	state_t queue_state = { .functional = new_state };
@@ -58,7 +67,7 @@ func_state_t get_func_state()
 
 int queue_drive_state(drive_state_t new_state)
 {
-	if (!state_trans_queue)
+	if (!drive_state_trans_queue)
 		return 1;
 
 	if (cerberus_state.functional != DRIVING)
@@ -77,8 +86,9 @@ void increment_nero_index() {
 		return;
 	}
 
-	if (nero_index += 1 < MAX_DRIVE_STATES) {
+	if (nero_index + 1 < MAX_DRIVE_STATES) {
 		nero_index += 1;
+		send_mode_status();
 	} else {
 		// Do Nothing because theres no additional states or we dont care about the additional states;
 	}
@@ -90,8 +100,9 @@ void decrement_nero_index() {
 		return;
 	}
 
-	if (nero_index -= 1 >= 0) {
+	if (nero_index - 1 >= 0) {
 		nero_index -= 1;
+		send_mode_status();
 	} else {
 		// Do Nothing because theres no negative states
 	}
@@ -105,6 +116,7 @@ void select_nero_index() {
 
 	if (nero_index >= 0 && nero_index < MAX_DRIVE_STATES) {
 		home_mode = false;
+		send_mode_status();
 		queue_drive_state(nero_index);
 	} else {
 		// Do Nothing because the index is out of bounds
@@ -113,6 +125,7 @@ void select_nero_index() {
 
 void set_home_mode() {
 	home_mode = true;
+	send_mode_status();
 }
 
 drive_state_t get_drive_state()
@@ -134,9 +147,9 @@ void vStateMachineDirector(void* pv_params)
 
 	for (;;) 
 	{
-		if (osOK != osMessageQueueGet(func_state_trans_queue, &new_state, NULL, 50)) 
+		if (osOK != osMessageQueueGet(func_state_trans_queue, &new_state, NULL, osWaitForever)) 
 		{
-			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition functional state"};
 			if(queue_fault(&state_trans_fault) == -1)
 			{
 				serial_print("Fill this in later");
@@ -144,9 +157,9 @@ void vStateMachineDirector(void* pv_params)
 			continue;
 		}
 
-		if (osOk != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, 50))
+		if (osOK != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, osWaitForever))
 		{
-			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition drive state"};
 			if(queue_fault(&state_trans_fault) == -1)
 			{
 				serial_print("Fill this in later");
@@ -156,10 +169,10 @@ void vStateMachineDirector(void* pv_params)
 		
 		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) 
 		{
-			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Failed to transition state"};
-			if(queue_fault(&state_trans_fault) == -1)
+			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Invalid state transition"};
+			if(queue_fault(&invalid_trans_fault) == -1)
 			{
-				serial_print("Fill this in later")
+				serial_print("Fill this in later");
 			}
 			continue;
 		}
@@ -175,3 +188,4 @@ void vStateMachineDirector(void* pv_params)
 		cerberus_state.drive	  = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
 	}
 }
+

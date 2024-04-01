@@ -36,12 +36,23 @@ int queue_drive_state(drive_state_t new_state);
 /*
  * Attempts to increment the nero index and handles any exceptions 
 */
-void inrement_nero_index();
+void increment_nero_index();
 
 /*
  * Attempts to decrement the nero index and handles any exceptions
 */
 void decrement_nero_index();
+
+/*
+ * Tells the statemachine to track up and down movements
+*/
+void set_home_mode();
+
+/*
+ * Tells NERO to select the current index if in home mode
+*/
+void select_nero_index();
+
 
 /*
  * Retrieves the current drive state

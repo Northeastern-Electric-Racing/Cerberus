@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "state_machine.h"
+#include "serial_monitor.h"
+#include "stdio.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -83,7 +85,7 @@ static void debounce_cb(void* arg)
 		return;
 
 	if (wheel->raw_buttons[button])
-		wheel->debounced_buttons[button] = PRESSED;
+		wheel->debounced_buttons[button] = NOT_PRESSED;
 }
 
 /* For updating values via the wheel's CAN message */
@@ -98,7 +100,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 	// Data is formatted with each bit within the first byte representing a button and the first two bits of the second byte representing the paddle shifters
 
 	/* Update raw buttons */
-	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
+	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS - 2; i++) {
 		wheel->raw_buttons[i] = (wheel_data[0] >> i) & 0x01;
 	}
 
@@ -108,9 +110,9 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		if (wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
+		if (!wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
 			wheel->debounced_buttons[i] = PRESSED;
-
+			printf("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
 					// doesnt effect cerb for now
@@ -119,10 +121,12 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 					// doesnt effect cerb for now
 					break;
 				case NERO_BUTTON_UP:
-					increment_nero_index();
+					serial_print("Up button pressed \r\n");
+					decrement_nero_index();
 					break;
 				case NERO_BUTTON_DOWN:
-					decrement_nero_index();
+					serial_print("Down button pressed \r\n");
+					increment_nero_index();
 					break;
 				case NERO_BUTTON_LEFT:
 					// doesnt effect cerb for now
@@ -131,17 +135,19 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 					// doesnt effect cerb for now
 					break;
 				case NERO_BUTTON_SELECT:
+					printf("Select button pressed \r\n");
 					select_nero_index();
 					break;
 				case NERO_HOME:
+					printf("Home button pressed \r\n");
 					set_home_mode();
 					break;
 				default:
 					break;
 			}
 		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
-			osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
-			ringbuffer_enqueue(wheel->debounce_buffer, &i);
+			// osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
+			// ringbuffer_enqueue(wheel->debounce_buffer, &i);
 		} else {
 			wheel->debounced_buttons[i] = NOT_PRESSED;
 		}
