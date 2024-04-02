@@ -32,6 +32,7 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "bms.h"
 #include "torque.h"
 #include "pdu.h"
 #include "mpu.h"
@@ -94,6 +95,7 @@ static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 void StartDefaultTask(void *argument);
 
+static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -159,7 +161,10 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
- 
+
+  /* Initialize interrupts */
+  MX_NVIC_Init();
+
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -172,10 +177,12 @@ int main(void)
 
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  pdu_t *pdu  = init_pdu(&hi2c2);
+  // pdu_t *pdu  = init_pdu(&hi2c2);
   dti_t *mc   = dti_init();
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
+  bms_t *bms = bms_init();
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -198,25 +205,27 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
-  temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
-  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  // fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
 
   /* Messaging */
   /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
+  bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
+
+  /* Control Logic */
 
   /* Control Logic */
   sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -225,6 +234,7 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
+
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -277,6 +287,17 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief NVIC Configuration.
+  * @retval None
+  */
+static void MX_NVIC_Init(void)
+{
+  /* CAN1_RX0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 10, 0);
+  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
 }
 
 /**
@@ -460,11 +481,11 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 3;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = ENABLE;
@@ -478,9 +499,6 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-	HAL_CAN_IRQHandler(&hcan1);
 
 }
 
@@ -640,15 +658,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
-
   /*Configure GPIO pins : PC3 PC8 PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PC4 PC5 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;

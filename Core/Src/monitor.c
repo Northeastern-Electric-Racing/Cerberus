@@ -2,7 +2,6 @@
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-#include "lsm6dso.h"
 #include "mpu.h"
 #include "pdu.h"
 #include "queues.h"
@@ -13,11 +12,13 @@
 #include "lsm6dso.h"
 #include "timer.h"
 #include "serial_monitor.h"
-#include "pdu.h"
-#include "mpu.h"
-#include "timer.h"
 #include <stdbool.h>
 #include <string.h>
+
+/* Parameters for the pedal monitoring task */
+#define MAX_ADC_VAL_12b	  4096
+#define PEDAL_DIFF_THRESH 10
+#define PEDAL_FAULT_TIME  1000 /* ms */
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -79,6 +80,7 @@ void vWatchdogMonitor(void* pv_params)
 		/* Pets Watchdog */
 		pet_watchdog(mpu);
 		/* Yield to other RTOS tasks */
+		pet_watchdog(mpu);
 		osThreadYield();
 	}
 }
@@ -87,57 +89,105 @@ osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
 	.stack_size = 128 * 12,
-	.priority	= (osPriority_t)osPriorityHigh,
+	.priority	= (osPriority_t)osPriorityAboveNormal6,
 };
+
+
+
+void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
+{
+		/* Fault - open circuit */
+		if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
+			/* starting the open circuit timer*/
+			start_timer(oc_timer, PEDAL_FAULT_TIME);
+
+			if (is_timer_expired(oc_timer)) {
+				if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b )) {
+					fault_data->diag = "Open circuit fault - max acceleration value ";
+					queue_fault(fault_data);
+				}
+				else {
+					/*
+					* if there is no pedal faulting condition cancel
+					* timer and return to not faulted condition
+					*/
+					cancel_timer(oc_timer);
+				}
+			}
+		}
+
+		/* Fault - short circuit */
+		if ((val_1 == 0 || val_2 == 0) &&  !is_timer_active(sc_timer)) {
+			/*starting the short circuit timer*/
+			start_timer(sc_timer, PEDAL_FAULT_TIME);
+
+			if (is_timer_expired(sc_timer)) {
+				if ((val_1 == 0 || val_2 == 0 )) {
+					fault_data->diag = "Short circuit fault - no acceleration value ";
+					queue_fault(fault_data);
+				}
+				else {
+					/*
+					* if there is no pedal faulting condition cancel
+					* timer and return to not faulted condition
+					*/
+					cancel_timer(sc_timer);
+				}
+			}
+
+		}
+
+		/* Fault - difference between pedal sensing values > 100 ms */
+		if ((val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
+			/* starting diff timer */
+			start_timer(diff_timer, PEDAL_FAULT_TIME);
+			if (is_timer_expired(diff_timer)) {
+				if (val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) {
+					fault_data->diag = "Diff timer fault - sensor readings more than 100 ms apart";
+					queue_fault(fault_data);
+				}
+				else {
+					/*
+					* if there is no faulting condition cancel
+					* timer and return to not faulted condition
+					*/
+					cancel_timer(diff_timer);
+				}
+			}
+		}
+	}
 
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
-	// nertimer_t diff_timer;
-	// nertimer_t sc_timer;
-	// nertimer_t oc_timer;
+
+	/* set of timers for accelerator fault conditions */
+	nertimer_t diff_timer_accelerator;
+	nertimer_t sc_timer_accelerator;	/* Open Circuit */
+	nertimer_t oc_timer_accelerator;	/* Short Circuit*/
+
+	/*set of timers for brake fault conditions*/
+	nertimer_t diff_timer_brake;
+	nertimer_t sc_timer_brake;	/* Open Circuit */
+	nertimer_t oc_timer_brake;	/* Short Circuit*/
+
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
-	//can_msg_t pedal_msg		= { .id = CANID_PEDAL_SENSOR, .len = 4, .data = { 0 } };
 	uint16_t adc_data[3];
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
-	//uint32_t curr_tick = HAL_GetTick();
-
 	for (;;) {
-		//serial_print("Pedals Task: %d\r\n", HAL_GetTick() - curr_tick);
-		//curr_tick = HAL_GetTick();
 		if (read_adc(mpu, adc_data)) {
 			fault_data.diag = "Failed to collect ADC Data!";
 			queue_fault(&fault_data);
 		}
 
-		/* Evaluate accelerator faults */
-		// if (is_timer_expired(&oc_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] == MAX_ADC_VAL_12B || adc_data[ACCELPIN_2] ==
-		// MAX_ADC_VAL_12B) && 	!is_timer_active(&oc_timer)) 	start_timer(&oc_timer,
-		// PEDAL_FAULT_TIME); else 	cancel_timer(&oc_timer);
-
-		// if (is_timer_expired(&sc_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] == 0 || adc_data[ACCELPIN_2] == 0) &&
-		//	!is_timer_active(&sc_timer))
-		//	start_timer(&sc_timer, PEDAL_FAULT_TIME);
-		// else
-		//	cancel_timer(&sc_timer);
-
-		// if (is_timer_expired(&diff_timer))
-		// todo queue fault
-		//	continue;
-		// else if ((adc_data[ACCELPIN_1] - adc_data[ACCELPIN_2] > PEDAL_DIFF_THRESH *
-		// MAX_ADC_VAL_12B) && 	!is_timer_active(&diff_timer)) 	start_timer(&diff_timer,
-		// PEDAL_FAULT_TIME); else 	cancel_timer(&diff_timer);
+		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
+		// TODO: Actually read in second brake ADC
+		eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
@@ -148,11 +198,18 @@ void vPedalsMonitor(void* pv_params)
 			  / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
-		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
+		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
+		if(check != 0)
+		{
+			fault_data.diag = "Failed to push pedal data to queue";
+			queue_fault(&fault_data);
+		}
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
+
+
 
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
