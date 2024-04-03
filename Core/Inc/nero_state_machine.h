@@ -1,6 +1,8 @@
 #ifndef NERO_STATE_MACHINE_H
 #define NERO_STATE_MACHINE_H
 
+#include <stdbool.h>
+
 typedef enum {
 	NOT_DRIVING,
 	REVERSE,
