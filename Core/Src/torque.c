@@ -16,6 +16,9 @@
 #include <assert.h>
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "torque.h"
+#include <math.h>
+#include <string.h>
 
 #define MAX_TORQUE 10.0 /* Nm */
 
@@ -63,7 +66,7 @@ static void limit_accel_to_torque(float accel, uint16_t* torque)
 		}
 		uint16_t ave = 0;
 		uint16_t temp[ACCUMULATOR_SIZE];
-		memcpy(torque_accumulator, ACCUMULATOR_SIZE, temp);
+		memcpy(torque_accumulator, temp, ACCUMULATOR_SIZE);
 		for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) {
 			temp[i + 1] = torque_accumulator[i];
 			ave += torque_accumulator[i+1];
@@ -71,10 +74,10 @@ static void limit_accel_to_torque(float accel, uint16_t* torque)
 		ave += newVal;
 		ave /= ACCUMULATOR_SIZE;
 		temp[0] = newVal;
-		if(torque > ave) {
-			torque = ave;
+		if(*torque > ave) {
+			*torque = ave;
 		}
-		memcpy(temp, ACCUMULATOR_SIZE, torque_accumulator);
+		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE);
 }
 
 static void paddle_accel_to_torque(float accel, uint16_t* torque)
@@ -91,7 +94,6 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	uint16_t torque = 0;
 	osStatus_t stat;
-	float accel = 0;
 
 	// TODO: Get important data from MC
 	// dti_t *mc = (dti_t *)pv_params;
@@ -141,7 +143,6 @@ void vCalcTorque(void* pv_params)
 		dti_set_torque(torque);
 	}
 }
- 
 
 void increase_torque_limit()
 {
