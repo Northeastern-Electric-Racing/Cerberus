@@ -42,7 +42,6 @@ static osMessageQueueId_t drive_state_trans_queue;
 
 static void send_mode_status() {
 	can_msg_t msg = { .id = 0x501, .len = 5, .data = { home_mode, nero_index, 0, 0, 0 } };
-	printf("sending mode status, mode index: %d, home_mode: %d \r\n", nero_index, home_mode);
 	/* Send CAN message */
 	queue_can_msg(msg);
 }

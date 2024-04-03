@@ -8,6 +8,7 @@
 #include "state_machine.h"
 #include "serial_monitor.h"
 #include "stdio.h"
+#include "torque.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -115,10 +116,14 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 			printf("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
-					// doesnt effect cerb for now
+					if (get_drive_state() == EFFICIENCY) {
+						increase_torque_limit();
+					}
 					break;
 				case STEERING_PADDLE_RIGHT:
-					// doesnt effect cerb for now
+					if (get_drive_state() == EFFICIENCY) {
+						decrease_torque_limit();
+					}
 					break;
 				case NERO_BUTTON_UP:
 					serial_print("Up button pressed \r\n");
