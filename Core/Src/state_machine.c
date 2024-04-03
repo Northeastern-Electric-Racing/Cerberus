@@ -38,7 +38,7 @@ static osMessageQueueId_t drive_state_trans_queue;
 
 int queue_func_state(func_state_t new_state)
 {
-	if (!state_trans_queue)
+	if (!func_state_trans_queue)
 		return 1;
 
 	state_t queue_state = { .functional = new_state };
@@ -55,7 +55,7 @@ func_state_t get_func_state()
 
 int queue_drive_state(drive_state_t new_state)
 {
-	if (!state_trans_queue)
+	if (!drive_state_trans_queue)
 		return 1;
 
 	if (cerberus_state.functional != DRIVING)
@@ -97,7 +97,7 @@ void vStateMachineDirector(void* pv_params)
 			continue;
 		}
 
-		if (osOk != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, 50))
+		if (osOK != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, 50))
 		{
 			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
 			if(queue_fault(&state_trans_fault) == -1)
@@ -110,9 +110,9 @@ void vStateMachineDirector(void* pv_params)
 		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) 
 		{
 			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Failed to transition state"};
-			if(queue_fault(&state_trans_fault) == -1)
+			if(queue_fault(&invalid_trans_fault) == -1)
 			{
-				serial_print("Fill this in later")
+				serial_print("Fill this in later");
 			}
 			continue;
 		}
