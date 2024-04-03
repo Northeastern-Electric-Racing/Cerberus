@@ -16,10 +16,6 @@ typedef struct
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-static uint8_t nero_index = 0;
-
-static bool home_mode = true;
-
 /* State Transition Map */
 static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	/*BOOT  READY DRIVING FAULTED*/
@@ -39,14 +35,6 @@ const osThreadAttr_t sm_director_attributes =
 
 static osMessageQueueId_t func_state_trans_queue;
 static osMessageQueueId_t drive_state_trans_queue;
-
-static void send_mode_status() {
-	can_msg_t msg = { .id = 0x501, .len = 5, .data = { home_mode, nero_index, 0, 0, 0 } };
-	printf("sending mode status, mode index: %d, home_mode: %d \r\n", nero_index, home_mode);
-	/* Send CAN message */
-	queue_can_msg(msg);
-}
-
 
 int queue_func_state(func_state_t new_state)
 {
@@ -78,54 +66,6 @@ int queue_drive_state(drive_state_t new_state)
 	serial_print("Queued Drive State!\r\n");
 
 	return osMessageQueuePut(drive_state_trans_queue, &queue_state, 0U, 0U);
-}
-
-void increment_nero_index() {
-	if (!home_mode) {
-		// Do Nothing because we are not in home mode and therefore not tracking the nero index
-		return;
-	}
-
-	if (nero_index + 1 < MAX_DRIVE_STATES) {
-		nero_index += 1;
-		send_mode_status();
-	} else {
-		// Do Nothing because theres no additional states or we dont care about the additional states;
-	}
-}
-
-void decrement_nero_index() {
-	if (!home_mode) {
-		// Do Nothing because we are not in home mode and therefore not tracking the nero index
-		return;
-	}
-
-	if (nero_index - 1 >= 0) {
-		nero_index -= 1;
-		send_mode_status();
-	} else {
-		// Do Nothing because theres no negative states
-	}
-}
-
-void select_nero_index() {
-	if (!home_mode) {
-		// Do Nothing because we are not in home mode and therefore not tracking the nero index
-		return;
-	}
-
-	if (nero_index >= 0 && nero_index < MAX_DRIVE_STATES) {
-		home_mode = false;
-		send_mode_status();
-		queue_drive_state(nero_index);
-	} else {
-		// Do Nothing because the index is out of bounds
-	}
-}
-
-void set_home_mode() {
-	home_mode = true;
-	send_mode_status();
 }
 
 drive_state_t get_drive_state()

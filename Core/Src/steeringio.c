@@ -7,6 +7,7 @@
 #include <string.h>
 #include "state_machine.h"
 #include "serial_monitor.h"
+#include "nero_state_machine.h"
 #include "stdio.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
