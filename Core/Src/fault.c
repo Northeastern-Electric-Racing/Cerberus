@@ -1,6 +1,8 @@
 #include "fault.h"
 #include "serial_monitor.h"
 #include "task.h"
+#include <assert.h>
+#include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 
