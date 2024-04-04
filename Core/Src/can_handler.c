@@ -99,7 +99,7 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void* pv_params)
 {
-	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
+	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON2 };
 
 	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
@@ -130,9 +130,18 @@ void vCanDispatch(void* pv_params)
 
 int8_t queue_can_msg(can_msg_t msg)
 {
+	fault_data_t fault_data = {
+		.id		  = CAN_QUEUING_FAULT,
+		.severity = DEFCON2,
+	};
 	if (!can_outbound_queue)
 		return -1;
 
-	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
+	if(osOK != osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U));
+	{
+		fault_data.diag = "Failed to queue CAN msg \r\n";
+		queue_fault(&fault_data);
+		return -1;
+	}
 	return 0;
 }
