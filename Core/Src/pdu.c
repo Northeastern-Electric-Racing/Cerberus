@@ -10,6 +10,9 @@
 #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
 
+#define SHUTDOWN_ADDR  0x20
+#define CTRL_ADDR      0x24
+
 static osMutexAttr_t pdu_mutex_attributes;
 #include <stdio.h>
 pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
@@ -24,10 +27,10 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(max7314_t));
-    pdu->shutdown_expander->dev_addr = 0x20;
+    pdu->shutdown_expander->dev_addr = SHUTDOWN_ADDR;
 	assert(pdu->shutdown_expander);
 	if (max7314_init(pdu->shutdown_expander, pdu->hi2c)) {
-		printf("\n\rshutdown init fail\n\r");
+		serial_print("\n\rshutdown init fail\n\r");
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
@@ -35,10 +38,10 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 
 	// /* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
-    pdu->ctrl_expander->dev_addr = 0x24;
+    pdu->ctrl_expander->dev_addr = CTRL_ADDR;
 	assert(pdu->ctrl_expander);
 	if (max7314_init(pdu->ctrl_expander, pdu->hi2c)) {
-	 	printf("\n\rctrl exp fail\n\r");
+	 	serial_print("\n\rctrl exp fail\n\r");
 		free(pdu->ctrl_expander);
 		free(pdu->shutdown_expander);
 		free(pdu);
@@ -48,7 +51,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     // set pins 0-3 to outputs
     uint8_t pin_configs = 0b11110000;
     if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, &pin_configs)) {
-		printf("set pin modes fail");
+		serial_print("set pin modes fail");
         free(pdu->ctrl_expander);
         free(pdu->shutdown_expander);
         free(pdu);
