@@ -90,6 +90,18 @@ static void debounce_cb(void* arg)
 		wheel->debounced_buttons[button] = NOT_PRESSED;
 }
 
+static void paddle_left_cb() {
+	if (get_drive_state() == EFFICIENCY) {
+		increase_torque_limit();
+	}
+}
+
+static void paddle_right_cb() {
+	if (get_drive_state() == EFFICIENCY) {
+		decrease_torque_limit();
+	}
+}
+
 /* For updating values via the wheel's CAN message */
 void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 {
@@ -117,14 +129,10 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 			printf("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
-					if (get_drive_state() == EFFICIENCY) {
-						increase_torque_limit();
-					}
+					paddle_left_cb();
 					break;
 				case STEERING_PADDLE_RIGHT:
-					if (get_drive_state() == EFFICIENCY) {
-						decrease_torque_limit();
-					}
+					paddle_right_cb();
 					break;
 				case NERO_BUTTON_UP:
 					serial_print("Up button pressed \r\n");

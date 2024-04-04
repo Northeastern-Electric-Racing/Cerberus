@@ -51,33 +51,33 @@ static void rpm_to_mph(uint32_t rpm, float* mph)
 	*mph = (rpm / 60) * WHEEL_CIRCUMFERENCE * 2.237 / GEAR_RATIO;
 }
 
-static void limit_accel_to_torque(float accel, uint16_t* torque)
+static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
 {
-		float mph;
-		rpm_to_mph(dti_get_rpm(), &mph);
 		uint16_t newVal;
 		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
 		if (mph > PIT_MAX_SPEED) {
-			newVal = 0;
+			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
 		}
 		else {
-			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph));
+			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
 			newVal = accel * torque_derating_factor;
 		}
+
+		// The following code is a moving average filter
 		uint16_t ave = 0;
 		uint16_t temp[ACCUMULATOR_SIZE];
-		memcpy(torque_accumulator, temp, ACCUMULATOR_SIZE);
-		for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) {
+		memcpy(torque_accumulator, temp, ACCUMULATOR_SIZE); // Copy the old values to the new array and shift them by one
+		for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) { 
 			temp[i + 1] = torque_accumulator[i];
 			ave += torque_accumulator[i+1];
 		}
-		ave += newVal;
-		ave /= ACCUMULATOR_SIZE;
-		temp[0] = newVal;
+		ave += newVal; // Add the new value to the sum
+		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
+		temp[0] = newVal; // Add the new value to the array
 		if(*torque > ave) {
-			*torque = ave;
+			*torque = ave; // If the new value is greater than the average, set the torque to the average
 		}
-		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE);
+		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
 }
 
 static void paddle_accel_to_torque(float accel, uint16_t* torque)
@@ -95,8 +95,7 @@ void vCalcTorque(void* pv_params)
 	uint16_t torque = 0;
 	osStatus_t stat;
 
-	// TODO: Get important data from MC
-	// dti_t *mc = (dti_t *)pv_params;
+	dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
@@ -115,13 +114,16 @@ void vCalcTorque(void* pv_params)
 
 			drive_state_t drive_state = get_drive_state();
 
+			float mph;
+			rpm_to_mph(dti_get_rpm(mc), &mph);
+
 			switch (drive_state)
 			{
 				case REVERSE:
-					linear_accel_to_torque(pedal_data.accelerator_value, &torque);
+					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
 					break;
 				case PIT:
-					limit_accel_to_torque(pedal_data.accelerator_value, &torque);
+					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
 					break;
 				case EFFICIENCY:
 					paddle_accel_to_torque(pedal_data.accelerator_value, &torque);

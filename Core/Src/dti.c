@@ -23,8 +23,6 @@
 static osMutexAttr_t dti_mutex_attributes;
 osMessageQueueId_t dti_router_queue;
 
-static dti_t* dti;
-
 dti_t* dti_init()
 {
 	dti_t* mc = malloc(sizeof(dti_t));
@@ -43,8 +41,6 @@ dti_t* dti_init()
 	/* Create Queue for CAN signaling */
 	dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(dti_router_queue);
-
-	dti = mc;
 
 	return mc;
 }
@@ -167,12 +163,12 @@ void dti_set_drive_enable(bool drive_enable)
 	queue_can_msg(msg);
 }
 
-uint32_t dti_get_rpm()
+uint32_t dti_get_rpm(dti_t* mc)
 {
 	uint32_t rpm;
-	osMutexAcquire(*dti->mutex, osWaitForever);
-	rpm = dti->rpm;
-	osMutexRelease(*dti->mutex);
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	rpm = mc->rpm;
+	osMutexRelease(*mc->mutex);
 
 	return rpm;
 }
@@ -182,7 +178,7 @@ osThreadId_t dti_router_handle;
 const osThreadAttr_t dti_router_attributes
 	= { .name = "DTIRouter", .stack_size = 128 * 8, .priority = (osPriority_t)osPriorityNormal3 };
 
-static void dti_set_rpm(can_msg_t msg)
+static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in big endian format */
 	uint32_t erpm = 0;
@@ -192,9 +188,9 @@ static void dti_set_rpm(can_msg_t msg)
 
 	uint32_t rpm = erpm / POLE_PAIRS;
 
-	osMutexAcquire(*dti->mutex, osWaitForever);
-	dti->rpm = rpm;
-	osMutexRelease(*dti->mutex);
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->rpm = rpm;
+	osMutexRelease(*mc->mutex);
 }
 
 void vDTIRouter(void* pv_params)
@@ -203,7 +199,7 @@ void vDTIRouter(void* pv_params)
 	osStatus_t status;
 	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
 
-	// dti_t *mc = (dti_t *)pv_params;
+	dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
@@ -213,7 +209,7 @@ void vDTIRouter(void* pv_params)
 			switch (message.id) 
 			{
 				case DTI_CANID_ERPM:
-					dti_set_rpm(message);
+					dti_set_rpm(mc, message);
 					break;
 				case DTI_CANID_CURRENTS:
 					break;
