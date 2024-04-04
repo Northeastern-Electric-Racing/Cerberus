@@ -50,6 +50,11 @@ void select_nero_index() {
 		nero_state.home_mode = false;
 		send_mode_status();
 		queue_drive_state(nero_state.nero_index);
+		if (nero_state.nero_index < NERO_ONLY && nero_state.nero_index >= 0) {
+			queue_func_state(DRIVING);
+		} else {
+			queue_func_state(READY);
+		}
 	} else {
 		// Do Nothing because the index is out of bounds
 	}
@@ -57,5 +62,6 @@ void select_nero_index() {
 
 void set_home_mode() {
 	nero_state.home_mode = true;
+	queue_func_state(READY);
 	send_mode_status();
 }
