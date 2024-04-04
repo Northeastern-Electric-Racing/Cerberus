@@ -30,8 +30,6 @@
 #define MIN_COMMAND_FREQ  60					  /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
-static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
-
 static float torque_limit_percentage = 1.0;
 
 osThreadId_t torque_calc_handle;
@@ -53,6 +51,8 @@ static void rpm_to_mph(uint32_t rpm, float* mph)
 
 static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
 {
+		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
+
 		uint16_t newVal;
 		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
 		if (mph > PIT_MAX_SPEED) {
@@ -85,6 +85,26 @@ static void paddle_accel_to_torque(float accel, uint16_t* torque)
 	*torque = (uint16_t)torque_limit_percentage * ((accel / MAX_TORQUE) * 0xFFFF);
 	//TODO add regen logic
 } 
+
+void increase_torque_limit()
+{
+	if (torque_limit_percentage + 0.1 > 1)
+	{
+		torque_limit_percentage = 1;
+	} else {
+		torque_limit_percentage += 0.1;
+	}
+}
+
+void decrease_torque_limit()
+{
+	if (torque_limit_percentage - 1 < 0)
+	{
+		torque_limit_percentage = 0;
+	} else {
+		torque_limit_percentage -= 0.1;
+	}
+}
 
 void vCalcTorque(void* pv_params)
 {
@@ -143,25 +163,5 @@ void vCalcTorque(void* pv_params)
 
 		/* Send whatever torque command we have on record */
 		dti_set_torque(torque);
-	}
-}
-
-void increase_torque_limit()
-{
-	if (torque_limit_percentage + 0.1 > 1)
-	{
-		torque_limit_percentage = 1;
-	} else {
-		torque_limit_percentage += 0.1;
-	}
-}
-
-void decrease_torque_limit()
-{
-	if (torque_limit_percentage - 1 < 0)
-	{
-		torque_limit_percentage = 0;
-	} else {
-		torque_limit_percentage -= 0.1;
 	}
 }
