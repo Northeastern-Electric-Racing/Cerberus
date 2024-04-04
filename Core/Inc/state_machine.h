@@ -3,7 +3,7 @@
 
 #include "cmsis_os.h"
 #include "fault.h"
-#include "nero_state_machine.h"
+#include "nero.h"
 
 typedef enum { BOOT, READY, DRIVING, FAULTED, MAX_FUNC_STATES } func_state_t;
 

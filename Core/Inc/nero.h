@@ -1,5 +1,5 @@
-#ifndef NERO_STATE_MACHINE_H
-#define NERO_STATE_MACHINE_H
+#ifndef NERO_H
+#define NERO_H
 
 #include <stdbool.h>
 
@@ -39,4 +39,4 @@ void set_home_mode();
 */
 void select_nero_index();
 
-#endif // NERO_STATE_MACHINE_H
+#endif // NERO_H

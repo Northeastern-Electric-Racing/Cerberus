@@ -1,4 +1,4 @@
-#include "nero_state_machine.h"
+#include "nero.h"
 #include "stdint.h"
 #include "stdbool.h"
 #include "can_handler.h"

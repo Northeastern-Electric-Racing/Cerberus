@@ -7,7 +7,7 @@
 #include <string.h>
 #include "state_machine.h"
 #include "serial_monitor.h"
-#include "nero_state_machine.h"
+#include "nero.h"
 #include "stdio.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
@@ -147,6 +147,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 					break;
 			}
 		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
+			//TODO: Look into debounce timer https://www.youtube.com/watch?v=e1-kc04jSE4
 			// osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
 			// ringbuffer_enqueue(wheel->debounce_buffer, &i);
 		} else {
