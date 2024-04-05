@@ -3,6 +3,7 @@
 #include "task.h"
 #include <assert.h>
 #include "state_machine.h"
+#include "timer.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 
@@ -28,9 +29,21 @@ void vFaultHandler(void* pv_params)
 {
 	fault_data_t fault_data;
 	osStatus_t status;
+
+	nertimer_t defcon2_timer;
+	nertimer_t defcon2_reset;
+
+	nertimer_t defcon3_timer;
+	nertimer_t defcon3_reset;
+
+	nertimer_t defcon4_timer;
+	nertimer_t defcon4_reset;
+
+	nertimer_t defcon5_timer;
+	nertimer_t defcon5_reset;
+
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
-	uint8_t critical_warning_count = 0;
-	uint8_t iteration_count = 0;
+	
 	for (;;) {
 		/* Wait until a message is in the queue, send messages when they are in the queue */
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
@@ -40,34 +53,125 @@ void vFaultHandler(void* pv_params)
 			switch (fault_data.severity) 
 			{
 			case DEFCON1: /* Highest(1st) Priority */
-				serial_print("DEFCON 1: Enter Faulted");
+				serial_print("DEFCON 1 RECEIVED ENTER FAULTED");
 				assert(osOK == queue_func_state(FAULTED));
 				break;
 			case DEFCON2: /*Critical Warnings*/
-				critical_warning_count++;
-				serial_print("Critical Warning Count: %s", critical_warning_count);
-				if(critical_warning_count == 10 && iteration_count == 10)
+				serial_print("DEFCON 2 RECEIVED");
+				if(!is_timer_active(&defcon2_reset))
 				{
-					assert(osOK == queue_func_state(FAULTED));
-					critical_warning_count = 0;
-					iteration_count = 0;
+					start_timer(&defcon2_reset, 1000);
+				}
+				else 
+				{
+					cancel_timer(&defcon2_reset);
+					start_timer(&defcon2_reset, 1000);
+				}
+				if(!is_timer_active(&defcon2_timer))
+				{
+					if(is_timer_expired(&defcon2_timer))
+					{
+						serial_print("DEFCON 2 TIMER EXPIRED ENTER FAULTED");
+						assert(osOK == queue_func_state(FAULTED));
+					}
+					else
+					{
+						start_timer(&defcon2_timer, 5000);
+					}
 				}
 				break;
 			case DEFCON3: /*Warnings*/
-				iteration_count = 0;
+				serial_print("DEFCON 3 RECEIVED");
+				if(!is_timer_active(&defcon3_reset))
+				{
+					start_timer(&defcon3_reset, 1000);
+				}
+				else 
+				{
+					cancel_timer(&defcon3_reset);
+					start_timer(&defcon3_reset, 1000);
+				}
+				if(!is_timer_active(&defcon3_timer))
+				{
+					if(is_timer_expired(&defcon3_timer))
+					{
+						serial_print("DEFCON 3 TIMER EXPIRED ENTER FAULTED");
+						assert(osOK == queue_func_state(FAULTED));
+					}
+					else
+					{
+						start_timer(&defcon3_timer, 15000);
+					}
+				}
 				break;
 			case DEFCON4: /*Lower priority warnings*/
-				iteration_count = 0;
+				serial_print("DEFCON 4 RECEIVED");
+				if(!is_timer_active(&defcon4_reset))
+				{
+					start_timer(&defcon4_reset, 1000);
+				}
+				else 
+				{
+					cancel_timer(&defcon4_reset);
+					start_timer(&defcon4_reset, 1000);
+				}
+				if(!is_timer_active(&defcon4_timer))
+				{
+					if(is_timer_expired(&defcon4_timer))
+					{
+						serial_print("DEFCON 4 TIMER EXPIRED ENTER FAULTED");
+						assert(osOK == queue_func_state(FAULTED));
+					}
+					else
+					{
+						start_timer(&defcon4_timer, 60000);
+					}
+				}
 				break;
 			case DEFCON5: /*Suggestions*/
-				iteration_count = 0;
+				serial_print("DEFCON 5 RECEIVED");
+				if(!is_timer_active(&defcon5_reset))
+				{
+					start_timer(&defcon5_reset, 1000);
+				}
+				else 
+				{
+					cancel_timer(&defcon5_reset);
+					start_timer(&defcon5_reset, 1000);
+				}
+				if(!is_timer_active(&defcon5_timer))
+				{
+					if(is_timer_expired(&defcon5_timer))
+					{
+						serial_print("DEFCON 5 TIMER EXPIRED ENTER FAULTED");
+						assert(osOK == queue_func_state(FAULTED));
+					}
+					else
+					{
+						start_timer(&defcon3_timer, 180000);
+					}
+				}
 				break;
 			default:
 				serial_print("ALL CLEAR: NO FAULTS \n \r");
-				iteration_count = 0;
 				break;
 			}
-			iteration_count++;
+			if(is_timer_expired(&defcon2_reset))
+			{
+				cancel_timer(&defcon2_timer);
+			}
+			if(is_timer_expired(&defcon3_reset))
+			{
+				cancel_timer(&defcon3_timer);
+			}
+			if(is_timer_expired(&defcon4_reset))
+			{
+				cancel_timer(&defcon4_timer);
+			}
+			if(is_timer_expired(&defcon5_reset))
+			{
+				cancel_timer(&defcon5_timer);
+			}
 		}
 
 		/* Yield to other tasks */
