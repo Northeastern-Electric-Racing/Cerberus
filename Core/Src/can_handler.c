@@ -137,7 +137,7 @@ int8_t queue_can_msg(can_msg_t msg)
 	if (!can_outbound_queue)
 		return -1;
 
-	if(osOK != osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U));
+	if(osOK != osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U))
 	{
 		fault_data.diag = "Failed to queue CAN msg \r\n";
 		queue_fault(&fault_data);

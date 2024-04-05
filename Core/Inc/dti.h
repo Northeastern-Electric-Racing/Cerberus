@@ -23,6 +23,60 @@
 #define DTI_CANID_ID_IQ		  0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 
+/* DTI OPERATING LIMITS */
+/* Note these may have to be adjusted (Hamza's rough guesses) */
+#define MAX_RPM 			  6500
+#define MAX_DUTY			  1000
+#define MAX_INPUT_VOLTAGE	  6500
+#define MIN_INPUT_VOLTAGE	  5500
+#define MAX_DC_CURRENT		  3300
+#define MIN_DC_CURRENT		  -3300
+#define MAX_AC_CURRENT		  3300
+#define MIN_AC_CURRENT		  -3300
+#define CTRL_TEMP_LIMIT		  500
+#define MOTOR_TEMP_LIMIT	  500
+#define MAX_FOC_ID			  300000
+#define MAX_FOC_IQ			  300000
+
+
+/* DTI ERROR CODES */
+/* Note treating most of these as critical errors for now */
+#define DTI_NO_FAULTS		  0x00
+#define DTI_OVERVOLTAGE		  0x01
+#define DTI_UNDERVOLTAGE	  0x02
+#define DTI_DRV			      0x03
+#define DTI_ABS_OVERCURRENT	  0x04
+#define DTI_CTLR_OVERTEMP	  0x05
+#define DTI_MOTOR_OVERTEMP	  0x06
+#define DTI_SENSOR_WIRE_FAULT 0x07
+#define DTI_SENSOR_GEN_FAULT  0x08
+#define DTI_CAN_CMD_ERR		  0x09
+#define DTI_ANLG_IN_ERR       0x0A
+
+typedef struct
+{
+	uint8_t digital_in_1 : 1;
+    uint8_t digital_in_2 : 1;
+    uint8_t digital_in_3 : 1;
+    uint8_t digital_in_4 : 1;
+    uint8_t digital_out_1 : 1;
+    uint8_t digital_out_2 : 1;
+    uint8_t digital_out_3 : 1;
+    uint8_t digital_out_4 : 1;
+    uint8_t cap_temp_limit : 1;
+    uint8_t dc_current_limit : 1;
+    uint8_t drive_enable_limit : 1;
+    uint8_t igbt_acc_temp_limit : 1;
+    uint8_t igbt_temp_limit : 1;
+    uint8_t input_voltage_limit : 1;
+    uint8_t motor_acc_temp_limit : 1;
+    uint8_t motor_temp_limit : 1;
+    uint8_t rpm_min_limit : 1;
+    uint8_t rpm_max_limit : 1;
+    uint8_t power_limit : 1;
+    uint8_t can_map_version : 1;
+} dti_signals_t;
+
 typedef struct 
 {
 	int32_t rpm;			/* SCALE: 1         UNITS: Rotations per Minute   */
@@ -33,9 +87,12 @@ typedef struct
 	int16_t contr_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
 	int16_t motor_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
 	uint8_t fault_code;		/* SCALE: 1         UNITS: No units just a number */
+	int32_t foc_id;			/* SCALE: 100		UNITS: Amps					  */	
+	int32_t foc_iq;			/* SCALE: 100		UNITS: Amps					  */
 	int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
 	int8_t brake_signal;	/* SCALE: 1         UNITS: Percentage             */
 	int8_t drive_enable;	/* SCALE: 1         UNITS: No units just a number */
+	dti_signals_t signals;	/* Bitfield of signal status flags                */
 	osMutexId_t* mutex;
 } dti_t;
 
@@ -47,6 +104,22 @@ extern const osThreadAttr_t dti_router_attributes;
 extern osMessageQueueId_t dti_router_queue;
 void vDTIRouter(void* pv_params);
 
+/*Functions to Decode and Handle CAN messages*/
+//typedef void (*DTI_Message_Handler)(const can_msg_t *, dti_t *);
+void handle_ERPM(const can_msg_t *msg, dti_t *dti);
+void handle_CURRENTS(const can_msg_t *msg, dti_t *dti);
+void handle_TEMPS_FAULTS(const can_msg_t *msg, dti_t *dti);
+void handle_ID_IQ(const can_msg_t *msg, dti_t *dti);
+void handle_SIGNALS(const can_msg_t *msg, dti_t *dti);
+
+// DTI_Message_Handler DTI_Handlers[5] =
+// [
+// 	handle_ERPM,
+// 	handle_CURRENTS,
+// 	handle_TEMPS_FAULTS,
+// 	handle_ID_IQ,
+// 	handle_SIGNALS
+// ];
 
 
 dti_t* dti_init();
