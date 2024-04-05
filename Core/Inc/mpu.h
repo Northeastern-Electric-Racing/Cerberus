@@ -7,6 +7,7 @@
 #include "stm32f405xx.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "fault.h"
 
 typedef struct {
 	I2C_HandleTypeDef* hi2c;

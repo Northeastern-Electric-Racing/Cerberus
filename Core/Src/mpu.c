@@ -104,18 +104,33 @@ int8_t pet_watchdog(mpu_t* mpu)
 static int8_t start_adcs(mpu_t* mpu)
 {
 	HAL_StatusTypeDef hal_stat;
-
+	fault_data_t fault_data = {
+		.id = ADC_INIT_FAULT,
+		.severity = DEFCON4
+	};
 	hal_stat = HAL_ADC_Start(mpu->accel_adc1);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed to initialize accel adc 1";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
 
 	hal_stat = HAL_ADC_Start(mpu->accel_adc2);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed to initialize accel adc 2";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
 
 	hal_stat = HAL_ADC_Start(mpu->brake_adc);
 	if (hal_stat)
+	{	
+		fault_data.diag = "Failed to initialize accel adc 1";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
 
 	return 0;
 }
@@ -135,6 +150,10 @@ static int8_t poll_adc_threaded(ADC_HandleTypeDef* adc)
 /* Note: this should be called from within a thread since it yields to scheduler */
 int8_t read_adc(mpu_t* mpu, uint16_t raw[3])
 {
+	fault_data_t fault_data = {
+		.id = READ_ADC_FAULT,
+		.severity = DEFCON1
+	};
 	if (!mpu)
 		return -1;
 
@@ -144,19 +163,36 @@ int8_t read_adc(mpu_t* mpu, uint16_t raw[3])
 
 	HAL_StatusTypeDef hal_stat = start_adcs(mpu);
 	if (hal_stat)
+	{
+		fault_data.diag = "Unable to start adcs";
+		queue_fault(&fault_data);
 		return hal_stat;
-
+	}
 	hal_stat = poll_adc_threaded(mpu->accel_adc1);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed reading accel channel 1";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
 
 	hal_stat = poll_adc_threaded(mpu->accel_adc2);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed reading accel channel 2";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
+		
 
 	hal_stat = poll_adc_threaded(mpu->brake_adc);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed reading brake adc";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
+		
 
 	raw[0] = HAL_ADC_GetValue(mpu->accel_adc1);
 	raw[1] = HAL_ADC_GetValue(mpu->accel_adc2);
@@ -169,6 +205,10 @@ int8_t read_adc(mpu_t* mpu, uint16_t raw[3])
 
 int8_t read_temp_sensor(mpu_t* mpu, uint16_t* temp, uint16_t* humidity)
 {
+	fault_data_t fault_data = {
+		.id = TEMP_READ_FAULT,
+		.severity = DEFCON5
+	};
 	if (!mpu)
 		return -1;
 
@@ -178,7 +218,11 @@ int8_t read_temp_sensor(mpu_t* mpu, uint16_t* temp, uint16_t* humidity)
 
 	HAL_StatusTypeDef hal_stat = sht30_get_temp_humid(mpu->temp_sensor);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed to read temp";
+		queue_fault( &fault_data);
 		return hal_stat;
+	}
 
 	*temp	  = mpu->temp_sensor->temp;
 	*humidity = mpu->temp_sensor->humidity;
@@ -189,6 +233,10 @@ int8_t read_temp_sensor(mpu_t* mpu, uint16_t* temp, uint16_t* humidity)
 
 int8_t read_accel(mpu_t* mpu, uint16_t accel[3])
 {
+	fault_data_t fault_data = {
+		.id = ACCEL_READ_FAULT,
+		.severity = DEFCON5
+	};
 	if (!mpu)
 		return -1;
 
@@ -198,7 +246,12 @@ int8_t read_accel(mpu_t* mpu, uint16_t accel[3])
 
 	HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
 	if (hal_stat)
+	{
+		fault_data.diag  = "Failed to read acclerometer data";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
+		
 
 	memcpy(accel, mpu->imu->accel_data, 3);
 
@@ -208,6 +261,10 @@ int8_t read_accel(mpu_t* mpu, uint16_t accel[3])
 
 int8_t read_gyro(mpu_t* mpu, uint16_t gyro[3])
 {
+	fault_data_t fault_data = {
+		.id = GYRO_READ_FAULT,
+		.severity = DEFCON5
+	};
 	if (!mpu)
 		return -1;
 
@@ -217,7 +274,12 @@ int8_t read_gyro(mpu_t* mpu, uint16_t gyro[3])
 
 	HAL_StatusTypeDef hal_stat = lsm6dso_read_gyro(mpu->imu);
 	if (hal_stat)
+	{
+		fault_data.diag = "Failed to read gyroscope data";
+		queue_fault(&fault_data);
 		return hal_stat;
+	}
+		
 
 	memcpy(gyro, mpu->imu->gyro_data, 3);
 

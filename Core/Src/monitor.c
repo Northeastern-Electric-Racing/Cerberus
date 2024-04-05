@@ -33,17 +33,17 @@ void vTempMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	//mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
 		// serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
-		//if (read_temp_sensor(mpu, &temp, &humidity)) {
-		//	fault_data.diag = "Failed to get temp";
-		//	queue_fault(&fault_data);
-		//}
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
@@ -55,7 +55,7 @@ void vTempMonitor(void* pv_params)
 		/* Send CAN message */
 		memcpy(temp_msg.data, &sensor_data, temp_msg.len);
 		if (queue_can_msg(temp_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+			fault_data.diag = "Failed to send temperature CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -201,18 +201,24 @@ void vIMUMonitor(void* pv_params)
 		sensor_data.gyro_z	= (sensor_data.gyro_z + gyro_data[2]) / num_samples;
 
 		/* Publish to IMU Queue */
-		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
+		if(osOK != osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U))
+		{
+			fault_data.diag = "Failed to push imu data to queue";
+			queue_fault(&fault_data);
+		}
 
 		/* Send CAN message */
 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
-		//if (queue_can_msg(imu_accel_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		//}
+		if (queue_can_msg(imu_accel_msg)) 
+		{
+			fault_data.diag = "Failed to send acclerometer CAN message";
+			queue_fault(&fault_data);
+		}
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
-		if (queue_can_msg(imu_gyro_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+		if (queue_can_msg(imu_gyro_msg)) 
+		{
+			fault_data.diag = "Failed to send gyroscope CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -238,18 +244,19 @@ void vFusingMonitor(void* pv_params)
 
 	for (;;) {
 		fuse_buf = 0;
-
-		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
+		// TODO: Talk to Jack about PDU faulting conditions
+		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) 
+		{
 			if (read_fuse(pdu, fuse, &fuses[fuse])) /* Actually read the fuse */
 				fuse_buf |= 1 << MAX_FUSES;			/* Set error bit */
 
-			fuse_buf |= fuses[fuse]
-						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
+			fuse_buf |= fuses[fuse] << fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
-		if (queue_can_msg(fuse_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+		if (queue_can_msg(fuse_msg)) 
+		{
+			fault_data.diag = "Failed to send fusing monitor CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -288,7 +295,7 @@ void vShutdownMonitor(void* pv_params)
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
-			fault_data.diag = "Failed to send CAN message";
+			fault_data.diag = "Failed to send shutdown CAN message";
 			queue_fault(&fault_data);
 		}
 
