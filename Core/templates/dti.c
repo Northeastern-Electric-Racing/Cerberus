@@ -1,11 +1,18 @@
+{#
+    This is a Jinja template, everything in {{ }} or {% %} brackets is replaced with C code.
+    Code inside brackets are Python snippets.
+
+    Pro tip: dont use tabs in C code, replace them with four spaces (tabs cause weird formatting issues). 
+-#}
+
 /**
  * @file dti.c
- * @author Hamza Iqbal and Nick DePatie
+ * @author Evan Lombardo, Hamza Iqbal, and Nick DePatie
  * @brief Source file for Motor Controller Driver
  * @version 0.1
- * @date 2023-08-22
+ * @date 2024-04-1
  *
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  *
  */
 
@@ -16,6 +23,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/imports.c" %}
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -44,7 +52,14 @@ dti_t* dti_init()
 	return mc;
 }
 
-{{dispatch}}
+
+// encoder functions
+{#- using encode function template -#}
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/encoders.c" %}
+
+// decoder functions
+{#- using decoder function template -#}
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/decoders.c" %}
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
@@ -53,15 +68,23 @@ const osThreadAttr_t dti_router_attributes
 
 void vDTIRouter(void* pv_params)
 {
-	can_msg_t message;
-	osStatus_t status;
-	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+    can_msg_t message;
+    osStatus_t status;
+    // fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
 
-	// dti_t *mc = (dti_t *)pv_params;
+    // dti_t *mc = (dti_t *)pv_params;
 
-	for (;;) {
-		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
-		{{router}}
-	}
+    for (;;) {
+        /* Wait until new CAN message comes into queue */
+        if ((status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever)) != 0) {
+            // err
+        }
+		
+		{#- using router template, indented to fit properly #}
+		{%- filter indent(width=8) %}
+
+			{%- include EMBEDDED_BASE_PATH + "/cangen/templates/routers.c" %}
+
+		{%- endfilter %}
+    }
 }

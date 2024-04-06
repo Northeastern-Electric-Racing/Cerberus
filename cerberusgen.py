@@ -18,19 +18,18 @@ cangen = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cangen)
 
 # Load in Jinja Templates
-environment = Environment(loader=FileSystemLoader("Core/templates/"))
-template = environment.get_template("dti.c")
+environment = Environment(loader=FileSystemLoader("./"))
+template = environment.get_template("Core/templates/dti.c")
 
 #decode_data = open("./src/decode_data.rs", "w")
 #master_mapping = open("./src/master_mapping.rs", "w")
 
 mpu_messages = cangen.YAMLParser().parse(open(f"{EMBEDDED_BASE_PATH}/{module_name}/can-messages/bms.yaml", "r"))
 
-result = cangen.CSynth().parse_messages(mpu_messages.msgs)
-
 content = template.render(
-    dispatch = result.decode_data,
-    router = result.master_mapping
+    can_msgs = mpu_messages.msgs,
+    EMBEDDED_BASE_PATH = EMBEDDED_BASE_PATH
 )
 
-print(content)
+with open("Core/Src/dti.c", "w") as fh:
+    fh.write(content)
