@@ -1,4 +1,4 @@
-name: shepherd
+name: cerberus
 
 services:
     ner-gcc-arm:
