@@ -19,7 +19,7 @@ spec.loader.exec_module(cangen)
 
 # Load in Jinja Templates
 environment = Environment(loader=FileSystemLoader("./"))
-template = environment.get_template("Core/templates/dti.c")
+template = environment.get_template("Core/templates/dti.c.j2")
 
 #decode_data = open("./src/decode_data.rs", "w")
 #master_mapping = open("./src/master_mapping.rs", "w")

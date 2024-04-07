@@ -2,7 +2,9 @@
     This is a Jinja template, everything in {{ }} or {% %} brackets is replaced with C code.
     Code inside brackets are Python snippets.
 
-    Pro tip: dont use tabs in C code, replace them with four spaces (tabs cause weird formatting issues). 
+    Note: dont use tabs in C code, replace them with four spaces (tabs cause weird formatting issues). 
+
+	This file defines the code and templates needed to create the DTI for the motor controller driver.
 -#}
 
 /**
@@ -23,7 +25,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-{% include EMBEDDED_BASE_PATH + "/cangen/templates/imports.c" %}
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/imports.c.j2" %}
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -55,11 +57,11 @@ dti_t* dti_init()
 
 // encoder functions
 {#- using encode function template -#}
-{% include EMBEDDED_BASE_PATH + "/cangen/templates/encoders.c" %}
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/encoders.c.j2" %}
 
 // decoder functions
 {#- using decoder function template -#}
-{% include EMBEDDED_BASE_PATH + "/cangen/templates/decoders.c" %}
+{% include EMBEDDED_BASE_PATH + "/cangen/templates/decoders.c.j2" %}
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
@@ -83,7 +85,7 @@ void vDTIRouter(void* pv_params)
 		{#- using router template, indented to fit properly #}
 		{%- filter indent(width=8) %}
 
-			{%- include EMBEDDED_BASE_PATH + "/cangen/templates/routers.c" %}
+			{%- include EMBEDDED_BASE_PATH + "/cangen/templates/routers.c.j2" %}
 
 		{%- endfilter %}
     }
