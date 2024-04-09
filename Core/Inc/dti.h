@@ -25,18 +25,18 @@
 
 /* DTI OPERATING LIMITS */
 /* Note these may have to be adjusted (Hamza's rough guesses) */
-#define MAX_RPM 			  6500
-#define MAX_DUTY			  1000
-#define MAX_INPUT_VOLTAGE	  6500
-#define MIN_INPUT_VOLTAGE	  5500
-#define MAX_DC_CURRENT		  3300
-#define MIN_DC_CURRENT		  -3300
-#define MAX_AC_CURRENT		  3300
-#define MIN_AC_CURRENT		  -3300
-#define CTRL_TEMP_LIMIT		  500
-#define MOTOR_TEMP_LIMIT	  500
-#define MAX_FOC_ID			  300000
-#define MAX_FOC_IQ			  300000
+#define MAX_RPM 			  6500      /* UNITS: RPM           SCALE: 1   */
+#define MAX_DUTY			  1000      /* UNITS: Percentage    SCALE: 10  */
+#define MAX_INPUT_VOLTAGE	  6500      /* UNITS: Volts         SCALE: 10  */
+#define MIN_INPUT_VOLTAGE	  5500      /* UNITS: Volts         SCALE: 10  */
+#define MAX_DC_CURRENT		  3300      /* UNITS: Amps          SCALE: 10  */
+#define MIN_DC_CURRENT		  -3300     /* UNITS: Amps          SCALE: 10  */
+#define MAX_AC_CURRENT		  3300      /* UNITS: Amps          SCALE: 10  */
+#define MIN_AC_CURRENT		  -3300     /* UNITS: Amps          SCALE: 10  */
+#define CTRL_TEMP_LIMIT		  500       /* UNITS: Celsius       SCALE: 10  */
+#define MOTOR_TEMP_LIMIT	  500       /* UNITS: Celsius       SCALE: 10  */
+#define MAX_FOC_ID			  300000    /* UNITS: Amps          SCALE: 100 */
+#define MAX_FOC_IQ			  300000    /* UNITS: Amps          SCALE: 100 */
 
 
 /* DTI ERROR CODES */
@@ -107,10 +107,10 @@ void vDTIRouter(void* pv_params);
 /*Functions to Decode and Handle CAN messages*/
 //typedef void (*DTI_Message_Handler)(const can_msg_t *, dti_t *);
 void handle_ERPM(const can_msg_t *msg, dti_t *dti);
-void handle_CURRENTS(const can_msg_t *msg, dti_t *dti);
-void handle_TEMPS_FAULTS(const can_msg_t *msg, dti_t *dti);
-void handle_ID_IQ(const can_msg_t *msg, dti_t *dti);
-void handle_SIGNALS(const can_msg_t *msg, dti_t *dti);
+void handle_currents(const can_msg_t *msg, dti_t *dti);
+void handle_temps_faults(const can_msg_t *msg, dti_t *dti);
+void handle_id_iq(const can_msg_t *msg, dti_t *dti);
+void handle_signals(const can_msg_t *msg, dti_t *dti);
 
 // DTI_Message_Handler DTI_Handlers[5] =
 // [

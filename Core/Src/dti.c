@@ -195,7 +195,7 @@ void handle_ERPM(const can_msg_t *msg, dti_t *dti)
 	}
 }
 
-void handle_CURRENTS(const can_msg_t *msg, dti_t *dti)
+void handle_currents(const can_msg_t *msg, dti_t *dti)
 {
 	fault_data_t fault_data = {
 		.id		  = DTI_LIMITS_FAULT,
@@ -226,7 +226,7 @@ void handle_CURRENTS(const can_msg_t *msg, dti_t *dti)
 	}
 }
 
-void handle_TEMPS_FAULTS(const can_msg_t *msg, dti_t *dti)
+void handle_temps_faults(const can_msg_t *msg, dti_t *dti)
 {
 	fault_data_t fault_data = {
 		.id		  = DTI_LIMITS_FAULT,
@@ -303,7 +303,7 @@ void handle_TEMPS_FAULTS(const can_msg_t *msg, dti_t *dti)
 }
 
 // Dont know what these values are for but they might be useful in future.
-void handle_ID_IQ(const can_msg_t *msg, dti_t *dti)
+void handle_id_iq(const can_msg_t *msg, dti_t *dti)
 {
 	fault_data_t fault_data = {
 		.id		  = DTI_LIMITS_FAULT,
@@ -325,7 +325,7 @@ void handle_ID_IQ(const can_msg_t *msg, dti_t *dti)
 	}
 }
 
-void handle_SIGNALS(const can_msg_t *msg, dti_t *dti)
+void handle_signals(const can_msg_t *msg, dti_t *dti)
 {
 	dti->throttle_signal = msg->data[0];
 	dti->brake_signal = msg->data[1];
@@ -376,16 +376,16 @@ void vDTIRouter(void* pv_params)
 					handle_ERPM(&message, mc);
 					break;
 				case DTI_CANID_CURRENTS:
-					handle_CURRENTS(&message, mc);
+					handle_currents(&message, mc);
 					break;
 				case DTI_CANID_TEMPS_FAULT:
-					handle_TEMPS_FAULTS(&message, mc);
+					handle_temps_faults(&message, mc);
 					break;
 				case DTI_CANID_ID_IQ:
-					handle_ID_IQ(&message, mc);
+					handle_id_iq(&message, mc);
 					break;
 				case DTI_CANID_SIGNALS:
-					handle_SIGNALS(&message, mc);
+					handle_signals(&message, mc);
 					break;
 				default:
 					break;
