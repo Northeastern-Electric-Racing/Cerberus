@@ -9,6 +9,7 @@
 #include "serial_monitor.h"
 #include "nero.h"
 #include "stdio.h"
+#include "torque.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -89,6 +90,18 @@ static void debounce_cb(void* arg)
 		wheel->debounced_buttons[button] = NOT_PRESSED;
 }
 
+static void paddle_left_cb() {
+	if (get_drive_state() == EFFICIENCY) {
+		increase_torque_limit();
+	}
+}
+
+static void paddle_right_cb() {
+	if (get_drive_state() == EFFICIENCY) {
+		decrease_torque_limit();
+	}
+}
+
 /* For updating values via the wheel's CAN message */
 void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 {
@@ -116,10 +129,10 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 			printf("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
-					// doesnt effect cerb for now
+					paddle_left_cb();
 					break;
 				case STEERING_PADDLE_RIGHT:
-					// doesnt effect cerb for now
+					paddle_right_cb();
 					break;
 				case NERO_BUTTON_UP:
 					serial_print("Up button pressed \r\n");
@@ -147,7 +160,6 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 					break;
 			}
 		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
-			//TODO: Look into debounce timer https://www.youtube.com/watch?v=e1-kc04jSE4
 			// osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
 			// ringbuffer_enqueue(wheel->debounce_buffer, &i);
 		} else {

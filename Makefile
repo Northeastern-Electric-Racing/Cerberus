@@ -54,6 +54,7 @@ Core/Src/dti.c \
 Core/Src/state_machine.c \
 Core/Src/bms.c \
 Core/Src/nero.c \
+Core/Src/bms.c \
 Core/Src/torque.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
