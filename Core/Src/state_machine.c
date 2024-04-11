@@ -1,5 +1,6 @@
 #include "state_machine.h"
 #include "fault.h"
+#include "can_handler.h"
 #include "serial_monitor.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,9 +17,8 @@ typedef struct
 static state_t cerberus_state;
 
 /* State Transition Map */
-static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = 
-{
-	/*BOOT  READY   DRIVING FAULTED*/
+static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
+	/*BOOT  READY DRIVING FAULTED*/
 	{ true, true, false, true },  /* BOOT */
 	{ false, true, true, true },  /* READY */
 	{ false, true, true, true },  /* DRIVING */
@@ -87,9 +87,9 @@ void vStateMachineDirector(void* pv_params)
 
 	for (;;) 
 	{
-		if (osOK != osMessageQueueGet(func_state_trans_queue, &new_state, NULL, 50)) 
+		if (osOK != osMessageQueueGet(func_state_trans_queue, &new_state, NULL, osWaitForever)) 
 		{
-			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition functional state"};
 			if(queue_fault(&state_trans_fault) == -1)
 			{
 				serial_print("Fill this in later");
@@ -97,9 +97,9 @@ void vStateMachineDirector(void* pv_params)
 			continue;
 		}
 
-		if (osOK != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, 50))
+		if (osOK != osMessageQueueGet(drive_state_trans_queue, &new_state, NULL, osWaitForever))
 		{
-			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition state"};
+			fault_data_t state_trans_fault = {STATE_RECEIVED_FAULT, DEFCON4, "Failed to transition drive state"};
 			if(queue_fault(&state_trans_fault) == -1)
 			{
 				serial_print("Fill this in later");
@@ -109,7 +109,7 @@ void vStateMachineDirector(void* pv_params)
 		
 		if (!valid_trans_to_from[new_state.functional][cerberus_state.functional]) 
 		{
-			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Failed to transition state"};
+			fault_data_t invalid_trans_fault = {INVALID_TRANSITION_FAULT, DEFCON5, "Invalid state transition"};
 			if(queue_fault(&invalid_trans_fault) == -1)
 			{
 				serial_print("Fill this in later");
@@ -128,3 +128,4 @@ void vStateMachineDirector(void* pv_params)
 		cerberus_state.drive	  = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
 	}
 }
+
