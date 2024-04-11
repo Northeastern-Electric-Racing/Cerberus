@@ -16,6 +16,7 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
+#include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,10 +26,8 @@
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO,
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO, BMS_CANID
 };
-
-void can1_callback(CAN_HandleTypeDef* hcan);
 
 can_t* init_can1(CAN_HandleTypeDef* hcan)
 {
@@ -39,7 +38,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	assert(can1);
 
 	can1->hcan		  = hcan;
-	can1->callback	  = can1_callback;
 	can1->id_list	  = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
@@ -57,8 +55,14 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
-
 	can_msg_t new_msg;
+
+	/* Read in CAN message */
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
+		fault_data.diag = "Failed to read CAN Msg";
+		queue_fault(&fault_data);
+		return;
+	}
 
 	/* Read in CAN message */
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
@@ -82,6 +86,8 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case STEERING_CANID_IO:
 		osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
 		break;
+	case BMS_CANID:
+		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
@@ -134,3 +140,4 @@ int8_t queue_can_msg(can_msg_t msg)
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
 	return 0;
 }
+
