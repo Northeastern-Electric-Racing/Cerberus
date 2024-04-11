@@ -7,7 +7,7 @@
 #include <string.h>
 #include "state_machine.h"
 #include "serial_monitor.h"
-#include "nero_state_machine.h"
+#include "nero.h"
 #include "stdio.h"
 #include "torque.h"
 
