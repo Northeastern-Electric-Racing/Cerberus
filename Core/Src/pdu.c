@@ -37,6 +37,8 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	    return NULL;
 	}
 
+	serial_print("I AM RUNNING");
+
 	// /* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
     assert(pdu->ctrl_expander);
@@ -52,16 +54,22 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     // set pins 0-3 to outputs
 
     // debugging: endianness of this is probably reversed
-    uint8_t pin_configs = 0b11110000;
-    if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, &pin_configs)) {
-		serial_print("set pin modes fail");
-        free(pdu->ctrl_expander);
-        free(pdu->shutdown_expander);
-        free(pdu);
-        return NULL;
-    }
+    // uint8_t pin_configs = 0b11110000;
+    // if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, &pin_configs)) {
+	// 	serial_print("set pin modes fail");
+    //     free(pdu->ctrl_expander);
+    //     free(pdu->shutdown_expander);
+    //     free(pdu);
+    //     return NULL;
+    // }
 
-	
+	// serial_print("IRAN");
+	// if (write_pump(pdu, false) != 0) {
+	// 	serial_print("WRITE PUMP FAIL\n");
+	// }
+	// write_fan_radiator(pdu, false);
+	// write_brakelight(pdu, false) ;
+	// write_fan_battbox(pdu, false) ;
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
