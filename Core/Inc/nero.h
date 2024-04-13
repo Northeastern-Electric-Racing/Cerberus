@@ -6,15 +6,26 @@
 typedef enum {
 	NOT_DRIVING,
 	REVERSE,
-	PIT,
-	EFFICIENCY,
-	PERFORMANCE,
-   NERO_ONLY,
+	SPEED_LIMITED,
+	AUTOCROSS,
+	ENDURANCE,
 	MAX_DRIVE_STATES
 } drive_state_t;
 
+typedef enum {
+	OFF,
+	PIT,
+	PERFORMANCE,
+	EFFICIENCY,
+	DEBUG,
+	CONFIGURATION,
+	FLAPPY_BIRD,
+	EXIT,
+	MAX_NERO_STATES
+} nero_menu_t;
+
 typedef struct {
-   drive_state_t nero_index;
+   nero_menu_t nero_index;
    bool home_mode;
 } nero_state_t;
 

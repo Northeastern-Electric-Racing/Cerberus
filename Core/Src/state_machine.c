@@ -2,6 +2,7 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "serial_monitor.h"
+#include "pdu.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -126,6 +127,25 @@ void vStateMachineDirector(void* pv_params)
 
 		cerberus_state.functional = new_state.functional;
 		cerberus_state.drive	  = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
+
+		switch (new_state.functional)
+		{
+			case BOOT:
+				// Do Nothing
+				break;
+			case READY:
+				// Turn off shit
+				break;
+			case DRIVING:
+				// Turn on shit
+				break;
+			case FAULTED:
+				// Turn off shit
+				break;
+			default:
+				// Do Nothing
+				break;
+		}
 	}
 }
 
