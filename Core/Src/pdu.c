@@ -55,41 +55,42 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	// Same as shutdown
 	status = max7314_write_config(pdu->ctrl_expander, &config_data);
     if (status != HAL_OK) {
-        serial_print("\n\rshutdown init fail\n\r");
+        serial_print("\n\rcntrl init fail\n\r");
+	    free(pdu->shutdown_expander);
+	    free(pdu);
+	    return NULL;
+    }
+
+	// Set global intensity
+	status = max7314_set_global_intensity(pdu->ctrl_expander, 0);
+    if (status != HAL_OK) {
+        serial_print("\n\rSet global intensity fail\n\r");
+		free(pdu->ctrl_expander);
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
     }
 
     // set pins 15, 3, 2, 1, 0 to outputs
-	uint8_t pin_config[2] = {0b01111111, 0b11110000};
-    if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
-		serial_print("set pin modes fail");
-        free(pdu->ctrl_expander);
-        free(pdu->shutdown_expander);
-        free(pdu);
-        return NULL;
-    }
+	// uint8_t pin_config[2] = {0b11110000, 0b01111111};
+    // if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
+	// 	serial_print("\n\rset pin modes fail\n\r");
+    //     free(pdu->ctrl_expander);
+    //     free(pdu->shutdown_expander);
+    //     free(pdu);
+    //     return NULL;
+    // }
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
-
-	// if (write_pump(pdu, false) != 0) {
-	// 	printf("WRITE PUMP FAIL\n");
-	// } else {
-	// 	printf("IRAN");
-	// }
-	// write_fan_radiator(pdu, false);
-	// write_brakelight(pdu, false) ;
-	// write_fan_battbox(pdu, false) ;
 
 	return pdu;
 }
 
 int8_t write_pump(pdu_t* pdu, bool status)
 {
-	printf("test");
+	
 	if (!pdu)
 		return -1;
 
@@ -99,7 +100,6 @@ int8_t write_pump(pdu_t* pdu, bool status)
 		return stat;
 	}
 
-	printf("test2");
 	/* write pump over i2c */
     HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, PUMP_CTRL, status);
     if(error != HAL_OK) {
@@ -108,7 +108,6 @@ int8_t write_pump(pdu_t* pdu, bool status)
     }
 
 	osMutexRelease(pdu->mutex);
-	printf("success");
 	return 0;
 }
 
