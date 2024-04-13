@@ -68,9 +68,11 @@ void select_nero_index() {
 		return;
 	}
 
-	if (nero_state.nero_index >= 0 && nero_state.nero_index < MAX_DRIVE_STATES) {
+	uint8_t max_drive_states = MAX_DRIVE_STATES;
+
+	if (nero_state.nero_index >= 0 && nero_state.nero_index < max_drive_states) {
 		nero_state.home_mode = false;
-		queue_drive_state(nero_state.nero_index);
+		queue_drive_state(map_nero_index_to_drive_state(nero_state.nero_index));
 		if (nero_state.nero_index >= 0) {
 			queue_func_state(DRIVING);
 		} else {

@@ -142,13 +142,13 @@ void vCalcTorque(void* pv_params)
 				case REVERSE:
 					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
 					break;
-				case PIT:
+				case SPEED_LIMITED:
 					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
 					break;
-				case EFFICIENCY:
+				case ENDURANCE:
 					paddle_accel_to_torque(pedal_data.accelerator_value, &torque);
 					break;
-				case PERFORMANCE:
+				case AUTOCROSS:
 					linear_accel_to_torque(pedal_data.accelerator_value, &torque);
 					break;
 				default:
