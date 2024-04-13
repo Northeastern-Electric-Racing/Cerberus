@@ -14,6 +14,9 @@
 #define SHUTDOWN_ADDR  0x20
 #define CTRL_ADDR      0x24
 
+#define PIN_MODE_OUTPUT 0
+#define PIN_MODE_INPUT  1 
+
 static osMutexAttr_t pdu_mutex_attributes;
 #include <stdio.h>
 pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
@@ -25,68 +28,78 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	assert(pdu);
 
 	pdu->hi2c = hi2c;
+	
 
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(max7314_t));
     assert(pdu->shutdown_expander);
     pdu->shutdown_expander->dev_addr = SHUTDOWN_ADDR;
-	if (max7314_init(pdu->shutdown_expander, pdu->hi2c)) {
-		serial_print("\n\rshutdown init fail\n\r");
+	max7314_init(pdu->shutdown_expander, pdu->hi2c);
+
+	// Blink disabled, global intensity enabled
+	uint8_t config_data = 0b01001100;
+    HAL_StatusTypeDef status = max7314_write_config(pdu->shutdown_expander, &config_data);
+    if (status != HAL_OK) {
+        serial_print("\n\rshutdown init fail\n\r");
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
-	}
-
-	serial_print("I AM RUNNING");
+    }
 
 	// /* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(max7314_t));
     assert(pdu->ctrl_expander);
     pdu->ctrl_expander->dev_addr = CTRL_ADDR;
-	if (max7314_init(pdu->ctrl_expander, pdu->hi2c)) {
-	 	serial_print("\n\rctrl exp fail\n\r");
-		free(pdu->ctrl_expander);
-		free(pdu->shutdown_expander);
-		free(pdu);
-		return NULL;
-	}
+	max7314_init(pdu->ctrl_expander, pdu->hi2c);
 
-    // set pins 0-3 to outputs
+	// Same as shutdown
+	status = max7314_write_config(pdu->ctrl_expander, &config_data);
+    if (status != HAL_OK) {
+        serial_print("\n\rshutdown init fail\n\r");
+	    free(pdu->shutdown_expander);
+	    free(pdu);
+	    return NULL;
+    }
 
-    // debugging: endianness of this is probably reversed
-    // uint8_t pin_configs = 0b11110000;
-    // if (max7314_set_pin_modes(pdu->ctrl_expander, MAX7314_PINS_0_TO_7, &pin_configs)) {
-	// 	serial_print("set pin modes fail");
-    //     free(pdu->ctrl_expander);
-    //     free(pdu->shutdown_expander);
-    //     free(pdu);
-    //     return NULL;
-    // }
-
-	// serial_print("IRAN");
-	// if (write_pump(pdu, false) != 0) {
-	// 	serial_print("WRITE PUMP FAIL\n");
-	// }
-	// write_fan_radiator(pdu, false);
-	// write_brakelight(pdu, false) ;
-	// write_fan_battbox(pdu, false) ;
+    // set pins 15, 3, 2, 1, 0 to outputs
+	uint8_t pin_config[2] = {0b01111111, 0b11110000};
+    if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
+		serial_print("set pin modes fail");
+        free(pdu->ctrl_expander);
+        free(pdu->shutdown_expander);
+        free(pdu);
+        return NULL;
+    }
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
+
+	// if (write_pump(pdu, false) != 0) {
+	// 	printf("WRITE PUMP FAIL\n");
+	// } else {
+	// 	printf("IRAN");
+	// }
+	// write_fan_radiator(pdu, false);
+	// write_brakelight(pdu, false) ;
+	// write_fan_battbox(pdu, false) ;
 
 	return pdu;
 }
 
 int8_t write_pump(pdu_t* pdu, bool status)
 {
+	printf("test");
 	if (!pdu)
 		return -1;
 
 	osStatus_t stat = osMutexAcquire(pdu->mutex, osWaitForever);
-	if (stat)
+	if (stat) {
+		osMutexRelease(pdu->mutex);
 		return stat;
+	}
 
+	printf("test2");
 	/* write pump over i2c */
     HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, PUMP_CTRL, status);
     if(error != HAL_OK) {
@@ -95,6 +108,7 @@ int8_t write_pump(pdu_t* pdu, bool status)
     }
 
 	osMutexRelease(pdu->mutex);
+	printf("success");
 	return 0;
 }
 
@@ -201,7 +215,7 @@ int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status)
 			return -1;
 	}
 
-	HAL_StatusTypeDef error = max7314_read_pin_state(pdu->ctrl_expander, pin, status);
+	HAL_StatusTypeDef error = max7314_read_pin(pdu->ctrl_expander, pin, status);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;
@@ -222,7 +236,7 @@ int8_t read_tsms_sense(pdu_t* pdu, bool* status)
 
 	/* read pin over i2c */
     uint8_t tsms_pin = 14;
-    HAL_StatusTypeDef error = max7314_read_pin_state(pdu->ctrl_expander, tsms_pin, status);
+    HAL_StatusTypeDef error = max7314_read_pin(pdu->ctrl_expander, tsms_pin, status);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;
@@ -276,7 +290,7 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 	}
 	
 	// read pin over i2c
-    HAL_StatusTypeDef error = max7314_read_pin_state(pdu->shutdown_expander, pin, status);
+    HAL_StatusTypeDef error = max7314_read_pin(pdu->shutdown_expander, pin, status);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;

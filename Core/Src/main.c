@@ -177,8 +177,8 @@ int main(void)
 
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  serial_print("I AM RUNNING");
   pdu_t *pdu  = init_pdu(&hi2c2);
+  printf("%p", pdu);
   dti_t *mc   = dti_init();
   //steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
@@ -210,7 +210,7 @@ int main(void)
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  //fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
 
   /* Messaging */
