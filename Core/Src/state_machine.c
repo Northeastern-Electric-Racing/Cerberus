@@ -82,6 +82,8 @@ void vStateMachineDirector(void* pv_params)
 	func_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 	drive_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 
+	pdu_t *pdu = (pdu_t *)pv_params;
+
 	state_t new_state;
 
 	serial_print("State Machine Init!\r\n");
@@ -135,12 +137,21 @@ void vStateMachineDirector(void* pv_params)
 				break;
 			case READY:
 				// Turn off shit
+				write_fan_battbox(pdu, false);
+				write_fan_radiator(pdu, false);
+				write_pump(pdu, false);
 				break;
 			case DRIVING:
 				// Turn on shit
+				write_fan_battbox(pdu, true);
+				write_fan_radiator(pdu, true);
+				write_pump(pdu, true);
 				break;
 			case FAULTED:
 				// Turn off shit
+				write_fan_battbox(pdu, false);
+				write_fan_radiator(pdu, false);
+				write_pump(pdu, false);
 				break;
 			default:
 				// Do Nothing
