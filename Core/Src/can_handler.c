@@ -64,12 +64,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		return;
 	}
 
-	/* Read in CAN message */
-	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, new_msg.data) != HAL_OK) {
-		fault_data.diag = "Failed to read CAN Msg";
-		queue_fault(&fault_data);
-		return;
-	}
 	new_msg.len = rx_header.DLC;
 	new_msg.id	= rx_header.StdId;
 
