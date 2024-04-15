@@ -3,10 +3,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define PUMP_CTRL	   0x00
-#define RADFAN_CTRL	   0x01
-#define BRKLIGHT_CTRL  0x02
-#define BATBOXFAN_CTRL 0x03
+#define PUMP_CTRL	   0
+#define RADFAN_CTRL	   1
+#define BRKLIGHT_CTRL  2
+#define BATBOXFAN_CTRL 3
+#define RTDS_CTRL	   15
 #define TSMS_CTRL	   0x04
 #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
@@ -160,6 +161,26 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
 
 	/* write fan over i2c */
     HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, BATBOXFAN_CTRL, status);
+    if(error != HAL_OK) {
+        osMutexRelease(pdu->mutex);
+        return error;
+    }
+
+	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+int8_t write_rtds(pdu_t* pdu, bool status) 
+{
+    if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* write fan over i2c */
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, status);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;
