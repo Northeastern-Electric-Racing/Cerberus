@@ -20,7 +20,7 @@
 #define ACCEL2_MAX_VAL          1200
 
 /* Torque Tuning */
-#define MAX_TORQUE              10 /* Nm * 10 */
+#define MAX_TORQUE              110 /* Nm * 10 */
 
 #define STEERING_WHEEL_DEBOUNCE 25  /* ms */
 
