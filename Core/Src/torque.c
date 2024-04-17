@@ -159,8 +159,7 @@ void vCalcTorque(void* pv_params)
 		{
 			serial_print("I'm scared.");
 		}
-
-		/* Send whatever torque command we have on record */
-		dti_set_torque(torque);
 	}
+	/* Send whatever torque command we have on record */
+	dti_set_torque(torque);
 }

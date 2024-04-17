@@ -15,7 +15,7 @@ static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
 
 mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
-				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc, 
+				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc,
                 GPIO_TypeDef* led_gpio, GPIO_TypeDef* watchdog_gpio)
 {
 	assert(hi2c);

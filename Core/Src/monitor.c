@@ -14,6 +14,7 @@
 #include "serial_monitor.h"
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	  4096
