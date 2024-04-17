@@ -19,8 +19,7 @@
 #include "torque.h"
 #include <math.h>
 #include <string.h>
-
-#define MAX_TORQUE 10.0 /* Nm */
+#include <stdio.h>
 
 // TODO: Might want to make these more dynamic to account for MechE tuning
 #define MIN_PEDAL_VAL 0x1DC /* Raw ADC */
@@ -40,7 +39,7 @@ const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
 static void linear_accel_to_torque(float accel, uint16_t* torque)
 {
 	/* Linearly map acceleration to torque */
-	*torque = (uint16_t)((accel / MAX_TORQUE) * 0xFFFF);
+	*torque = (uint16_t)(accel * MAX_TORQUE);
 }
 
 static void rpm_to_mph(uint32_t rpm, float* mph)
@@ -120,18 +119,22 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
+		/* Send whatever torque command we have on record */
+		dti_set_torque(torque);
+
+		//printf("%d\r\n", pedal_data.accelerator_value);
+
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{
-			func_state_t func_state = get_func_state();
+			func_state_t func_state = DRIVING;//get_func_state();
 			if (func_state != DRIVING)
 			{
 				torque = 0;
 				continue;
 			}
 
-
-			drive_state_t drive_state = get_drive_state();
+			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
 
 			float mph;
 			rpm_to_mph(dti_get_rpm(mc), &mph);
@@ -139,27 +142,21 @@ void vCalcTorque(void* pv_params)
 			switch (drive_state)
 			{
 				case REVERSE:
-					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
+					limit_accel_to_torque(mph, pedal_data.accelerator_value / 100, &torque);
 					break;
 				case SPEED_LIMITED:
-					limit_accel_to_torque(mph, pedal_data.accelerator_value, &torque);
+					limit_accel_to_torque(mph, pedal_data.accelerator_value / 100, &torque);
 					break;
 				case ENDURANCE:
-					paddle_accel_to_torque(pedal_data.accelerator_value, &torque);
+					paddle_accel_to_torque(pedal_data.accelerator_value / 100, &torque);
 					break;
 				case AUTOCROSS:
-					linear_accel_to_torque(pedal_data.accelerator_value, &torque);
+					linear_accel_to_torque(pedal_data.accelerator_value  / 100, &torque);
 					break;
 				default:
 					torque = 0;
 					break;
 			}
 		}
-		else
-		{
-			serial_print("I'm scared.");
-		}
 	}
-	/* Send whatever torque command we have on record */
-	dti_set_torque(torque);
 }

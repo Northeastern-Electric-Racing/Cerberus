@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
@@ -47,6 +48,16 @@ dti_t* dti_init()
 
 void dti_set_torque(int16_t torque)
 {
+	// TODO: this 
+	//static uint16_t torque_accumulator = 0;
+	//static const uint8_t num_samples = 50;
+
+	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
+	//torque = (uint16_t)(((uint64_t)torque_accumulator * (num_samples - 1)) + torque) / num_samples;
+	//torque_accumulator = torque;
+
+	//printf("%d\r\n", torque);
+
 	int16_t ac_current = ((float)torque / EMRAX_KT) * 10; /* times 10 */
 	dti_set_current(ac_current);
 }

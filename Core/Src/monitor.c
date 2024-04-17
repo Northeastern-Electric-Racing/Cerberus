@@ -186,15 +186,22 @@ void vPedalsMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
+		/* Evaluate Pedal Faulting Conditions */
 		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		// TODO: Actually read in second brake ADC
 		eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
+		/* Offset adjusted per pedal sensor, clamp to be above 0 */
+		//float accel_val1 = 
+		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
+
+		//printf("%d\r\n", accel_val2);
+
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
-			= (sensor_data.accelerator_value + (adc_data[ACCELPIN_1] + adc_data[ACCELPIN_2]) / 2)
+			= (sensor_data.accelerator_value + (accel_val2))
 			  / num_samples;
-		 sensor_data.brake_value
+		sensor_data.brake_value
 			= (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
 			  / num_samples;
 

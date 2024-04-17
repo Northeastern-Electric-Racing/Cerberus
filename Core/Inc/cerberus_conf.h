@@ -2,7 +2,6 @@
 #define YELLOW_LED_BLINK_DELAY 500  /* ms */
 #define TEMP_SENS_SAMPLE_DELAY 200  /* ms */
 #define IMU_SAMPLE_DELAY	   5    /* ms */
-#define PEDALS_SAMPLE_DELAY	   5    /* ms */
 #define FUSES_SAMPLE_DELAY	   50   /* ms */
 #define SHUTDOWN_MONITOR_DELAY 50   /* ms */
 #define SERIAL_MONITOR_DELAY
@@ -12,6 +11,16 @@
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
+
+/* Pedal tuning */
+#define PEDALS_SAMPLE_DELAY	   5    /* ms */
+#define ACCEL1_OFFSET           2200
+#define ACCEL1_MAX_VAL          1200
+#define ACCEL2_OFFSET           2200
+#define ACCEL2_MAX_VAL          1200
+
+/* Torque Tuning */
+#define MAX_TORQUE              10 /* Nm * 10 */
 
 #define STEERING_WHEEL_DEBOUNCE 25  /* ms */
 
