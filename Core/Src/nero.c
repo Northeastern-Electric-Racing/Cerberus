@@ -4,8 +4,7 @@
 #include "can_handler.h"
 #include "state_machine.h"
 
-static nero_state_t nero_state;
-
+static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
 static void send_mode_status() {
 	can_msg_t msg = { .id = 0x501, .len = 5, .data = { nero_state.home_mode, nero_state.nero_index, 0, 0, 0 } };
 	/* Send CAN message */
@@ -71,9 +70,8 @@ void select_nero_index() {
 	uint8_t max_drive_states = MAX_DRIVE_STATES;
 
 	if (nero_state.nero_index >= 0 && nero_state.nero_index < max_drive_states) {
-		nero_state.home_mode = false;
 		queue_drive_state(map_nero_index_to_drive_state(nero_state.nero_index));
-		if (nero_state.nero_index >= 0) {
+		if (nero_state.nero_index > 0) {
 			queue_func_state(DRIVING);
 		} else {
 			queue_func_state(READY);
@@ -81,6 +79,8 @@ void select_nero_index() {
 	} else {
 		// Do Nothing because the index is out of bounds
 	}
+	nero_state.home_mode = false;
+
 	send_mode_status();
 }
 

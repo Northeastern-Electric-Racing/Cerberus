@@ -126,7 +126,6 @@ void vCalcTorque(void* pv_params)
 			func_state_t func_state = get_func_state();
 			if (func_state != DRIVING)
 			{
-				serial_print("Not driving.");
 				torque = 0;
 				continue;
 			}
