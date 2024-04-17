@@ -187,9 +187,9 @@ void vPedalsMonitor(void* pv_params)
 		}
 
 		/* Evaluate Pedal Faulting Conditions */
-		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
+		// eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		// TODO: Actually read in second brake ADC
-		eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
+		// eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		//float accel_val1 = 
