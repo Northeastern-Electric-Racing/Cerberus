@@ -2,6 +2,7 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "serial_monitor.h"
+#include "pdu.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -81,6 +82,8 @@ void vStateMachineDirector(void* pv_params)
 	func_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 	drive_state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_t), NULL);
 
+	pdu_t *pdu = (pdu_t *)pv_params;
+
 	state_t new_state;
 
 	serial_print("State Machine Init!\r\n");
@@ -126,6 +129,34 @@ void vStateMachineDirector(void* pv_params)
 
 		cerberus_state.functional = new_state.functional;
 		cerberus_state.drive	  = new_state.functional == DRIVING ? new_state.drive : NOT_DRIVING;
+
+		switch (new_state.functional)
+		{
+			case BOOT:
+				// Do Nothing
+				break;
+			case READY:
+				// Turn off shit
+				write_fan_battbox(pdu, false);
+				write_fan_radiator(pdu, false);
+				write_pump(pdu, false);
+				break;
+			case DRIVING:
+				// Turn on shit
+				write_fan_battbox(pdu, true);
+				write_fan_radiator(pdu, true);
+				write_pump(pdu, true);
+				break;
+			case FAULTED:
+				// Turn off shit
+				write_fan_battbox(pdu, false);
+				write_fan_radiator(pdu, false);
+				write_pump(pdu, false);
+				break;
+			default:
+				// Do Nothing
+				break;
+		}
 	}
 }
 

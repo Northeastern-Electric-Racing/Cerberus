@@ -7,6 +7,8 @@
 #define YLED_PIN	 GPIO_PIN_8
 #define RLED_PIN	 GPIO_PIN_9
 #define WATCHDOG_PIN GPIO_PIN_15
+#define CAN_FAULT_PIN GPIO_PIN_3
+
 #define ADC_TIMEOUT	 2 /* ms */
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
@@ -52,6 +54,9 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 
 	mpu->adc_mutex = osMutexNew(&mpu_adc_mutex_attr);
 	assert(mpu->adc_mutex);
+
+	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, GPIO_PIN_SET);
+	
 
 	return mpu;
 }

@@ -223,7 +223,7 @@ int main(void)
   /* Control Logic */
 
   /* Control Logic */
-  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   /* USER CODE END RTOS_THREADS */

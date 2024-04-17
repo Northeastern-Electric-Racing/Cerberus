@@ -91,13 +91,13 @@ static void debounce_cb(void* arg)
 }
 
 static void paddle_left_cb() {
-	if (get_drive_state() == EFFICIENCY) {
+	if (get_drive_state() == ENDURANCE) {
 		increase_torque_limit();
 	}
 }
 
 static void paddle_right_cb() {
-	if (get_drive_state() == EFFICIENCY) {
+	if (get_drive_state() == ENDURANCE) {
 		decrease_torque_limit();
 	}
 }
