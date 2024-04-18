@@ -81,7 +81,7 @@ void vStateMachineDirector(void* pv_params)
 
 			/* If we are turning ON the motor, blare RTDS */
 			if (cerberus_state.drive == NOT_DRIVING && new_state.state.drive != NOT_DRIVING) {
-				//TODO: Blare RTDS
+				sound_rtds(pdu);
 			}
 
 			cerberus_state.drive = new_state.state.drive;
