@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PRINTF_QUEUE_SIZE 16  /* Strings */
+#define PRINTF_QUEUE_SIZE 25  /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
 
 osMessageQueueId_t printf_queue;

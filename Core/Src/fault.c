@@ -11,8 +11,8 @@ osMessageQueueId_t fault_handle_queue;
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name		= "FaultHandler",
-	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityHigh7,
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
 int queue_fault(fault_data_t* fault_data)
@@ -28,6 +28,7 @@ void vFaultHandler(void* pv_params)
 {
 	fault_data_t fault_data;
 	osStatus_t status;
+	const state_req_t fault_request = {.id = FUNCTIONAL, .state.functional = FAULTED};
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
 
 	for (;;) {
@@ -35,16 +36,16 @@ void vFaultHandler(void* pv_params)
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
 		if (status == osOK) {
 			serial_print("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
-			switch (fault_data.severity) 
+			switch (fault_data.severity)
 			{
 			case DEFCON1: /* Highest(1st) Priority */
-				assert(osOK == queue_func_state(FAULTED));
+				assert(osOK == queue_state_transition(fault_request));
 				break;
 			case DEFCON2:
-				assert(osOK == queue_func_state(FAULTED));
+				assert(osOK == queue_state_transition(fault_request));
 				break;
 			case DEFCON3:
-				assert(osOK == queue_func_state(FAULTED));
+				assert(osOK == queue_state_transition(fault_request));
 				break;
 			case DEFCON4:
 				break;
@@ -54,8 +55,5 @@ void vFaultHandler(void* pv_params)
 				break;
 			}
 		}
-
-		/* Yield to other tasks */
-		osThreadYield();
 	}
 }

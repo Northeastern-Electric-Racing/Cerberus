@@ -60,8 +60,8 @@ void dti_set_torque(int16_t torque)
     torque_accumulator = (int16_t) (alpha * torque + (1.0 - alpha) * torque_accumulator);
     torque = torque_accumulator;
 	count += 1;
-	if (count == 10) {
-		serial_print("%d\r\n", torque);
+	if (count == 100) {
+		serial_print("Commanded Torque:\t%d\r\n", torque);
 		count = 0;
 	}
 
@@ -194,7 +194,7 @@ uint32_t dti_get_rpm(dti_t* mc)
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
 const osThreadAttr_t dti_router_attributes
-	= { .name = "DTIRouter", .stack_size = 128 * 8, .priority = (osPriority_t)osPriorityNormal3 };
+	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
 
 static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 {

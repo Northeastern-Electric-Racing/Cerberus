@@ -173,7 +173,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 osThreadId_t steeringio_router_handle;
 const osThreadAttr_t steeringio_router_attributes = { .name		  = "SteeringIORouter",
 													  .stack_size = 128 * 8,
-													  .priority = (osPriority_t)osPriorityNormal4 };
+													  .priority = (osPriority_t)osPriorityHigh1 };
 
 void vSteeringIORouter(void* pv_params)
 {
@@ -189,6 +189,5 @@ void vSteeringIORouter(void* pv_params)
 		if (status == osOK){
 			steeringio_update(wheel, message.data, message.len);
 		}
-		osThreadYield();
 	}
 }

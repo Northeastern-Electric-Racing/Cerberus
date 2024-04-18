@@ -45,7 +45,6 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
 	assert(mpu->imu);
-	
 	//assert(!lsm6dso_init(mpu->imu, mpu->hi2c)); /* This is always connected */
 
 	/* Create Mutexes */
@@ -56,7 +55,6 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 	assert(mpu->adc_mutex);
 
 	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, GPIO_PIN_SET);
-	
 
 	return mpu;
 }
@@ -172,7 +170,7 @@ static brake_adc_channels_t poll_brake_adc_threaded(ADC_HandleTypeDef* adc)
 	HAL_ADC_Start(adc);
 
 	// Poll channel 1
-	HAL_StatusTypeDef hal_stat = HAL_TIMEOUT;
+	hal_stat = HAL_TIMEOUT;
 	while (hal_stat == HAL_TIMEOUT) 
 	{
 		hal_stat = HAL_ADC_PollForConversion(adc, ADC_TIMEOUT);
