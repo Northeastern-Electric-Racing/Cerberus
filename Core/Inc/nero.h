@@ -2,15 +2,8 @@
 #define NERO_H
 
 #include <stdbool.h>
-
-typedef enum {
-	NOT_DRIVING,
-	REVERSE,
-	SPEED_LIMITED,
-	AUTOCROSS,
-	ENDURANCE,
-	MAX_DRIVE_STATES
-} drive_state_t;
+#include "cmsis_os.h"
+#include "stm32f4xx_hal.h"
 
 typedef enum {
 	OFF,
@@ -29,9 +22,8 @@ typedef struct {
    bool home_mode;
 } nero_state_t;
 
-
 /*
- * Attempts to increment the nero index and handles any exceptions 
+ * Attempts to increment the nero index and handles any exceptions
 */
 void increment_nero_index();
 
@@ -49,5 +41,12 @@ void set_home_mode();
  * Tells NERO to select the current index if in home mode
 */
 void select_nero_index();
+
+/*
+* Emits the state of NERO
+*/
+void vNeroMonitor(void* pv_params);
+extern osThreadId_t nero_monitor_handle;
+extern const osThreadAttr_t nero_monitor_attributes;
 
 #endif // NERO_H

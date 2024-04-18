@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "sht30.h"
 #include "lsm6dso.h"
 #include "monitor.h"
@@ -35,6 +36,7 @@
 #include "bms.h"
 #include "torque.h"
 #include "pdu.h"
+#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
@@ -74,7 +76,7 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal2,
 };
 /* USER CODE BEGIN PV */
 osMessageQueueId_t onboard_temp_queue;
@@ -205,27 +207,41 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
-  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  //temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  //assert(temp_monitor_handle);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  assert(watchdog_monitor_handle);
+  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  //assert(imu_monitor_handle);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
+  assert(pedals_monitor_handle);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  assert(fusing_monitor_handle);
   shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  assert(shutdown_monitor_handle);
 
   /* Messaging */
-  /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+  assert(dti_router_handle);
   steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  assert(steeringio_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
+  assert(can_dispatch_handle);
   bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);
+  assert(bms_monitor_handle);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
+  assert(serial_monitor_handle);
+  nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
+  assert(nero_monitor_handle);
 
   /* Control Logic */
-
-  /* Control Logic */
-  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
+  assert(torque_calc_handle);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  assert(fault_handle);
+  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
+  assert(sm_director_handle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -720,37 +736,19 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  int i = 0;
+  //int i = 0;
   //uint8_t data;
   //HAL_StatusTypeDef err;
   /* Infinite loop */
   for(;;) {
-    /* Testing getting data from I2C devices */
-    //serial_print("Register Address\tContents\r\n");
-    //serial_print("----------------\t--------\r\n");
-    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
-      //uint8_t reg = 0x0F;
-      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
-      //  if (err)
-      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
-      //  else
-      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
-    //}
-    
-    /* Basics of manually getting ADC reading (no DMA) */
-    //HAL_ADC_Start(&hadc1);
-    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    //if (!err)
-    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
-
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
-    i++;
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
+    //i++;
 
-    if (i % 2 == 1)
-      serial_print(".\r\n");
-    else
-      serial_print("..\r\n");
+    //if (i % 2 == 1)
+    //  serial_print(".\r\n");
+    //else
+    //  serial_print("..\r\n");
 
     osDelay(YELLOW_LED_BLINK_DELAY);
   }

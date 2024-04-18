@@ -1,19 +1,20 @@
 /* Sampling Intervals */
 #define YELLOW_LED_BLINK_DELAY 500  /* ms */
 #define TEMP_SENS_SAMPLE_DELAY 200  /* ms */
-#define IMU_SAMPLE_DELAY	   5    /* ms */
-#define FUSES_SAMPLE_DELAY	   50   /* ms */
-#define SHUTDOWN_MONITOR_DELAY 50   /* ms */
+#define IMU_SAMPLE_DELAY	   500    /* ms */
+#define FUSES_SAMPLE_DELAY	   1000   /* ms */
+#define SHUTDOWN_MONITOR_DELAY 500   /* ms */
+#define NERO_DELAY_TIME        100 /* ms*/
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
-#define CAN_DISPATCH_DELAY      5000
-#define BMS_CAN_MONITOR_DELAY   5000 
+#define CAN_DISPATCH_DELAY      2
+#define BMS_CAN_MONITOR_DELAY   5000
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY	   5    /* ms */
+#define PEDALS_SAMPLE_DELAY     20    /* ms */
 #define ACCEL1_OFFSET           2200
 #define ACCEL1_MAX_VAL          1200
 #define ACCEL2_OFFSET           2200
@@ -46,12 +47,11 @@
 #define WATCHDOG_Pin		GPIO_PIN_15
 #define WATCHDOG_GPIO_Port	GPIOB
 
-#define CANID_TEMP_SENSOR  0xBEEF
-#define CANID_PEDAL_SENSOR 0xDEAD
+#define CANID_PEDAL_SENSOR 0x002
 // TODO: GET CORRECT CAN ID
-#define CANID_IMU			0xDEAD
-#define CANID_TEMP_SENSOR	0xBEEF
+#define CANID_IMU			0x003
+#define CANID_TEMP_SENSOR	0x004
 #define CANID_OUTBOUND_MSG	0xA55
-#define CANID_TORQUE_MSG	0xBA115
+#define CANID_TORQUE_MSG	0x005
 #define CANID_FUSE			0x111
 #define CANID_SHUTDOWN_LOOP 0x123

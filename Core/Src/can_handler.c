@@ -1,7 +1,7 @@
 /**
  * @file can_handler.c
  * @author Hamza Iqbal and Nick DePatie
- * @brief Source file for CAN handler.
+ * @brief Source file for CAN handler
  * @version 0.1
  * @date 2023-09-22
  *
@@ -19,9 +19,11 @@
 #include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
+#include "stdio.h"
 #include <string.h>
 
-#define CAN_MSG_QUEUE_SIZE 25 /* messages */
+#define CAN_MSG_QUEUE_SIZE 50 /* messages */
+static osMessageQueueId_t can_outbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
@@ -42,6 +44,8 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
 	assert(!can_init(can1));
+
+	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	return can1;
 }
@@ -87,19 +91,16 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	}
 }
 
-static osMessageQueueId_t can_outbound_queue;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name		= "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal4,
+	.priority	= (osPriority_t)osPriorityRealtime5,
 };
 
 void vCanDispatch(void* pv_params)
 {
 	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
-
-	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
@@ -119,10 +120,13 @@ void vCanDispatch(void* pv_params)
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
 			}
+			else
+			{
+				//printf("Message sent: %lX\r\n", msg_from_queue.id);
+			}
 		}
 
-		/* Yield to other tasks */
-		osDelay(2);
+		osDelay(CAN_DISPATCH_DELAY);
 	}
 }
 

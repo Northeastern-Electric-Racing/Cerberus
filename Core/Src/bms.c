@@ -16,8 +16,8 @@ void bms_fault_callback();
 osThreadId_t bms_monitor_handle;
 const osThreadAttr_t bms_monitor_attributes = {
 	.name = "BMSCANMonitor",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityLow1 /*TO-DO: Adjust priority*/
+	.stack_size = 64 * 8,
+	.priority = (osPriority_t)osPriorityHigh2
 };
 
 void bms_fault_callback()
@@ -53,6 +53,5 @@ void vBMSCANMonitor(void* pv_params)
 			/*TO-DO: fix duration (ticks)*/
 			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DURATION);
 		}
-		osThreadYield();
 	}
 }

@@ -3,6 +3,9 @@
 #include "stdbool.h"
 #include "can_handler.h"
 #include "state_machine.h"
+#include "serial_monitor.h"
+#include "stdio.h"
+#include "cerberus_conf.h"
 
 static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
 static void send_mode_status() {
@@ -34,13 +37,13 @@ void increment_nero_index() {
 
 	if (nero_state.nero_index + 1 < MAX_NERO_STATES) {
 		nero_state.nero_index += 1;
-		send_mode_status();
 	} else {
 		// Do Nothing because theres no additional states or we dont care about the additional states;
 	}
 }
 
 void decrement_nero_index() {
+	serial_print("decrementing with mode, %d", nero_state.home_mode);
 	if (!nero_state.home_mode) {
 		// Do Nothing because we are not in home mode and therefore not tracking the nero index
 		return;
@@ -48,20 +51,25 @@ void decrement_nero_index() {
 
 	if (nero_state.nero_index - 1 >= 0) {
 		nero_state.nero_index -= 1;
-		send_mode_status();
 	} else {
 		// Do Nothing because theres no negative states
 	}
 }
 
 void select_nero_index() {
+	state_req_t state_request;
+
 	if (!nero_state.home_mode) {
 		// Only Check if we are in pit mode to toggle direction
 		if (nero_state.nero_index == PIT) {
 			if (get_drive_state() == REVERSE) {
-				queue_drive_state(SPEED_LIMITED);
+				state_request.id = DRIVE;
+				state_request.state.drive = SPEED_LIMITED;
+				queue_state_transition(state_request);
 			} else {
-				queue_drive_state(REVERSE);
+				state_request.id = DRIVE;
+				state_request.state.drive = REVERSE;
+				queue_state_transition(state_request);
 			}
 		}
 		return;
@@ -70,22 +78,42 @@ void select_nero_index() {
 	uint8_t max_drive_states = MAX_DRIVE_STATES;
 
 	if (nero_state.nero_index >= 0 && nero_state.nero_index < max_drive_states) {
-		queue_drive_state(map_nero_index_to_drive_state(nero_state.nero_index));
+		state_request.id = DRIVE;
+		state_request.state.drive = map_nero_index_to_drive_state(nero_state.nero_index);
+		queue_state_transition(state_request);
 		if (nero_state.nero_index > 0) {
-			queue_func_state(DRIVING);
+			state_request.id = FUNCTIONAL;
+			state_request.state.drive = ACTIVE;
+			queue_state_transition(state_request);
 		} else {
-			queue_func_state(READY);
+			state_request.id = FUNCTIONAL;
+			state_request.state.drive = READY;
+			queue_state_transition(state_request);
 		}
 	} else {
 		// Do Nothing because the index is out of bounds
 	}
 	nero_state.home_mode = false;
-
-	send_mode_status();
 }
 
 void set_home_mode() {
+	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
 	nero_state.home_mode = true;
-	queue_func_state(READY);
-	send_mode_status();
+
+	queue_state_transition(state_request);
+}
+
+osThreadId_t nero_monitor_handle;
+const osThreadAttr_t nero_monitor_attributes = {
+	.name		= "NeroMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh2,
+};
+
+void vNeroMonitor(void* pv_params) {
+	for (;;) {
+		send_mode_status();
+
+		osDelay(NERO_DELAY_TIME);
+	}
 }

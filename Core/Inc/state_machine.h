@@ -5,24 +5,41 @@
 #include "fault.h"
 #include "nero.h"
 
-typedef enum { BOOT, READY, DRIVING, FAULTED, MAX_FUNC_STATES } func_state_t;
+/*
+ * This is a hierarchical state machine, with "drive modes"
+ * being sub states of the ACTIVE functional state
+ */
+typedef enum { BOOT, READY, ACTIVE, FAULTED, MAX_FUNC_STATES } func_state_t;
+typedef enum {
+	NOT_DRIVING,
+	REVERSE,
+	SPEED_LIMITED,
+	AUTOCROSS,
+	ENDURANCE,
+	MAX_DRIVE_STATES
+} drive_state_t;
 
 extern osThreadId_t sm_director_handle;
 extern const osThreadAttr_t sm_director_attributes;
 
+typedef struct {
+    enum {
+        FUNCTIONAL,
+        DRIVE
+    } id;
+
+    union {
+        func_state_t functional;
+        drive_state_t drive;
+    } state;
+} state_req_t;
+
 void vStateMachineDirector(void* pv_params);
 
-/* Adds a functional state transition to be processed */
-int queue_func_state(func_state_t new_state);
+int queue_state_transition(state_req_t request);
 
 /* Retrieves the current functional state */
 func_state_t get_func_state();
-
-/*
- * Adds a drive state transition to be processed
- * Will return negative if functional state is not DRIVING
- */
-int queue_drive_state(drive_state_t new_state);
 
 
 /*

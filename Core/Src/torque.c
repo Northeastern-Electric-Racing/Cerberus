@@ -34,7 +34,7 @@ static float torque_limit_percentage = 1.0;
 osThreadId_t torque_calc_handle;
 const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
 												.stack_size = 128 * 8,
-												.priority = (osPriority_t)osPriorityAboveNormal5 };
+												.priority = (osPriority_t)osPriorityRealtime2 };
 
 static void linear_accel_to_torque(float accel, uint16_t* torque)
 {
@@ -129,14 +129,14 @@ void vCalcTorque(void* pv_params)
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{
-			func_state_t func_state = DRIVING;//get_func_state();
-			if (func_state != DRIVING)
+			func_state_t func_state = get_func_state();
+			if (func_state != ACTIVE)
 			{
 				torque = 0;
 				continue;
 			}
 
-			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
+			drive_state_t drive_state = get_drive_state();
 
 			float mph;
 			rpm_to_mph(dti_get_rpm(mc), &mph);

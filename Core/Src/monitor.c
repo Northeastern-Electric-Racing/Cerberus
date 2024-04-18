@@ -12,6 +12,7 @@
 #include "lsm6dso.h"
 #include "timer.h"
 #include "serial_monitor.h"
+#include "state_machine.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -24,28 +25,28 @@
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
 	.name		= "TempMonitor",
-	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityNormal1,
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh1,
 };
 
 void vTempMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	static onboard_temp_t sensor_data;
-	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON4 };
+	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON5 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	//mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
-		// serial_print("Temp Sensor Task\r\n");
+		//serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
-		//if (read_temp_sensor(mpu, &temp, &humidity)) {
-		//	fault_data.diag = "Failed to get temp";
-		//	queue_fault(&fault_data);
-		//}
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
@@ -69,7 +70,7 @@ void vTempMonitor(void* pv_params)
 osThreadId_t watchdog_monitor_handle;
 const osThreadAttr_t watchdog_monitor_attributes = {
 	.name		= "WatchdogMonitor",
-	.stack_size = 128 * 4,
+	.stack_size = 32 * 8,
 	.priority	= (osPriority_t)osPriorityNormal,
 };
 
@@ -81,19 +82,16 @@ void vWatchdogMonitor(void* pv_params)
 		/* Pets Watchdog */
 		pet_watchdog(mpu);
 		/* Yield to other RTOS tasks */
-		pet_watchdog(mpu);
-		osThreadYield();
+		osDelay(1);
 	}
 }
 
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
-	.stack_size = 128 * 12,
-	.priority	= (osPriority_t)osPriorityAboveNormal6,
+	.stack_size = 64 * 8,
+	.priority	= (osPriority_t)osPriorityRealtime1,
 };
-
-
 
 void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
@@ -164,14 +162,14 @@ void vPedalsMonitor(void* pv_params)
 	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 	/* set of timers for accelerator fault conditions */
-	nertimer_t diff_timer_accelerator;
-	nertimer_t sc_timer_accelerator;	/* Open Circuit */
-	nertimer_t oc_timer_accelerator;	/* Short Circuit*/
+	// nertimer_t diff_timer_accelerator;
+	// nertimer_t sc_timer_accelerator;	/* Open Circuit */
+	// nertimer_t oc_timer_accelerator;	/* Short Circuit*/
 
-	/*set of timers for brake fault conditions*/
-	nertimer_t diff_timer_brake;
-	nertimer_t sc_timer_brake;	/* Open Circuit */
-	nertimer_t oc_timer_brake;	/* Short Circuit*/
+	// /*set of timers for brake fault conditions*/
+	// nertimer_t diff_timer_brake;
+	// nertimer_t sc_timer_brake;	/* Open Circuit */
+	// nertimer_t oc_timer_brake;	/* Short Circuit*/
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
@@ -195,7 +193,7 @@ void vPedalsMonitor(void* pv_params)
 		//float accel_val1 = 
 		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
 
-		//printf("%d\r\n", accel_val2);
+		//printf("%d\r\n", adc_data[ACCELPIN_1]);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
@@ -222,15 +220,15 @@ void vPedalsMonitor(void* pv_params)
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
 	.name		= "IMUMonitor",
-	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal2,
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh,
 };
 
 void vIMUMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	static imu_data_t sensor_data;
-	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON3 };
+	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
 	can_msg_t imu_accel_msg = { .id = CANID_IMU, .len = 6, .data = { 0 } };
 	can_msg_t imu_gyro_msg	= { .id = CANID_IMU, .len = 6, .data = { 0 } };
 
@@ -284,12 +282,12 @@ osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name		= "FusingMonitor",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityNormal5,
+	.priority	= (osPriority_t)osPriorityAboveNormal1,
 };
 
 void vFusingMonitor(void* pv_params)
 {
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON3 };
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
 	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 8, .data = { 0 } };
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool fuses[MAX_FUSES]	= { 0 };
@@ -306,6 +304,8 @@ void vFusingMonitor(void* pv_params)
 						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
+		serial_print("Fuses:\t%X\r\n", fuse_buf);
+
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
@@ -320,16 +320,18 @@ osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
 	.name		= "ShutdownMonitor",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityNormal3,
+	.priority	= (osPriority_t)osPriorityAboveNormal2,
 };
 
 void vShutdownMonitor(void* pv_params)
 {
-	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT, .severity = DEFCON2 };
+	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT, .severity = DEFCON5 };
 	can_msg_t shutdown_msg	= { .id = CANID_SHUTDOWN_LOOP, .len = 8, .data = { 0 } };
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
+	bool tsms_status = false;
+	state_req_t state_request = {.id = FUNCTIONAL};
 
 	for (;;) {
 		shutdown_buf = 0;
@@ -345,10 +347,24 @@ void vShutdownMonitor(void* pv_params)
 				   << stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
+		serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
+
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
+		}
+
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if(read_tsms_sense(pdu, &tsms_status)) {
+			if (tsms_status && get_func_state() == READY) {
+				state_request.state.functional = ACTIVE;
+				queue_state_transition(state_request);
+			}
+			if (!tsms_status && get_func_state() == ACTIVE) {
+				state_request.state.functional = READY;
+				queue_state_transition(state_request);
+			}
 		}
 
 	 	osDelay(SHUTDOWN_MONITOR_DELAY);
