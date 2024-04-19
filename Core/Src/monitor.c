@@ -31,8 +31,6 @@ const osThreadAttr_t temp_monitor_attributes = {
 
 void vTempMonitor(void* pv_params)
 {
-	const uint8_t num_samples = 10;
-	static onboard_temp_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON5 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
@@ -40,7 +38,6 @@ void vTempMonitor(void* pv_params)
 
 	for (;;) {
 		/* Take measurement */
-		//serial_print("Temp Sensor Task\r\n");
 		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
 		if (read_temp_sensor(mpu, &temp, &humidity)) {
@@ -48,15 +45,14 @@ void vTempMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
-		/* Run values through LPF of sample size  */
-		sensor_data.temperature = (sensor_data.temperature + temp) / num_samples;
-		sensor_data.humidity	= (sensor_data.humidity + humidity) / num_samples;
+		serial_print("MPU Board Temperature:\t%d\r\n", temp);
 
-		/* Publish to Onboard Temp Queue */
-		osMessageQueuePut(onboard_temp_queue, &sensor_data, 0U, 0U);
+		temp_msg.data[0] = temp & 0xFF;
+		temp_msg.data[1] = (temp >> 8) & 0xFF;
+		temp_msg.data[0] = humidity & 0xFF;
+		temp_msg.data[1] = (humidity >> 8) & 0xFF;
 
 		/* Send CAN message */
-		memcpy(temp_msg.data, &sensor_data, temp_msg.len);
 		if (queue_can_msg(temp_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
