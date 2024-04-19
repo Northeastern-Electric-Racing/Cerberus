@@ -155,7 +155,7 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
+	enum {BRAKEPIN_1, BRAKEPIN_2, ACCELPIN_1, ACCELPIN_2};
 
 	/* set of timers for accelerator fault conditions */
 	// nertimer_t diff_timer_accelerator;
@@ -169,16 +169,13 @@ void vPedalsMonitor(void* pv_params)
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
-	uint16_t adc_data[3];
+	uint32_t adc_data[4];
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
-		if (read_adc(mpu, adc_data)) {
-			fault_data.diag = "Failed to collect ADC Data!";
-			queue_fault(&fault_data);
-		}
+		read_pedals(mpu, adc_data);
 
 		/* Evaluate Pedal Faulting Conditions */
 		// eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
