@@ -119,9 +119,6 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		/* Send whatever torque command we have on record */
-		dti_set_torque(torque);
-
 		//printf("%d\r\n", pedal_data.accelerator_value);
 
 		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0;
@@ -159,6 +156,9 @@ void vCalcTorque(void* pv_params)
 					torque = 0;
 					break;
 			}
+
+			/* Send whatever torque command we have on record */
+			dti_set_torque(torque);
 		}
 	}
 }
