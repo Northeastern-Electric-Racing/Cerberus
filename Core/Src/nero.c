@@ -9,7 +9,7 @@
 
 static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
 static void send_mode_status() {
-	can_msg_t msg = { .id = 0x501, .len = 5, .data = { nero_state.home_mode, nero_state.nero_index, 0, 0, 0 } };
+	can_msg_t msg = { .id = 0x501, .len = 8, .data = { nero_state.home_mode, nero_state.nero_index, 0, 0, 0, 0, 0, 0 } };
 	/* Send CAN message */
 	queue_can_msg(msg);
 }
