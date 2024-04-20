@@ -207,7 +207,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
-  //temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   //assert(temp_monitor_handle);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
   assert(watchdog_monitor_handle);
