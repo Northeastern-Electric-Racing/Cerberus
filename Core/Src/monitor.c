@@ -300,7 +300,7 @@ void vFusingMonitor(void* pv_params)
 						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
-		serial_print("Fuses:\t%X\r\n", fuse_buf);
+		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
@@ -343,7 +343,7 @@ void vShutdownMonitor(void* pv_params)
 				   << stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
-		serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
+		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {

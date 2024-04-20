@@ -54,7 +54,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	max7314_init(pdu->ctrl_expander, pdu->hi2c);
 
 	/* Same as shutdown */
-	HAL_StatusTypeDef status = max7314_write_config(pdu->ctrl_expander, &config_data);
+	status = max7314_write_config(pdu->ctrl_expander, &config_data);
     if (status != HAL_OK) {
         serial_print("\n\rcntrl init fail\n\r");
 	    free(pdu->shutdown_expander);

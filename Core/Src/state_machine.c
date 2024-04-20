@@ -109,6 +109,7 @@ void vStateMachineDirector(void* pv_params)
 					break;
 				case READY:
 					/* Turn off high power peripherals */
+					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
 					write_fan_radiator(pdu, false);
 					write_pump(pdu, false);

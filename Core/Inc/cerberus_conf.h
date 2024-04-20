@@ -7,7 +7,7 @@
 #define NERO_DELAY_TIME        100 /* ms*/
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
-#define CAN_DISPATCH_DELAY      2
+#define CAN_DISPATCH_DELAY      5
 #define BMS_CAN_MONITOR_DELAY   5000
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
