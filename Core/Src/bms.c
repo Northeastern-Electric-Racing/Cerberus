@@ -2,11 +2,13 @@
 #include "timer.h"
 #include "fault.h"
 #include "can.h"
+#include "serial_monitor.h"
 #include "cerberus_conf.h"
 #include <assert.h>
 #include <stdlib.h>
+#include "stdio.h"
 
-#define BMS_CAN_MONITOR_DURATION 100 /*Duration of between petting bms monitor watchdog (in ticks)*/
+
 #define CAN_QUEUE_SIZE 5
 
 osMessageQueueId_t bms_monitor_queue;
@@ -48,10 +50,11 @@ void vBMSCANMonitor(void* pv_params)
     bms_t* bms = (bms_t*)pv_params;
 	can_msg_t msg_from_queue;
 
+	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 	for (;;) {
 		if (osOK == osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
 			/*TO-DO: fix duration (ticks)*/
-			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DURATION);
+			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 		}
 	}
 }
