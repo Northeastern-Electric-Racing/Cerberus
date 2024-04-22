@@ -189,8 +189,6 @@ void vPedalsMonitor(void* pv_params)
 		//float accel_val1 = 
 		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
 
-		//printf("%d\r\n", adc_data[ACCELPIN_1]);
-
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
 			= (sensor_data.accelerator_value + (accel_val2))

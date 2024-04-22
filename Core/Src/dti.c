@@ -16,10 +16,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
-
+#define SAMPLES 20
 static osMutexAttr_t dti_mutex_attributes;
 osMessageQueueId_t dti_router_queue;
 
@@ -46,26 +47,33 @@ dti_t* dti_init()
 }
 
 void dti_set_torque(int16_t torque)
-{
-    // TODO: this 
-	static int16_t torque_accumulator = 0;
-	static uint8_t count = 0;
-	//static const uint8_t num_samples = 50;
-
+{	
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
-	// torque = (uint16_t)(((uint64_t)torque_accumulator * (num_samples - 1)) + torque) / (uint64_t) num_samples;
-	// torque_accumulator = torque;
+	 // Static variables for the buffer and index
+    static float buffer[SAMPLES] = {0};
+    static int index = 0;
 
-    float alpha = 0.5;
-    torque_accumulator = (int16_t) (alpha * torque + (1.0 - alpha) * torque_accumulator);
-    torque = torque_accumulator;
-	count += 1;
-	if (count == 100) {
-		serial_print("Commanded Torque:\t%d\r\n", torque);
-		count = 0;
+    // Add the new value to the buffer
+    buffer[index] = torque;
+
+    // Increment the index, wrapping around if necessary
+    index = (index + 1) % SAMPLES;
+
+    // Calculate the average of the buffer
+    float sum = 0.0;
+    for (int i = 0; i < SAMPLES; ++i) {
+        sum += buffer[i];
+    }
+    float average = sum / SAMPLES;
+
+	if (torque == 0) {
+		average = 0;
 	}
 
-	int16_t ac_current = ((float)torque / EMRAX_KT) * 10; /* times 10 */
+
+	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
+	serial_print("Commanded Current: %d \r\n", ac_current);
+
 	dti_set_current(ac_current);
 }
 
@@ -73,8 +81,16 @@ void dti_set_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x036, .len = 8, .data = { 0 } };
 	dti_set_drive_enable(true);
-	/* Send CAN message */
-	memcpy(&msg.data, &current, msg.len);
+	/* Send CAN message in big endian format */
+
+	int8_t msb = (int8_t)((current >> 8) & 0xFF);
+	uint8_t lsb = (uint8_t)((current & 0xFF));
+
+	msg.data[0] = lsb;
+	msg.data[1] = msb;
+
+	serial_print("MSB: %d, LSB: %d\r\n", msb, lsb);
+
 	queue_can_msg(msg);
 }
 

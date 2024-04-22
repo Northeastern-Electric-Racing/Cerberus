@@ -119,8 +119,6 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		// printf("%d\r\n", pedal_data.accelerator_value);
-
 		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0;
 
 		/* If we receive a new message within the time frame, calc new torque */
@@ -159,6 +157,9 @@ void vCalcTorque(void* pv_params)
 					break;
 			}
 
+			serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
+
+			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
 			dti_set_torque(torque);
 		}
