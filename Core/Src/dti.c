@@ -86,8 +86,8 @@ void dti_set_current(int16_t current)
 	int8_t msb = (int8_t)((current >> 8) & 0xFF);
 	uint8_t lsb = (uint8_t)((current & 0xFF));
 
-	msg.data[0] = lsb;
-	msg.data[1] = msb;
+	msg.data[0] = msb;
+	msg.data[1] = lsb;
 
 	// serial_print("MSB: %d, LSB: %d\r\n", msb, lsb);
 

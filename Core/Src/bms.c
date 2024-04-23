@@ -24,10 +24,10 @@ const osThreadAttr_t bms_monitor_attributes = {
 
 void bms_fault_callback()
 {
-	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*TO-DO: update severity*/
+	// fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*TO-DO: update severity*/
 
-	fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
-	queue_fault(&fault_data);
+	// fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
+	// queue_fault(&fault_data);
 }
 
 bms_t* bms_init()
