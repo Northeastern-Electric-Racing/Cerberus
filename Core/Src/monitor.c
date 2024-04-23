@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "steeringio.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -363,4 +364,26 @@ void vShutdownMonitor(void* pv_params)
 
 	 	osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
+}
+
+osThreadId steeringio_buttons_monitor_handle;
+const osThreadAttr_t steeringio_buttons_monitor_attributes = {
+	.name		= "SteeringIOButtonsMonitor",
+	.stack_size = 128 * 8,
+	.priority	= (osPriority_t)osPriorityAboveNormal1,
+};
+
+void vSteeringIOButtonsMonitor(void* pv_params)
+{
+	button_data_t buttons;
+	buttons.data[0] = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+	buttons.data[1] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_5);
+	buttons.data[2] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_6);
+	buttons.data[3] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_7);
+	buttons.data[4] = !HAL_GPIO_ReadPIN(GPIOC, GPIO_PIN_4);
+	buttons.data[5] = !HAL_GPIO_ReadPIN(GPIOC, GPIO_PIN_5);
+	buttons.data[6] = !HAL_GPIO_ReadPIN(GPIOB, GPIO_PIN_0);
+	buttons.data[7] = !HAL_GPIO_ReadPIN(GPIOB, GPIO_PIN_1);
+
+	osMessageQueuePut(steeringio_router_queue, &buttons, 0U, 0U);
 }

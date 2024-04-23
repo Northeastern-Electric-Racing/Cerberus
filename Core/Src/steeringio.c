@@ -103,7 +103,7 @@ static void paddle_right_cb() {
 }
 
 /* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
+void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 {
 	if (!wheel || !wheel_data)
 		return;
@@ -187,7 +187,7 @@ void vSteeringIORouter(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
 		if (status == osOK){
-			steeringio_update(wheel, message.data, message.len);
+			steeringio_update(wheel, message.data);
 		}
 	}
 }
