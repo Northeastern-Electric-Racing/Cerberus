@@ -177,7 +177,7 @@ const osThreadAttr_t steeringio_router_attributes = { .name		  = "SteeringIORout
 
 void vSteeringIORouter(void* pv_params)
 {
-	can_msg_t message;
+	button_data_t message;
 	osStatus_t status;
 	// fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
 

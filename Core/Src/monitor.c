@@ -376,14 +376,40 @@ const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 void vSteeringIOButtonsMonitor(void* pv_params)
 {
 	button_data_t buttons;
-	buttons.data[0] = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-	buttons.data[1] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_5);
-	buttons.data[2] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_6);
-	buttons.data[3] = !HAL_GPIO_ReadPIN(GPIOA, GPIO_PIN_7);
-	buttons.data[4] = !HAL_GPIO_ReadPIN(GPIOC, GPIO_PIN_4);
-	buttons.data[5] = !HAL_GPIO_ReadPIN(GPIOC, GPIO_PIN_5);
-	buttons.data[6] = !HAL_GPIO_ReadPIN(GPIOB, GPIO_PIN_0);
-	buttons.data[7] = !HAL_GPIO_ReadPIN(GPIOB, GPIO_PIN_1);
+	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
+	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT, .severity = DEFCON5 };
 
-	osMessageQueuePut(steeringio_router_queue, &buttons, 0U, 0U);
+	for (;;) {
+		uint8_t button_1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+		uint8_t button_2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
+		uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+		uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
+		uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
+		uint8_t button_6 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
+		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
+
+		uint8_t button_data = (button_1 << 7) |
+              (button_2 << 6) |
+              (button_3 << 5) |
+              (button_4 << 4) |
+              (button_5 << 3) |
+              (button_6 << 2) |
+              (button_7 << 1) |
+              (button_8);
+
+		buttons.data[0] = button_data;
+
+		osMessageQueuePut(steeringio_router_queue, &buttons, 0U, 0U);
+
+		/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
+		msg.data[0] = button_data;
+		if (queue_can_msg(msg)) {
+			fault_data.diag = "Failed to send steering buttons can message";
+			queue_fault(&fault_data);
+		}
+		
+		osDelay(25);
+	}
+	
 }

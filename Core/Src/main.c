@@ -209,6 +209,7 @@ int main(void)
   assert(watchdog_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
+  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, NULL, &steeringio_buttons_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
