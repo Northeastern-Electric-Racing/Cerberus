@@ -40,7 +40,7 @@ int queue_state_transition(state_req_t request)
 	if (!state_trans_queue)
 		return 1;
 
-	serial_print("Queued State Transition! for %d to %d\n", request.id, request.state);
+	printf("Queued State Transition! ");
 
 	return osMessageQueuePut(state_trans_queue, &request, 0U, 0U);
 }
@@ -68,6 +68,11 @@ void vStateMachineDirector(void* pv_params)
 
 	serial_print("State Machine Init!\r\n");
 
+	state_req_t request;
+  	request.id = FUNCTIONAL;
+  	request.state.functional = READY;
+  	queue_state_transition(request);
+
 	for (;;)
 	{
 		osMessageQueueGet(state_trans_queue, &new_state, NULL, osWaitForever);
@@ -80,7 +85,8 @@ void vStateMachineDirector(void* pv_params)
 			//TODO: Make sure motor is not spinning before switching
 
 			/* If we are turning ON the motor, blare RTDS */
-			if (cerberus_state.drive == NOT_DRIVING && new_state.state.drive != NOT_DRIVING) {
+			if (cerberus_state.drive == NOT_DRIVING) {
+				serial_print("CALLING RTDS");
 				sound_rtds(pdu);
 			}
 
@@ -90,16 +96,11 @@ void vStateMachineDirector(void* pv_params)
 
 		if (new_state.id == FUNCTIONAL) 
 		{
-			if (valid_trans_to_from[new_state.state.functional][get_func_state()])
+			if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
+				printf("Invalid State transition");
 				continue;
-
-			if(cerberus_state.functional == BOOT)
-			{
-				/* If we are in boot, we should immediately try and transition to READY */
-				// TODO: Add some more checks here to make sure we are good to go into ready
-				state_req_t ready_request = {.id = FUNCTIONAL, .state.functional = READY};
-				queue_state_transition(ready_request);
 			}
+
 			cerberus_state.functional = new_state.state.functional;
 			/* Catching state transitions */
 			switch (new_state.state.functional)
@@ -112,7 +113,7 @@ void vStateMachineDirector(void* pv_params)
 					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
 					write_fan_radiator(pdu, false);
-					write_pump(pdu, false);
+					write_pump(pdu, true);
 					break;
 				case ACTIVE:
 					/* Turn on high power peripherals */
