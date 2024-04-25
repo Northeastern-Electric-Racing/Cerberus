@@ -20,8 +20,11 @@ int queue_fault(fault_data_t* fault_data)
 {
 	if (!fault_handle_queue)
 		return -1;
-
+	can_msg_t msg = { .id = 0x069, .len = 8, .data = { 0 } };
 	osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
+	msg_data = ((fault_data.id << 8) | fault_data.severity) << 24;
+	memcpy(msg.data, &msg_data, msg.len);
+	queue_can_msg(msg);
 	return 0;
 }
 
