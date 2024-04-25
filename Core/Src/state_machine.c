@@ -37,10 +37,9 @@ static osMessageQueueId_t state_trans_queue;
 
 int queue_state_transition(state_req_t request)
 {
-	if (!state_trans_queue)
+	if (!state_trans_queue) {
 		return 1;
-
-	printf("Queued State Transition! ");
+	}
 
 	return osMessageQueuePut(state_trans_queue, &request, 0U, 0U);
 }
@@ -76,6 +75,7 @@ void vStateMachineDirector(void* pv_params)
 	for (;;)
 	{
 		osMessageQueueGet(state_trans_queue, &new_state, NULL, osWaitForever);
+
 		if (new_state.id == DRIVE) 
 		{
 			if(get_func_state() != ACTIVE)
