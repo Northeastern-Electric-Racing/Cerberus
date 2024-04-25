@@ -76,6 +76,9 @@ typedef struct
     uint8_t power_limit : 1;
     uint8_t can_map_version : 1;
 } dti_signals_t;
+#define WHEEL_CIRCUMFERENCE 1.2767 /* meters */
+#define GEAR_RATIO 4.3 /* unitless */ 
+#define POLE_PAIRS 10 /* unitless */
 
 typedef struct 
 {
@@ -97,6 +100,7 @@ typedef struct
 } dti_t;
 
 // TODO: Expand GET interface
+uint32_t dti_get_rpm(dti_t* dti);
 
 /* Utilities for Decoding CAN message */
 extern osThreadId_t dti_router_handle;

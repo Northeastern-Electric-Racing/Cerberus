@@ -6,18 +6,25 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define STEERING_CANID_IO 0x400
+#define STEERING_CANID_IO 0x680
 
 typedef enum {
-	STEERING_PADDLE_LEFT,
-	STEERING_PADDLE_RIGHT,
-	NERO_BUTTON_UP,
-	NERO_BUTTON_DOWN,
-	NERO_BUTTON_LEFT,
+	NONE,
+	NONE2,
 	NERO_BUTTON_RIGHT,
 	NERO_BUTTON_SELECT,
+	NERO_BUTTON_UP,
+	NERO_BUTTON_LEFT,
+	NERO_HOME,
+	NERO_BUTTON_DOWN,
+	STEERING_PADDLE_LEFT,
+	STEERING_PADDLE_RIGHT,
 	MAX_STEERING_BUTTONS
 } steeringio_button_t;
+
+typedef struct	{
+	uint8_t data[8];
+} button_data_t;
 
 typedef struct {
 	osMutexId_t* button_mutex; /* Necessary to allow multiple threads to access same data */
@@ -39,7 +46,6 @@ steeringio_t* steeringio_init();
 
 bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button);
 
-/* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len);
+void steeringio_update(steeringio_t *wheel, uint8_t button_data[]);
 
 #endif /* STEERING_H */

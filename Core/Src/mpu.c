@@ -7,13 +7,15 @@
 #define YLED_PIN	 GPIO_PIN_8
 #define RLED_PIN	 GPIO_PIN_9
 #define WATCHDOG_PIN GPIO_PIN_15
+#define CAN_FAULT_PIN GPIO_PIN_3
+
 #define ADC_TIMEOUT	 2 /* ms */
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
 
 mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
-				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc, 
+				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc,
                 GPIO_TypeDef* led_gpio, GPIO_TypeDef* watchdog_gpio)
 {
 	assert(hi2c);
@@ -38,7 +40,7 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 	mpu->temp_sensor = malloc(sizeof(sht30_t));
 	assert(mpu->temp_sensor);
 	mpu->temp_sensor->i2c_handle = hi2c;
-	//assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
+	assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
 
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
@@ -51,6 +53,8 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 
 	mpu->adc_mutex = osMutexNew(&mpu_adc_mutex_attr);
 	assert(mpu->adc_mutex);
+
+	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, GPIO_PIN_SET);
 
 	return mpu;
 }
@@ -138,13 +142,60 @@ static int8_t start_adcs(mpu_t* mpu)
 static int8_t poll_adc_threaded(ADC_HandleTypeDef* adc)
 {
 	HAL_StatusTypeDef hal_stat = HAL_TIMEOUT;
-	while (hal_stat == HAL_TIMEOUT) {
+	while (hal_stat == HAL_TIMEOUT) 
+	{
 		hal_stat = HAL_ADC_PollForConversion(adc, ADC_TIMEOUT);
 
 		if (hal_stat == HAL_TIMEOUT)
 			osThreadYield();
 	}
 	return hal_stat;
+}
+
+// This function exists because we need to reconfigure ADC 3 on the fly to access
+// both channels for brake pedal sensor
+static brake_adc_channels_t poll_brake_adc_threaded(ADC_HandleTypeDef* adc)
+{
+	brake_adc_channels_t brake_polls;
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// Configure for channel 0
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	HAL_ADC_ConfigChannel(adc, &sConfig);
+	HAL_ADC_Start(adc);
+
+	// Poll channel 0
+	HAL_StatusTypeDef hal_stat = HAL_TIMEOUT;
+	while (hal_stat == HAL_TIMEOUT) 
+	{
+		hal_stat = HAL_ADC_PollForConversion(adc, ADC_TIMEOUT);
+
+		if (hal_stat == HAL_TIMEOUT)
+			osThreadYield();
+	}
+	brake_polls.channel_0 = hal_stat;
+	
+	// Config channel 1
+	sConfig.Channel = ADC_CHANNEL_1;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	HAL_ADC_ConfigChannel(adc, &sConfig);
+	HAL_ADC_Start(adc);
+
+	// Poll channel 1
+	hal_stat = HAL_TIMEOUT;
+	while (hal_stat == HAL_TIMEOUT) 
+	{
+		hal_stat = HAL_ADC_PollForConversion(adc, ADC_TIMEOUT);
+
+		if (hal_stat == HAL_TIMEOUT)
+			osThreadYield();
+	}
+	brake_polls.channel_1 = hal_stat;
+
+	return brake_polls;
 }
 
 /* Note: this should be called from within a thread since it yields to scheduler */
@@ -162,6 +213,7 @@ int8_t read_adc(mpu_t* mpu, uint16_t raw[3])
 		return mut_stat;
 
 	HAL_StatusTypeDef hal_stat = start_adcs(mpu);
+	brake_adc_channels_t brake_channels_stat;
 	if (hal_stat)
 	{
 		fault_data.diag = "Unable to start adcs";
@@ -185,18 +237,36 @@ int8_t read_adc(mpu_t* mpu, uint16_t raw[3])
 	}
 		
 
-	hal_stat = poll_adc_threaded(mpu->brake_adc);
-	if (hal_stat)
+	brake_channels_stat = poll_brake_adc_threaded(mpu->brake_adc);
+	if (brake_channels_stat.channel_0 | brake_channels_stat.channel_1)
 	{
-		fault_data.diag = "Failed reading brake adc";
-		queue_fault(&fault_data);
-		return hal_stat;
+		fault_data.diag = "Failed reading brake";
+		queu_fault(&fault_data);
+		return 1;
 	}
 		
 
 	raw[0] = HAL_ADC_GetValue(mpu->accel_adc1);
 	raw[1] = HAL_ADC_GetValue(mpu->accel_adc2);
+
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// Configure for channel 0
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	HAL_ADC_ConfigChannel(mpu->brake_adc, &sConfig);
+	HAL_ADC_Start(mpu->brake_adc);
 	raw[2] = HAL_ADC_GetValue(mpu->brake_adc);
+
+	// Configure for channel 1
+	sConfig.Channel = ADC_CHANNEL_1;
+	sConfig.Rank = 1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+	HAL_ADC_ConfigChannel(mpu->brake_adc, &sConfig);
+	HAL_ADC_Start(mpu->brake_adc);
+	raw[3] = HAL_ADC_GetValue(mpu->brake_adc);
+
 
 	osMutexRelease(mpu->adc_mutex);
 

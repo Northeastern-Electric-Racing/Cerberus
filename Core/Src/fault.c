@@ -12,8 +12,8 @@ osMessageQueueId_t fault_handle_queue;
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name		= "FaultHandler",
-	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityHigh7,
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
 int queue_fault(fault_data_t* fault_data)
@@ -29,6 +29,8 @@ void vFaultHandler(void* pv_params)
 {
 	fault_data_t fault_data;
 	osStatus_t status;
+	const state_req_t fault_request = {.id = FUNCTIONAL, .state.functional = FAULTED};
+	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
 
 	nertimer_t defcon2_timer;
 	nertimer_t defcon2_reset;
@@ -54,7 +56,7 @@ void vFaultHandler(void* pv_params)
 			{
 			case DEFCON1: /* Highest(1st) Priority */
 				serial_print("DEFCON 1 RECEIVED ENTER FAULTED");
-				assert(osOK == queue_func_state(FAULTED));
+				assert(osOK == queue_state_transition(fault_request));				
 				break;
 			case DEFCON2: /*Critical Warnings*/
 				serial_print("DEFCON 2 RECEIVED");
@@ -72,7 +74,7 @@ void vFaultHandler(void* pv_params)
 					if(is_timer_expired(&defcon2_timer))
 					{
 						serial_print("DEFCON 2 TIMER EXPIRED ENTER FAULTED");
-						assert(osOK == queue_func_state(FAULTED));
+						assert(osOK == queue_state_transition(fault_request));
 					}
 					else
 					{
@@ -96,14 +98,13 @@ void vFaultHandler(void* pv_params)
 					if(is_timer_expired(&defcon3_timer))
 					{
 						serial_print("DEFCON 3 TIMER EXPIRED ENTER FAULTED");
-						assert(osOK == queue_func_state(FAULTED));
+						assert(osOK == queue_state_transition(fault_request));
 					}
 					else
 					{
 						start_timer(&defcon3_timer, 15000);
 					}
 				}
-				break;
 			case DEFCON4: /*Lower priority warnings*/
 				serial_print("DEFCON 4 RECEIVED");
 				if(!is_timer_active(&defcon4_reset))
@@ -120,7 +121,7 @@ void vFaultHandler(void* pv_params)
 					if(is_timer_expired(&defcon4_timer))
 					{
 						serial_print("DEFCON 4 TIMER EXPIRED ENTER FAULTED");
-						assert(osOK == queue_func_state(FAULTED));
+						assert(osOK == queue_state_transition(fault_request));
 					}
 					else
 					{
@@ -144,7 +145,7 @@ void vFaultHandler(void* pv_params)
 					if(is_timer_expired(&defcon5_timer))
 					{
 						serial_print("DEFCON 5 TIMER EXPIRED ENTER FAULTED");
-						assert(osOK == queue_func_state(FAULTED));
+						assert(osOK == queue_state_transition(fault_request));
 					}
 					else
 					{
@@ -173,8 +174,5 @@ void vFaultHandler(void* pv_params)
 				cancel_timer(&defcon5_timer);
 			}
 		}
-
-		/* Yield to other tasks */
-		osThreadYield();
 	}
 }

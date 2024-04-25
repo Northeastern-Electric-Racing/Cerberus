@@ -1,7 +1,7 @@
 /**
  * @file can_handler.c
  * @author Hamza Iqbal and Nick DePatie
- * @brief Source file for CAN handler.
+ * @brief Source file for CAN handler
  * @version 0.1
  * @date 2023-09-22
  *
@@ -16,19 +16,20 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
+#include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
+#include "stdio.h"
 #include <string.h>
 
-#define CAN_MSG_QUEUE_SIZE 25 /* messages */
+#define CAN_MSG_QUEUE_SIZE 50 /* messages */
+static osMessageQueueId_t can_outbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,	 STEERING_CANID_IO,
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS, BMS_CANID
 };
-
-void can1_callback(CAN_HandleTypeDef* hcan);
 
 can_t* init_can1(CAN_HandleTypeDef* hcan)
 {
@@ -39,16 +40,15 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	assert(can1);
 
 	can1->hcan		  = hcan;
-	can1->callback	  = can1_callback;
 	can1->id_list	  = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
 
 	assert(!can_init(can1));
 
+	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+
 	return can1;
 }
-
-
 
 /* Callback to be called when we get a CAN message */
 void can1_callback(CAN_HandleTypeDef* hcan)
@@ -59,7 +59,6 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
-
 	can_msg_t new_msg;
 
 	/* Read in CAN message */
@@ -68,6 +67,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		queue_fault(&fault_data);
 		return;
 	}
+
 	new_msg.len = rx_header.DLC;
 	new_msg.id	= rx_header.StdId;
 
@@ -81,27 +81,23 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case DTI_CANID_SIGNALS:
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
-	case STEERING_CANID_IO:
-		osMessageQueuePut(steeringio_router_queue, &new_msg, 0U, 0U);
-		break;
+	case BMS_CANID:
+		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
 	}
 }
 
-static osMessageQueueId_t can_outbound_queue;
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name		= "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal4,
+	.priority	= (osPriority_t)osPriorityRealtime5,
 };
 
 void vCanDispatch(void* pv_params)
 {
 	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON2 };
-
-	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
@@ -121,10 +117,13 @@ void vCanDispatch(void* pv_params)
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
 			}
+			else
+			{
+				//printf("Message sent: %lX\r\n", msg_from_queue.id);
+			}
 		}
 
-		/* Yield to other tasks */
-		osDelay(2);
+		osDelay(CAN_DISPATCH_DELAY);
 	}
 }
 
@@ -145,3 +144,4 @@ int8_t queue_can_msg(can_msg_t msg)
 	}
 	return 0;
 }
+

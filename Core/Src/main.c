@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "sht30.h"
 #include "lsm6dso.h"
 #include "monitor.h"
@@ -32,8 +33,10 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "bms.h"
 #include "torque.h"
 #include "pdu.h"
+#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
@@ -64,8 +67,6 @@ CAN_HandleTypeDef hcan1;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
-SPI_HandleTypeDef hspi1;
-
 UART_HandleTypeDef huart3;
 
 /* Definitions for defaultTask */
@@ -87,7 +88,6 @@ static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC2_Init(void);
@@ -130,8 +130,9 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
+  /* USER CODE BEGIN 1 */
+  
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -155,7 +156,6 @@ int main(void)
   MX_CAN1_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  MX_SPI1_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
   MX_ADC2_Init();
@@ -175,10 +175,11 @@ int main(void)
 
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  // pdu_t *pdu  = init_pdu(&hi2c2);
+  pdu_t *pdu  = init_pdu(&hi2c2);
   dti_t *mc   = dti_init();
-  //steeringio_t *wheel = steeringio_init();
+  steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
+  bms_t *bms = bms_init();
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -203,23 +204,40 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  //assert(temp_monitor_handle);
   watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  assert(watchdog_monitor_handle);
+  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  //assert(imu_monitor_handle);
+  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  // fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
-  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  assert(pedals_monitor_handle);
+  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  assert(fusing_monitor_handle);
+  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  assert(shutdown_monitor_handle);
 
   /* Messaging */
-  /* Note that CAN Router initializes CAN */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  assert(dti_router_handle);
+  steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
+  assert(steeringio_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
+  assert(can_dispatch_handle);
+  bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);
+  assert(bms_monitor_handle);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
+  assert(serial_monitor_handle);
+  nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
+  assert(nero_monitor_handle);
 
   /* Control Logic */
-  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
+  assert(torque_calc_handle);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  assert(fault_handle);
+  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
+  assert(sm_director_handle);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -231,10 +249,13 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // write_pump(pdu, false);
+    // sound_rtds(pdu);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -333,7 +354,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -370,7 +391,7 @@ static void MX_ADC2_Init(void)
   hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc2.Init.Resolution = ADC_RESOLUTION_12B;
   hadc2.Init.ScanConvMode = DISABLE;
-  hadc2.Init.ContinuousConvMode = ENABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
   hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -385,9 +406,9 @@ static void MX_ADC2_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -478,14 +499,14 @@ static void MX_CAN1_Init(void)
   hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = ENABLE;
+  hcan1.Init.AutoBusOff = ENABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = ENABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
@@ -565,44 +586,6 @@ static void MX_I2C2_Init(void)
 }
 
 /**
-  * @brief SPI1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI1_Init(void)
-{
-
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
-
-}
-
-/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -662,16 +645,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : PC4 PC5 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB0 PB1 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB2 */
@@ -719,34 +708,58 @@ void StartDefaultTask(void *argument)
   //HAL_StatusTypeDef err;
   /* Infinite loop */
   for(;;) {
-    /* Testing getting data from I2C devices */
-    //serial_print("Register Address\tContents\r\n");
-    //serial_print("----------------\t--------\r\n");
-    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
-      //uint8_t reg = 0x0F;
-      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
-      //  if (err)
-      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
-      //  else
-      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
-    //}
-    
-    /* Basics of manually getting ADC reading (no DMA) */
-    //HAL_ADC_Start(&hadc1);
-    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    //if (!err)
-    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
-
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
+    //i++;
+    
+    state_req_t bingbong;
+    if(i % 5 == 0)
+    {
+      bingbong.id = FUNCTIONAL;
+      bingbong.state.functional = READY;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if(i % 5 == 1)
+    {
+      bingbong.id = FUNCTIONAL;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if((i % 5 == 2) || (i % 5 == 4))
+    {
+      bingbong.id = DRIVE;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if(i % 5 == 3)
+    {
+      bingbong.id = DRIVE;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = SPEED_LIMITED;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
     i++;
-
-    if (i % 2 == 1)
-      serial_print(".\r\n");
-    else
-      serial_print("..\r\n");
-
-    osDelay(YELLOW_LED_BLINK_DELAY);
+    //if (i % 2 == 1)
+    //  serial_print(".\r\n");
+    //else
+    //  serial_print("..\r\n");
+    osDelay(1000);
+    //osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
 }

@@ -16,10 +16,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
-
+#define SAMPLES 20
 static osMutexAttr_t dti_mutex_attributes;
 osMessageQueueId_t dti_router_queue;
 
@@ -46,23 +47,56 @@ dti_t* dti_init()
 }
 
 void dti_set_torque(int16_t torque)
-{
-	int16_t ac_current = ((float)torque / EMRAX_KT) * 10; /* times 10 */
+{	
+	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
+	 // Static variables for the buffer and index
+    static float buffer[SAMPLES] = {0};
+    static int index = 0;
+
+    // Add the new value to the buffer
+    buffer[index] = torque;
+
+    // Increment the index, wrapping around if necessary
+    index = (index + 1) % SAMPLES;
+
+    // Calculate the average of the buffer
+    float sum = 0.0;
+    for (int i = 0; i < SAMPLES; ++i) {
+        sum += buffer[i];
+    }
+    float average = sum / SAMPLES;
+
+	if (torque == 0) {
+		average = 0;
+	}
+
+
+	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
+	// serial_print("Commanded Current: %d \r\n", ac_current);
+
 	dti_set_current(ac_current);
 }
 
 void dti_set_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x036, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x036, .len = 8, .data = { 0 } };
 	dti_set_drive_enable(true);
-	/* Send CAN message */
-	memcpy(&msg.data, &current, msg.len);
+	/* Send CAN message in big endian format */
+
+	int8_t msb = (int8_t)((current >> 8) & 0xFF);
+	uint8_t lsb = (uint8_t)((current & 0xFF));
+
+	msg.data[0] = msb;
+	msg.data[1] = lsb;
+
+	// serial_print("MSB: %d, LSB: %d\r\n", msb, lsb);
+
 	queue_can_msg(msg);
 }
 
 void dti_set_brake_current(int16_t brake_current)
 {
-	can_msg_t msg = { .id = 0x056, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x056, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(&msg.data, &brake_current, msg.len);
@@ -71,7 +105,7 @@ void dti_set_brake_current(int16_t brake_current)
 
 void dti_set_speed(int32_t rpm)
 {
-	can_msg_t msg = { .id = 0x076, .len = 4, .data = { 0 } };
+	can_msg_t msg = { .id = 0x076, .len = 8, .data = { 0 } };
 
 	rpm = rpm * EMRAX_NUM_POLE_PAIRS;
 
@@ -82,7 +116,7 @@ void dti_set_speed(int32_t rpm)
 
 void dti_set_position(int16_t angle)
 {
-	can_msg_t msg = { .id = 0x096, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x096, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &angle, msg.len);
@@ -91,7 +125,7 @@ void dti_set_position(int16_t angle)
 
 void dti_set_relative_current(int16_t relative_current)
 {
-	can_msg_t msg = { .id = 0x0B6, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0B6, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_current, msg.len);
@@ -100,7 +134,7 @@ void dti_set_relative_current(int16_t relative_current)
 
 void dti_set_relative_brake_current(int16_t relative_brake_current)
 {
-	can_msg_t msg = { .id = 0x0D6, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0D6, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_brake_current, msg.len);
@@ -109,7 +143,7 @@ void dti_set_relative_brake_current(int16_t relative_brake_current)
 
 void dti_set_digital_output(uint8_t output, bool value)
 {
-	can_msg_t msg = { .id = 0x0F6, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x0F6, .len = 8, .data = { 0 } };
 
 	uint8_t ctrl = value >> output;
 
@@ -120,7 +154,7 @@ void dti_set_digital_output(uint8_t output, bool value)
 
 void dti_set_max_ac_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x116, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x116, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -129,7 +163,7 @@ void dti_set_max_ac_current(int16_t current)
 
 void dti_set_max_ac_brake_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x136, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x136, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -138,7 +172,7 @@ void dti_set_max_ac_brake_current(int16_t current)
 
 void dti_set_max_dc_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x156, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x156, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -147,7 +181,7 @@ void dti_set_max_dc_current(int16_t current)
 
 void dti_set_max_dc_brake_current(int16_t current)
 {
-	can_msg_t msg = { .id = 0x176, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x176, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -156,7 +190,7 @@ void dti_set_max_dc_brake_current(int16_t current)
 
 void dti_set_drive_enable(bool drive_enable)
 {
-	can_msg_t msg = { .id = 0x196, .len = 1, .data = { 0 } };
+	can_msg_t msg = { .id = 0x196, .len = 8, .data = { 0 } };
 
 	/* Send CAN message */
 	memcpy(msg.data, &drive_enable, msg.len);
@@ -350,12 +384,35 @@ void handle_signals(const can_msg_t *msg, dti_t *dti)
 	dti->signals.rpm_max_limit = (msg->data[5] >> 6) &  0x01;
 	dti->signals.power_limit = (msg->data[5] >> 5) & 0x01;
 	dti->signals.can_map_version = msg->data[6] & 0x01;
+uint32_t dti_get_rpm(dti_t* mc)
+{
+	uint32_t rpm;
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	rpm = mc->rpm;
+	osMutexRelease(*mc->mutex);
+
+	return rpm;
 }
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
 const osThreadAttr_t dti_router_attributes
-	= { .name = "DTIRouter", .stack_size = 128 * 8, .priority = (osPriority_t)osPriorityNormal3 };
+	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
+
+static void dti_set_rpm(dti_t *mc, can_msg_t msg)
+{
+	/* ERPM is first four bytes of can message in big endian format */
+	uint32_t erpm = 0;
+	for (int i = 0; i < 4; i++) {
+		erpm |= msg.data[i] << (8 * (3 - i));
+	}
+
+	uint32_t rpm = erpm / POLE_PAIRS;
+
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->rpm = rpm;
+	osMutexRelease(*mc->mutex);
+}
 
 void vDTIRouter(void* pv_params)
 {
@@ -373,7 +430,11 @@ void vDTIRouter(void* pv_params)
 			switch (message.id) 
 			{
 				case DTI_CANID_ERPM:
+<<<<<<< HEAD
 					handle_ERPM(&message, mc);
+=======
+					dti_set_rpm(mc, message);
+>>>>>>> develop/statemachine
 					break;
 				case DTI_CANID_CURRENTS:
 					handle_currents(&message, mc);

@@ -14,11 +14,6 @@ void vWatchdogMonitor(void* pv_params);
 extern osThreadId_t watchdog_monitor_handle;
 extern const osThreadAttr_t watchdog_monitor_attributes;
 
-/* Parameters for the pedal monitoring task */
-#define MAX_ADC_VAL_12B	  4096
-#define PEDAL_DIFF_THRESH 10
-#define PEDAL_FAULT_TIME  1000 /* ms */
-
 /* Task for Reading in Pedal Inputs (Brakes + Accelerator) */
 void vPedalsMonitor(void* pv_params);
 extern osThreadId_t pedals_monitor_handle;
@@ -38,5 +33,9 @@ extern const osThreadAttr_t fusing_monitor_attributes;
 void vShutdownMonitor(void* pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
+
+void vSteeringIOButtonsMonitor(void* pv_params);
+extern osThreadId_t steeringio_buttons_monitor_handle;
+extern const osThreadAttr_t steeringio_buttons_monitor_attributes;
 
 #endif // MONITOR_H
