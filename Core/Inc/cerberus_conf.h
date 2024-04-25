@@ -17,8 +17,8 @@
 #define PEDALS_SAMPLE_DELAY     20    /* ms */
 #define ACCEL1_OFFSET           2200
 #define ACCEL1_MAX_VAL          1200
-#define ACCEL2_OFFSET           2200
-#define ACCEL2_MAX_VAL          1200
+#define ACCEL2_OFFSET           1945
+#define ACCEL2_MAX_VAL          3400
 
 /* Torque Tuning */
 #define MAX_TORQUE              110 /* Nm * 10 */

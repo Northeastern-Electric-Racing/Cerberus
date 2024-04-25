@@ -190,7 +190,7 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		//float accel_val1 = 
-		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
+		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
