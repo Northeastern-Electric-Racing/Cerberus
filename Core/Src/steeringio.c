@@ -28,10 +28,10 @@ steeringio_t* steeringio_init()
 	assert(steeringio);
 
 	/* Create Mutexes */
-	steeringio->ringbuffer_mutex = osMutexNew(&steeringio_data_mutex_attributes);
+	steeringio->ringbuffer_mutex = osMutexNew(&steeringio_ringbuffer_mutex_attributes);
 	assert(steeringio->ringbuffer_mutex);
 
-	steeringio->button_mutex = osMutexNew(&steeringio_ringbuffer_mutex_attributes);
+	steeringio->button_mutex = osMutexNew(&steeringio_data_mutex_attributes);
 	assert(steeringio->button_mutex);
 
 	/* Create debounce utilities */
@@ -104,11 +104,8 @@ static void paddle_right_cb() {
 
 /* For updating values via the wheel's CAN message */
 void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
-{
-	if (!wheel || !wheel_data)
-		return;
+{	
 
-	// TODO: Revisit how new wheel's data is formatted
 	/* Copy message data to wheelio buffer */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);
 	// Data is formatted with each bit within the first byte representing a button and the first two bits of the second byte representing the paddle shifters
@@ -119,8 +116,9 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 	}
 
 	/* Update raw paddle shifters */
-	wheel->raw_buttons[STEERING_PADDLE_LEFT] = (wheel_data[1] >> 0) & 0x01;
-	wheel->raw_buttons[STEERING_PADDLE_RIGHT] = (wheel_data[1] >> 1) & 0x01;
+
+	// wheel->raw_buttons[STEERING_PADDLE_LEFT] = (wheel_data[1] >> 0) & 0x01;
+	// wheel->raw_buttons[STEERING_PADDLE_RIGHT] = (wheel_data[1] >> 1) & 0x01;
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
@@ -187,6 +185,7 @@ void vSteeringIORouter(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
 		if (status == osOK){
+			printf("joe mama");\
 			steeringio_update(wheel, message.data);
 		}
 	}

@@ -376,6 +376,7 @@ const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 void vSteeringIOButtonsMonitor(void* pv_params)
 {
 	button_data_t buttons;
+	steeringio_t *wheel = (steeringio_t *)pv_params;
 	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
 	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT, .severity = DEFCON5 };
 
@@ -389,6 +390,10 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
+		// printf("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+
+		// printf("\r\n");
+
 		uint8_t button_data = (button_1 << 7) |
               (button_2 << 6) |
               (button_3 << 5) |
@@ -400,7 +405,7 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 
 		buttons.data[0] = button_data;
 
-		osMessageQueuePut(steeringio_router_queue, &buttons, 0U, 0U);
+		steeringio_update(wheel, buttons.data);
 
 		/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
 		msg.data[0] = button_data;
@@ -408,6 +413,7 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 			fault_data.diag = "Failed to send steering buttons can message";
 			queue_fault(&fault_data);
 		}
+
 		
 		osDelay(25);
 	}

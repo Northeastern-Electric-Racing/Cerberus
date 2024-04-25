@@ -77,6 +77,8 @@ void select_nero_index() {
 
 	uint8_t max_drive_states = MAX_DRIVE_STATES;
 
+	
+
 	if (nero_state.nero_index >= 0 && nero_state.nero_index < max_drive_states) {
 		if (nero_state.nero_index > 0) {
 			state_request.id = FUNCTIONAL;

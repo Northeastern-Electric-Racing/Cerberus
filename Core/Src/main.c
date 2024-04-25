@@ -209,7 +209,7 @@ int main(void)
   assert(watchdog_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
-  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, NULL, &steeringio_buttons_monitor_attributes);
+  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
@@ -254,6 +254,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // write_pump(pdu, false);
+    // sound_rtds(pdu);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -494,13 +496,13 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 1;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
+  hcan1.Init.AutoBusOff = ENABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
@@ -701,7 +703,7 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  //int i = 0;
+  int i = 0;
   //uint8_t data;
   //HAL_StatusTypeDef err;
   /* Infinite loop */
@@ -709,13 +711,55 @@ void StartDefaultTask(void *argument)
     /* Toggle LED at certain frequency */
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
     //i++;
-
+    
+    state_req_t bingbong;
+    if(i % 5 == 0)
+    {
+      bingbong.id = FUNCTIONAL;
+      bingbong.state.functional = READY;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if(i % 5 == 1)
+    {
+      bingbong.id = FUNCTIONAL;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if((i % 5 == 2) || (i % 5 == 4))
+    {
+      bingbong.id = DRIVE;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = NOT_DRIVING;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    else if(i % 5 == 3)
+    {
+      bingbong.id = DRIVE;
+      bingbong.state.functional = ACTIVE;
+      bingbong.state.drive = SPEED_LIMITED;
+      if(queue_state_transition(bingbong))
+      {
+        serial_print("0xBA115ACC");
+      }
+    }
+    i++;
     //if (i % 2 == 1)
     //  serial_print(".\r\n");
     //else
     //  serial_print("..\r\n");
-
-    osDelay(YELLOW_LED_BLINK_DELAY);
+    osDelay(1000);
+    //osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
 }

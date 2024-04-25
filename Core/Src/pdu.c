@@ -21,6 +21,23 @@
 
 static osMutexAttr_t pdu_mutex_attributes;
 
+static void rtds_shutoff_cb(void* pv_params)
+{
+	pdu_t *pdu = (pdu_t *)pv_params;
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return;
+
+	/* write RTDS over i2c */
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false);
+    if(error != HAL_OK) {
+        osMutexRelease(pdu->mutex);
+        return;
+    }
+
+	osMutexRelease(pdu->mutex);
+}
+
 pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 {
 	assert(hi2c);
@@ -73,20 +90,20 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     }
 
     // set pins 15, 3, 2, 1, 0 to outputs
-	// uint8_t pin_config[2] = {0b11110000, 0b01111111};
-    // if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
-	// 	serial_print("\n\rset pin modes fail\n\r");
-    //     free(pdu->ctrl_expander);
-    //     free(pdu->shutdown_expander);
-    //     free(pdu);
-    //     return NULL;
-    // }
+	uint8_t pin_config[2] = {0b11110000, 0b01111111};
+    if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
+		serial_print("\n\rset pin modes fail\n\r");
+        free(pdu->ctrl_expander);
+        free(pdu->shutdown_expander);
+        free(pdu);
+        return NULL;
+    }
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
 
-	//pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, NULL, NULL);
+	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
 
 	//assert(max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false));
 
@@ -188,7 +205,7 @@ int8_t sound_rtds(pdu_t* pdu)
 	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
 
 	/* write RTDS over i2c */
-    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, true);
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;
