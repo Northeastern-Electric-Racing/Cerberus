@@ -124,7 +124,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
 		if (!wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
 			wheel->debounced_buttons[i] = PRESSED;
-			printf("%d index pressed \r\n",i);
+			serial_print("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
 					paddle_left_cb();
@@ -151,7 +151,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 					select_nero_index();
 					break;
 				case NERO_HOME:
-					printf("Home button pressed \r\n");
+					serial_print("Home button pressed \r\n");
 					set_home_mode();
 					break;
 				default:

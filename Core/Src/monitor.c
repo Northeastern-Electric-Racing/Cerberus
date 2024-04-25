@@ -363,7 +363,7 @@ void vShutdownMonitor(void* pv_params)
 osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name		= "SteeringIOButtonsMonitor",
-	.stack_size = 64 * 8,
+	.stack_size = 128 * 8,
 	.priority	= (osPriority_t)osPriorityAboveNormal1,
 };
 
@@ -384,9 +384,9 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
-		serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+		//serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
 
-		serial_print("\r\n");
+		//serial_print("\r\n");
 
 		uint8_t button_data = (button_1 << 7) |
               (button_2 << 6) |
