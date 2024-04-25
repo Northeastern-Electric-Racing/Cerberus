@@ -3,22 +3,42 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define PUMP_CTRL	   0x00
-#define RADFAN_CTRL	   0x01
-#define BRKLIGHT_CTRL  0x02
-#define BATBOXFAN_CTRL 0x03
+#define PUMP_CTRL	   0
+#define RADFAN_CTRL	   1
+#define BRKLIGHT_CTRL  2
+#define BATBOXFAN_CTRL 3
+#define RTDS_CTRL	   15
 #define TSMS_CTRL	   0x04
 #define SMBALERT	   0x05
+#define RTDS_CTRL	   15
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
 
 #define SHUTDOWN_ADDR  0x20
 #define CTRL_ADDR      0x24
+#define RTDS_DURATION	1000
 
 #define PIN_MODE_OUTPUT 0
 #define PIN_MODE_INPUT  1
 
 static osMutexAttr_t pdu_mutex_attributes;
-#include <stdio.h>
+
+static void rtds_shutoff_cb(void* pv_params)
+{
+	pdu_t *pdu = (pdu_t *)pv_params;
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return;
+
+	/* write RTDS over i2c */
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false);
+    if(error != HAL_OK) {
+        osMutexRelease(pdu->mutex);
+        return;
+    }
+
+	osMutexRelease(pdu->mutex);
+}
+
 pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 {
 	assert(hi2c);
@@ -71,18 +91,22 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     }
 
     // set pins 15, 3, 2, 1, 0 to outputs
-	// uint8_t pin_config[2] = {0b11110000, 0b01111111};
-    // if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
-	// 	serial_print("\n\rset pin modes fail\n\r");
-    //     free(pdu->ctrl_expander);
-    //     free(pdu->shutdown_expander);
-    //     free(pdu);
-    //     return NULL;
-    // }
+	uint8_t pin_config[2] = {0b11110000, 0b01111111};
+    if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
+		serial_print("\n\rset pin modes fail\n\r");
+        free(pdu->ctrl_expander);
+        free(pdu->shutdown_expander);
+        free(pdu);
+        return NULL;
+    }
 
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
+
+	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
+
+	//assert(max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false));
 
 	return pdu;
 }
@@ -166,6 +190,30 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
     }
 
 	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+int8_t sound_rtds(pdu_t* pdu) 
+{
+    if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+	
+	
+	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
+
+	/* write RTDS over i2c */
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false);
+    if(error != HAL_OK) {
+        osMutexRelease(pdu->mutex);
+        return error;
+    }
+
+	osMutexRelease(pdu->mutex);
+
 	return 0;
 }
 
@@ -288,6 +336,26 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 
 	// read pin over i2c
     HAL_StatusTypeDef error = max7314_read_pin(pdu->shutdown_expander, pin, status);
+    if(error != HAL_OK) {
+        osMutexRelease(pdu->mutex);
+        return error;
+    }
+
+	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+int8_t write_rtds(pdu_t* pdu, bool status) 
+{
+    if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* write fan over i2c */
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, status);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;

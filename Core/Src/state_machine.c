@@ -37,10 +37,9 @@ static osMessageQueueId_t state_trans_queue;
 
 int queue_state_transition(state_req_t request)
 {
-	if (!state_trans_queue)
+	if (!state_trans_queue) {
 		return 1;
-
-	serial_print("Queued State Transition!\r\n");
+	}
 
 	return osMessageQueuePut(state_trans_queue, &request, 0U, 0U);
 }
@@ -68,11 +67,17 @@ void vStateMachineDirector(void* pv_params)
 
 	serial_print("State Machine Init!\r\n");
 
+	state_req_t request;
+  	request.id = FUNCTIONAL;
+  	request.state.functional = READY;
+  	queue_state_transition(request);
+
 	for (;;)
 	{
 		osMessageQueueGet(state_trans_queue, &new_state, NULL, osWaitForever);
 
-		if (new_state.id == DRIVE) {
+		if (new_state.id == DRIVE) 
+		{
 			if(get_func_state() != ACTIVE)
 				continue;
 
@@ -80,27 +85,23 @@ void vStateMachineDirector(void* pv_params)
 			//TODO: Make sure motor is not spinning before switching
 
 			/* If we are turning ON the motor, blare RTDS */
-			if (cerberus_state.drive == NOT_DRIVING && new_state.state.drive != NOT_DRIVING) {
-				//TODO: Blare RTDS
+			if (cerberus_state.drive == NOT_DRIVING) {
+				serial_print("CALLING RTDS");
+				sound_rtds(pdu);
 			}
 
 			cerberus_state.drive = new_state.state.drive;
 			continue;
 		}
 
-		if (new_state.id == FUNCTIONAL) {
-			if (!valid_trans_to_from[new_state.state.functional][get_func_state()])
+		if (new_state.id == FUNCTIONAL) 
+		{
+			if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
+				printf("Invalid State transition");
 				continue;
-
-			if(cerberus_state.functional == BOOT)
-			{
-				/* If we are in boot, we should immediately try and transition to READY */
-				// TODO: Add some more checks here to make sure we are good to go into ready
-				state_req_t ready_request = {.id = FUNCTIONAL, .state.functional = READY};
-				queue_state_transition(ready_request);
 			}
-			cerberus_state.functional = new_state.state.functional;
 
+			cerberus_state.functional = new_state.state.functional;
 			/* Catching state transitions */
 			switch (new_state.state.functional)
 			{
@@ -109,9 +110,10 @@ void vStateMachineDirector(void* pv_params)
 					break;
 				case READY:
 					/* Turn off high power peripherals */
+					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
 					write_fan_radiator(pdu, false);
-					write_pump(pdu, false);
+					write_pump(pdu, true);
 					break;
 				case ACTIVE:
 					/* Turn on high power peripherals */

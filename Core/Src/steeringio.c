@@ -28,10 +28,10 @@ steeringio_t* steeringio_init()
 	assert(steeringio);
 
 	/* Create Mutexes */
-	steeringio->ringbuffer_mutex = osMutexNew(&steeringio_data_mutex_attributes);
+	steeringio->ringbuffer_mutex = osMutexNew(&steeringio_ringbuffer_mutex_attributes);
 	assert(steeringio->ringbuffer_mutex);
 
-	steeringio->button_mutex = osMutexNew(&steeringio_ringbuffer_mutex_attributes);
+	steeringio->button_mutex = osMutexNew(&steeringio_data_mutex_attributes);
 	assert(steeringio->button_mutex);
 
 	/* Create debounce utilities */
@@ -103,12 +103,9 @@ static void paddle_right_cb() {
 }
 
 /* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
-{
-	if (!wheel || !wheel_data)
-		return;
+void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
+{	
 
-	// TODO: Revisit how new wheel's data is formatted
 	/* Copy message data to wheelio buffer */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);
 	// Data is formatted with each bit within the first byte representing a button and the first two bits of the second byte representing the paddle shifters
@@ -119,14 +116,15 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 	}
 
 	/* Update raw paddle shifters */
-	wheel->raw_buttons[STEERING_PADDLE_LEFT] = (wheel_data[1] >> 0) & 0x01;
-	wheel->raw_buttons[STEERING_PADDLE_RIGHT] = (wheel_data[1] >> 1) & 0x01;
+
+	// wheel->raw_buttons[STEERING_PADDLE_LEFT] = (wheel_data[1] >> 0) & 0x01;
+	// wheel->raw_buttons[STEERING_PADDLE_RIGHT] = (wheel_data[1] >> 1) & 0x01;
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
 		if (!wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
 			wheel->debounced_buttons[i] = PRESSED;
-			printf("%d index pressed \r\n",i);
+			serial_print("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
 					paddle_left_cb();
@@ -153,7 +151,7 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[], uint8_t len)
 					select_nero_index();
 					break;
 				case NERO_HOME:
-					printf("Home button pressed \r\n");
+					serial_print("Home button pressed \r\n");
 					set_home_mode();
 					break;
 				default:
@@ -177,7 +175,7 @@ const osThreadAttr_t steeringio_router_attributes = { .name		  = "SteeringIORout
 
 void vSteeringIORouter(void* pv_params)
 {
-	can_msg_t message;
+	button_data_t message;
 	osStatus_t status;
 	// fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
 
@@ -187,7 +185,8 @@ void vSteeringIORouter(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
 		if (status == osOK){
-			steeringio_update(wheel, message.data, message.len);
+			printf("joe mama");\
+			steeringio_update(wheel, message.data);
 		}
 	}
 }

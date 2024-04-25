@@ -3,6 +3,7 @@
 
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
+#include "stdbool.h"
 
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void* pv_params);
@@ -33,5 +34,11 @@ extern const osThreadAttr_t fusing_monitor_attributes;
 void vShutdownMonitor(void* pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
+
+void vSteeringIOButtonsMonitor(void* pv_params);
+extern osThreadId_t steeringio_buttons_monitor_handle;
+extern const osThreadAttr_t steeringio_buttons_monitor_attributes;
+
+bool get_tsms();
 
 #endif // MONITOR_H
