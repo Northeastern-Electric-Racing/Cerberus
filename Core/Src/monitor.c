@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
+#include "steeringio.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -189,8 +190,6 @@ void vPedalsMonitor(void* pv_params)
 		//float accel_val1 = 
 		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
 
-		//printf("%d\r\n", adc_data[ACCELPIN_1]);
-
 		/* Low Pass Filter */
 		sensor_data.accelerator_value
 			= (sensor_data.accelerator_value + (accel_val2))
@@ -300,7 +299,7 @@ void vFusingMonitor(void* pv_params)
 						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
-		serial_print("Fuses:\t%X\r\n", fuse_buf);
+		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
@@ -343,7 +342,7 @@ void vShutdownMonitor(void* pv_params)
 				   << stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
-		serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
+		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
@@ -365,4 +364,58 @@ void vShutdownMonitor(void* pv_params)
 
 	 	osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
+}
+
+osThreadId steeringio_buttons_monitor_handle;
+const osThreadAttr_t steeringio_buttons_monitor_attributes = {
+	.name		= "SteeringIOButtonsMonitor",
+	.stack_size = 128 * 8,
+	.priority	= (osPriority_t)osPriorityAboveNormal1,
+};
+
+void vSteeringIOButtonsMonitor(void* pv_params)
+{
+	button_data_t buttons;
+	steeringio_t *wheel = (steeringio_t *)pv_params;
+	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
+	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT, .severity = DEFCON5 };
+
+	for (;;) {
+		uint8_t button_1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+		uint8_t button_2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
+		uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+		uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
+		uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
+		uint8_t button_6 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
+		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
+
+		// printf("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+
+		// printf("\r\n");
+
+		uint8_t button_data = (button_1 << 7) |
+              (button_2 << 6) |
+              (button_3 << 5) |
+              (button_4 << 4) |
+              (button_5 << 3) |
+              (button_6 << 2) |
+              (button_7 << 1) |
+              (button_8);
+
+		buttons.data[0] = button_data;
+
+		steeringio_update(wheel, buttons.data);
+
+		/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
+		msg.data[0] = button_data;
+		if (queue_can_msg(msg)) {
+			fault_data.diag = "Failed to send steering buttons can message";
+			queue_fault(&fault_data);
+		}
+
+		
+		osDelay(25);
+	}
+	
 }

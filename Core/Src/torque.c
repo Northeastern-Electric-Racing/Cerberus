@@ -119,24 +119,21 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		/* Send whatever torque command we have on record */
-		dti_set_torque(torque);
-
-		//printf("%d\r\n", pedal_data.accelerator_value);
-
 		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{
-			func_state_t func_state = get_func_state();
+			// TODO revert this immediately!!!!!!!!!!!!!
+			func_state_t func_state = ACTIVE;//get_func_state();
 			if (func_state != ACTIVE)
 			{
 				torque = 0;
 				continue;
 			}
 
-			drive_state_t drive_state = get_drive_state();
+			// TODO revert this immediately!!!!!!!!!!!!!
+			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
 
 			float mph;
 			rpm_to_mph(dti_get_rpm(mc), &mph);
@@ -159,6 +156,12 @@ void vCalcTorque(void* pv_params)
 					torque = 0;
 					break;
 			}
+
+			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
+
+			// serial_print("torque: %d\r\n", torque);
+			/* Send whatever torque command we have on record */
+			dti_set_torque(torque);
 		}
 	}
 }

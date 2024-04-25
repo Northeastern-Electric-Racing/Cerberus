@@ -12,6 +12,7 @@ typedef struct {
 	osMutexId_t* mutex;
 	max7314_t* shutdown_expander;
 	max7314_t* ctrl_expander;
+	osTimerId rtds_timer;
 } pdu_t;
 
 /* Creates a new PDU interface */
@@ -22,6 +23,7 @@ int8_t write_pump(pdu_t* pdu, bool status);
 int8_t write_fan_radiator(pdu_t* pdu, bool status);
 int8_t write_brakelight(pdu_t* pdu, bool status);
 int8_t write_fan_battbox(pdu_t* pdu, bool status);
+int8_t sound_rtds(pdu_t* pdu);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {

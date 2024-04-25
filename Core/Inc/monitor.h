@@ -34,4 +34,8 @@ void vShutdownMonitor(void* pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
 
+void vSteeringIOButtonsMonitor(void* pv_params);
+extern osThreadId_t steeringio_buttons_monitor_handle;
+extern const osThreadAttr_t steeringio_buttons_monitor_attributes;
+
 #endif // MONITOR_H

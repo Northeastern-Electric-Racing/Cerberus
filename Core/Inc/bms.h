@@ -4,7 +4,7 @@
 
 #include "cmsis_os.h"
 
-#define BMS_CANID		0x070 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
+#define BMS_CANID		0x081 /*BMS MONITOR WATCHDOG*/ /*Arbitrary*/
 
 typedef struct
 {
