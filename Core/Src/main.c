@@ -220,8 +220,6 @@ int main(void)
   /* Messaging */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   assert(dti_router_handle);
-  steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
-  assert(steeringio_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
   bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);

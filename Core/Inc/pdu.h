@@ -24,6 +24,7 @@ int8_t write_fan_radiator(pdu_t* pdu, bool status);
 int8_t write_brakelight(pdu_t* pdu, bool status);
 int8_t write_fan_battbox(pdu_t* pdu, bool status);
 int8_t sound_rtds(pdu_t* pdu);
+int8_t write_rtds(pdu_t* pdu, bool status);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {

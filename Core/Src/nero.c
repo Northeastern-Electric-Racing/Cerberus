@@ -6,7 +6,7 @@
 #include "serial_monitor.h"
 #include "stdio.h"
 #include "cerberus_conf.h"
-
+#include "monitor.h"
 static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
 static void send_mode_status() {
 	can_msg_t msg = { .id = 0x501, .len = 8, .data = { nero_state.home_mode, nero_state.nero_index, 0, 0, 0, 0, 0, 0 } };
@@ -77,23 +77,17 @@ void select_nero_index() {
 
 	uint8_t max_drive_states = MAX_DRIVE_STATES;
 
-	
-
-	if (nero_state.nero_index >= 0 && nero_state.nero_index < max_drive_states) {
-		if (nero_state.nero_index > 0) {
-			state_request.id = FUNCTIONAL;
-			state_request.state.drive = DRIVE;
-			queue_state_transition(state_request);
-		} else {
-			state_request.id = FUNCTIONAL;
-			state_request.state.drive = READY;
-			queue_state_transition(state_request);
-		}
+	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms()) {
+		state_request.id = FUNCTIONAL;
+		state_request.state.drive = ACTIVE;
+		queue_state_transition(state_request);
 		state_request.id = DRIVE;
 		state_request.state.drive = map_nero_index_to_drive_state(nero_state.nero_index);
 		queue_state_transition(state_request);
-	} else {
-		// Do Nothing because the index is out of bounds
+	} else if (nero_state.nero_index == 0) {
+		state_request.id = FUNCTIONAL;
+		state_request.state.drive = READY;
+		queue_state_transition(state_request);
 	}
 	nero_state.home_mode = false;
 }

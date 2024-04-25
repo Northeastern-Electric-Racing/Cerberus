@@ -23,6 +23,8 @@
 #define PEDAL_DIFF_THRESH 10
 #define PEDAL_FAULT_TIME  1000 /* ms */
 
+static bool tsms = false;
+
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
 	.name		= "TempMonitor",
@@ -326,7 +328,6 @@ void vShutdownMonitor(void* pv_params)
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
 	bool tsms_status = false;
-	state_req_t state_request = {.id = FUNCTIONAL};
 
 	for (;;) {
 		shutdown_buf = 0;
@@ -352,14 +353,7 @@ void vShutdownMonitor(void* pv_params)
 
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
 		if(read_tsms_sense(pdu, &tsms_status)) {
-			if (tsms_status && get_func_state() == READY) {
-				state_request.state.functional = ACTIVE;
-				queue_state_transition(state_request);
-			}
-			if (!tsms_status && get_func_state() == ACTIVE) {
-				state_request.state.functional = READY;
-				queue_state_transition(state_request);
-			}
+			tsms = tsms_status;
 		}
 
 	 	osDelay(SHUTDOWN_MONITOR_DELAY);
@@ -369,7 +363,7 @@ void vShutdownMonitor(void* pv_params)
 osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name		= "SteeringIOButtonsMonitor",
-	.stack_size = 128 * 8,
+	.stack_size = 64 * 8,
 	.priority	= (osPriority_t)osPriorityAboveNormal1,
 };
 
@@ -390,9 +384,9 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
-		// printf("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+		serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
 
-		// printf("\r\n");
+		serial_print("\r\n");
 
 		uint8_t button_data = (button_1 << 7) |
               (button_2 << 6) |
@@ -402,6 +396,8 @@ void vSteeringIOButtonsMonitor(void* pv_params)
               (button_6 << 2) |
               (button_7 << 1) |
               (button_8);
+
+		
 
 		buttons.data[0] = button_data;
 
@@ -415,7 +411,10 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		}
 
 		
-		osDelay(25);
+		osDelay(200);
 	}
+}
 	
+bool get_tsms() {
+	return tsms;
 }
