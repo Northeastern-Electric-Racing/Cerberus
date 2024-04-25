@@ -702,60 +702,16 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   int i = 0;
-  //uint8_t data;
-  //HAL_StatusTypeDef err;
+  
   /* Infinite loop */
   for(;;) {
     /* Toggle LED at certain frequency */
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
-    //i++;
-    
-    state_req_t bingbong;
-    if(i % 5 == 0)
-    {
-      bingbong.id = FUNCTIONAL;
-      bingbong.state.functional = READY;
-      bingbong.state.drive = NOT_DRIVING;
-      if(queue_state_transition(bingbong))
-      {
-        serial_print("0xBA115ACC");
-      }
-    }
-    else if(i % 5 == 1)
-    {
-      bingbong.id = FUNCTIONAL;
-      bingbong.state.functional = ACTIVE;
-      bingbong.state.drive = NOT_DRIVING;
-      if(queue_state_transition(bingbong))
-      {
-        serial_print("0xBA115ACC");
-      }
-    }
-    else if((i % 5 == 2) || (i % 5 == 4))
-    {
-      bingbong.id = DRIVE;
-      bingbong.state.functional = ACTIVE;
-      bingbong.state.drive = NOT_DRIVING;
-      if(queue_state_transition(bingbong))
-      {
-        serial_print("0xBA115ACC");
-      }
-    }
-    else if(i % 5 == 3)
-    {
-      bingbong.id = DRIVE;
-      bingbong.state.functional = ACTIVE;
-      bingbong.state.drive = SPEED_LIMITED;
-      if(queue_state_transition(bingbong))
-      {
-        serial_print("0xBA115ACC");
-      }
-    }
-    i++;
-    //if (i % 2 == 1)
-    //  serial_print(".\r\n");
-    //else
-    //  serial_print("..\r\n");
+   
+    if (i % 2 == 1)
+     serial_print(".\r\n");
+    else
+     serial_print("..\r\n");
     osDelay(1000);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }
