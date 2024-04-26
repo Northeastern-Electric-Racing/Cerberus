@@ -189,16 +189,14 @@ void vPedalsMonitor(void* pv_params)
 		// eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		//float accel_val1 = 
-		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		uint16_t accel_val1 = adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL2_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET); 
+		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
+		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
+		
 		/* Low Pass Filter */
-		sensor_data.accelerator_value
-			= (sensor_data.accelerator_value + (accel_val2))
-			  / num_samples;
-		sensor_data.brake_value
-			= (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
-			  / num_samples;
+		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
+		sensor_data.brake_value = (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
