@@ -163,6 +163,12 @@ void vPedalsMonitor(void* pv_params)
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
+		/* Brakelight Control */
+		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+		bool brakelight_state = adc_data[BRAKEPIN_1] > 450;
+		osMessageQueuePut(brakelight_signal, &brakelight_state, 0U, 0U);
+
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
 		sensor_data.brake_value = (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) / num_samples;
@@ -282,7 +288,7 @@ osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
 	.name		= "ShutdownMonitor",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal2,
+	.priority	= (osPriority_t)osPriorityHigh2,
 };
 
 void vShutdownMonitor(void* pv_params)
@@ -318,6 +324,7 @@ void vShutdownMonitor(void* pv_params)
 
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
 		if(read_tsms_sense(pdu, &tsms_status)) {
+			printf("TSMS: %d", tsms_status);
 			tsms = tsms_status;
 		}
 
@@ -381,4 +388,26 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 
 bool get_tsms() {
 	return tsms;
+}
+
+osThreadId brakelight_monitor_handle;
+const osThreadAttr_t brakelight_monitor_attributes = {
+	.name		= "BrakelightMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh,
+};
+
+void vBrakelightMonitor(void* pv_params)
+{
+	pdu_t* pdu = (pdu_t*)pv_params;
+
+	bool state;
+	osStatus_t status;
+
+	for (;;) {
+		status = osMessageQueueGet(brakelight_signal, &state, NULL, osWaitForever);
+		if (!status) {
+			write_brakelight(pdu, state);
+		}
+	}
 }
