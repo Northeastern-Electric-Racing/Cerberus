@@ -8,12 +8,7 @@
 #define PEDAL_DATA_QUEUE_SIZE	8
 #define IMU_QUEUE_SIZE			8
 
-typedef struct {
-	uint16_t temperature;
-	uint16_t humidity;
-} onboard_temp_t;
-
-extern osMessageQueueId_t onboard_temp_queue;
+extern osMessageQueueId_t brakelight_signal;
 
 typedef struct {
 	uint16_t accel_x;

@@ -66,25 +66,6 @@ void vTempMonitor(void* pv_params)
 	}
 }
 
-osThreadId_t watchdog_monitor_handle;
-const osThreadAttr_t watchdog_monitor_attributes = {
-	.name		= "WatchdogMonitor",
-	.stack_size = 32 * 8,
-	.priority	= (osPriority_t)osPriorityNormal,
-};
-
-void vWatchdogMonitor(void* pv_params)
-{
-	mpu_t* mpu = (mpu_t*)pv_params;
-
-	for (;;) {
-		/* Pets Watchdog */
-		pet_watchdog(mpu);
-		/* Yield to other RTOS tasks */
-		osDelay(1);
-	}
-}
-
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
@@ -157,20 +138,17 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
+	enum {ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2};
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
-	uint16_t adc_data[3];
+	uint32_t adc_data[4];
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
-		if (read_adc(mpu, adc_data)) {
-			fault_data.diag = "Failed to collect ADC Data!";
-			queue_fault(&fault_data);
-		}
+		read_pedals(mpu, adc_data);
 
 		/* Evaluate Pedal Faulting Conditions */
 		//eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
@@ -178,12 +156,18 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		//printf("Accel 1: %d\r\n", accel_val1);
+		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
 		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		//printf("Accel 2: %d\r\n", accel_val2);
+		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
+
+		/* Brakelight Control */
+		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+		bool brakelight_state = adc_data[BRAKEPIN_1] > 450;
+		osMessageQueuePut(brakelight_signal, &brakelight_state, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
@@ -200,8 +184,6 @@ void vPedalsMonitor(void* pv_params)
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
-
-
 
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
@@ -306,7 +288,7 @@ osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
 	.name		= "ShutdownMonitor",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityAboveNormal2,
+	.priority	= (osPriority_t)osPriorityHigh2,
 };
 
 void vShutdownMonitor(void* pv_params)
@@ -342,6 +324,7 @@ void vShutdownMonitor(void* pv_params)
 
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
 		if(read_tsms_sense(pdu, &tsms_status)) {
+			printf("TSMS: %d", tsms_status);
 			tsms = tsms_status;
 		}
 
@@ -402,7 +385,29 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		osDelay(25);
 	}
 }
-	
+
 bool get_tsms() {
 	return tsms;
+}
+
+osThreadId brakelight_monitor_handle;
+const osThreadAttr_t brakelight_monitor_attributes = {
+	.name		= "BrakelightMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh,
+};
+
+void vBrakelightMonitor(void* pv_params)
+{
+	pdu_t* pdu = (pdu_t*)pv_params;
+
+	bool state;
+	osStatus_t status;
+
+	for (;;) {
+		status = osMessageQueueGet(brakelight_signal, &state, NULL, osWaitForever);
+		if (!status) {
+			write_brakelight(pdu, state);
+		}
+	}
 }

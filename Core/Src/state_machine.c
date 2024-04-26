@@ -114,19 +114,19 @@ void vStateMachineDirector(void* pv_params)
 					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
 					write_pump(pdu, true);
-					write_fault(pdu, false);
+					write_fault(pdu, true);
 					break;
 				case ACTIVE:
 					/* Turn on high power peripherals */
 					write_fan_battbox(pdu, true);
 					write_pump(pdu, true);
-					write_fault(pdu, false);
+					write_fault(pdu, true);
 					break;
 				case FAULTED:
 					/* Turn off high power peripherals */
 					write_fan_battbox(pdu, false);
 					write_pump(pdu, false);
-					write_fault(pdu, true);
+					write_fault(pdu, false);
 					assert(0); /* Literally just hang */
 					break;
 				default:
