@@ -83,8 +83,6 @@ osMessageQueueId_t onboard_temp_queue;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 
-pdu_t *pdu_temp;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -187,7 +185,7 @@ int main(void)
   can_t *can1 = init_can1(&hcan1);
   bms_t *bms = bms_init();
 
-  pdu_temp = pdu;
+  printf("\r\n\n\n...BOOTING...\r\n\n\n");
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -213,8 +211,6 @@ int main(void)
   /* Monitors */
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   //assert(temp_monitor_handle);
-  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  assert(watchdog_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
   steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
@@ -754,7 +750,7 @@ void StartDefaultTask(void *argument)
 
     i++;
 
-    osDelay(1000);
+    osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
