@@ -166,7 +166,7 @@ void vPedalsMonitor(void* pv_params)
 		/* Brakelight Control */
 		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
-		bool brakelight_state = adc_data[BRAKEPIN_1] > 450;
+		bool brakelight_state = true;//adc_data[BRAKEPIN_1] > 450;
 		osMessageQueuePut(brakelight_signal, &brakelight_state, 0U, 0U);
 
 		/* Low Pass Filter */

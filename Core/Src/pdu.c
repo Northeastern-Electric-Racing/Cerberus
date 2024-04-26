@@ -2,6 +2,7 @@
 #include "serial_monitor.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define PUMP_CTRL	   0
 #define RADFAN_CTRL	   1
@@ -106,9 +107,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 
 	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
 
-
-	//write_fault(pdu, true);
-	//assert(max7314_set_pin_state(pdu->ctrl_expander, 1, true));
+	assert(!max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, true));
 
 	return pdu;
 }
