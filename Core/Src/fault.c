@@ -2,6 +2,7 @@
 #include "serial_monitor.h"
 #include "task.h"
 #include <assert.h>
+#include <stdio.h>
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
@@ -35,7 +36,7 @@ void vFaultHandler(void* pv_params)
 		/* Wait until a message is in the queue, send messages when they are in the queue */
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
 		if (status == osOK) {
-			serial_print("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
+			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
 			switch (fault_data.severity)
 			{
 			case DEFCON1: /* Highest(1st) Priority */
