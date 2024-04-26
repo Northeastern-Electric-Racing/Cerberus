@@ -26,7 +26,7 @@
 static osMessageQueueId_t can_outbound_queue;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint16_t id_list[] = {
+static uint32_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
 	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS, BMS_CANID
 };
@@ -41,7 +41,7 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 
 	can1->hcan		  = hcan;
 	can1->id_list	  = id_list;
-	can1->id_list_len = sizeof(id_list) / sizeof(uint16_t);
+	can1->id_list_len = sizeof(id_list) / sizeof(uint32_t);
 
 	assert(!can_init(can1));
 
