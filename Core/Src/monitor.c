@@ -66,109 +66,79 @@ void vTempMonitor(void* pv_params)
 	}
 }
 
-osThreadId_t watchdog_monitor_handle;
-const osThreadAttr_t watchdog_monitor_attributes = {
-	.name		= "WatchdogMonitor",
-	.stack_size = 32 * 8,
-	.priority	= (osPriority_t)osPriorityNormal,
-};
-
-void vWatchdogMonitor(void* pv_params)
-{
-	mpu_t* mpu = (mpu_t*)pv_params;
-
-	for (;;) {
-		/* Pets Watchdog */
-		pet_watchdog(mpu);
-		/* Yield to other RTOS tasks */
-		osDelay(1);
-	}
-}
-
 osThreadId_t pedals_monitor_handle;
 const osThreadAttr_t pedals_monitor_attributes = {
 	.name		= "PedalMonitor",
-	.stack_size = 64 * 8,
+	.stack_size = 128 * 8,
 	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
 void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
-		/* Fault - open circuit */
-		if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
-			/* starting the open circuit timer*/
-			start_timer(oc_timer, PEDAL_FAULT_TIME);
+	/* Fault - open circuit */
+	if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
+		/* starting the open circuit timer*/
+		start_timer(oc_timer, PEDAL_FAULT_TIME);
 
-			if (is_timer_expired(oc_timer)) {
-				if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b )) {
-					fault_data->diag = "Open circuit fault - max acceleration value ";
-					queue_fault(fault_data);
-				}
-				else {
-					/*
-					* if there is no pedal faulting condition cancel
-					* timer and return to not faulted condition
-					*/
-					cancel_timer(oc_timer);
-				}
+		if (is_timer_expired(oc_timer)) {
+			if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b )) {
+				fault_data->diag = "Open circuit fault - max acceleration value ";
+				queue_fault(fault_data);
 			}
-		}
-
-		/* Fault - short circuit */
-		if ((val_1 == 0 || val_2 == 0) &&  !is_timer_active(sc_timer)) {
-			/*starting the short circuit timer*/
-			start_timer(sc_timer, PEDAL_FAULT_TIME);
-
-			if (is_timer_expired(sc_timer)) {
-				if ((val_1 == 0 || val_2 == 0 )) {
-					fault_data->diag = "Short circuit fault - no acceleration value ";
-					queue_fault(fault_data);
-				}
-				else {
-					/*
-					* if there is no pedal faulting condition cancel
-					* timer and return to not faulted condition
-					*/
-					cancel_timer(sc_timer);
-				}
-			}
-
-		}
-
-		/* Fault - difference between pedal sensing values > 100 ms */
-		if ((val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
-			/* starting diff timer */
-			start_timer(diff_timer, PEDAL_FAULT_TIME);
-			if (is_timer_expired(diff_timer)) {
-				if (val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) {
-					fault_data->diag = "Diff timer fault - sensor readings more than 100 ms apart";
-					queue_fault(fault_data);
-				}
-				else {
-					/*
-					* if there is no faulting condition cancel
-					* timer and return to not faulted condition
-					*/
-					cancel_timer(diff_timer);
-				}
+			else {
+				/*
+				* if there is no pedal faulting condition cancel
+				* timer and return to not faulted condition
+				*/
+				cancel_timer(oc_timer);
 			}
 		}
 	}
 
+	/* Fault - short circuit */
+	if ((val_1 == 0 || val_2 == 0) &&  !is_timer_active(sc_timer)) {
+		/*starting the short circuit timer*/
+		start_timer(sc_timer, PEDAL_FAULT_TIME);
+
+		if (is_timer_expired(sc_timer)) {
+			if ((val_1 == 0 || val_2 == 0 )) {
+				fault_data->diag = "Short circuit fault - no acceleration value ";
+				queue_fault(fault_data);
+			}
+			else {
+				/*
+				* if there is no pedal faulting condition cancel
+				* timer and return to not faulted condition
+				*/
+				cancel_timer(sc_timer);
+			}
+		}
+	}
+
+	/* Fault - difference between pedal sensing values > 100 ms */
+	if ((val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
+		/* starting diff timer */
+		start_timer(diff_timer, PEDAL_FAULT_TIME);
+		if (is_timer_expired(diff_timer)) {
+			if (val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) {
+				fault_data->diag = "Diff timer fault - sensor readings more than 100 ms apart";
+				queue_fault(fault_data);
+			}
+			else {
+				/*
+				* if there is no faulting condition cancel
+				* timer and return to not faulted condition
+				*/
+				cancel_timer(diff_timer);
+			}
+		}
+	}
+}
+
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum {BRAKEPIN_1, BRAKEPIN_2, ACCELPIN_1, ACCELPIN_2};
-
-	/* set of timers for accelerator fault conditions */
-	// nertimer_t diff_timer_accelerator;
-	// nertimer_t sc_timer_accelerator;	/* Open Circuit */
-	// nertimer_t oc_timer_accelerator;	/* Short Circuit*/
-
-	// /*set of timers for brake fault conditions*/
-	// nertimer_t diff_timer_brake;
-	// nertimer_t sc_timer_brake;	/* Open Circuit */
-	// nertimer_t oc_timer_brake;	/* Short Circuit*/
+	enum {ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2};
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
@@ -181,21 +151,21 @@ void vPedalsMonitor(void* pv_params)
 		read_pedals(mpu, adc_data);
 
 		/* Evaluate Pedal Faulting Conditions */
-		// eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
-		// TODO: Actually read in second brake ADC
-		// eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
+		//eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
+		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		//float accel_val1 = 
-		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET < 0 ? 0.0 : (uint32_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 1000 / ACCEL2_MAX_VAL;
+		uint16_t accel_val1 = adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		printf("Accel 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		printf("Accel 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+
+		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
+		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Low Pass Filter */
-		sensor_data.accelerator_value
-			= (sensor_data.accelerator_value + (accel_val2))
-			  / num_samples;
-		sensor_data.brake_value
-			= (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
-			  / num_samples;
+		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
+		sensor_data.brake_value = (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
@@ -208,8 +178,6 @@ void vPedalsMonitor(void* pv_params)
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
-
-
 
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
@@ -410,7 +378,7 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		osDelay(25);
 	}
 }
-	
+
 bool get_tsms() {
 	return tsms;
 }

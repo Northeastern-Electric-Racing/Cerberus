@@ -22,7 +22,7 @@ typedef struct {
 	/* Not including LED Mutexes because not necessary */
 } mpu_t;
 
-typedef struct 
+typedef struct
 {
 	int8_t channel_0;
 	int8_t channel_1;

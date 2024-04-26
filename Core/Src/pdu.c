@@ -133,7 +133,7 @@ int8_t write_pump(pdu_t* pdu, bool status)
 	return 0;
 }
 
-int8_t write_fan_radiator(pdu_t* pdu, bool status)
+int8_t write_fault(pdu_t* pdu, bool status)
 {
 	if (!pdu)
 		return -1;

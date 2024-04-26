@@ -80,6 +80,9 @@ const osThreadAttr_t defaultTask_attributes = {
 osMessageQueueId_t onboard_temp_queue;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
+
+pdu_t *pdu_temp;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,7 +97,6 @@ static void MX_USART3_UART_Init(void);
 static void MX_ADC3_Init(void);
 void StartDefaultTask(void *argument);
 
-static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -130,7 +132,6 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
   
   /* USER CODE END 1 */
@@ -160,9 +161,6 @@ int main(void)
   MX_ADC1_Init();
   MX_USART3_UART_Init();
   MX_ADC3_Init();
-
-  /* Initialize interrupts */
-  MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -180,6 +178,8 @@ int main(void)
   steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
   bms_t *bms = bms_init();
+
+  pdu_temp = pdu;
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -205,8 +205,6 @@ int main(void)
   /* Monitors */
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   //assert(temp_monitor_handle);
-  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  assert(watchdog_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
   steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
@@ -247,7 +245,6 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -303,17 +300,6 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief NVIC Configuration.
-  * @retval None
-  */
-static void MX_NVIC_Init(void)
-{
-  /* CAN1_RX0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 10, 0);
-  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-}
-
-/**
   * @brief ADC1 Initialization Function
   * @param None
   * @retval None
@@ -334,7 +320,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
@@ -386,7 +372,7 @@ static void MX_ADC3_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
   hadc3.Init.ScanConvMode = ENABLE;
   hadc3.Init.ContinuousConvMode = ENABLE;
@@ -395,7 +381,7 @@ static void MX_ADC3_Init(void)
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc3.Init.NbrOfConversion = 4;
-  hadc3.Init.DMAContinuousRequests = DISABLE;
+  hadc3.Init.DMAContinuousRequests = ENABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
   {
@@ -591,11 +577,6 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
 
-  /* DMA interrupt init */
-  /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
-
 }
 
 /**
@@ -631,8 +612,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC4 PC5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+  /*Configure GPIO pin : PC4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -689,11 +670,14 @@ void StartDefaultTask(void *argument)
   for(;;) {
     /* Toggle LED at certain frequency */
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
-   
+
     if (i % 2 == 1)
      serial_print(".\r\n");
     else
      serial_print("..\r\n");
+
+    i++;
+
     osDelay(1000);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

@@ -83,7 +83,7 @@ static void paddle_accel_to_torque(float accel, uint16_t* torque)
 {
 	*torque = (uint16_t)torque_limit_percentage * ((accel / MAX_TORQUE) * 0xFFFF);
 	//TODO add regen logic
-} 
+}
 
 void increase_torque_limit()
 {
@@ -157,7 +157,7 @@ void vCalcTorque(void* pv_params)
 
 			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
 
-			// serial_print("torque: %d\r\n", torque);
+			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
 			dti_set_torque(torque);
 		}
