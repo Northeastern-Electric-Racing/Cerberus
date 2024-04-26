@@ -83,7 +83,7 @@ static void paddle_accel_to_torque(float accel, uint16_t* torque)
 {
 	*torque = (uint16_t)torque_limit_percentage * ((accel / MAX_TORQUE) * 0xFFFF);
 	//TODO add regen logic
-} 
+}
 
 void increase_torque_limit()
 {

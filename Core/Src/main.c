@@ -80,6 +80,9 @@ const osThreadAttr_t defaultTask_attributes = {
 osMessageQueueId_t onboard_temp_queue;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
+
+pdu_t *pdu_temp;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -180,6 +183,8 @@ int main(void)
   steeringio_t *wheel = steeringio_init();
   can_t *can1 = init_can1(&hcan1);
   bms_t *bms = bms_init();
+
+  pdu_temp = pdu;
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -707,11 +712,14 @@ void StartDefaultTask(void *argument)
   for(;;) {
     /* Toggle LED at certain frequency */
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
-   
+
     if (i % 2 == 1)
      serial_print(".\r\n");
     else
      serial_print("..\r\n");
+
+    i++;
+
     osDelay(1000);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }
