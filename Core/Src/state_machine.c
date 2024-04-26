@@ -5,6 +5,7 @@
 #include "pdu.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <assert.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
@@ -76,7 +77,7 @@ void vStateMachineDirector(void* pv_params)
 	{
 		osMessageQueueGet(state_trans_queue, &new_state, NULL, osWaitForever);
 
-		if (new_state.id == DRIVE) 
+		if (new_state.id == DRIVE)
 		{
 			if(get_func_state() != ACTIVE)
 				continue;
@@ -94,7 +95,7 @@ void vStateMachineDirector(void* pv_params)
 			continue;
 		}
 
-		if (new_state.id == FUNCTIONAL) 
+		if (new_state.id == FUNCTIONAL)
 		{
 			if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
 				printf("Invalid State transition");
@@ -112,21 +113,21 @@ void vStateMachineDirector(void* pv_params)
 					/* Turn off high power peripherals */
 					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
-					write_fan_radiator(pdu, false);
 					write_pump(pdu, true);
+					write_fault(pdu, false);
 					break;
 				case ACTIVE:
 					/* Turn on high power peripherals */
 					write_fan_battbox(pdu, true);
-					write_fan_radiator(pdu, true);
 					write_pump(pdu, true);
+					write_fault(pdu, false);
 					break;
 				case FAULTED:
 					/* Turn off high power peripherals */
 					write_fan_battbox(pdu, false);
-					write_fan_radiator(pdu, false);
 					write_pump(pdu, false);
-					//TODO: Write fault
+					write_fault(pdu, true);
+					assert(0); /* Literally just hang */
 					break;
 				default:
 					// Do Nothing

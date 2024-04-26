@@ -47,7 +47,7 @@ dti_t* dti_init()
 }
 
 void dti_set_torque(int16_t torque)
-{	
+{
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
 	 // Static variables for the buffer and index
     static float buffer[SAMPLES] = {0};
@@ -72,7 +72,7 @@ void dti_set_torque(int16_t torque)
 
 
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
-	// serial_print("Commanded Current: %d \r\n", ac_current);
+	serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
 }

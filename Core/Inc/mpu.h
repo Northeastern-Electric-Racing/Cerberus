@@ -22,12 +22,11 @@ typedef struct {
 	/* Not including LED Mutexes because not necessary */
 } mpu_t;
 
-typedef struct 
+typedef struct
 {
 	int8_t channel_0;
 	int8_t channel_1;
 } brake_adc_channels_t;
-
 
 mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
 				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc, GPIO_TypeDef* led_gpio,
