@@ -13,6 +13,7 @@
 #include "can.h"
 #include "emrax.h"
 #include "fault.h"
+#include "c_utils.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,12 +81,8 @@ void dti_set_current(int16_t current)
 	dti_set_drive_enable(true);
 	/* Send CAN message in big endian format */
 
-	int8_t msb = (int8_t)((current >> 8) & 0xFF);
-	uint8_t lsb = (uint8_t)((current & 0xFF));
-
-	msg.data[0] = msb;
-	msg.data[1] = lsb;
-
+	endian_swap(&current, sizeof(current));
+	memcpy(msg.data, &current, msg.len);
 	// serial_print("MSB: %d, LSB: %d\r\n", msb, lsb);
 
 	queue_can_msg(msg);
@@ -95,6 +92,8 @@ void dti_set_brake_current(int16_t brake_current)
 {
 	can_msg_t msg = { .id = 0x056, .len = 8, .data = { 0 } };
 
+	/* convert to big endian */
+	endian_swap(&brake_current, sizeof(brake_current));
 	/* Send CAN message */
 	memcpy(&msg.data, &brake_current, msg.len);
 	queue_can_msg(msg);
@@ -106,6 +105,9 @@ void dti_set_speed(int32_t rpm)
 
 	rpm = rpm * EMRAX_NUM_POLE_PAIRS;
 
+	/* convert to big endian */
+	endian_swap(&rpm, sizeof(rpm));
+
 	/* Send CAN message */
 	memcpy(msg.data, &rpm, msg.len);
 	queue_can_msg(msg);
@@ -114,6 +116,9 @@ void dti_set_speed(int32_t rpm)
 void dti_set_position(int16_t angle)
 {
 	can_msg_t msg = { .id = 0x096, .len = 8, .data = { 0 } };
+
+	/* convert to big endian */
+	endian_swap(&angle, sizeof(angle));
 
 	/* Send CAN message */
 	memcpy(msg.data, &angle, msg.len);
@@ -124,6 +129,9 @@ void dti_set_relative_current(int16_t relative_current)
 {
 	can_msg_t msg = { .id = 0x0B6, .len = 8, .data = { 0 } };
 
+	/* convert to big endian */
+	endian_swap(&relative_current, sizeof(relative_current));
+
 	/* Send CAN message */
 	memcpy(msg.data, &relative_current, msg.len);
 	queue_can_msg(msg);
@@ -132,6 +140,9 @@ void dti_set_relative_current(int16_t relative_current)
 void dti_set_relative_brake_current(int16_t relative_brake_current)
 {
 	can_msg_t msg = { .id = 0x0D6, .len = 8, .data = { 0 } };
+
+	/* convert to big endian */
+	endian_swap(&relative_brake_current, sizeof(relative_brake_current));
 
 	/* Send CAN message */
 	memcpy(msg.data, &relative_brake_current, msg.len);
@@ -153,6 +164,9 @@ void dti_set_max_ac_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x116, .len = 8, .data = { 0 } };
 
+	/* convert to big endian */
+	endian_swap(&current, sizeof(current));
+
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
 	queue_can_msg(msg);
@@ -161,6 +175,9 @@ void dti_set_max_ac_current(int16_t current)
 void dti_set_max_ac_brake_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x136, .len = 8, .data = { 0 } };
+
+	/* convert to big endian */
+	endian_swap(&current, sizeof(current));
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
@@ -171,6 +188,9 @@ void dti_set_max_dc_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x156, .len = 8, .data = { 0 } };
 
+	/* convert to big endian */
+	endian_swap(&current, sizeof(current));
+
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);
 	queue_can_msg(msg);
@@ -179,6 +199,9 @@ void dti_set_max_dc_current(int16_t current)
 void dti_set_max_dc_brake_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x176, .len = 8, .data = { 0 } };
+
+	/* convert to big endian */
+	endian_swap(&current, sizeof(current));
 
 	/* Send CAN message */
 	memcpy(msg.data, &current, msg.len);

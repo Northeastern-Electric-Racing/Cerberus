@@ -4,12 +4,17 @@
 #include "can_handler.h"
 #include "state_machine.h"
 #include "serial_monitor.h"
+#include "c_utils.h"
 #include "stdio.h"
 #include "cerberus_conf.h"
 #include "monitor.h"
 static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
 static void send_mode_status() {
 	can_msg_t msg = { .id = 0x501, .len = 2, .data = { nero_state.home_mode, nero_state.nero_index} };
+
+	/* convert to big endian */
+	endian_swap(&msg.data, sizeof(msg.data));
+
 	/* Send CAN message */
 	queue_can_msg(msg);
 }

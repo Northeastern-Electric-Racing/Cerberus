@@ -7,6 +7,7 @@
 #include "queues.h"
 #include "serial_monitor.h"
 #include "sht30.h"
+#include "c_utils.h"
 #include "stm32f405xx.h"
 #include "task.h"
 #include "lsm6dso.h"
@@ -52,8 +53,8 @@ void vTempMonitor(void* pv_params)
 
 		temp_msg.data[0] = temp & 0xFF;
 		temp_msg.data[1] = (temp >> 8) & 0xFF;
-		temp_msg.data[0] = humidity & 0xFF;
-		temp_msg.data[1] = (humidity >> 8) & 0xFF;
+		temp_msg.data[2] = humidity & 0xFF;
+		temp_msg.data[3] = (humidity >> 8) & 0xFF;
 
 		/* Send CAN message */
 		if (queue_can_msg(temp_msg)) {
@@ -229,6 +230,14 @@ void vIMUMonitor(void* pv_params)
 		/* Publish to IMU Queue */
 		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
 
+		/* convert to big endian */
+		endian_swap(&sensor_data.accel_x, sizeof(sensor_data.accel_x));
+		endian_swap(&sensor_data.accel_y, sizeof(sensor_data.accel_y));
+		endian_swap(&sensor_data.accel_z, sizeof(sensor_data.accel_z));
+		endian_swap(&sensor_data.gyro_x, sizeof(sensor_data.gyro_x));
+		endian_swap(&sensor_data.gyro_y, sizeof(sensor_data.gyro_y));
+		endian_swap(&sensor_data.gyro_z, sizeof(sensor_data.gyro_z));
+
 		/* Send CAN message */
 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
 		//if (queue_can_msg(imu_accel_msg)) {
@@ -274,6 +283,9 @@ void vFusingMonitor(void* pv_params)
 		}
 
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
+		
+		/* convert to big endian */
+		endian_swap(&fuse_buf, sizeof(fuse_buf));
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
@@ -316,6 +328,9 @@ void vShutdownMonitor(void* pv_params)
 		}
 
 		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
+
+		/* convert to big endian */
+		endian_swap(&shutdown_buf, sizeof(shutdown_buf));
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
