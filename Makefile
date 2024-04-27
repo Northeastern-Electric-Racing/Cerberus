@@ -28,7 +28,7 @@ $(info ........\/     \/          \/     \/                 \/ )
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -O0
+OPT = -O2
 
 
 #######################################
@@ -83,6 +83,7 @@ Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/pi4ioe.c \
 Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/Embedded-Base/middleware/src/ringbuffer.c \
+Drivers/Embedded-Base/middleware/src/c_utils.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
