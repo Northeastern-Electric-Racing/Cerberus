@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 /* Parameters for the pedal monitoring task */
-#define MAX_ADC_VAL_12b	  4096
+// #define MAX_ADC_VAL_12b	  4096  I do not think we need this value
 #define PEDAL_DIFF_THRESH 10
 #define PEDAL_FAULT_TIME  1000 /* ms */
 
@@ -73,19 +73,18 @@ const osThreadAttr_t pedals_monitor_attributes = {
 	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
-void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
+void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
 	/* Fault - open circuit */
-	if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
+	if ((accel_1 == ACCEL1_MAX_VAL || accel_2 == ACCEL2_MAX_VAL) && !is_timer_active(oc_timer)) {
 		/* starting the open circuit timer*/
 		start_timer(oc_timer, PEDAL_FAULT_TIME);
 
 		if (is_timer_expired(oc_timer)) {
-			if ((val_1 == MAX_ADC_VAL_12b || val_2 == MAX_ADC_VAL_12b )) {
-				fault_data->diag = "Open circuit fault - max acceleration value ";
+			if ((accel_1 == ACCEL1_MAX_VAL || accel_2 == ACCEL2_MAX_VAL)) {
+				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
 				queue_fault(fault_data);
-			}
-			else {
+			} else {
 				/*
 				* if there is no pedal faulting condition cancel
 				* timer and return to not faulted condition
@@ -96,16 +95,15 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 	}
 
 	/* Fault - short circuit */
-	if ((val_1 == 0 || val_2 == 0) &&  !is_timer_active(sc_timer)) {
+	if ((accel_1 == 0 || accel_2 == 0) &&  !is_timer_active(sc_timer)) {
 		/*starting the short circuit timer*/
 		start_timer(sc_timer, PEDAL_FAULT_TIME);
 
 		if (is_timer_expired(sc_timer)) {
-			if ((val_1 == 0 || val_2 == 0 )) {
-				fault_data->diag = "Short circuit fault - no acceleration value ";
+			if ((accel_1 == 0 || accel_2 == 0 )) {
+				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
-			}
-			else {
+			} else {
 				/*
 				* if there is no pedal faulting condition cancel
 				* timer and return to not faulted condition
@@ -115,13 +113,17 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 		}
 	}
 
-	/* Fault - difference between pedal sensing values > 100 ms */
-	if ((val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) && !is_timer_active(diff_timer)) {
+	/* Normalize pedal values */
+	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+
+	/* Fault - difference between pedal sensing values */
+	if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
 		/* starting diff timer */
 		start_timer(diff_timer, PEDAL_FAULT_TIME);
 		if (is_timer_expired(diff_timer)) {
-			if (val_1 - val_2 > PEDAL_DIFF_THRESH * MAX_ADC_VAL_12b) {
-				fault_data->diag = "Diff timer fault - sensor readings more than 100 ms apart";
+			if (accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) {
+				fault_data->diag = "Pedal fault - pedal values are too different ";
 				queue_fault(fault_data);
 			}
 			else {
@@ -144,6 +146,10 @@ void vPedalsMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 	uint32_t adc_data[4];
 
+	nertimer_t diff_timer_accelerator;	
+	nertimer_t sc_timer_accelerator;
+	nertimer_t oc_timer_accelerator;
+
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
@@ -151,7 +157,7 @@ void vPedalsMonitor(void* pv_params)
 		read_pedals(mpu, adc_data);
 
 		/* Evaluate Pedal Faulting Conditions */
-		//eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
+		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
