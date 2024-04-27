@@ -6,6 +6,7 @@
 #include "state_machine.h"
 #include "can_handler.h"
 #include <string.h>
+#include "c_utils.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 
@@ -39,13 +40,16 @@ void vFaultHandler(void* pv_params)
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
 		if (status == osOK) {
 
-			uint8_t fault_code_high = (fault_data.id & 0x0000FF00) >> 8;
-			uint8_t fault_code_low = (fault_data.id & 0x000000FF);
+			uint8_t fault_code_first  = (((uint32_t)fault_data) & 0xFF000000) >> 24;
+			uint8_t fault_code_second = (((uint32_t)fault_data) & 0x00FF0000) >> 16;
+			uint8_t fault_code_third  = (((uint32_t)fault_data) & 0x0000FF00) >> 8;
+			uint8_t fault_code_fourth = ((uint32_t)fault_data)  & 0x000000FF;
+			uint8_t defcon = fault_data.severity;
 
 			can_msg_t msg;
 			msg.id = CANID_FAULT_MSG;
 			msg.len = 8;
-			uint8_t msg_data[8] = {fault_code_high, fault_code_low};
+			uint8_t msg_data[8] = {fault_code_first, fault_code_second, fault_code_third, fault_code_fourth, defcon};
 			memcpy(msg.data, msg_data, msg.len);
 			queue_can_msg(msg);
 			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
