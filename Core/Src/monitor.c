@@ -20,7 +20,8 @@
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	  4096
-#define PEDAL_DIFF_THRESH 10
+// DEBUG: threshold may need adjusting
+#define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  1000 /* ms */
 
 static bool tsms = false;
@@ -76,49 +77,41 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
 	/* Fault - open circuit */
-	if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
-		/* starting the open circuit timer*/
-		start_timer(oc_timer, PEDAL_FAULT_TIME);
-
+	if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && is_timer_active(oc_timer)) {
 		if (is_timer_expired(oc_timer)) {
 			if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b)) {
 				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
 				queue_fault(fault_data);
-			} else {
-				/*
-				* if there is no pedal faulting condition cancel
-				* timer and return to not faulted condition
-				*/
-				cancel_timer(oc_timer);
 			}
 		}
+	} else if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer))  {
+		start_timer(oc_timer, PEDAL_FAULT_TIME);
+	} else {
+		cancel_timer(oc_timer);
 	}
 
 	/* Fault - short circuit */
-	if ((accel_1 == 0 || accel_2 == 0) &&  !is_timer_active(sc_timer)) {
-		/*starting the short circuit timer*/
-		start_timer(sc_timer, PEDAL_FAULT_TIME);
-
+	if ((accel_1 == 0 || accel_2 == 0) && is_timer_active(sc_timer)) {
 		if (is_timer_expired(sc_timer)) {
 			if ((accel_1 == 0 || accel_2 == 0 )) {
 				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
-			} else {
-				/*
-				* if there is no pedal faulting condition cancel
-				* timer and return to not faulted condition
-				*/
-				cancel_timer(sc_timer);
 			}
 		}
+	} else if ((accel_1 == 0 || accel_2 == 0) && !is_timer_active(sc_timer)) {
+		start_timer(sc_timer, PEDAL_FAULT_TIME);
+	} else {
+		cancel_timer(sc_timer);
 	}
 
 	/* Normalize pedal values */
 	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
 	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
+	//DEBUG: threshold may cause fault
+
 	/* Fault - difference between pedal sensing values */
-	if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
+	if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
 		/* starting diff timer */
 		start_timer(diff_timer, PEDAL_FAULT_TIME);
 		if (is_timer_expired(diff_timer)) {
@@ -126,14 +119,11 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 				fault_data->diag = "Pedal fault - pedal values are too different ";
 				queue_fault(fault_data);
 			}
-			else {
-				/*
-				* if there is no faulting condition cancel
-				* timer and return to not faulted condition
-				*/
-				cancel_timer(diff_timer);
-			}
 		}
+	} else if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
+		start_timer(diff_timer, PEDAL_FAULT_TIME);
+	} else {
+		cancel_timer(diff_timer);
 	}
 }
 
