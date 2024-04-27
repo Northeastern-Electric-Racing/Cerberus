@@ -138,7 +138,7 @@ void eval_pedal_fault(int val_1, int val_2, nertimer_t *diff_timer, nertimer_t *
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum {ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2};
+	enum {ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2};
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
@@ -155,13 +155,14 @@ void vPedalsMonitor(void* pv_params)
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		uint16_t accel_val1 = adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
-		uint16_t accel_val2 = adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
+		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		// printf("Accel 1: %d\r\n", accel_val1);
+		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		// printf("RAW 2: %ld\r\n",adc_data[ACCELPIN_2]);
+		// printf("Accel 2: %d\r\n",accel_val2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
-		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
+		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Brakelight Control */
 		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
@@ -249,7 +250,7 @@ void vIMUMonitor(void* pv_params)
 osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name		= "FusingMonitor",
-	.stack_size = 128 * 8,
+	.stack_size = 64 * 8,
 	.priority	= (osPriority_t)osPriorityAboveNormal1,
 };
 
@@ -287,7 +288,7 @@ void vFusingMonitor(void* pv_params)
 osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
 	.name		= "ShutdownMonitor",
-	.stack_size = 128 * 8,
+	.stack_size = 64 * 8,
 	.priority	= (osPriority_t)osPriorityHigh2,
 };
 
@@ -337,7 +338,7 @@ void vShutdownMonitor(void* pv_params)
 osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name		= "SteeringIOButtonsMonitor",
-	.stack_size = 128 * 8,
+	.stack_size = 200 * 8,
 	.priority	= (osPriority_t)osPriorityAboveNormal1,
 };
 
@@ -354,7 +355,7 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
 		uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
 		uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
-		uint8_t button_6 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
+		uint8_t button_6 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 

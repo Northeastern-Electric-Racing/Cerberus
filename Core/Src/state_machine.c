@@ -17,6 +17,8 @@ typedef struct {
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
+static pdu_t *pdu;
+
 /* State Transition Map */
 static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	/*BOOT  READY DRIVING FAULTED*/
@@ -30,19 +32,81 @@ osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes =
 {
 	.name		= "State Machine Director",
-	.stack_size = 128 * 4,
+	.stack_size = 128 * 8,
 	.priority	= (osPriority_t)osPriorityRealtime2,
 };
 
 static osMessageQueueId_t state_trans_queue;
 
-int queue_state_transition(state_req_t request)
+int queue_state_transition(state_req_t new_state)
 {
 	if (!state_trans_queue) {
 		return 1;
 	}
 
-	return osMessageQueuePut(state_trans_queue, &request, 0U, 0U);
+	printf("QUEUING STATAE TRANSITION\r\n");
+
+	if (new_state.id == DRIVE)
+		{
+			if(get_func_state() != ACTIVE)
+				return 0;
+
+			/* Transitioning between drive states is always allowed */
+			//TODO: Make sure motor is not spinning before switching
+
+			/* If we are turning ON the motor, blare RTDS */
+			if (cerberus_state.drive == NOT_DRIVING) {
+				serial_print("CALLING RTDS");
+				sound_rtds(pdu);
+			}
+
+			cerberus_state.drive = new_state.state.drive;
+			return 0;
+		}
+
+		if (new_state.id == FUNCTIONAL)
+		{
+			if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
+				printf("Invalid State transition");
+				return -1;
+			}
+
+			cerberus_state.functional = new_state.state.functional;
+			/* Catching state transitions */
+			switch (new_state.state.functional)
+			{
+				case BOOT:
+					/* Do Nothing */
+					break;
+				case READY:
+					/* Turn off high power peripherals */
+					serial_print("going to ready");
+					write_fan_battbox(pdu, false);
+					write_pump(pdu, true);
+					write_fault(pdu, true);
+					break;
+				case ACTIVE:
+					/* Turn on high power peripherals */
+					write_fan_battbox(pdu, true);
+					write_pump(pdu, true);
+					write_fault(pdu, true);
+					break;
+				case FAULTED:
+					/* Turn off high power peripherals */
+					write_fan_battbox(pdu, false);
+					write_pump(pdu, false);
+					write_fault(pdu, false);
+					assert(0); /* Literally just hang */
+					break;
+				default:
+					// Do Nothing
+					break;
+			}
+			return 0;
+		}
+
+		return 0;
+
 }
 
 func_state_t get_func_state()
@@ -62,8 +126,9 @@ void vStateMachineDirector(void* pv_params)
 
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_req_t), NULL);
 
-	pdu_t *pdu = (pdu_t *)pv_params;
+	pdu_t *pdu_1 = (pdu_t *)pv_params;
 
+	pdu = pdu_1;
 	state_req_t new_state;
 
 	serial_print("State Machine Init!\r\n");

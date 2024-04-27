@@ -72,6 +72,9 @@ void dti_set_torque(int16_t torque)
 
 
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
+
+	if (ac_current > 3000) ac_current = 3000;
+
 	serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
