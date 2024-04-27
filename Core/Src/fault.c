@@ -4,6 +4,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include "state_machine.h"
+#include "can_handler.h"
+#include <string.h>
+#include "c_utils.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 
@@ -36,6 +39,19 @@ void vFaultHandler(void* pv_params)
 		/* Wait until a message is in the queue, send messages when they are in the queue */
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
 		if (status == osOK) {
+
+			uint32_t fault_id = (uint32_t) fault_data.id;
+			endian_swap(&fault_id, 4);
+			uint8_t defcon = (uint8_t) fault_data.severity;
+
+			can_msg_t msg;
+			msg.id = CANID_FAULT_MSG;
+			msg.len = 8;
+			uint8_t msg_data[8];
+			memcpy(msg_data, &fault_id, 4);
+			memcpy(msg_data + 4, &defcon, 1);
+			memcpy(msg.data, msg_data, msg.len);
+			queue_can_msg(msg);
 			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
 			switch (fault_data.severity)
 			{
