@@ -218,8 +218,8 @@ int main(void)
   assert(shutdown_monitor_handle);
 
   /* Messaging */
-  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  assert(dti_router_handle);
+  //dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+  //assert(dti_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
   bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
