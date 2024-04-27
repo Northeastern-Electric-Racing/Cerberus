@@ -178,8 +178,8 @@ int main(void)
   pdu_t *pdu  = init_pdu(&hi2c2);
   dti_t *mc   = dti_init();
   steeringio_t *wheel = steeringio_init();
-  can_t *can1 = init_can1(&hcan1);
-  bms_t *bms = bms_init();
+  init_can1(&hcan1);
+  bms_init();
 
   printf("\r\n\n\n...BOOTING...\r\n\n\n");
 
@@ -220,9 +220,9 @@ int main(void)
   /* Messaging */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
   assert(dti_router_handle);
-  can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
+  can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);
+  bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
   assert(bms_monitor_handle);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   assert(serial_monitor_handle);

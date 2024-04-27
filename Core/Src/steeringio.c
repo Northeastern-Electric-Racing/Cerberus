@@ -103,7 +103,7 @@ static void paddle_right_cb() {
 
 /* For updating values via the wheel's CAN message */
 void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
-{	
+{
 
 	/* Copy message data to wheelio buffer */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);

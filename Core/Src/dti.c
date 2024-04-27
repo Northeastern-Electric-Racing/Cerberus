@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "bms.h"
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
@@ -32,12 +33,6 @@ dti_t* dti_init()
 	/* Create Mutex */
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
 	assert(mc->mutex);
-
-	// TODO: Set safety parameters for operation (maxes, mins, etc)
-	// dti_set_max_ac_brake_current();
-	// dti_set_max_ac_current();
-	// dti_set_max_dc_brake_current();
-	// dti_set_max_dc_current();
 
 	/* Create Queue for CAN signaling */
 	dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -70,10 +65,9 @@ void dti_set_torque(int16_t torque)
 		average = 0;
 	}
 
-
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
 
-	if (ac_current > 3000) ac_current = 3000;
+	if ((uint16_t)abs(ac_current) > bms->dcl) ac_current = bms->dcl;
 
 	serial_print("Commanded Current: %d \r\n", ac_current);
 
