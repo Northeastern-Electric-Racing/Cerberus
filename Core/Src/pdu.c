@@ -207,7 +207,7 @@ int8_t sound_rtds(pdu_t* pdu)
 	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
 
 	/* write RTDS over i2c */
-    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false);
+    HAL_StatusTypeDef error = max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, true);
     if(error != HAL_OK) {
         osMutexRelease(pdu->mutex);
         return error;
