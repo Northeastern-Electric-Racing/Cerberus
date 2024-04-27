@@ -25,18 +25,20 @@
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 static osMessageQueueId_t can_outbound_queue;
 
+can_t *can1;
+
 /* Relevant Info for Initializing CAN 1 */
 static uint32_t id_list[] = {
 	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS, BMS_CANID
+	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS, BMS_DCL_MSG
 };
 
-can_t* init_can1(CAN_HandleTypeDef* hcan)
+void init_can1(CAN_HandleTypeDef* hcan)
 {
 	assert(hcan);
 
 	/* Create PDU struct */
-	can_t* can1 = malloc(sizeof(can_t));
+	can1 = malloc(sizeof(can_t));
 	assert(can1);
 
 	can1->hcan		  = hcan;
@@ -46,8 +48,6 @@ can_t* init_can1(CAN_HandleTypeDef* hcan)
 	assert(!can_init(can1));
 
 	can_outbound_queue = osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-
-	return can1;
 }
 
 /* Callback to be called when we get a CAN message */
@@ -81,7 +81,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	// case DTI_CANID_SIGNALS:
 	// 	osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 	// 	break;
-	case BMS_CANID:
+	case BMS_DCL_MSG:
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
 	default:
 		break;
@@ -101,7 +101,6 @@ void vCanDispatch(void* pv_params)
 
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
-	can_t* can1 = (can_t*)pv_params;
 
 	for (;;) {
 		/* Send CAN message */
