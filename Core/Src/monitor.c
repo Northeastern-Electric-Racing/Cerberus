@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 /* Parameters for the pedal monitoring task */
-// #define MAX_ADC_VAL_12b	  4096  I do not think we need this value
+#define MAX_ADC_VAL_12b	  4096
 #define PEDAL_DIFF_THRESH 10
 #define PEDAL_FAULT_TIME  1000 /* ms */
 
@@ -76,12 +76,12 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
 	/* Fault - open circuit */
-	if ((accel_1 == ACCEL1_MAX_VAL || accel_2 == ACCEL2_MAX_VAL) && !is_timer_active(oc_timer)) {
+	if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer)) {
 		/* starting the open circuit timer*/
 		start_timer(oc_timer, PEDAL_FAULT_TIME);
 
 		if (is_timer_expired(oc_timer)) {
-			if ((accel_1 == ACCEL1_MAX_VAL || accel_2 == ACCEL2_MAX_VAL)) {
+			if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b)) {
 				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
 				queue_fault(fault_data);
 			} else {
