@@ -86,7 +86,39 @@ static void debounce_cb(void* arg)
 	steeringio_t *wheel = args->wheel;
 
 	if (wheel->raw_buttons[button])
-		wheel->debounced_buttons[button] = NOT_PRESSED;
+		serial_print("%d index pressed \r\n",button);
+		switch (button) {
+			case STEERING_PADDLE_LEFT:
+				paddle_left_cb();
+				break;
+			case STEERING_PADDLE_RIGHT:
+				paddle_right_cb();
+				break;
+			case NERO_BUTTON_UP:
+				serial_print("Up button pressed \r\n");
+				decrement_nero_index();
+				break;
+			case NERO_BUTTON_DOWN:
+				serial_print("Down button pressed \r\n");
+				increment_nero_index();
+				break;
+			case NERO_BUTTON_LEFT:
+				// doesnt effect cerb for now
+				break;
+			case NERO_BUTTON_RIGHT:
+				// doesnt effect cerb for now
+				break;
+			case NERO_BUTTON_SELECT:
+				printf("Select button pressed \r\n");
+				select_nero_index();
+				break;
+			case NERO_HOME:
+				serial_print("Home button pressed \r\n");
+				set_home_mode();
+				break;
+			default:
+				break;
+		}
 }
 
 static void paddle_left_cb() {
@@ -121,45 +153,12 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		if (wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
-			wheel->debounced_buttons[i] = NOT_PRESSED;
-			serial_print("%d index pressed \r\n",i);
-			switch (i) {
-				case STEERING_PADDLE_LEFT:
-					paddle_left_cb();
-					break;
-				case STEERING_PADDLE_RIGHT:
-					paddle_right_cb();
-					break;
-				case NERO_BUTTON_UP:
-					serial_print("Up button pressed \r\n");
-					decrement_nero_index();
-					break;
-				case NERO_BUTTON_DOWN:
-					serial_print("Down button pressed \r\n");
-					increment_nero_index();
-					break;
-				case NERO_BUTTON_LEFT:
-					// doesnt effect cerb for now
-					break;
-				case NERO_BUTTON_RIGHT:
-					// doesnt effect cerb for now
-					break;
-				case NERO_BUTTON_SELECT:
-					printf("Select button pressed \r\n");
-					select_nero_index();
-					break;
-				case NERO_HOME:
-					serial_print("Home button pressed \r\n");
-					set_home_mode();
-					break;
-				default:
-					break;
-			}
-		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
+		if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
+			/* Start timer if a button has been pressed */
 			osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
-		} else {
-			wheel->debounced_buttons[i] = NOT_PRESSED;
+		} else if (!wheel->raw_buttons[i] && osTimerIsRunning(wheel->debounce_timers[i])) {
+			/* Button stopped being pressed. Kill timer. */
+			osTimerStop(wheel->debounce_timers[i]);
 		}
 	}
 	osMutexRelease(wheel->button_mutex);

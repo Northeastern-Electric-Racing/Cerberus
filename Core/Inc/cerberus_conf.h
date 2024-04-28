@@ -23,7 +23,10 @@
 /* Torque Tuning */
 #define MAX_TORQUE              200 /* Nm * 10 */
 
-#define STEERING_WHEEL_DEBOUNCE 25  /* ms */
+// DEBUGGING: Start with a high debounce period, lower it if it is too slow
+// NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
+// give enough time to differentiate signal from noise.
+#define STEERING_WHEEL_DEBOUNCE 100  /* ms */
 
 /* Pin Assignments */
 #define FAULT_MCU_Pin		GPIO_PIN_3
