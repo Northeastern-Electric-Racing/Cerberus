@@ -112,6 +112,9 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	// DEBUG To test RTDS
 	//sound_rtds(pdu);
 
+	// DEBUG brakelight
+	write_brakelight(pdu, true);
+
 	return pdu;
 }
 
