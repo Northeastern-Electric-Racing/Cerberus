@@ -16,7 +16,7 @@
 
 #define SHUTDOWN_ADDR  0x20
 #define CTRL_ADDR      0x24
-#define RTDS_DURATION	1000
+#define RTDS_DURATION	2500
 
 #define PIN_MODE_OUTPUT 0
 #define PIN_MODE_INPUT  1
@@ -108,6 +108,9 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
 
 	assert(!max7314_set_pin_state(pdu->ctrl_expander, RTDS_CTRL, false));
+
+	// DEBUG To test RTDS
+	//sound_rtds(pdu);
 
 	return pdu;
 }

@@ -131,7 +131,6 @@ void vCalcTorque(void* pv_params)
 				continue;
 			}
 
-
 			drive_state_t drive_state = AUTOCROSS;
 
 			float mph;

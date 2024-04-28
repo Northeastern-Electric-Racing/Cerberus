@@ -70,7 +70,7 @@ void dti_set_torque(int16_t torque)
 
 	if ((uint16_t)abs(ac_current) > 3000) ac_current = 3000;
 
-	serial_print("Commanded Current: %d \r\n", ac_current);
+	//serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
 }
