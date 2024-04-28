@@ -17,7 +17,7 @@ static osMutexAttr_t steeringio_data_mutex_attributes;
 static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
 osMessageQueueId_t steeringio_router_queue;
 
-static void debounce_cb(void* arg);
+// static void debounce_cb(void* arg);
 
 enum { NOT_PRESSED, PRESSED };
 
@@ -44,7 +44,8 @@ steeringio_t* steeringio_init()
 		debounce_cb_args_t *debounce_args = malloc(sizeof(debounce_cb_args_t));
 		debounce_args->wheel = steeringio;
 		debounce_args->button = i;
-		steeringio->debounce_timers[i] = osTimerNew(debounce_cb, osTimerOnce, debounce_args, NULL);
+		nertimer_t timer;
+		steeringio->debounce_timers[i] = &timer;
 		assert(steeringio->debounce_timers[i]);
 	}
 	steeringio->debounce_buffer = ringbuffer_create(MAX_STEERING_BUTTONS, sizeof(uint8_t));
@@ -72,22 +73,22 @@ bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button)
 }
 
 /* Callback to see if we have successfully debounced */
-static void debounce_cb(void* arg)
-{
-	debounce_cb_args_t* args = (debounce_cb_args_t*)arg;
-	if (!args)
-		return;
+// static void debounce_cb(void* arg)
+// {
+// 	debounce_cb_args_t* args = (debounce_cb_args_t*)arg;
+// 	if (!args)
+// 		return;
 
-	steeringio_button_t button = args->button;
+// 	steeringio_button_t button = args->button;
 
-	if (!button)
-		return;
+// 	if (!button)
+// 		return;
 
-	steeringio_t *wheel = args->wheel;
+// 	steeringio_t *wheel = args->wheel;
 
-	if (wheel->raw_buttons[button])
-		wheel->debounced_buttons[button] = NOT_PRESSED;
-}
+// 	if (wheel->raw_buttons[button])
+// 		wheel->debounced_buttons[button] = PRESSED;
+// }
 
 static void paddle_left_cb() {
 	if (get_drive_state() == ENDURANCE) {
@@ -121,8 +122,8 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		if (wheel->debounced_buttons[i] && wheel->raw_buttons[i]) {
-			wheel->debounced_buttons[i] = NOT_PRESSED;
+		if (is_timer_expired(wheel->debounce_timers[i]) && wheel->raw_buttons[i]) {
+			wheel->debounced_buttons[i] = PRESSED;
 			serial_print("%d index pressed \r\n",i);
 			switch (i) {
 				case STEERING_PADDLE_LEFT:
@@ -156,10 +157,15 @@ void steeringio_update(steeringio_t* wheel, uint8_t wheel_data[])
 				default:
 					break;
 			}
-		} else if (wheel->raw_buttons[i] && !osTimerIsRunning(wheel->debounce_timers[i])) {
-			osTimerStart(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
-		} else {
+		} else if (wheel->raw_buttons[i] && !is_timer_active(wheel->debounce_timers[i])) {
+			start_timer(wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
+		} else if (wheel->raw_buttons[i] && is_timer_active(wheel->debounce_timers[i])) {
+			continue;
+		} else if (!wheel->raw_buttons[i] && is_timer_active(wheel->debounce_timers[i])) {
 			wheel->debounced_buttons[i] = NOT_PRESSED;
+			cancel_timer(wheel->debounce_timers[i]);
+		}  else {
+			serial_print("Scott sucks balls at coding\r\n");
 		}
 	}
 	osMutexRelease(wheel->button_mutex);

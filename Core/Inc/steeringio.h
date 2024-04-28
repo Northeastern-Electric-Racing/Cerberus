@@ -5,6 +5,7 @@
 #include "ringbuffer.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "timer.h"
 
 #define STEERING_CANID_IO 0x680
 
@@ -29,7 +30,7 @@ typedef struct	{
 typedef struct {
 	osMutexId_t* button_mutex; /* Necessary to allow multiple threads to access same data */
 	osMutexId_t* ringbuffer_mutex;
-	osTimerId_t debounce_timers[MAX_STEERING_BUTTONS];
+	nertimer_t* debounce_timers[MAX_STEERING_BUTTONS];
 	ringbuffer_t* debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
