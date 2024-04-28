@@ -71,6 +71,18 @@ bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button)
 	return ret;
 }
 
+static void paddle_left_cb() {
+	if (get_drive_state() == ENDURANCE) {
+		increase_torque_limit();
+	}
+}
+
+static void paddle_right_cb() {
+	if (get_drive_state() == ENDURANCE) {
+		decrease_torque_limit();
+	}
+}
+
 /* Callback to see if we have successfully debounced */
 static void debounce_cb(void* arg)
 {
@@ -85,7 +97,7 @@ static void debounce_cb(void* arg)
 
 	steeringio_t *wheel = args->wheel;
 
-	if (wheel->raw_buttons[button])
+	if (wheel->raw_buttons[button]) {
 		serial_print("%d index pressed \r\n",button);
 		switch (button) {
 			case STEERING_PADDLE_LEFT:
@@ -119,17 +131,6 @@ static void debounce_cb(void* arg)
 			default:
 				break;
 		}
-}
-
-static void paddle_left_cb() {
-	if (get_drive_state() == ENDURANCE) {
-		increase_torque_limit();
-	}
-}
-
-static void paddle_right_cb() {
-	if (get_drive_state() == ENDURANCE) {
-		decrease_torque_limit();
 	}
 }
 
