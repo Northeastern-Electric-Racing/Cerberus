@@ -262,7 +262,7 @@ const osThreadAttr_t fusing_monitor_attributes = {
 void vFusingMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
-	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 8, .data = { 0 } };
+	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool fuses[MAX_FUSES]	= { 0 };
 	uint16_t fuse_buf;
@@ -303,7 +303,7 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 void vShutdownMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT, .severity = DEFCON5 };
-	can_msg_t shutdown_msg	= { .id = CANID_SHUTDOWN_LOOP, .len = 8, .data = { 0 } };
+	can_msg_t shutdown_msg	= { .id = CANID_SHUTDOWN_LOOP, .len = 2, .data = { 0 } };
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;

@@ -310,7 +310,7 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 		case BMS_OK:
 			pin = 2;
 			break;
-		case INTERTIA_SW_OK:
+		case INERTIA_SW_OK:
 			pin = 3;
 			break;
 		case SPARE_GPIO1_OK:
@@ -319,7 +319,7 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 		case IMD_OK:
 			pin = 5;
 			break;
-		case BPSD_OK:
+		case BSPD_OK:
 			pin = 8;
 			break;
 		case BOTS_OK:
