@@ -108,20 +108,6 @@ void set_home_mode() {
 	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
 	nero_state.home_mode = true;
 
-	// TEMPORARY
-	if (get_tsms() && (get_func_state() == READY)) {
-		state_request.id = FUNCTIONAL;
-		state_request.state.functional = ACTIVE;
-		queue_state_transition(state_request);
-		return;
-	}
-	else if (get_tsms() && (get_func_state() == ACTIVE)) {
-		state_request.id = FUNCTIONAL;
-		state_request.state.functional = READY;
-		queue_state_transition(state_request);
-		return;
-	}
-
 	queue_state_transition(state_request);
 }
 
