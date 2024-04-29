@@ -178,6 +178,7 @@ int main(void)
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, GPIOC, GPIOB);
   pdu_t *pdu  = init_pdu(&hi2c2);
+  assert(pdu);
   dti_t *mc   = dti_init();
   steeringio_t *wheel = steeringio_init();
   init_can1(&hcan1);

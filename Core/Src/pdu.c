@@ -60,7 +60,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	uint8_t config_data = 0b01001100;
     HAL_StatusTypeDef status = max7314_write_config(pdu->shutdown_expander, &config_data);
     if (status != HAL_OK) {
-        serial_print("\n\rshutdown init fail\n\r");
+        printf("\n\rshutdown init fail\n\r");
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
@@ -75,7 +75,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	/* Same as shutdown */
 	status = max7314_write_config(pdu->ctrl_expander, &config_data);
     if (status != HAL_OK) {
-        serial_print("\n\rcntrl init fail\n\r");
+        printf("\n\rcntrl init fail\n\r");
 	    free(pdu->shutdown_expander);
 	    free(pdu);
 	    return NULL;
@@ -84,7 +84,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	/* Set global intensity */
 	status = max7314_set_global_intensity(pdu->ctrl_expander, 0);
     if (status != HAL_OK) {
-        serial_print("\n\rSet global intensity fail\n\r");
+        printf("\n\rSet global intensity fail\n\r");
 		free(pdu->ctrl_expander);
 	    free(pdu->shutdown_expander);
 	    free(pdu);
@@ -94,7 +94,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
     // set pins 15, 3, 2, 1, 0 to outputs
 	uint8_t pin_config[2] = {0b11110000, 0b01111111};
     if (max7314_set_pin_modes(pdu->ctrl_expander, pin_config)) {
-		serial_print("\n\rset pin modes fail\n\r");
+		printf("\n\rset pin modes fail\n\r");
         free(pdu->ctrl_expander);
         free(pdu->shutdown_expander);
         free(pdu);

@@ -18,12 +18,13 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	  4096
 // DEBUG: threshold may need adjusting
 #define PEDAL_DIFF_THRESH 30
-#define PEDAL_FAULT_TIME  1000 /* ms */
+#define PEDAL_FAULT_TIME  500 /* ms */
 
 static bool tsms = false;
 
@@ -77,29 +78,29 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
 {
-	/* Fault - open circuit */
-	if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && is_timer_active(oc_timer)) {
+	/* Fault - open circuit (Max ADC value + some a lil bit) */
+	if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20)) && is_timer_active(oc_timer)) {
 		if (is_timer_expired(oc_timer)) {
 			if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b)) {
 				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
 				queue_fault(fault_data);
 			}
 		}
-	} else if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b) && !is_timer_active(oc_timer))  {
+	} else if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20)) && !is_timer_active(oc_timer))  {
 		start_timer(oc_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(oc_timer);
 	}
 
 	/* Fault - short circuit */
-	if ((accel_1 == 0 || accel_2 == 0) && is_timer_active(sc_timer)) {
+	if ((accel_1 < 500 || accel_2 < 500) && is_timer_active(sc_timer)) {
 		if (is_timer_expired(sc_timer)) {
-			if ((accel_1 == 0 || accel_2 == 0 )) {
+			if ((accel_1 < 500 || accel_2 < 500 )) {
 				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
 			}
 		}
-	} else if ((accel_1 == 0 || accel_2 == 0) && !is_timer_active(sc_timer)) {
+	} else if ((accel_1 < 500 || accel_2 < 500) && !is_timer_active(sc_timer)) {
 		start_timer(sc_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(sc_timer);
@@ -109,19 +110,16 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
 	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
-	//DEBUG: threshold may cause fault
-
 	/* Fault - difference between pedal sensing values */
-	if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
+	if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
 		/* starting diff timer */
-		start_timer(diff_timer, PEDAL_FAULT_TIME);
 		if (is_timer_expired(diff_timer)) {
-			if (accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) {
+			if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH)) {
 				fault_data->diag = "Pedal fault - pedal values are too different ";
 				queue_fault(fault_data);
 			}
 		}
-	} else if ((accel_1_norm - accel_2_norm > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
+	} else if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
 		start_timer(diff_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(diff_timer);
@@ -137,9 +135,13 @@ void vPedalsMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 	uint32_t adc_data[4];
 
-	nertimer_t diff_timer_accelerator;	
+	nertimer_t diff_timer_accelerator;
 	nertimer_t sc_timer_accelerator;
 	nertimer_t oc_timer_accelerator;
+
+	cancel_timer(&diff_timer_accelerator);
+	cancel_timer(&sc_timer_accelerator);
+	cancel_timer(&oc_timer_accelerator);
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
@@ -153,17 +155,18 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		// printf("Accel 1: %d\r\n", accel_val1);
+		//printf("Accel 1: %d\r\n", accel_val1);
+		printf("RAW 1: %ld\r\n",adc_data[ACCELPIN_1]);
 		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		// printf("RAW 2: %ld\r\n",adc_data[ACCELPIN_2]);
+		printf("RAW 2: %ld\r\n",adc_data[ACCELPIN_2]);
 		// printf("Accel 2: %d\r\n",accel_val2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Brakelight Control */
-		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
-		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+		printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 		bool brakelight_state = adc_data[BRAKEPIN_1] > 450;
 		osMessageQueuePut(brakelight_signal, &brakelight_state, 0U, 0U);
 
