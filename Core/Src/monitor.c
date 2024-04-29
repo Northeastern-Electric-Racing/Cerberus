@@ -281,7 +281,7 @@ void vFusingMonitor(void* pv_params)
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 		
 		/* convert to big endian */
-		endian_swap(&fuse_buf, sizeof(fuse_buf));
+		// endian_swap(&fuse_buf, sizeof(fuse_buf));
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
@@ -326,7 +326,7 @@ void vShutdownMonitor(void* pv_params)
 		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
 		/* convert to big endian */
-		endian_swap(&shutdown_buf, sizeof(shutdown_buf));
+		// endian_swap(&shutdown_buf, sizeof(shutdown_buf));
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
