@@ -144,6 +144,8 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  HAL_Delay(500);
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -698,7 +700,7 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   int i = 0;
-  
+
   /* Infinite loop */
   for(;;) {
 

@@ -124,14 +124,14 @@ void vCalcTorque(void* pv_params)
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{
-			func_state_t func_state = ACTIVE;
+			func_state_t func_state = get_func_state();
 			if (func_state != ACTIVE)
 			{
 				torque = 0;
 				continue;
 			}
 
-			drive_state_t drive_state = AUTOCROSS;
+			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
 
 			float mph;
 			rpm_to_mph(dti_get_rpm(mc), &mph);

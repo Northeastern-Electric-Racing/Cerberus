@@ -82,7 +82,7 @@ void select_nero_index() {
 
 	uint8_t max_drive_states = MAX_DRIVE_STATES;
 
-	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states) {
+	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms()) {
 		state_request.id = FUNCTIONAL;
 		state_request.state.functional = ACTIVE;
 		queue_state_transition(state_request);
@@ -103,6 +103,20 @@ void select_nero_index() {
 void set_home_mode() {
 	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
 	nero_state.home_mode = true;
+
+	// TEMPORARY
+	if (get_tsms() && (get_func_state() == READY)) {
+		state_request.id = FUNCTIONAL;
+		state_request.state.functional = ACTIVE;
+		queue_state_transition(state_request);
+		return;
+	}
+	else if (get_tsms() && (get_func_state() == ACTIVE)) {
+		state_request.id = FUNCTIONAL;
+		state_request.state.functional = READY;
+		queue_state_transition(state_request);
+		return;
+	}
 
 	queue_state_transition(state_request);
 }

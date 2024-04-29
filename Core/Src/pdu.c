@@ -113,7 +113,10 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	//sound_rtds(pdu);
 
 	// DEBUG brakelight
-	write_brakelight(pdu, true);
+	//write_brakelight(pdu, true);
+
+	// DEBUG pump
+	//write_pump(pdu, false);
 
 	return pdu;
 }
@@ -200,7 +203,7 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
 	return 0;
 }
 
-int8_t sound_rtds(pdu_t* pdu) 
+int8_t sound_rtds(pdu_t* pdu)
 {
     if (!pdu)
 		return -1;
@@ -208,8 +211,7 @@ int8_t sound_rtds(pdu_t* pdu)
 	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
 	if (stat)
 		return stat;
-	
-	
+
 	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
 
 	/* write RTDS over i2c */

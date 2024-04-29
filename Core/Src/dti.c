@@ -81,9 +81,15 @@ void dti_set_current(int16_t current)
 	dti_set_drive_enable(true);
 	/* Send CAN message in big endian format */
 
-	endian_swap(&current, sizeof(current));
-	memcpy(msg.data, &current, msg.len);
-	// serial_print("MSB: %d, LSB: %d\r\n", msb, lsb);
+	//endian_swap(&current, sizeof(current));
+	//memcpy(msg.data, &current, msg.len);
+	serial_print("current: %d\r\n", current);
+
+	int8_t msb = (int8_t)((current >> 8) & 0xFF);
+	int8_t lsb = (uint8_t)(current & 0xFF);
+
+	msg.data[0] = msb;
+	msg.data[1] = lsb;
 
 	queue_can_msg(msg);
 }

@@ -21,7 +21,7 @@
 #define ACCEL2_MAX_VAL          3300
 
 /* Torque Tuning */
-#define MAX_TORQUE              200 /* Nm * 10 */
+#define MAX_TORQUE              100 /* Nm * 10 */
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
 // NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't

@@ -335,7 +335,7 @@ void vShutdownMonitor(void* pv_params)
 		}
 
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if(read_tsms_sense(pdu, &tsms_status)) {
+		if(!read_tsms_sense(pdu, &tsms_status)) {
 			printf("TSMS: %d", tsms_status);
 			tsms = tsms_status;
 		}
@@ -370,7 +370,9 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
-		// serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+		//serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+
+		//  1, 2, 0 ,0 , 0, 0
 
 		// serial_print("\r\n");
 
