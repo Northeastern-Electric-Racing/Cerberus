@@ -336,8 +336,10 @@ void vShutdownMonitor(void* pv_params)
 
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
 		if(!read_tsms_sense(pdu, &tsms_status)) {
-			printf("TSMS: %d", tsms_status);
 			tsms = tsms_status;
+			if (get_func_state() == ACTIVE && tsms == 0) {
+				set_home_mode();
+			}
 		}
 
 		// serial_print("TSMS: %d\r\n", tsms_status);
