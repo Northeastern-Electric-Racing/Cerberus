@@ -97,7 +97,6 @@ int queue_state_transition(state_req_t new_state)
 				write_fan_battbox(pdu, true);
 				write_pump(pdu, false);
 				write_fault(pdu, false);
-				assert(0); /* Literally just hang */
 				break;
 			default:
 				// Do Nothing
@@ -192,7 +191,7 @@ void vStateMachineDirector(void* pv_params)
 					write_fan_battbox(pdu, false);
 					write_pump(pdu, false);
 					write_fault(pdu, false);
-					assert(0); /* Literally just hang */
+					
 					break;
 				default:
 					// Do Nothing
