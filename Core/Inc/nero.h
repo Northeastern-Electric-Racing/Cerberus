@@ -43,6 +43,11 @@ void set_home_mode();
 void select_nero_index();
 
 /*
+ * Tells NERO the current MPH
+*/
+void set_mph(int8_t new_mph);
+
+/*
 * Emits the state of NERO
 */
 void vNeroMonitor(void* pv_params);

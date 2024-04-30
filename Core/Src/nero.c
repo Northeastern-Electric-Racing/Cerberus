@@ -8,12 +8,12 @@
 #include "stdio.h"
 #include "cerberus_conf.h"
 #include "monitor.h"
-static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
-static void send_mode_status() {
-	can_msg_t msg = { .id = 0x501, .len = 2, .data = { nero_state.home_mode, nero_state.nero_index} };
 
-	/* convert to big endian */
-	endian_swap(&msg.data, sizeof(msg.data));
+static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
+static int8_t mph = 0;
+
+static void send_mode_status() {
+	can_msg_t msg = { .id = 0x501, .len = 4, .data = { nero_state.home_mode, nero_state.nero_index, mph, get_tsms() } };
 
 	/* Send CAN message */
 	queue_can_msg(msg);
@@ -45,6 +45,10 @@ void increment_nero_index() {
 	} else {
 		// Do Nothing because theres no additional states or we dont care about the additional states;
 	}
+}
+
+void set_mph(int8_t new_mph) {
+	mph = new_mph;
 }
 
 void decrement_nero_index() {
@@ -103,20 +107,6 @@ void select_nero_index() {
 void set_home_mode() {
 	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
 	nero_state.home_mode = true;
-
-	// TEMPORARY
-	if (get_tsms() && (get_func_state() == READY)) {
-		state_request.id = FUNCTIONAL;
-		state_request.state.functional = ACTIVE;
-		queue_state_transition(state_request);
-		return;
-	}
-	else if (get_tsms() && (get_func_state() == ACTIVE)) {
-		state_request.id = FUNCTIONAL;
-		state_request.state.functional = READY;
-		queue_state_transition(state_request);
-		return;
-	}
 
 	queue_state_transition(state_request);
 }
