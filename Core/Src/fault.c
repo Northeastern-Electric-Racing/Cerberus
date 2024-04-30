@@ -29,26 +29,22 @@ int queue_fault(fault_data_t* fault_data)
 }
 
 void can_send_fault_msg(fault_data_t* fault_data) {
-	uint32_t fault_id = (uint32_t) fault_data->id;
-	endian_swap(&fault_id, 4);
-	uint8_t defcon = (uint8_t) fault_data->severity;
+
+	struct __attribute__((packed)) {
+		uint32_t fault_id; // The packed attribute does not correctly arrange the bytes
+		uint8_t defcon;
+	} msg_data;
+
+	msg_data.fault_id = (uint32_t) fault_data->id;
+	endian_swap(&msg_data.fault_id, 4);
+	msg_data.defcon = (uint8_t) fault_data->severity;
 
 	can_msg_t msg;
 	msg.id = CANID_FAULT_MSG;
-	msg.len = 8;
-	uint8_t msg_data[8];
-	memcpy(msg_data, &fault_id, 4);
-	memcpy(msg_data + 4, &defcon, 1);
-	memcpy(msg.data, msg_data, msg.len);
+	msg.len = 5;
+	memcpy(msg.data, &msg_data, msg.len);
 	queue_can_msg(msg);
-}
-
-void fault_cb() {
-	const state_req_t ready_request = {.id = FUNCTIONAL, .state.functional = READY};
-	queue_state_transition(ready_request);
-}
-
-
+}	
 
 void vFaultHandler(void* pv_params)
 {
@@ -56,9 +52,7 @@ void vFaultHandler(void* pv_params)
 	osStatus_t status;
 	const state_req_t fault_request = {.id = FUNCTIONAL, .state.functional = FAULTED};
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
-
-	osTimerId_t fault_timer = osTimerNew(fault_cb, osTimerOnce, NULL, NULL);
-
+	
 	for (;;) {
 		/* Wait until a message is in the queue, send messages when they are in the queue */
 		status = osMessageQueueGet(fault_handle_queue, &fault_data, NULL, osWaitForever);
@@ -66,7 +60,6 @@ void vFaultHandler(void* pv_params)
 
 			can_send_fault_msg(&fault_data);
 			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n", fault_data.diag);
-			osTimerStart(fault_timer, 5000);
 			switch (fault_data.severity)
 			{
 			case DEFCON1: /* Highest(1st) Priority */

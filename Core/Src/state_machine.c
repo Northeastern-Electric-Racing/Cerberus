@@ -118,6 +118,11 @@ drive_state_t get_drive_state()
 	return cerberus_state.drive;
 }
 
+void fault_cb() {
+	const state_req_t ready_request = {.id = FUNCTIONAL, .state.functional = READY};
+	queue_state_transition(ready_request);
+}
+
 void vStateMachineDirector(void* pv_params)
 {
 	cerberus_state.functional = BOOT;
@@ -136,6 +141,8 @@ void vStateMachineDirector(void* pv_params)
   	request.id = FUNCTIONAL;
   	request.state.functional = READY;
   	queue_state_transition(request);
+
+	osTimerId_t fault_timer = osTimerNew(fault_cb, osTimerOnce, NULL, NULL);
 
 	for (;;)
 	{
@@ -191,7 +198,7 @@ void vStateMachineDirector(void* pv_params)
 					write_fan_battbox(pdu, false);
 					write_pump(pdu, false);
 					write_fault(pdu, false);
-					
+					osTimerStart(fault_timer, 5000);
 					break;
 				default:
 					// Do Nothing
