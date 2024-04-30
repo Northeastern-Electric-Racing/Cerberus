@@ -84,7 +84,7 @@ void select_nero_index() {
 		return;
 	}
 
-	uint8_t max_drive_states = MAX_DRIVE_STATES;
+	uint8_t max_drive_states = MAX_DRIVE_STATES - 1; // Account for reverse and pit being the same screen
 
 	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms()) {
 		state_request.id = FUNCTIONAL;
