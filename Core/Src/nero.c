@@ -106,9 +106,10 @@ void select_nero_index() {
 
 void set_home_mode() {
 	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
-	nero_state.home_mode = true;
-
-	queue_state_transition(state_request);
+	if (!get_tsms()) {
+		nero_state.home_mode = true;
+		queue_state_transition(state_request);
+	}
 }
 
 osThreadId_t nero_monitor_handle;

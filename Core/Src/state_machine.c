@@ -82,7 +82,7 @@ int queue_state_transition(state_req_t new_state)
 				/* Turn off high power peripherals */
 				serial_print("going to ready");
 				write_fan_battbox(pdu, false);
-				write_pump(pdu, true);
+				write_pump(pdu, false);
 				write_fault(pdu, true);
 				break;
 			case ACTIVE:
