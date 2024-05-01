@@ -134,6 +134,7 @@ void vPedalsMonitor(void* pv_params)
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
 	uint32_t adc_data[4];
+	bool is_braking = false;
 
 	nertimer_t diff_timer_accelerator;
 	nertimer_t sc_timer_accelerator;
@@ -155,20 +156,26 @@ void vPedalsMonitor(void* pv_params)
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		//printf("Accel 1: %d\r\n", accel_val1);
-		printf("RAW 1: %ld\r\n",adc_data[ACCELPIN_1]);
+		//printf("Accel 1: %d\r\n", max_pedal1);
 		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		printf("RAW 2: %ld\r\n",adc_data[ACCELPIN_2]);
-		// printf("Accel 2: %d\r\n",accel_val2);
+		//printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
-		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
+		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Brakelight Control */
-		printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
-		printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
-		bool brakelight_state = adc_data[BRAKEPIN_1] > 450;
-		osMessageQueuePut(brakelight_signal, &brakelight_state, 0U, 0U);
+		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+
+		/* Rising edge */
+		if (!is_braking)
+			is_braking = adc_data[BRAKEPIN_1] > 650;
+
+		/* Falling edge */
+		else
+			is_braking = adc_data[BRAKEPIN_1] < 850;
+
+		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
