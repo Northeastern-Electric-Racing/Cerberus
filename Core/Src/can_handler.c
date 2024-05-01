@@ -75,6 +75,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	switch (new_msg.id) {
 	/* Messages Relevant to Motor Controller */
 	case DTI_CANID_ERPM:
+		queue_dti_message(new_msg);
 	case DTI_CANID_CURRENTS:
 	case DTI_CANID_TEMPS_FAULT:
 	case DTI_CANID_ID_IQ:

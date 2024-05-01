@@ -47,10 +47,12 @@ typedef struct
 uint32_t dti_get_rpm(dti_t* dti);
 
 /* Utilities for Decoding CAN message */
-// extern osThreadId_t dti_router_handle;
-// extern const osThreadAttr_t dti_router_attributes;
-// extern osMessageQueueId_t dti_router_queue;
-// void vDTIRouter(void* pv_params);
+extern osThreadId_t dti_router_handle;
+extern const osThreadAttr_t dti_router_attributes;
+extern osMessageQueueId_t dti_router_queue;
+void vDTIRouter(void* pv_params);
+
+void queue_dti_message(can_msg_t msg);
 
 dti_t* dti_init();
 

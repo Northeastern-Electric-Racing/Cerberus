@@ -24,7 +24,7 @@
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES 20
 static osMutexAttr_t dti_mutex_attributes;
-// osMessageQueueId_t dti_router_queue;
+osMessageQueueId_t dti_router_queue;
 
 dti_t* dti_init()
 {
@@ -234,55 +234,59 @@ uint32_t dti_get_rpm(dti_t* mc)
 }
 
 /* Inbound Task-specific Info */
-// osThreadId_t dti_router_handle;
-// const osThreadAttr_t dti_router_attributes
-// 	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
+osThreadId_t dti_router_handle;
+const osThreadAttr_t dti_router_attributes
+	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
 
-// static void dti_set_rpm(dti_t *mc, can_msg_t msg)
-// {
-// 	/* ERPM is first four bytes of can message in big endian format */
-// 	uint32_t erpm = 0;
-// 	for (int i = 0; i < 4; i++) {
-// 		erpm |= msg.data[i] << (8 * (3 - i));
-// 	}
+void queue_dti_message(can_msg_t message) {
+	osMessageQueuePut(dti_router_queue, &message, 0U, 0U);
+}
 
-// 	uint32_t rpm = erpm / POLE_PAIRS;
+static void dti_set_rpm(dti_t *mc, can_msg_t msg)
+{
+	/* ERPM is first four bytes of can message in big endian format */
+	uint32_t erpm = 0;
+	for (int i = 0; i < 4; i++) {
+		erpm |= msg.data[i] << (8 * (3 - i));
+	}
 
-// 	osMutexAcquire(*mc->mutex, osWaitForever);
-// 	mc->rpm = rpm;
-// 	osMutexRelease(*mc->mutex);
-// }
+	uint32_t rpm = erpm / POLE_PAIRS;
 
-// void vDTIRouter(void* pv_params)
-// {
-// 	can_msg_t message;
-// 	osStatus_t status;
-// 	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->rpm = rpm;
+	osMutexRelease(*mc->mutex);
+}
 
-// 	dti_t *mc = (dti_t *)pv_params;
+void vDTIRouter(void* pv_params)
+{
+	can_msg_t message;
+	osStatus_t status;
+	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
 
-// 	for (;;) {
-// 		/* Wait until new CAN message comes into queue */
-// 		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
-// 		if (status == osOK) 
-// 		{
-// 			switch (message.id) 
-// 			{
-// 				case DTI_CANID_ERPM:
-// 					dti_set_rpm(mc, message);
-// 					break;
-// 				case DTI_CANID_CURRENTS:
-// 					break;
-// 				case DTI_CANID_TEMPS_FAULT:
-// 					break;
-// 				case DTI_CANID_ID_IQ:
-// 					break;
-// 				case DTI_CANID_SIGNALS:
-// 					break;
-// 				default:
-// 					break;
-// 			}
-// 		}
-// 	}
-// }
+	dti_t *mc = (dti_t *)pv_params;
+
+	for (;;) {
+		/* Wait until new CAN message comes into queue */
+		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
+		if (status == osOK) 
+		{
+			switch (message.id) 
+			{
+				case DTI_CANID_ERPM:
+					dti_set_rpm(mc, message);
+					break;
+				case DTI_CANID_CURRENTS:
+					break;
+				case DTI_CANID_TEMPS_FAULT:
+					break;
+				case DTI_CANID_ID_IQ:
+					break;
+				case DTI_CANID_SIGNALS:
+					break;
+				default:
+					break;
+			}
+		}
+	}
+}
 
