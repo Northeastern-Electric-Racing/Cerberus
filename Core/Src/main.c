@@ -134,7 +134,7 @@ int _write(int file, char* ptr, int len) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+  printf("BOOT\r\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -184,7 +184,7 @@ int main(void)
   init_can1(&hcan1);
   bms_init();
 
-  printf("\r\n\n\n...BOOTING...\r\n\n\n");
+  printf("\r\n\n\nInit Success...\r\n\n\n");
 
   /* USER CODE END RTOS_MUTEX */
 

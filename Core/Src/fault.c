@@ -15,7 +15,7 @@ osMessageQueueId_t fault_handle_queue;
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name		= "FaultHandler",
-	.stack_size = 32 * 8,
+	.stack_size = 52 * 8,
 	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
@@ -56,13 +56,13 @@ void vFaultHandler(void* pv_params)
 			switch (fault_data.severity)
 			{
 			case DEFCON1: /* Highest(1st) Priority */
-				assert(osOK == queue_state_transition(fault_request));
+				queue_state_transition(fault_request);
 				break;
 			case DEFCON2:
-				assert(osOK == queue_state_transition(fault_request));
+				queue_state_transition(fault_request);
 				break;
 			case DEFCON3:
-				assert(osOK == queue_state_transition(fault_request));
+				queue_state_transition(fault_request);
 				break;
 			case DEFCON4:
 				break;

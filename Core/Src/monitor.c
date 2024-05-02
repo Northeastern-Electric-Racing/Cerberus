@@ -167,13 +167,7 @@ void vPedalsMonitor(void* pv_params)
 		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		/* Rising edge */
-		if (!is_braking)
-			is_braking = adc_data[BRAKEPIN_1] > 650;
-
-		/* Falling edge */
-		else
-			is_braking = adc_data[BRAKEPIN_1] < 850;
+		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > 650;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
 

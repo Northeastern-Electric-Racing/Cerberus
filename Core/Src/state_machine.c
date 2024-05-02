@@ -19,13 +19,17 @@ static state_t cerberus_state;
 
 static pdu_t *pdu;
 
+extern IWDG_HandleTypeDef hiwdg;
+
+osTimerId fault_timer;
+
 /* State Transition Map */
 static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	/*BOOT  READY DRIVING FAULTED*/
 	{ true, true, false, true },  /* BOOT */
 	{ false, true, true, true },  /* READY */
 	{ false, true, true, true },  /* DRIVING */
-	{ false, true, false, false } /* FAULTED */
+	{ false, true, false, true } /* FAULTED */
 };
 
 osThreadId_t sm_director_handle;
@@ -37,6 +41,12 @@ const osThreadAttr_t sm_director_attributes =
 };
 
 static osMessageQueueId_t state_trans_queue;
+
+void fault_callback()
+{
+	state_req_t req = {.id = FUNCTIONAL, .state.functional = READY};
+	queue_state_transition(req);
+}
 
 int queue_state_transition(state_req_t new_state)
 {
@@ -97,7 +107,8 @@ int queue_state_transition(state_req_t new_state)
 				write_fan_battbox(pdu, true);
 				write_pump(pdu, false);
 				write_fault(pdu, false);
-				assert(0); /* Literally just hang */
+				osTimerStart(fault_timer, 5000);
+				HAL_IWDG_Refresh(&hiwdg);
 				break;
 			default:
 				// Do Nothing
@@ -137,6 +148,8 @@ void vStateMachineDirector(void* pv_params)
   	request.id = FUNCTIONAL;
   	request.state.functional = READY;
   	queue_state_transition(request);
+
+	fault_timer = osTimerNew(&fault_callback, osTimerOnce, NULL, NULL);
 
 	for (;;)
 	{
@@ -192,7 +205,8 @@ void vStateMachineDirector(void* pv_params)
 					write_fan_battbox(pdu, false);
 					write_pump(pdu, false);
 					write_fault(pdu, false);
-					assert(0); /* Literally just hang */
+					HAL_IWDG_Refresh(&hiwdg);
+					while(1) {printf("Delaying...\r\n");}
 					break;
 				default:
 					// Do Nothing
