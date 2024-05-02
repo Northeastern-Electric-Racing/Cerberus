@@ -329,7 +329,7 @@ void vShutdownMonitor(void* pv_params)
 		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
 		/* convert to big endian */
-		// endian_swap(&shutdown_buf, sizeof(shutdown_buf));
+		endian_swap(&shutdown_buf, sizeof(shutdown_buf));
 
 		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {

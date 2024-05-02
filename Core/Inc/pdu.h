@@ -55,8 +55,6 @@ typedef enum {
 	BOTS_OK,		/* Brake Over Travel Switch */
 	HVD_INTLK_OK,	/* HVD Interlock */
 	HVC_INTLK_OK,	/* HV C Interlock*/
-    //SIDE_BRB_CLR,	/* Side BRB */
-    //TSMS,			/* Tractive System Main Switch */
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
