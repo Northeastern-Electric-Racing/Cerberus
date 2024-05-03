@@ -10,9 +10,9 @@
 
 typedef struct {
 	I2C_HandleTypeDef* hi2c;
-	ADC_HandleTypeDef* accel_adc1;
-	ADC_HandleTypeDef* accel_adc2;
-	ADC_HandleTypeDef* brake_adc;
+	ADC_HandleTypeDef* pedals_adc;
+	uint32_t pedal_dma_buf[4];
+
 	GPIO_TypeDef* led_gpio;
 	GPIO_TypeDef* watchdog_gpio;
 	sht30_t* temp_sensor;
@@ -22,8 +22,14 @@ typedef struct {
 	/* Not including LED Mutexes because not necessary */
 } mpu_t;
 
-mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* accel_adc1,
-				ADC_HandleTypeDef* accel_adc2, ADC_HandleTypeDef* brake_adc, GPIO_TypeDef* led_gpio,
+typedef struct
+{
+	int8_t channel_0;
+	int8_t channel_1;
+} brake_adc_channels_t;
+
+
+mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc, GPIO_TypeDef* led_gpio,
 				GPIO_TypeDef* watchdog_gpio);
 
 int8_t write_rled(mpu_t* mpu, bool status);
@@ -36,8 +42,7 @@ int8_t toggle_yled(mpu_t* mpu);
 
 int8_t pet_watchdog(mpu_t* mpu);
 
-/* Note: this should be called from within a thread since it yields to scheduler */
-int8_t read_adc(mpu_t* mpu, uint16_t raw[3]);
+void read_pedals(mpu_t* mpu, uint32_t pedal_buf[4]);
 
 int8_t read_temp_sensor(mpu_t* mpu, uint16_t* temp, uint16_t* humidity);
 

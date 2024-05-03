@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "sht30.h"
 #include "lsm6dso.h"
 #include "monitor.h"
@@ -35,6 +36,7 @@
 #include "bms.h"
 #include "torque.h"
 #include "pdu.h"
+#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
@@ -57,15 +59,15 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
+DMA_HandleTypeDef hdma_adc3;
 
 CAN_HandleTypeDef hcan1;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
-SPI_HandleTypeDef hspi1;
+IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
 
@@ -77,25 +79,25 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osMessageQueueId_t onboard_temp_queue;
+osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
+static void MX_IWDG_Init(void);
 void StartDefaultTask(void *argument);
 
-static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -132,7 +134,7 @@ int _write(int file, char* ptr, int len) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  printf("BOOT\r\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -141,6 +143,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
+  HAL_Delay(500);
 
   /* USER CODE END Init */
 
@@ -153,18 +157,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN1_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  MX_SPI1_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
-  MX_ADC2_Init();
   MX_ADC3_Init();
-
-  /* Initialize interrupts */
-  MX_NVIC_Init();
-
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -176,12 +176,15 @@ int main(void)
   /* I'm kinda defining mutexes here lol */
 
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc1, &hadc2, &hadc3, GPIOC, GPIOB);
-  // pdu_t *pdu  = init_pdu(&hi2c2);
+  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, GPIOC, GPIOB);
+  pdu_t *pdu  = init_pdu(&hi2c2);
+  assert(pdu);
   dti_t *mc   = dti_init();
-  //steeringio_t *wheel = steeringio_init();
-  can_t *can1 = init_can1(&hcan1);
-  bms_t *bms = bms_init();
+  steeringio_t *wheel = steeringio_init();
+  init_can1(&hcan1);
+  bms_init();
+
+  printf("\r\n\n\nInit Success...\r\n\n\n");
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -194,7 +197,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  onboard_temp_queue = osMessageQueueNew(ONBOARD_TEMP_QUEUE_SIZE, sizeof(onboard_temp_t), NULL);
+  brakelight_signal = osMessageQueueNew(15, sizeof(bool), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
   /* USER CODE END RTOS_QUEUES */
@@ -206,26 +209,39 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
-  watchdog_monitor_handle = osThreadNew(vWatchdogMonitor, GPIOB, &watchdog_monitor_attributes);
-  // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  //assert(temp_monitor_handle);
+  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  //assert(imu_monitor_handle);
+  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  // fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
-  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  assert(pedals_monitor_handle);
+  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  assert(fusing_monitor_handle);
+  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  assert(shutdown_monitor_handle);
 
   /* Messaging */
-  /* Note that CAN Router initializes CAN */
-  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  // steeringio_router_handle = osThreadNew(vSteeringIORouter, wheel, &steeringio_router_attributes);
-  can_dispatch_handle = osThreadNew(vCanDispatch, can1, &can_dispatch_attributes);
-  bms_monitor_handle = osThreadNew(vBMSCANMonitor, bms, &bms_monitor_attributes);
+  //dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+  //assert(dti_router_handle);
+  can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
+  assert(can_dispatch_handle);
+  bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
+  assert(bms_monitor_handle);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
+  assert(serial_monitor_handle);
+  nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
+  assert(nero_monitor_handle);
 
   /* Control Logic */
-
-  /* Control Logic */
-  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
+  assert(torque_calc_handle);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  assert(fault_handle);
+  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
+  assert(sm_director_handle);
+  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);;
+  assert(brakelight_monitor_handle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -235,12 +251,13 @@ int main(void)
   /* Start scheduler */
   osKernelStart();
 
-
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    // write_pump(pdu, false);
+    // sound_rtds(pdu);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -265,9 +282,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -287,17 +305,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief NVIC Configuration.
-  * @retval None
-  */
-static void MX_NVIC_Init(void)
-{
-  /* CAN1_RX0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 10, 0);
-  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
 }
 
 /**
@@ -321,10 +328,10 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -339,9 +346,9 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_15;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -349,58 +356,6 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
-
-}
-
-/**
-  * @brief ADC2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC2_Init(void)
-{
-
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
-
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
-  hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc2.Init.ScanConvMode = DISABLE;
-  hadc2.Init.ContinuousConvMode = ENABLE;
-  hadc2.Init.DiscontinuousConvMode = DISABLE;
-  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2.Init.NbrOfConversion = 1;
-  hadc2.Init.DMAContinuousRequests = DISABLE;
-  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  if (HAL_ADC_Init(&hadc2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
 
 }
 
@@ -425,7 +380,7 @@ static void MX_ADC3_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
   hadc3.Init.ScanConvMode = ENABLE;
   hadc3.Init.ContinuousConvMode = ENABLE;
@@ -433,8 +388,8 @@ static void MX_ADC3_Init(void)
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.NbrOfConversion = 2;
-  hadc3.Init.DMAContinuousRequests = DISABLE;
+  hadc3.Init.NbrOfConversion = 4;
+  hadc3.Init.DMAContinuousRequests = ENABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
   {
@@ -455,6 +410,24 @@ static void MX_ADC3_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = 2;
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Rank = 3;
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 4;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -484,14 +457,14 @@ static void MX_CAN1_Init(void)
   hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = DISABLE;
-  hcan1.Init.AutoWakeUp = ENABLE;
+  hcan1.Init.AutoBusOff = ENABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = ENABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
@@ -571,40 +544,30 @@ static void MX_I2C2_Init(void)
 }
 
 /**
-  * @brief SPI1 Initialization Function
+  * @brief IWDG Initialization Function
   * @param None
   * @retval None
   */
-static void MX_SPI1_Init(void)
+static void MX_IWDG_Init(void)
 {
 
-  /* USER CODE BEGIN SPI1_Init 0 */
+  /* USER CODE BEGIN IWDG_Init 0 */
 
-  /* USER CODE END SPI1_Init 0 */
+  /* USER CODE END IWDG_Init 0 */
 
-  /* USER CODE BEGIN SPI1_Init 1 */
+  /* USER CODE BEGIN IWDG_Init 1 */
 
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI1_Init 2 */
+  /* USER CODE BEGIN IWDG_Init 2 */
 
-  /* USER CODE END SPI1_Init 2 */
+  /* USER CODE END IWDG_Init 2 */
 
 }
 
@@ -642,6 +605,17 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -658,24 +632,32 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : PC3 PC8 PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC4 PC5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB0 PB1 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB2 */
@@ -719,38 +701,24 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   int i = 0;
-  //uint8_t data;
-  //HAL_StatusTypeDef err;
+
   /* Infinite loop */
   for(;;) {
-    /* Testing getting data from I2C devices */
-    //serial_print("Register Address\tContents\r\n");
-    //serial_print("----------------\t--------\r\n");
-    //for (uint8_t reg = 0x00; reg <= 0x7E; reg++) {
-      //uint8_t reg = 0x0F;
-      //  err = HAL_I2C_Mem_Read(&hi2c1, 0x6A, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, HAL_MAX_DELAY);
-      //  if (err)
-      //    serial_print("0x%02X\t\t\tErr: %d!\r\n", reg, err);
-      //  else
-      //    serial_print("0x%02X\t\t\t0x%02X\r\n", reg, data);;
-    //}
-    
-    /* Basics of manually getting ADC reading (no DMA) */
-    //HAL_ADC_Start(&hadc1);
-    //HAL_StatusTypeDef err = HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    //if (!err)
-    //  serial_print("%d\r\n", HAL_ADC_GetValue(&hadc1));
 
+    /* Pet watchdog */
+    HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy 
-    i++;
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
 
     if (i % 2 == 1)
-      serial_print(".\r\n");
+     serial_print(".\r\n");
     else
-      serial_print("..\r\n");
+     serial_print("..\r\n");
 
-    osDelay(YELLOW_LED_BLINK_DELAY);
+    i++;
+
+    osDelay(500);
+    //osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
 }

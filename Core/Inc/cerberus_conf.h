@@ -1,19 +1,32 @@
 /* Sampling Intervals */
 #define YELLOW_LED_BLINK_DELAY 500  /* ms */
 #define TEMP_SENS_SAMPLE_DELAY 200  /* ms */
-#define IMU_SAMPLE_DELAY	   5    /* ms */
-#define PEDALS_SAMPLE_DELAY	   5    /* ms */
-#define FUSES_SAMPLE_DELAY	   50   /* ms */
-#define SHUTDOWN_MONITOR_DELAY 50   /* ms */
+#define IMU_SAMPLE_DELAY	   500    /* ms */
+#define FUSES_SAMPLE_DELAY	   1000   /* ms */
+#define SHUTDOWN_MONITOR_DELAY 500   /* ms */
+#define NERO_DELAY_TIME        100 /* ms*/
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
-#define CAN_DISPATCH_DELAY      5000
-#define BMS_CAN_MONITOR_DELAY   5000 
+#define CAN_DISPATCH_DELAY      5
+#define BMS_CAN_MONITOR_DELAY   7000
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
 
-#define STEERING_WHEEL_DEBOUNCE 25  /* ms */
+/* Pedal tuning */
+#define PEDALS_SAMPLE_DELAY     20    /* ms */
+#define ACCEL1_OFFSET           2767
+#define ACCEL1_MAX_VAL          3319
+#define ACCEL2_OFFSET           1920
+#define ACCEL2_MAX_VAL          3382
+
+/* Torque Tuning */
+#define MAX_TORQUE              220 /* Nm * 10 */
+
+// DEBUGGING: Start with a high debounce period, lower it if it is too slow
+// NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
+// give enough time to differentiate signal from noise.
+#define STEERING_WHEEL_DEBOUNCE 100  /* ms */
 
 /* Pin Assignments */
 #define FAULT_MCU_Pin		GPIO_PIN_3
@@ -37,12 +50,12 @@
 #define WATCHDOG_Pin		GPIO_PIN_15
 #define WATCHDOG_GPIO_Port	GPIOB
 
-#define CANID_TEMP_SENSOR  0xBEEF
-#define CANID_PEDAL_SENSOR 0xDEAD
+#define CANID_PEDAL_SENSOR 0x002
 // TODO: GET CORRECT CAN ID
-#define CANID_IMU			0xDEAD
-#define CANID_TEMP_SENSOR	0xBEEF
+#define CANID_IMU			0x003
+#define CANID_TEMP_SENSOR	0x004
+#define CANID_TORQUE_MSG	0x005
 #define CANID_OUTBOUND_MSG	0xA55
-#define CANID_TORQUE_MSG	0xBA115
 #define CANID_FUSE			0x111
 #define CANID_SHUTDOWN_LOOP 0x123
+#define CANID_FAULT_MSG 	0x502
