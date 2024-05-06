@@ -26,7 +26,7 @@
 #define MAX_PEDAL_VAL 0x283 /* Raw ADC */
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
-#define MIN_COMMAND_FREQ  60					  /* Hz */
+#define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
 extern dti_t *mc;
@@ -34,54 +34,61 @@ extern dti_t *mc;
 static float torque_limit_percentage = 1.0;
 
 osThreadId_t torque_calc_handle;
-const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
+const osThreadAttr_t torque_calc_attributes = { .name = "SendTorque",
 												.stack_size = 128 * 8,
 												.priority = (osPriority_t)osPriorityRealtime2 };
 
-static void linear_accel_to_torque(float accel, uint16_t* torque)
+static void linear_accel_to_torque(float accel, uint16_t *torque)
 {
 	/* Linearly map acceleration to torque */
 	*torque = (uint16_t)(accel * MAX_TORQUE);
 }
 
-static void rpm_to_mph(uint32_t rpm, float* mph)
+static void rpm_to_mph(uint32_t rpm, float *mph)
 {
 	/* Convert RPM to MPH */
 	*mph = (rpm / 60) * WHEEL_CIRCUMFERENCE * 2.237 / GEAR_RATIO;
 }
 
-static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
+static void limit_accel_to_torque(float mph, float accel, uint16_t *torque)
 {
-		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
+	static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
 
-		uint16_t newVal;
-		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
-		if (mph > PIT_MAX_SPEED) {
-			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
-		}
-		else {
-			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
-			newVal = accel * torque_derating_factor;
-		}
+	uint16_t newVal;
+	//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
+	if (mph > PIT_MAX_SPEED) {
+		// If we are going too fast, we don't want to apply any torque to the moving average
+		newVal = 0;
+	} else {
+		// Linearly derate torque from 0.5 to 0 as speed increases
+		float torque_derating_factor = fabs(0.5 + ((-0.5 / PIT_MAX_SPEED) * mph));
+		newVal = accel * torque_derating_factor;
+	}
 
-		// The following code is a moving average filter
-		uint16_t ave = 0;
-		uint16_t temp[ACCUMULATOR_SIZE];
-		memcpy(torque_accumulator, temp, ACCUMULATOR_SIZE); // Copy the old values to the new array and shift them by one
-		for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) { 
-			temp[i + 1] = torque_accumulator[i];
-			ave += torque_accumulator[i+1];
-		}
-		ave += newVal; // Add the new value to the sum
-		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
-		temp[0] = newVal; // Add the new value to the array
-		if(*torque > ave) {
-			*torque = ave; // If the new value is greater than the average, set the torque to the average
-		}
-		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
+	// The following code is a moving average filter
+	uint16_t ave = 0;
+	uint16_t temp[ACCUMULATOR_SIZE];
+
+	// Copy the old values to the new array and shift them by one
+	memcpy(torque_accumulator, temp, ACCUMULATOR_SIZE);
+	for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) {
+		temp[i + 1] = torque_accumulator[i];
+		ave += torque_accumulator[i + 1];
+	}
+	ave += newVal; // Add the new value to the sum
+	ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
+	temp[0] = newVal; // Add the new value to the array
+
+	if (*torque > ave) {
+		// If the new value is greater than the average, set the torque to the average
+		*torque = ave;
+	}
+
+	// Copy the new array back to the old array to set the moving average
+	memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE);
 }
 
-static void paddle_accel_to_torque(float accel, uint16_t* torque)
+static void paddle_accel_to_torque(float accel, uint16_t *torque)
 {
 	*torque = (uint16_t)torque_limit_percentage * ((accel / MAX_TORQUE) * 0xFFFF);
 	//TODO add regen logic
@@ -89,8 +96,7 @@ static void paddle_accel_to_torque(float accel, uint16_t* torque)
 
 void increase_torque_limit()
 {
-	if (torque_limit_percentage + 0.1 > 1)
-	{
+	if (torque_limit_percentage + 0.1 > 1) {
 		torque_limit_percentage = 1;
 	} else {
 		torque_limit_percentage += 0.1;
@@ -99,15 +105,14 @@ void increase_torque_limit()
 
 void decrease_torque_limit()
 {
-	if (torque_limit_percentage - 1 < 0)
-	{
+	if (torque_limit_percentage - 1 < 0) {
 		torque_limit_percentage = 0;
 	} else {
 		torque_limit_percentage -= 0.1;
 	}
 }
 
-void vCalcTorque(void* pv_params)
+void vCalcTorque(void *pv_params)
 {
 	const uint16_t delay_time = 5; /* ms */
 	/* End application if we try to update motor at freq below this value */
@@ -119,40 +124,37 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
+		float accelerator_value = (float)pedal_data.accelerator_value / 10.0;
 
 		/* If we receive a new message within the time frame, calc new torque */
-		if (stat == osOK)
-		{
+		if (stat == osOK) {
 			func_state_t func_state = get_func_state();
-			if (func_state != ACTIVE)
-			{
+			if (func_state != ACTIVE) {
 				torque = 0;
 				continue;
 			}
 
-			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
+			drive_state_t drive_state = AUTOCROSS; //get_drive_state();
 
 			float mph;
 			rpm_to_mph(dti_get_rpm(mc), &mph);
 
-			switch (drive_state)
-			{
-				case REVERSE:
-					limit_accel_to_torque(mph, accelerator_value, &torque);
-					break;
-				case SPEED_LIMITED:
-					limit_accel_to_torque(mph, accelerator_value, &torque);
-					break;
-				case ENDURANCE:
-					paddle_accel_to_torque(accelerator_value, &torque);
-					break;
-				case AUTOCROSS:
-					linear_accel_to_torque(accelerator_value, &torque);
-					break;
-				default:
-					torque = 0;
-					break;
+			switch (drive_state) {
+			case REVERSE:
+				limit_accel_to_torque(mph, accelerator_value, &torque);
+				break;
+			case SPEED_LIMITED:
+				limit_accel_to_torque(mph, accelerator_value, &torque);
+				break;
+			case ENDURANCE:
+				paddle_accel_to_torque(accelerator_value, &torque);
+				break;
+			case AUTOCROSS:
+				linear_accel_to_torque(accelerator_value, &torque);
+				break;
+			default:
+				torque = 0;
+				break;
 			}
 
 			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);

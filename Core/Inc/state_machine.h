@@ -22,25 +22,22 @@ typedef enum {
 extern osThreadId_t sm_director_handle;
 extern const osThreadAttr_t sm_director_attributes;
 
-typedef struct {
-    enum {
-        FUNCTIONAL,
-        DRIVE
-    } id;
+typedef struct
+{
+	enum { FUNCTIONAL, DRIVE } id;
 
-    union {
-        func_state_t functional;
-        drive_state_t drive;
-    } state;
+	union {
+		func_state_t functional;
+		drive_state_t drive;
+	} state;
 } state_req_t;
 
-void vStateMachineDirector(void* pv_params);
+void vStateMachineDirector(void *pv_params);
 
 int queue_state_transition(state_req_t request);
 
 /* Retrieves the current functional state */
 func_state_t get_func_state();
-
 
 /*
  * Retrieves the current drive state
