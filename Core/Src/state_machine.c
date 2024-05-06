@@ -17,7 +17,7 @@ typedef struct {
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-static pdu_t *pdu;
+extern pdu_t *pdu;
 
 extern IWDG_HandleTypeDef hiwdg;
 
@@ -54,70 +54,8 @@ int queue_state_transition(state_req_t new_state)
 		return 1;
 	}
 
-	printf("QUEUING STATAE TRANSITION\r\n");
-
-	if (new_state.id == DRIVE)
-	{
-		if(get_func_state() != ACTIVE)
-			return 0;
-
-		/* Transitioning between drive states is always allowed */
-		//TODO: Make sure motor is not spinning before switching
-
-		/* If we are turning ON the motor, blare RTDS */
-		if (cerberus_state.drive == NOT_DRIVING) {
-			serial_print("CALLING RTDS");
-			sound_rtds(pdu);
-		}
-
-		cerberus_state.drive = new_state.state.drive;
-		return 0;
-	}
-
-	if (new_state.id == FUNCTIONAL)
-	{
-		if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
-			printf("Invalid State transition");
-			return -1;
-		}
-
-		cerberus_state.functional = new_state.state.functional;
-		/* Catching state transitions */
-		switch (new_state.state.functional)
-		{
-			case BOOT:
-				/* Do Nothing */
-				break;
-			case READY:
-				/* Turn off high power peripherals */
-				serial_print("going to ready");
-				write_fan_battbox(pdu, false);
-				write_pump(pdu, false);
-				write_fault(pdu, true);
-				break;
-			case ACTIVE:
-				/* Turn on high power peripherals */
-				write_fan_battbox(pdu, true);
-				write_pump(pdu, true);
-				write_fault(pdu, true);
-				sound_rtds(pdu); // TEMPORARY
-				break;
-			case FAULTED:
-				/* Turn off high power peripherals */
-				write_fan_battbox(pdu, true);
-				write_pump(pdu, false);
-				write_fault(pdu, false);
-				osTimerStart(fault_timer, 5000);
-				HAL_IWDG_Refresh(&hiwdg);
-				break;
-			default:
-				// Do Nothing
-				break;
-		}
-		return 0;
-	}
-
-		return 0;
+	osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
+	return 0;
 }
 
 func_state_t get_func_state()
@@ -137,9 +75,6 @@ void vStateMachineDirector(void* pv_params)
 
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_req_t), NULL);
 
-	pdu_t *pdu_1 = (pdu_t *)pv_params;
-
-	pdu = pdu_1;
 	state_req_t new_state;
 
 	serial_print("State Machine Init!\r\n");
@@ -165,7 +100,6 @@ void vStateMachineDirector(void* pv_params)
 
 			/* If we are turning ON the motor, blare RTDS */
 			if (cerberus_state.drive == NOT_DRIVING) {
-				serial_print("CALLING RTDS");
 				sound_rtds(pdu);
 			}
 
@@ -176,11 +110,11 @@ void vStateMachineDirector(void* pv_params)
 		if (new_state.id == FUNCTIONAL)
 		{
 			if (!valid_trans_to_from[cerberus_state.functional][new_state.state.functional]) {
-				printf("Invalid State transition");
 				continue;
 			}
 
 			cerberus_state.functional = new_state.state.functional;
+
 			/* Catching state transitions */
 			switch (new_state.state.functional)
 			{
@@ -191,7 +125,7 @@ void vStateMachineDirector(void* pv_params)
 					/* Turn off high power peripherals */
 					serial_print("going to ready");
 					write_fan_battbox(pdu, false);
-					write_pump(pdu, true);
+					write_pump(pdu, false);
 					write_fault(pdu, true);
 					break;
 				case ACTIVE:
@@ -199,20 +133,20 @@ void vStateMachineDirector(void* pv_params)
 					write_fan_battbox(pdu, true);
 					write_pump(pdu, true);
 					write_fault(pdu, true);
+					sound_rtds(pdu); // TEMPORARY
 					break;
 				case FAULTED:
 					/* Turn off high power peripherals */
-					write_fan_battbox(pdu, false);
+					write_fan_battbox(pdu, true);
 					write_pump(pdu, false);
 					write_fault(pdu, false);
+					osTimerStart(fault_timer, 5000);
 					HAL_IWDG_Refresh(&hiwdg);
-					while(1) {printf("Delaying...\r\n");}
 					break;
 				default:
 					// Do Nothing
 					break;
 			}
-			continue;
 		}
 	}
 }

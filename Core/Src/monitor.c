@@ -28,6 +28,10 @@
 
 static bool tsms = false;
 
+extern mpu_t *mpu;
+extern pdu_t *pdu;
+extern steeringio_t *wheel;
+
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
 	.name		= "TempMonitor",
@@ -39,8 +43,6 @@ void vTempMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON5 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
-
-	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		/* Take measurement */
@@ -144,9 +146,6 @@ void vPedalsMonitor(void* pv_params)
 	cancel_timer(&sc_timer_accelerator);
 	cancel_timer(&oc_timer_accelerator);
 
-	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	mpu_t *mpu = (mpu_t *)pv_params;
-
 	for (;;) {
 		read_pedals(mpu, adc_data);
 
@@ -201,8 +200,6 @@ void vIMUMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
 	can_msg_t imu_accel_msg = { .id = CANID_IMU, .len = 6, .data = { 0 } };
 	can_msg_t imu_gyro_msg	= { .id = CANID_IMU, .len = 6, .data = { 0 } };
-
-	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
 		// serial_print("IMU Task\r\n");
@@ -267,7 +264,6 @@ void vFusingMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
 	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool fuses[MAX_FUSES]	= { 0 };
 	uint16_t fuse_buf;
 
@@ -283,7 +279,7 @@ void vFusingMonitor(void* pv_params)
 		}
 
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
-		
+
 		/* convert to big endian */
 		// endian_swap(&fuse_buf, sizeof(fuse_buf));
 
@@ -308,7 +304,6 @@ void vShutdownMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT, .severity = DEFCON5 };
 	can_msg_t shutdown_msg	= { .id = CANID_SHUTDOWN_LOOP, .len = 2, .data = { 0 } };
-	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
 	bool tsms_status = false;
@@ -362,7 +357,6 @@ const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 void vSteeringIOButtonsMonitor(void* pv_params)
 {
 	button_data_t buttons;
-	steeringio_t *wheel = (steeringio_t *)pv_params;
 	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
 	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT, .severity = DEFCON5 };
 
@@ -419,8 +413,6 @@ const osThreadAttr_t brakelight_monitor_attributes = {
 
 void vBrakelightMonitor(void* pv_params)
 {
-	pdu_t* pdu = (pdu_t*)pv_params;
-
 	bool state;
 	osStatus_t status;
 
