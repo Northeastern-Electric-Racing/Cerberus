@@ -29,6 +29,8 @@
 #define MIN_COMMAND_FREQ  60					  /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
+extern dti_t *mc;
+
 static float torque_limit_percentage = 1.0;
 
 osThreadId_t torque_calc_handle;
@@ -113,8 +115,6 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	uint16_t torque = 0;
 	osStatus_t stat;
-
-	dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);

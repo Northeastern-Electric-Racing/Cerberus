@@ -354,7 +354,7 @@ int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status)
 	return 0;
 }
 
-int8_t write_rtds(pdu_t* pdu, bool status) 
+int8_t write_rtds(pdu_t* pdu, bool status)
 {
     if (!pdu)
 		return -1;

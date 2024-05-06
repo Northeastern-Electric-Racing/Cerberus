@@ -79,6 +79,12 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
+
+mpu_t *mpu;
+pdu_t *pdu;
+dti_t *mc;
+steeringio_t *wheel;
+
 osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
@@ -176,11 +182,15 @@ int main(void)
   /* I'm kinda defining mutexes here lol */
 
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, GPIOC, GPIOB);
-  pdu_t *pdu  = init_pdu(&hi2c2);
+  mpu = init_mpu(&hi2c1, &hadc3, GPIOC, GPIOB);
+  assert(mpu);
+  pdu = init_pdu(&hi2c2);
   assert(pdu);
-  dti_t *mc   = dti_init();
-  steeringio_t *wheel = steeringio_init();
+  mc = dti_init();
+  assert(mc);
+  wheel = steeringio_init();
+  assert(wheel);
+
   init_can1(&hcan1);
   bms_init();
 
@@ -212,12 +222,12 @@ int main(void)
   //assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
-  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
+  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, NULL, &steeringio_buttons_monitor_attributes);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, NULL, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
-  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
+  fusing_monitor_handle = osThreadNew(vFusingMonitor, NULL, &fusing_monitor_attributes);
   assert(fusing_monitor_handle);
-  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, NULL, &shutdown_monitor_attributes);
   assert(shutdown_monitor_handle);
 
   /* Messaging */
@@ -233,13 +243,13 @@ int main(void)
   assert(nero_monitor_handle);
 
   /* Control Logic */
-  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
+  torque_calc_handle = osThreadNew(vCalcTorque, NULL, &torque_calc_attributes);
   assert(torque_calc_handle);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
-  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, NULL, &sm_director_attributes);
   assert(sm_director_handle);
-  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);;
+  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, NULL, &brakelight_monitor_attributes);;
   assert(brakelight_monitor_handle);
 
   /* USER CODE END RTOS_THREADS */
