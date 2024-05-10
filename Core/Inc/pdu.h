@@ -7,32 +7,33 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
-	I2C_HandleTypeDef* hi2c;
-	osMutexId_t* mutex;
-	max7314_t* shutdown_expander;
-	max7314_t* ctrl_expander;
+typedef struct
+{
+	I2C_HandleTypeDef *hi2c;
+	osMutexId_t *mutex;
+	max7314_t *shutdown_expander;
+	max7314_t *ctrl_expander;
 	osTimerId rtds_timer;
 } pdu_t;
 
 /* Creates a new PDU interface */
-pdu_t* init_pdu(I2C_HandleTypeDef* hi2c);
+pdu_t *init_pdu(I2C_HandleTypeDef *hi2c);
 
 /* Functions to Control PDU */
-int8_t write_pump(pdu_t* pdu, bool status);
-int8_t write_fault(pdu_t* pdu, bool status);
-int8_t write_brakelight(pdu_t* pdu, bool status);
-int8_t write_fan_battbox(pdu_t* pdu, bool status);
-int8_t sound_rtds(pdu_t* pdu);
-int8_t write_rtds(pdu_t* pdu, bool status);
+int8_t write_pump(pdu_t *pdu, bool status);
+int8_t write_fault(pdu_t *pdu, bool status);
+int8_t write_brakelight(pdu_t *pdu, bool status);
+int8_t write_fan_battbox(pdu_t *pdu, bool status);
+int8_t sound_rtds(pdu_t *pdu);
+int8_t write_rtds(pdu_t *pdu, bool status);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
-    FUSE_BATTBOX,
-    FUSE_LVBOX,
-    FUSE_FAN_RADIATOR,
-    FUSE_MC,
-    FUSE_FAN_BATTBOX,
+	FUSE_BATTBOX,
+	FUSE_LVBOX,
+	FUSE_FAN_RADIATOR,
+	FUSE_MC,
+	FUSE_FAN_BATTBOX,
 	FUSE_PUMP,
 	FUSE_DASHBOARD,
 	FUSE_BRAKELIGHT,
@@ -40,9 +41,9 @@ typedef enum {
 	MAX_FUSES
 } fuse_t;
 
-int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status);
+int8_t read_fuse(pdu_t *pdu, fuse_t fuse, bool *status);
 
-int8_t read_tsms_sense(pdu_t* pdu, bool* status);
+int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
@@ -58,6 +59,6 @@ typedef enum {
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
-int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status);
+int8_t read_shutdown(pdu_t *pdu, shutdown_stage_t stage, bool *status);
 
 #endif /* PDU_H */

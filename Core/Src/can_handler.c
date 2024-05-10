@@ -28,12 +28,10 @@ static osMessageQueueId_t can_outbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = {
-	DTI_CANID_ERPM,	 DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
-	DTI_CANID_ID_IQ, DTI_CANID_SIGNALS, BMS_DCL_MSG
-};
+static uint32_t id_list[] = { DTI_CANID_ERPM,  DTI_CANID_CURRENTS, DTI_CANID_TEMPS_FAULT,
+							  DTI_CANID_ID_IQ, DTI_CANID_SIGNALS,  BMS_DCL_MSG };
 
-void init_can1(CAN_HandleTypeDef* hcan)
+void init_can1(CAN_HandleTypeDef *hcan)
 {
 	assert(hcan);
 
@@ -41,8 +39,8 @@ void init_can1(CAN_HandleTypeDef* hcan)
 	can1 = malloc(sizeof(can_t));
 	assert(can1);
 
-	can1->hcan		  = hcan;
-	can1->id_list	  = id_list;
+	can1->hcan = hcan;
+	can1->id_list = id_list;
 	can1->id_list_len = sizeof(id_list) / sizeof(uint32_t);
 
 	assert(!can_init(can1));
@@ -51,10 +49,10 @@ void init_can1(CAN_HandleTypeDef* hcan)
 }
 
 /* Callback to be called when we get a CAN message */
-void can1_callback(CAN_HandleTypeDef* hcan)
+void can1_callback(CAN_HandleTypeDef *hcan)
 {
 	fault_data_t fault_data = {
-		.id		  = CAN_ROUTING_FAULT,
+		.id = CAN_ROUTING_FAULT,
 		.severity = DEFCON2,
 	};
 
@@ -69,7 +67,7 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	}
 
 	new_msg.len = rx_header.DLC;
-	new_msg.id	= rx_header.StdId;
+	new_msg.id = rx_header.StdId;
 
 	// TODO: Switch to hash map
 	switch (new_msg.id) {
@@ -91,12 +89,12 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
-	.name		= "CanDispatch",
+	.name = "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority	= (osPriority_t)osPriorityRealtime5,
+	.priority = (osPriority_t)osPriorityRealtime5,
 };
 
-void vCanDispatch(void* pv_params)
+void vCanDispatch(void *pv_params)
 {
 	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT, .severity = DEFCON1 };
 
@@ -107,18 +105,13 @@ void vCanDispatch(void* pv_params)
 		/* Send CAN message */
 		if (osOK == osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL, osWaitForever)) {
 			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR)
-			{
+			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
-			}
-			else if (msg_status == HAL_BUSY)
-			{
+			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
-			}
-			else
-			{
+			} else {
 				//printf("Message sent: %lX\r\n", msg_from_queue.id);
 			}
 		}
@@ -135,4 +128,3 @@ int8_t queue_can_msg(can_msg_t msg)
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
 	return 0;
 }
-

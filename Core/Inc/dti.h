@@ -24,27 +24,27 @@
 #define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 
 #define WHEEL_CIRCUMFERENCE 1.2767 /* meters */
-#define GEAR_RATIO 4.3 /* unitless */ 
-#define POLE_PAIRS 10 /* unitless */
+#define GEAR_RATIO			4.3 /* unitless */
+#define POLE_PAIRS			10 /* unitless */
 
-typedef struct 
+typedef struct
 {
-	int32_t rpm;			/* SCALE: 1         UNITS: Rotations per Minute   */
-	int16_t duty_cycle;		/* SCALE: 10        UNITS: Percentage             */
-	int16_t input_voltage;	/* SCALE: 1         UNITS: Volts                  */
-	int16_t ac_current;		/* SCALE: 10        UNITS: Amps                   */
-	int16_t dc_current;		/* SCALE: 10        UNITS: Amps                   */
-	int16_t contr_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
-	int16_t motor_temp;		/* SCALE: 10        UNITS: Degrees Celsius        */
-	uint8_t fault_code;		/* SCALE: 1         UNITS: No units just a number */
+	int32_t rpm; /* SCALE: 1         UNITS: Rotations per Minute   */
+	int16_t duty_cycle; /* SCALE: 10        UNITS: Percentage             */
+	int16_t input_voltage; /* SCALE: 1         UNITS: Volts                  */
+	int16_t ac_current; /* SCALE: 10        UNITS: Amps                   */
+	int16_t dc_current; /* SCALE: 10        UNITS: Amps                   */
+	int16_t contr_temp; /* SCALE: 10        UNITS: Degrees Celsius        */
+	int16_t motor_temp; /* SCALE: 10        UNITS: Degrees Celsius        */
+	uint8_t fault_code; /* SCALE: 1         UNITS: No units just a number */
 	int8_t throttle_signal; /* SCALE: 1         UNITS: Percentage             */
-	int8_t brake_signal;	/* SCALE: 1         UNITS: Percentage             */
-	int8_t drive_enable;	/* SCALE: 1         UNITS: No units just a number */
-	osMutexId_t* mutex;
+	int8_t brake_signal; /* SCALE: 1         UNITS: Percentage             */
+	int8_t drive_enable; /* SCALE: 1         UNITS: No units just a number */
+	osMutexId_t *mutex;
 } dti_t;
 
 // TODO: Expand GET interface
-uint32_t dti_get_rpm(dti_t* dti);
+uint32_t dti_get_rpm(dti_t *dti);
 
 /* Utilities for Decoding CAN message */
 extern osThreadId_t dti_router_handle;
@@ -54,7 +54,7 @@ void vDTIRouter(void* pv_params);
 
 void queue_dti_message(can_msg_t msg);
 
-dti_t* dti_init();
+dti_t *dti_init();
 
 /*
  * SCALE: 10

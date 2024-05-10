@@ -17,13 +17,13 @@
 #include "can.h"
 #include "cmsis_os.h"
 
-void can1_callback(CAN_HandleTypeDef* hcan);
+void can1_callback(CAN_HandleTypeDef *hcan);
 
-void vCanDispatch(void* pv_params);
+void vCanDispatch(void *pv_params);
 extern osThreadId_t can_dispatch_handle;
 extern const osThreadAttr_t can_dispatch_attributes;
 
 int8_t queue_can_msg(can_msg_t msg);
-void init_can1(CAN_HandleTypeDef* hcan);
+void init_can1(CAN_HandleTypeDef *hcan);
 
 #endif

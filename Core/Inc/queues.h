@@ -10,7 +10,8 @@
 
 extern osMessageQueueId_t brakelight_signal;
 
-typedef struct {
+typedef struct
+{
 	uint16_t accel_x;
 	uint16_t accel_y;
 	uint16_t accel_z;
@@ -21,7 +22,8 @@ typedef struct {
 
 extern osMessageQueueId_t imu_queue;
 
-typedef struct {
+typedef struct
+{
 	uint16_t brake_value; /* 0-1 */
 	uint16_t accelerator_value; /* 0-1 */
 } pedals_t;

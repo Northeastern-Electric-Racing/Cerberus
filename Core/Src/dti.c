@@ -22,13 +22,13 @@
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
-#define SAMPLES 20
+#define SAMPLES		   20
 static osMutexAttr_t dti_mutex_attributes;
 osMessageQueueId_t dti_router_queue;
 
-dti_t* dti_init()
+dti_t *dti_init()
 {
-	dti_t* mc = malloc(sizeof(dti_t));
+	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
 
 	/* Create Mutex */
@@ -45,30 +45,28 @@ dti_t* dti_init()
 void dti_set_torque(int16_t torque)
 {
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
-	 // Static variables for the buffer and index
-    static float buffer[SAMPLES] = {0};
-    static int index = 0;
+	// Static variables for the buffer and index
+	static float buffer[SAMPLES] = { 0 };
+	static int index = 0;
 
-    // Add the new value to the buffer
-    buffer[index] = torque;
+	// Add the new value to the buffer
+	buffer[index] = torque;
 
-    // Increment the index, wrapping around if necessary
-    index = (index + 1) % SAMPLES;
+	// Increment the index, wrapping around if necessary
+	index = (index + 1) % SAMPLES;
 
-    // Calculate the average of the buffer
-    float sum = 0.0;
-    for (int i = 0; i < SAMPLES; ++i) {
-        sum += buffer[i];
-    }
-    float average = sum / SAMPLES;
+	// Calculate the average of the buffer
+	float sum = 0.0;
+	for (int i = 0; i < SAMPLES; ++i) {
+		sum += buffer[i];
+	}
+	float average = sum / SAMPLES;
 
 	if (torque == 0) {
 		average = 0;
 	}
 
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
-
-	if ((uint16_t)abs(ac_current) > 3000) ac_current = 3000;
 
 	//serial_print("Commanded Current: %d \r\n", ac_current);
 
@@ -223,7 +221,7 @@ void dti_set_drive_enable(bool drive_enable)
 	queue_can_msg(msg);
 }
 
-uint32_t dti_get_rpm(dti_t* mc)
+uint32_t dti_get_rpm(dti_t *mc)
 {
 	uint32_t rpm;
 	osMutexAcquire(*mc->mutex, osWaitForever);
