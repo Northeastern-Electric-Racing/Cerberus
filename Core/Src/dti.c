@@ -233,10 +233,12 @@ uint32_t dti_get_rpm(dti_t *mc)
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
-const osThreadAttr_t dti_router_attributes
-	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
+const osThreadAttr_t dti_router_attributes = { .name = "DTIRouter",
+											   .stack_size = 64 * 8,
+											   .priority = (osPriority_t)osPriorityHigh };
 
-void queue_dti_message(can_msg_t message) {
+void queue_dti_message(can_msg_t message)
+{
 	osMessageQueuePut(dti_router_queue, &message, 0U, 0U);
 }
 
@@ -255,7 +257,7 @@ static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 	osMutexRelease(*mc->mutex);
 }
 
-void vDTIRouter(void* pv_params)
+void vDTIRouter(void *pv_params)
 {
 	can_msg_t message;
 	osStatus_t status;
@@ -266,25 +268,22 @@ void vDTIRouter(void* pv_params)
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
-		if (status == osOK) 
-		{
-			switch (message.id) 
-			{
-				case DTI_CANID_ERPM:
-					dti_set_rpm(mc, message);
-					break;
-				case DTI_CANID_CURRENTS:
-					break;
-				case DTI_CANID_TEMPS_FAULT:
-					break;
-				case DTI_CANID_ID_IQ:
-					break;
-				case DTI_CANID_SIGNALS:
-					break;
-				default:
-					break;
+		if (status == osOK) {
+			switch (message.id) {
+			case DTI_CANID_ERPM:
+				dti_set_rpm(mc, message);
+				break;
+			case DTI_CANID_CURRENTS:
+				break;
+			case DTI_CANID_TEMPS_FAULT:
+				break;
+			case DTI_CANID_ID_IQ:
+				break;
+			case DTI_CANID_SIGNALS:
+				break;
+			default:
+				break;
 			}
 		}
 	}
 }
-

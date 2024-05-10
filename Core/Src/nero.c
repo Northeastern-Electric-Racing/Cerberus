@@ -14,9 +14,9 @@ static int8_t mph = 0;
 
 static void send_mode_status()
 {
-	can_msg_t msg = { .id = 0x501,
+	can_msg_t msg = { .id = CANID_NERO_MSG,
 					  .len = 4,
-					  .data = { nero_state.home_mode, nero_state.nero_index, mph, get_tsms() } };
+					  .data = { nero_state.home_mode, nero_state.nero_index, mph, get_tsms()} };
 
 	/* Send CAN message */
 	queue_can_msg(msg);
@@ -116,10 +116,8 @@ void select_nero_index()
 void set_home_mode()
 {
 	state_req_t state_request = { .id = FUNCTIONAL, .state.functional = READY };
-	if (!get_tsms()) {
-		nero_state.home_mode = true;
-		queue_state_transition(state_request);
-	}
+	nero_state.home_mode = true;
+	queue_state_transition(state_request);
 }
 
 osThreadId_t nero_monitor_handle;

@@ -47,15 +47,15 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
-	CKPT_BRB_CLR,	/* Cockpit BRB */
-    BMS_OK,			/* Battery Management System (Shepherd) */
-    INERTIA_SW_OK, /* Inertia Switch */
-    SPARE_GPIO1_OK,
-    IMD_OK,			/* Insulation Monitoring Device */
-    BSPD_OK,		/* Brake System Plausbility Device */
-	BOTS_OK,		/* Brake Over Travel Switch */
-	HVD_INTLK_OK,	/* HVD Interlock */
-	HVC_INTLK_OK,	/* HV C Interlock*/
+	CKPT_BRB_CLR, /* Cockpit BRB */
+	BMS_OK, /* Battery Management System (Shepherd) */
+	INERTIA_SW_OK, /* Inertia Switch */
+	SPARE_GPIO1_OK,
+	IMD_OK, /* Insulation Monitoring Device */
+	BSPD_OK, /* Brake System Plausbility Device */
+	BOTS_OK, /* Brake Over Travel Switch */
+	HVD_INTLK_OK, /* HVD Interlock */
+	HVC_INTLK_OK, /* HV C Interlock*/
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 

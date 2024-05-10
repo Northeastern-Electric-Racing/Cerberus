@@ -50,7 +50,7 @@ uint32_t dti_get_rpm(dti_t *dti);
 extern osThreadId_t dti_router_handle;
 extern const osThreadAttr_t dti_router_attributes;
 extern osMessageQueueId_t dti_router_queue;
-void vDTIRouter(void* pv_params);
+void vDTIRouter(void *pv_params);
 
 void queue_dti_message(can_msg_t msg);
 

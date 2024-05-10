@@ -217,8 +217,8 @@ int main(void)
 	/* creation of defaultTask */
 	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-    assert(dti_router_handle);
+	dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+	assert(dti_router_handle);
 	steeringio_buttons_monitor_handle =
 		osThreadNew(vSteeringIOButtonsMonitor, NULL, &steeringio_buttons_monitor_attributes);
 	pedals_monitor_handle = osThreadNew(vPedalsMonitor, NULL, &pedals_monitor_attributes);

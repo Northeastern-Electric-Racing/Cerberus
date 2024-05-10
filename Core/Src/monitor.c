@@ -284,8 +284,7 @@ void vFusingMonitor(void *pv_params)
 		fuse_buf = 0;
 
 		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-			if (read_fuse(pdu, fuse, &fuses[fuse])) /* Actually read the fuse */
-				fuse_buf |= 1 << MAX_FUSES; /* Set error bit */
+			read_fuse(pdu, fuse, &fuses[fuse]); /* Actually read the fuse */
 
 			/* Sets the bit at position `fuse` to the state of the fuse */
 			fuse_buf |= fuses[fuse] << fuse;
@@ -293,8 +292,8 @@ void vFusingMonitor(void *pv_params)
 
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 
-		/* convert to big endian */
-		// endian_swap(&fuse_buf, sizeof(fuse_buf));
+		/* convert each byte to big endian */
+		endian_swap(&fuse_buf, sizeof(fuse_buf));
 
 		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
@@ -324,10 +323,10 @@ void vShutdownMonitor(void *pv_params)
 	for (;;) {
 		shutdown_buf = 0;
 
+		// this code is kind of glitched if using more than 8 bytes
 		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
 			/* Actually read the shutdown loop stage state */
-			if (read_shutdown(pdu, stage, &shutdown_loop[stage]))
-				shutdown_buf |= 1 << MAX_SHUTDOWN_STAGES; /* Set error bit */
+			read_shutdown(pdu, stage, &shutdown_loop[stage]);
 
 			/* Sets the bit at position `stage` to the state of the stage */
 			shutdown_buf |= shutdown_loop[stage] << stage;
