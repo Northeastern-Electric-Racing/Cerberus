@@ -77,6 +77,10 @@ void vStateMachineDirector(void *pv_params)
 
 	serial_print("State Machine Init!\r\n");
 
+	// debug bootup msg
+	can_msg_t bootup_msg = { .id = 0x701, .len = 8, .data = { 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
+	queue_can_msg(bootup_msg);
+
 	state_req_t request;
 	request.id = FUNCTIONAL;
 	request.state.functional = READY;

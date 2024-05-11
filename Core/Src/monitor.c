@@ -1,4 +1,5 @@
 #include "monitor.h"
+#include "c_utils.h"
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
@@ -280,6 +281,11 @@ void vFusingMonitor(void *pv_params)
 	bool fuses[MAX_FUSES] = { 0 };
 	uint16_t fuse_buf;
 
+	struct __attribute__((__packed__)){
+        uint8_t fuse_1;
+        uint8_t fuse_2;
+    } fuse_data;
+
 	for (;;) {
 		fuse_buf = 0;
 
@@ -290,12 +296,17 @@ void vFusingMonitor(void *pv_params)
 			fuse_buf |= fuses[fuse] << fuse;
 		}
 
-		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 
-		/* convert each byte to big endian */
-		endian_swap(&fuse_buf, sizeof(fuse_buf));
+		/* seperate each byte */
+		fuse_data.fuse_1 = fuse_buf & 0xFF;
+		fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
 
-		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
+		// reverse the bit order
+		fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
+		fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
+
+
+		memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
@@ -320,10 +331,14 @@ void vShutdownMonitor(void *pv_params)
 	uint16_t shutdown_buf;
 	bool tsms_status = false;
 
+	struct __attribute__((__packed__)){
+        uint8_t shut_1;
+        uint8_t shut_2;
+    } shutdown_data ;
+
 	for (;;) {
 		shutdown_buf = 0;
 
-		// this code is kind of glitched if using more than 8 bytes
 		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
 			/* Actually read the shutdown loop stage state */
 			read_shutdown(pdu, stage, &shutdown_loop[stage]);
@@ -332,12 +347,17 @@ void vShutdownMonitor(void *pv_params)
 			shutdown_buf |= shutdown_loop[stage] << stage;
 		}
 
-		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
-		/* convert to big endian */
-		endian_swap(&shutdown_buf, sizeof(shutdown_buf));
+		/* seperate each byte */
+		shutdown_data.shut_1 = shutdown_buf & 0xFF;
+		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
 
-		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
+		// reverse the bit order
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
+		
+
+		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);

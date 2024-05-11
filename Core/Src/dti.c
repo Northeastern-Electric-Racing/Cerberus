@@ -36,8 +36,8 @@ dti_t *dti_init()
 	assert(mc->mutex);
 
 	/* Create Queue for CAN signaling */
-	// dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	// assert(dti_router_queue);
+	dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	assert(dti_router_queue);
 
 	return mc;
 }
@@ -236,11 +236,6 @@ osThreadId_t dti_router_handle;
 const osThreadAttr_t dti_router_attributes = { .name = "DTIRouter",
 											   .stack_size = 64 * 8,
 											   .priority = (osPriority_t)osPriorityHigh };
-
-void queue_dti_message(can_msg_t message)
-{
-	osMessageQueuePut(dti_router_queue, &message, 0U, 0U);
-}
 
 static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 {

@@ -73,7 +73,7 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	switch (new_msg.id) {
 	/* Messages Relevant to Motor Controller */
 	case DTI_CANID_ERPM:
-		queue_dti_message(new_msg);
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 	case DTI_CANID_CURRENTS:
 	case DTI_CANID_TEMPS_FAULT:
 	case DTI_CANID_ID_IQ:
