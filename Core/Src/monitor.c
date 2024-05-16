@@ -149,6 +149,9 @@ void vPedalsMonitor(void* pv_params)
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
 
+
+	uint8_t counter = 0;
+
 	for (;;) {
 		read_pedals(mpu, adc_data);
 
@@ -187,15 +190,19 @@ void vPedalsMonitor(void* pv_params)
 		}
 
 		/* Send CAN messages with raw pedal readings, we do not care if it fails*/
+		counter += 1;
+		if (counter >= 5) {
+			counter = 0;
 		endian_swap(&adc_data[ACCELPIN_1], sizeof(adc_data[ACCELPIN_1]));
 		endian_swap(&adc_data[ACCELPIN_2], sizeof(adc_data[ACCELPIN_2]));
 		memcpy(accel_pedals_msg.data, &adc_data, accel_pedals_msg.len);
 		queue_can_msg(accel_pedals_msg);
 		
 		endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_1]));
-		endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_2]));
-		memcpy(brake_pedals_msg.data, &adc_data[2], brake_pedals_msg.len);
+		endian_swap(&adc_data[BRAKEPIN_2], sizeof(adc_data[BRAKEPIN_2]));
+		memcpy(brake_pedals_msg.data, adc_data + 2, brake_pedals_msg.len);
 		queue_can_msg(brake_pedals_msg);
+		}
 		
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
