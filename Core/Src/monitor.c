@@ -133,6 +133,8 @@ void vPedalsMonitor(void* pv_params)
 
 	static pedals_t sensor_data;
 	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
+	can_msg_t accel_pedals_msg	= { .id = CANID_PEDALS_ACCEL_MSG, .len = 8, .data = { 0 } };
+	can_msg_t brake_pedals_msg	= { .id = CANID_PEDALS_BRAKE_MSG, .len = 8, .data = { 0 } };
 	uint32_t adc_data[4];
 	bool is_braking = false;
 
@@ -183,6 +185,18 @@ void vPedalsMonitor(void* pv_params)
 			fault_data.diag = "Failed to push pedal data to queue";
 			queue_fault(&fault_data);
 		}
+
+		/* Send CAN messages with raw pedal readings, we do not care if it fails*/
+		endian_swap(&adc_data[ACCELPIN_1], sizeof(adc_data[ACCELPIN_1]));
+		endian_swap(&adc_data[ACCELPIN_2], sizeof(adc_data[ACCELPIN_2]));
+		memcpy(accel_pedals_msg.data, &adc_data, accel_pedals_msg.len);
+		queue_can_msg(accel_pedals_msg);
+		
+		endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_1]));
+		endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_2]));
+		memcpy(brake_pedals_msg.data, &adc_data[2], brake_pedals_msg.len);
+		queue_can_msg(brake_pedals_msg);
+		
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
@@ -271,12 +285,16 @@ void vFusingMonitor(void* pv_params)
 	bool fuses[MAX_FUSES]	= { 0 };
 	uint16_t fuse_buf;
 
+	struct __attribute__((__packed__)){
+        uint8_t fuse_1;
+        uint8_t fuse_2;
+    } fuse_data;
+
 	for (;;) {
 		fuse_buf = 0;
 
 		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-			if (read_fuse(pdu, fuse, &fuses[fuse])) /* Actually read the fuse */
-				fuse_buf |= 1 << MAX_FUSES;			/* Set error bit */
+			read_fuse(pdu, fuse, &fuses[fuse]); /* Actually read the fuse */
 
 			fuse_buf |= fuses[fuse]
 						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
@@ -284,10 +302,15 @@ void vFusingMonitor(void* pv_params)
 
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 		
-		/* convert to big endian */
-		// endian_swap(&fuse_buf, sizeof(fuse_buf));
+		fuse_data.fuse_1 = fuse_buf & 0xFF;
+		fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
 
-		memcpy(fuse_msg.data, &fuse_buf, fuse_msg.len);
+		// reverse the bit order
+		fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
+		fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
+
+
+		memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
@@ -313,14 +336,17 @@ void vShutdownMonitor(void* pv_params)
 	uint16_t shutdown_buf;
 	bool tsms_status = false;
 
+	struct __attribute__((__packed__)){
+        uint8_t shut_1;
+        uint8_t shut_2;
+    } shutdown_data ;
+
 	for (;;) {
 		shutdown_buf = 0;
 
 		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
-			if (read_shutdown(
-					pdu, stage,
-					&shutdown_loop[stage])) /* Actually read the shutdown loop stage state */
-				shutdown_buf |= 1 << MAX_SHUTDOWN_STAGES; /* Set error bit */
+			read_shutdown(pdu, stage, &shutdown_loop[stage]); /* Actually read the shutdown loop stage state */
+				
 
 			shutdown_buf
 				|= shutdown_loop[stage]
@@ -329,10 +355,16 @@ void vShutdownMonitor(void* pv_params)
 
 		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
 
-		/* convert to big endian */
-		// endian_swap(&shutdown_buf, sizeof(shutdown_buf));
+		/* seperate each byte */
+		shutdown_data.shut_1 = shutdown_buf & 0xFF;
+		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
 
-		memcpy(shutdown_msg.data, &shutdown_buf, shutdown_msg.len);
+		// reverse the bit order
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
+
+
+		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
