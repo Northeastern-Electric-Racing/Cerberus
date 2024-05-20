@@ -58,4 +58,8 @@
 #define CANID_OUTBOUND_MSG	0xA55
 #define CANID_FUSE			0x111
 #define CANID_SHUTDOWN_LOOP 0x123
+#define CANID_NERO_MSG      0x501
 #define CANID_FAULT_MSG 	0x502
+#define CANID_PEDALS_ACCEL_MSG 	0x504
+#define CANID_PEDALS_BRAKE_MSG 	0x505
+#define CANID_EXTRA_MSG     0x701 // Reserved for MPU debug message, see yaml for format
