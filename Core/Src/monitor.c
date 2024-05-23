@@ -382,11 +382,11 @@ void vShutdownMonitor(void* pv_params)
 		if(!read_tsms_sense(pdu, &tsms_status)) {
 			
 			// Timer has not been started, and there is a change in TSMS, so start the timer
-			if (tsms_status != tsms_status && !is_timer_active(&tsms_debounce_timer)) {
+			if (tsms != tsms_status && !is_timer_active(&tsms_debounce_timer)) {
 				start_timer(&tsms_debounce_timer, 1000);
 			} 
 			// During debouncing, the tsms reading changes, so end the debounce period
-			else if (tsms_status == tsms_status && !is_timer_expired(&tsms_debounce_timer)) {
+			else if (tsms == tsms_status && !is_timer_expired(&tsms_debounce_timer)) {
 				cancel_timer(&tsms_debounce_timer);
 			}
 			// The TSMS reading has been consistent thorughout the debounce period
