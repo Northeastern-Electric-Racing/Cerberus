@@ -133,6 +133,7 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
   printf("BOOT\r\n");
   /* USER CODE END 1 */
@@ -221,8 +222,8 @@ int main(void)
   assert(shutdown_monitor_handle);
 
   /* Messaging */
-  //dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  //assert(dti_router_handle);
+  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+  assert(dti_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
   bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
@@ -252,6 +253,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
