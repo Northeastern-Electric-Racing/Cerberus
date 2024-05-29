@@ -14,8 +14,8 @@
 #define RTDS_CTRL	   5 // PORT 1
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
 
-#define SHUTDOWN_ADDR PCA_I2C_ADDR_0
-#define CTRL_ADDR	  PCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR PCA_I2C_ADDR_1
+#define CTRL_ADDR	  PCA_I2C_ADDR_2
 #define RTDS_DURATION 2500
 
 static osMutexAttr_t pdu_mutex_attributes;
