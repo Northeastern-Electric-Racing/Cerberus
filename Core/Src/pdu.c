@@ -14,7 +14,7 @@
 #define RTDS_CTRL	   5 // PORT 1
 #define MUTEX_TIMEOUT  osWaitForever /* ms */
 
-#define SHUTDOWN_ADDR PCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR PCA_I2C_ADDR_3
 #define CTRL_ADDR	  PCA_I2C_ADDR_2
 #define RTDS_DURATION 2500
 
@@ -28,7 +28,7 @@ static void rtds_shutoff_cb(void* pv_params)
 		return;
 
 	/* write RTDS over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_1, RTDS_CTRL, false);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_1_REG, RTDS_CTRL, false);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return;
@@ -51,20 +51,26 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->shutdown_expander);
 	pca9539_init(pdu->shutdown_expander, pdu->hi2c, SHUTDOWN_ADDR);
+	// if (status != HAL_OK) {
+	// 	printf("\n\rshutdown init fail\n\r");
+	// 	free(pdu->shutdown_expander);
+	// 	free(pdu);
+	// 	return NULL;
+	// }
 
 	// all shutdown expander things are inputs
 	uint8_t shutdown_config_directions = 0b00000000;
-	HAL_StatusTypeDef status = pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_0, shutdown_config_directions);
+	 HAL_StatusTypeDef status = pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_0_REG, shutdown_config_directions);
 	if (status != HAL_OK) {
-		printf("\n\rshutdown init fail\n\r");
+		printf("\n\rshutdown write fail\n\r");
 		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
 	}
 	status
-		= pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_1, shutdown_config_directions);
+		= pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_1_REG, shutdown_config_directions);
 	if (status != HAL_OK) {
-		printf("\n\rshutdown init fail\n\r");
+		printf("\n\rshutdown wrtie 2 fail\n\r");
 		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
@@ -77,7 +83,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 
 
 	uint8_t control_config_directions_0 = 0b11110000;
-	status = pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_0, control_config_directions_0);
+	status = pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_0_REG, control_config_directions_0);
 	if (status != HAL_OK) {
 		printf("\n\rcntrl init fail\n\r");
 		free(pdu->ctrl_expander);
@@ -85,7 +91,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 		return NULL;
 	}
 	uint8_t control_config_directions_1 = 0b00000001;
-	status = pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_1, control_config_directions_1);
+	status = pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_1_REG, control_config_directions_1);
 	if (status != HAL_OK) {
 		printf("\n\rcntrl init fail\n\r");
 		free(pdu->ctrl_expander);
@@ -125,7 +131,7 @@ int8_t write_pump(pdu_t* pdu, bool status)
 	}
 
 	/* write pump over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0, PUMP_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, PUMP_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -145,7 +151,7 @@ int8_t write_fault(pdu_t* pdu, bool status)
 		return stat;
 
 	/* write radiator over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0, RADFAN_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, RADFAN_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -165,7 +171,7 @@ int8_t write_brakelight(pdu_t* pdu, bool status)
 		return stat;
 
 	/* write brakelight over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0, BRKLIGHT_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, BRKLIGHT_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -185,7 +191,7 @@ int8_t write_fan_battbox(pdu_t* pdu, bool status)
 		return stat;
 
 	/* write fan over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0, BATBOXFAN_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, BATBOXFAN_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -207,7 +213,7 @@ int8_t sound_rtds(pdu_t* pdu)
 	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
 
 	/* write RTDS over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0, RTDS_CTRL, true);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, RTDS_CTRL, true);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -236,14 +242,14 @@ int8_t read_fuses(pdu_t* pdu, bool status[MAX_FUSES])
 		return stat;
 
 	uint8_t bank0_d = 0;
-	HAL_StatusTypeDef error = pca9539_read_reg(pdu->ctrl_expander, PCA_INPUT_0, bank0_d);
+	HAL_StatusTypeDef error = pca9539_read_reg(pdu->ctrl_expander, PCA_INPUT_0_REG, bank0_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
 
 	uint8_t bank1_d = 0;
-	error = pca9539_read_reg(pdu->ctrl_expander, PCA_INPUT_1, bank1_d);
+	error = pca9539_read_reg(pdu->ctrl_expander, PCA_INPUT_1_REG, bank1_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -282,7 +288,7 @@ int8_t read_tsms_sense(pdu_t* pdu, bool* status)
 	/* read pin over i2c */
 	uint8_t tsms_pin		= 14;
 	uint8_t config = 0;
-	HAL_StatusTypeDef error = pca9539_read_pin(pdu->ctrl_expander, PCA_INPUT_1, tsms_pin, &config);
+	HAL_StatusTypeDef error = pca9539_read_pin(pdu->ctrl_expander, PCA_INPUT_1_REG, tsms_pin, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -303,14 +309,14 @@ int8_t read_shutdown(pdu_t* pdu, bool status[MAX_SHUTDOWN_STAGES])
 		return stat;
 
 	uint8_t bank0_d = 0;
-	HAL_StatusTypeDef error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_0, bank0_d);
+	HAL_StatusTypeDef error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_0_REG, bank0_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
 
 	uint8_t bank1_d = 0;
-	error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_1, bank1_d);
+	error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_1_REG, bank1_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -346,7 +352,7 @@ int8_t write_rtds(pdu_t* pdu, bool status)
 		return stat;
 
 	/* write fan over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_1, RTDS_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_1_REG, RTDS_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
