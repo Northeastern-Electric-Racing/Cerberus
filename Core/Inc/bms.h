@@ -4,12 +4,14 @@
 
 #include "cmsis_os.h"
 
-#define BMS_DCL_MSG		0x156 /*BMS MONITOR WATCHDOG*/
+#define BMS_DCL_MSG		    0x156 /*BMS MONITOR WATCHDOG*/
+#define BMS_CURR_LIMIT_MSG  0x86
 
 typedef struct
 {
     osTimerId bms_monitor_timer;
     uint16_t dcl;
+    uint16_t ccl;
 } bms_t;
 
 extern bms_t* bms;

@@ -52,6 +52,9 @@ void vBMSCANMonitor(void* pv_params)
 			/*TO-DO: fix duration (ticks)*/
 			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 			//serial_print("BMS DCL %d", bms->dcl);
+			if (msg_from_queue.id == BMS_CURR_LIMIT_MSG) {
+				bms->ccl = (msg_from_queue.data[3] << 8) | msg_from_queue.data[2];
+			}
 		}
 	}
 }

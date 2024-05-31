@@ -16,6 +16,10 @@
 
 /* Pedal tuning */
 #define PEDALS_SAMPLE_DELAY     20    /* ms */
+#define BRAKE1_OFFSET           0
+#define BRAKE1_MAX_VAL          0
+#define BRAKE2_OFFSET           0
+#define BRAKE2_MAX_VAL          0
 #define ACCEL1_OFFSET           980
 #define ACCEL1_MAX_VAL          1866
 #define ACCEL2_OFFSET           1780
@@ -24,6 +28,7 @@
 
 /* Torque Tuning */
 #define MAX_TORQUE              220 /* Nm * 10 */
+#define MAX_BRAKE_PRESSURE      1800 // psi
 #define REGEN_RAMP_TIME         500    // regen ramp time (in ms)
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
