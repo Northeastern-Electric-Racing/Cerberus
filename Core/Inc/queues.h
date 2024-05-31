@@ -28,4 +28,6 @@ typedef struct {
 
 extern osMessageQueueId_t pedal_data_queue;
 
+extern osMessageQueueId_t break_state_queue;
+
 #endif // QUEUES_H

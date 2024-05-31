@@ -25,6 +25,7 @@
 // DEBUG: threshold may need adjusting
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
+ 
 
 static bool tsms = false;
 
@@ -158,23 +159,33 @@ void vPedalsMonitor(void* pv_params)
 		/* Evaluate Pedal Faulting Conditions */
 		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
-
+		
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
 		//printf("Accel 1: %d\r\n", max_pedal1);
 		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 		//printf("Accel 2: %d\r\n",max_pedal2);
 
+		// NOTE USE THESE IF SENSORS WERE FLIPPED
+		//uint16_t accel_val1 = (int16_t)(ACCEL1_MAX_VAL - adc_data[ACCELPIN_1]) - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)((ACCEL1_MAX_VAL - adc_data[ACCELPIN_1]) - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		//uint16_t accel_val2 = (int16_t)(ACCEL2_MAX_VAL - adc_data[ACCELPIN_2]) - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)((ACCEL2_MAX_VAL - adc_data[ACCELPIN_2]) - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+
+
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
+
+		/* Raw ADC for tuning */
+		printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
+		printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
 
 		/* Brakelight Control */
 		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > 650;
+		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > PEDAL_BRAKE_THRESH;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
+		osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;

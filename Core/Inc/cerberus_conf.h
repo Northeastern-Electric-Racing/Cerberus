@@ -19,6 +19,7 @@
 #define ACCEL1_MAX_VAL          3319
 #define ACCEL2_OFFSET           1920
 #define ACCEL2_MAX_VAL          3382
+#define PEDAL_BRAKE_THRESH      650
 
 /* Torque Tuning */
 #define MAX_TORQUE              220 /* Nm * 10 */

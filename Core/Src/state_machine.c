@@ -41,6 +41,7 @@ const osThreadAttr_t sm_director_attributes =
 };
 
 static osMessageQueueId_t state_trans_queue;
+osMessageQueueId_t break_state_queue;
 
 void fault_callback()
 {
@@ -136,6 +137,7 @@ void vStateMachineDirector(void* pv_params)
 	cerberus_state.drive	  = NOT_DRIVING;
 
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_req_t), NULL);
+	break_state_queue = osMessageQueueNew(1, sizeof(bool), NULL);
 
 	pdu_t *pdu_1 = (pdu_t *)pv_params;
 
@@ -169,6 +171,14 @@ void vStateMachineDirector(void* pv_params)
 
 			/* If we are turning ON the motor, blare RTDS */
 			if (cerberus_state.drive == NOT_DRIVING) {
+
+				/* make sure foot is on break */
+				bool break_state = false;
+				osMessageQueueGet(break_state_queue, &break_state, NULL, 0);
+				if (!break_state) {
+					continue;
+				}
+
 				serial_print("CALLING RTDS");
 				sound_rtds(pdu);
 			}
