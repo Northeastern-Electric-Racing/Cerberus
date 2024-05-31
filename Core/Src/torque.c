@@ -113,6 +113,7 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	uint16_t torque = 0;
 	osStatus_t stat;
+	bool motor_disabled = false;
 
 	dti_t *mc = (dti_t *)pv_params;
 
@@ -120,6 +121,7 @@ void vCalcTorque(void* pv_params)
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
 		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
+		float brake_value = (float) pedal_data.brake_value / 10.0;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
@@ -128,7 +130,30 @@ void vCalcTorque(void* pv_params)
 			if (func_state != ACTIVE)
 			{
 				torque = 0;
+				dti_set_torque(torque);
 				continue;
+			}
+
+			/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
+			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
+			float rel_accel_pedal_travel = accelerator_value / (((ACCEL1_MAX_VAL - ACCEL1_OFFSET) + (ACCEL2_MAX_VAL - ACCEL2_OFFSET)) / 2.0);
+			uint16_t brakes_engaged_threshold = 650;
+			if (brake_value > brakes_engaged_threshold && rel_accel_pedal_travel > 0.25) 
+			{
+				motor_disabled = true;
+			}
+
+			if (motor_disabled) 
+			{
+				if (rel_accel_pedal_travel < 0.05) 
+				{
+					motor_disabled = false;
+					continue;
+				} else {
+					torque = 0;
+					dti_set_torque(torque);
+					continue;
+				}
 			}
 
 			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
