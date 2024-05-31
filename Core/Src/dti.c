@@ -238,10 +238,10 @@ const osThreadAttr_t dti_router_attributes
 
 static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 {
-	/* ERPM is first four bytes of can message in big endian format */
+	/* ERPM is first four bytes of can message in little endian format */
 	uint32_t erpm = 0;
-	for (int i = 0; i < 4; i++) {
-		erpm |= msg.data[i] << (8 * (3 - i));
+	for (int i = 3; i > 0; i--) {
+		erpm |= msg.data[i] << (8 * i);
 	}
 
 	uint32_t rpm = erpm / POLE_PAIRS;
