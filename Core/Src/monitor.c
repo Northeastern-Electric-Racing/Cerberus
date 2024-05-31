@@ -126,6 +126,12 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 	}
 }
 
+bool is_braking = false;
+
+bool get_braking() {
+	return is_braking;
+}
+
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
@@ -136,7 +142,6 @@ void vPedalsMonitor(void* pv_params)
 	can_msg_t accel_pedals_msg	= { .id = CANID_PEDALS_ACCEL_MSG, .len = 8, .data = { 0 } };
 	can_msg_t brake_pedals_msg	= { .id = CANID_PEDALS_BRAKE_MSG, .len = 8, .data = { 0 } };
 	uint32_t adc_data[4];
-	bool is_braking = false;
 
 	nertimer_t diff_timer_accelerator;
 	nertimer_t sc_timer_accelerator;
@@ -263,7 +268,7 @@ void vIMUMonitor(void* pv_params)
 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
 		//if (queue_can_msg(imu_accel_msg)) {
 		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
+		//	queue_fault(&fault_data);enabled
 		//}
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);

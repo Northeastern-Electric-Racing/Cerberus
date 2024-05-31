@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>
+#include "monitor.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
@@ -168,11 +169,13 @@ void vStateMachineDirector(void* pv_params)
 			//TODO: Make sure motor is not spinning before switching
 
 			/* If we are turning ON the motor, blare RTDS */
-			if (cerberus_state.drive == NOT_DRIVING) {
+			if (cerberus_state.drive == NOT_DRIVING && get_braking()) {
+				/* Can only enter RTD state if brakes are engaged */
 				serial_print("CALLING RTDS");
 				sound_rtds(pdu);
+			} else if (cerberus_state.drive == NOT_DRIVING) {
+				continue;
 			}
-
 			cerberus_state.drive = new_state.state.drive;
 			continue;
 		}

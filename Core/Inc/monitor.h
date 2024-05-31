@@ -45,4 +45,6 @@ extern const osThreadAttr_t brakelight_monitor_attributes;
 
 bool get_tsms();
 
+bool get_braking();
+
 #endif // MONITOR_H
