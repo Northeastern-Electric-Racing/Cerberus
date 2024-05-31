@@ -47,6 +47,8 @@ typedef struct
 // TODO: Expand GET interface
 int32_t dti_get_rpm(dti_t* dti);
 
+uint16_t dti_get_input_voltage(dti_t* dti);
+
 /* Utilities for Decoding CAN message */
 extern osThreadId_t dti_router_handle;
 extern const osThreadAttr_t dti_router_attributes;

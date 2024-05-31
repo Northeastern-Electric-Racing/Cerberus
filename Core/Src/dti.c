@@ -248,6 +248,21 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexRelease(*mc->mutex);
 }
 
+uint16_t dti_get_input_voltage(dti_t* mc) {
+	uint16_t voltage;
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	voltage = mc->input_voltage;
+	osMutexRelease(*mc->mutex);
+
+	return voltage;
+}
+
+static void dti_set_input_voltage(dti_t *mc, can_msg_t msg) {
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->input_voltage = (msg.data[8] << 8) | msg.data[7];
+	osMutexRelease(*mc->mutex);
+}
+
 void vDTIRouter(void* pv_params)
 {
 	can_msg_t message;
@@ -265,6 +280,7 @@ void vDTIRouter(void* pv_params)
 			{
 				case DTI_CANID_ERPM:
 					dti_record_rpm(mc, message);
+					dti_set_input_voltage(mc, message);
 					break;
 				case DTI_CANID_CURRENTS:
 					break;

@@ -24,6 +24,7 @@
 
 /* Torque Tuning */
 #define MAX_TORQUE              220 /* Nm * 10 */
+#define REGEN_RAMP_TIME         500    // regen ramp time (in ms)
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
 // NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
