@@ -30,6 +30,16 @@
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
 static float torque_limit_percentage = 1.0;
+static int REGEN_STRENGTHS[4] = {0, 300, 600, 1000}; // N-m to be applied, in N-m * 10
+
+typedef enum {
+	ZILCH,
+	LIGHT,
+	MEDIUM,
+	STRONG
+} Regen_Level_t; 
+
+Regen_Level_t regenLevel = ZILCH;
 
 osThreadId_t torque_calc_handle;
 const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
@@ -42,10 +52,10 @@ static void linear_accel_to_torque(float accel, uint16_t* torque)
 	*torque = (uint16_t)(accel * MAX_TORQUE);
 }
 
-static void rpm_to_mph(uint32_t rpm, float* mph)
+static float rpm_to_mph(uint32_t rpm)
 {
 	/* Convert RPM to MPH */
-	*mph = (rpm / 60) * WHEEL_CIRCUMFERENCE * 2.237 / GEAR_RATIO;
+	return (rpm / 60) * WHEEL_CIRCUMFERENCE * 2.237 / GEAR_RATIO;
 }
 
 static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
@@ -79,140 +89,68 @@ static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
 		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
 }
 
-static void paddle_accel_to_torque(float accel, uint16_t* torque)
+uint32_t regenStartTime = 0;
+bool regenActive = false;
+
+bool brakePressed = false;
+uint32_t timeBrake = 0;     // the time at which the brake was last pressed
+
+int16_t calcCLRegenLimit(dti_t* mc)
 {
-	*torque = (uint16_t)torque_limit_percentage * ((accel / MAX_TORQUE) * 0xFFFF);
-	//TODO add regen logic
+	int16_t dcVoltage = fabs(dti_get_input_voltage(mc));
+	int16_t dcChargeCurrent = 5; // I assume this is in amps
+
+	// Serial.print("Vdc: ");
+	// Serial.println(dcVoltage);
+	// Serial.print("dcChargeCurrent: ");
+	// Serial.println(dcChargeCurrent);
+
+	return (7.84 * dcVoltage * dcChargeCurrent) / (500 + 1);
 }
-// 	pedalTorque = pedalTorque * torqueLimitPercentage;
-// 	if (pedalTorque == 0 && mph > 5) {
-// 		uint32_t currTime = millis();
-// 		if (!regenActive) {
-// 			regenStartTime = currTime;
-// 			regenActive = true;
-// 		}
-// 		if (currTime - regenStartTime < REGEN_RAMP_TIME) {
-// 			pedalTorque = (((float)currTime - (float)regenStartTime) / REGEN_RAMP_TIME) * -1 * (min(REGEN_STRENGTHS[regenLevel], regenTorqueLim));
-// 		} else {
-// 			pedalTorque = -1 * min(REGEN_STRENGTHS[regenLevel], regenTorqueLim);
-// 		}
-// 	} else {
-// 		regenStartTime = 0;
-// 		regenActive = false;
-// 	}
-// }
 
-
-// // 	int16_t regenTorqueLim = calcCLRegenLimit();
-// //    else if (drive_state == EFFICIENCY) {
-// // 		pedalTorque = pedalTorque * torqueLimitPercentage;
-// // 		if (pedalTorque == 0 && mph > 5) {
-// // 			uint32_t currTime = millis();
-// // 			if (!regenActive) {
-// // 				regenStartTime = currTime;
-// // 				regenActive = true;
-// // 			}
-// // 			if (currTime - regenStartTime < REGEN_RAMP_TIME) {
-// // 				pedalTorque = (((float)currTime - (float)regenStartTime) / REGEN_RAMP_TIME) * -1 * (min(REGEN_STRENGTHS[regenLevel], regenTorqueLim));
-// // 			} else {
-// // 				pedalTorque = -1 * min(REGEN_STRENGTHS[regenLevel], regenTorqueLim);
-// // 			}
-// // 		} else {
-// // 			regenStartTime = 0;
-// // 			regenActive = false;
-// // 		}
-// // 	}
-
-// // 	return pedalTorque;
-// // }
-
-
-// int16_t calcCLTorqueLimit()
-// {
-// 	int16_t dcVoltage = abs(bms->getLiveVoltage());
-// 	int16_t dcCurrent = bms->getCurrentLimit();
-// 	int16_t motorSpeed = abs(motorController->getMotorSpeed());
-
-// 	int16_t calculated = 102;
-
-// 	// calculated = (0.9 * (7.84 * (dcVoltage / 10) * dcCurrent)) / (500 + 1);
-// 	calculated = (dcCurrent * dcVoltage * sqrt(3)) / (motorSpeed * CL_TO_TOQRUE_CONST);
-
-// 	if ((calculated < 0) | (calculated > (MAXIMUM_TORQUE / 10))) {
-// 		calculated = MAXIMUM_TORQUE / 10;
-// 	}
-
-// 	/*
-// 	Serial.print("Vdc: ");
-// 	Serial.print(dcVoltage);
-// 	Serial.print(", Idc: ");
-// 	Serial.print(dcCurrent);
-// 	Serial.print(", wm: ");
-// 	Serial.println(motorSpeed);
-
-// 	Serial.print("CL Limit: ");
-// 	Serial.print(calculated);
-
-// 	Serial.print(", ");
-// 	Serial.println(10 * calculated);
-// 	*/
-// 	return calculated * 10;
-// }
-
-
-// int16_t calcCLRegenLimit()
-// {
-// 	int16_t dcVoltage = abs(bms->getLiveVoltage());
-// 	int16_t dcChargeCurrent = abs(bms->getChargeCurrentLimit());
-// 	int16_t motorSpeed = abs(motorController->getMotorSpeed());
-
-// 	// Serial.print("Vdc: ");
-// 	// Serial.println(dcVoltage);
-// 	// Serial.print("dcChargeCurrent: ");
-// 	// Serial.println(dcChargeCurrent);
-
-// 	return (7.84 * dcVoltage * dcChargeCurrent) / (500 + 1);
-// }
-
-// void incrRegenLevel()
-// {
-// 	switch (regenLevel)
-// 	{
-// 	case ZILCH:
-// 		regenLevel = LIGHT;
-// 		break;
-// 	case LIGHT:
-// 		regenLevel = MEDIUM;
-// 		break;
-// 	case MEDIUM:
-// 		regenLevel = STRONG;
-// 		break;
-// 	case STRONG:
-// 		regenLevel = ZILCH;
-// 		break;
-// 	default:
-// 		regenLevel = ZILCH;
-// 		break;
-// 	}
-// }
-
-void increase_torque_limit()
+void incrRegenLevel()
 {
-	if (torque_limit_percentage + 0.1 > 1)
+	switch (regenLevel)
 	{
-		torque_limit_percentage = 1;
-	} else {
-		torque_limit_percentage += 0.1;
+	case ZILCH:
+		regenLevel = LIGHT;
+		break;
+	case LIGHT:
+		regenLevel = MEDIUM;
+		break;
+	case MEDIUM:
+		regenLevel = STRONG;
+		break;
+	case STRONG:
+		regenLevel = ZILCH;
+		break;
+	default:
+		regenLevel = ZILCH;
+		break;
 	}
 }
 
-void decrease_torque_limit()
+// TEMPORARY should be made a constant in cerberus_conf.h
+static const float torqueLimitPercentage = 1;
+
+static void paddle_accel_to_torque(float mph, float accel, uint16_t* torque, dti_t* mc)
 {
-	if (torque_limit_percentage - 1 < 0)
-	{
-		torque_limit_percentage = 0;
+	int16_t regenTorqueLim = calcCLRegenLimit(mc);
+	*torque = *torque * torqueLimitPercentage;
+	if (*torque == 0 && mph > 5) {
+		uint32_t currTime = HAL_GetTick();
+		if (!regenActive) {
+			regenStartTime = currTime;
+			regenActive = true;
+		}
+		if (currTime - regenStartTime < REGEN_RAMP_TIME) {
+			*torque = (((float)currTime - (float)regenStartTime) / REGEN_RAMP_TIME) * -1 * (fmin(REGEN_STRENGTHS[regenLevel], regenTorqueLim));
+		} else {
+			*torque = -1 * fmin(REGEN_STRENGTHS[regenLevel], regenTorqueLim);
+		}
 	} else {
-		torque_limit_percentage -= 0.1;
+		regenStartTime = 0;
+		regenActive = false;
 	}
 }
 
@@ -244,8 +182,7 @@ void vCalcTorque(void* pv_params)
 
 			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
 
-			float mph;
-			rpm_to_mph(dti_get_rpm(mc), &mph);
+			float mph = rpm_to_mph(dti_get_rpm(mc));
 
 			switch (drive_state)
 			{
@@ -256,7 +193,7 @@ void vCalcTorque(void* pv_params)
 					limit_accel_to_torque(mph, accelerator_value, &torque);
 					break;
 				case ENDURANCE:
-					paddle_accel_to_torque(accelerator_value, &torque);
+					paddle_accel_to_torque(mph, accelerator_value, &torque, mc);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);

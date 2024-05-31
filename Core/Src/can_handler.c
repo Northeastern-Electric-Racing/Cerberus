@@ -78,9 +78,9 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	case DTI_CANID_CURRENTS:
 	case DTI_CANID_TEMPS_FAULT:
 	case DTI_CANID_ID_IQ:
-	// case DTI_CANID_SIGNALS:
+	case DTI_CANID_SIGNALS:
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
-	// 	break;
+		break;
 	case BMS_DCL_MSG:
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
 	default:
