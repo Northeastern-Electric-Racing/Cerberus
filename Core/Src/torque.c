@@ -109,22 +109,36 @@ void decrease_torque_limit()
 	}
 }
 
-void handle_endurance(dti_t* mc, float accel_val, float brake_val, uint16_t* torque) {
-	if (brake_val > 5) {
-		// braking, do regen
-		// Temporary value for testing purposes
-		uint16_t ccl = 5; //bms->ccl;
+/**
+ * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
+ * 
+ * @param mc pointer to struct containing dti data
+ * @param mph mph of the car
+ * @param accel_val adjusted value of the acceleration pedal
+ * @param brake_val adjusted value of the brake pedal
+ * @param torque pointer to torque value
+ */
+void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, uint16_t* torque) {
+	float rel_brake_travel = (brake_val / (float)MAX_BRAKE_PRESSURE);
+	if (rel_brake_travel > 5 && mph > 5) {
+		// braking and moving, do regen
+
+		// The % brake travel at which we want maximum regen
+		static const float travel_scaling_max = 0.25;
 		// % of max brake pressure * limit that cells can charge at
-		float brake_current = (brake_val / (float)MAX_BRAKE_PRESSURE) * ccl;
+		float brake_current = (rel_brake_travel / travel_scaling_max) * bms->ccl;
+		if (brake_current > bms->ccl) {
+			// clamp for safety
+			brake_current = bms->ccl;
+		}
 	
 		// current must be delivered to DTI as a multiple of 10
-		dti_set_brake_current((uint16_t)brake_current * 10);
+		dti_set_brake_current((uint16_t)(brake_current * 10));
 		*torque = 0;
 	} else {
-		// accelerating
+		// accelerating, limit torque
 		linear_accel_to_torque(accel_val, torque);
 		*torque = (uint16_t) (*torque * torque_limit_percentage);
-		dti_set_torque(*torque);
 	}
 }
 
@@ -169,7 +183,7 @@ void vCalcTorque(void* pv_params)
 					limit_accel_to_torque(mph, accelerator_value, &torque);
 					break;
 				case ENDURANCE:
-					handle_endurance(mc, accelerator_value, brake_value, &torque);
+					handle_endurance(mc, mph, accelerator_value, brake_value, &torque);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);
