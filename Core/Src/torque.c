@@ -114,7 +114,7 @@ void decrease_torque_limit()
 	}
 }
 
-void handle_endurance(dti_t* mc, float accel_val, float brake_val, uint16_t torque) {
+void handle_endurance(dti_t* mc, float accel_val, float brake_val, uint16_t* torque) {
 	if (brake_val > 5) {
 		// braking, do regen
 		// Temporary value for testing purposes
@@ -124,11 +124,12 @@ void handle_endurance(dti_t* mc, float accel_val, float brake_val, uint16_t torq
 	
 		// current must be delivered to DTI as a multiple of 10
 		dti_set_brake_current((uint16_t)brake_current * 10);
+		*torque = 0;
 	} else {
 		// accelerating
-		linear_accel_to_torque(accel_val, &torque);
-		torque *= torque_limit_percentage;
-		dti_set_torque(torque);
+		linear_accel_to_torque(accel_val, torque);
+		*torque = (uint16_t) (*torque * torque_limit_percentage);
+		dti_set_torque(*torque);
 	}
 }
 
@@ -200,18 +201,15 @@ void vCalcTorque(void* pv_params)
 				// 	break;
 				case SPEED_LIMITED:
 					limit_accel_to_torque(mph, accelerator_value, &torque);
-					dti_set_torque(torque);
 					break;
 				case ENDURANCE:
-					handle_endurance(mc, accelerator_value, brake_value, torque);
+					handle_endurance(mc, accelerator_value, brake_value, &torque);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);
-					dti_set_torque(torque);
 					break;
 				default:
 					torque = 0;
-					dti_set_torque(torque);
 					break;
 			}
 
