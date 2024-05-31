@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include "bms.h"
 
 // TODO: Might want to make these more dynamic to account for MechE tuning
 #define MIN_PEDAL_VAL 0x1DC /* Raw ADC */
@@ -29,9 +30,7 @@
 #define MIN_COMMAND_FREQ  60					  /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
-// TEMPORARY should be made a constant in cerberus_conf.h
 static float torque_limit_percentage = 1.0;
-static int REGEN_STRENGTHS[4] = {0, 300, 600, 1000}; // N-m to be applied, in N-m * 10
 
 typedef enum {
 	ZILCH,
@@ -90,69 +89,6 @@ static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
 		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
 }
 
-uint32_t regenStartTime = 0;
-bool regenActive = false;
-
-bool brakePressed = false;
-uint32_t timeBrake = 0;     // the time at which the brake was last pressed
-
-int16_t calcCLRegenLimit(dti_t* mc)
-{
-	int16_t dcVoltage = fabs(dti_get_input_voltage(mc));
-	int16_t dcChargeCurrent = 5; // I assume this is in amps
-
-	// Serial.print("Vdc: ");
-	// Serial.println(dcVoltage);
-	// Serial.print("dcChargeCurrent: ");
-	// Serial.println(dcChargeCurrent);
-
-	return (7.84 * dcVoltage * dcChargeCurrent) / (500 + 1);
-}
-
-void incrRegenLevel()
-{
-	switch (regenLevel)
-	{
-	case ZILCH:
-		regenLevel = LIGHT;
-		break;
-	case LIGHT:
-		regenLevel = MEDIUM;
-		break;
-	case MEDIUM:
-		regenLevel = STRONG;
-		break;
-	case STRONG:
-		regenLevel = ZILCH;
-		break;
-	default:
-		regenLevel = ZILCH;
-		break;
-	}
-}
-
-
-static void paddle_accel_to_torque(float mph, float accel, uint16_t* torque, dti_t* mc)
-{
-	int16_t regenTorqueLim = calcCLRegenLimit(mc);
-	*torque = *torque * torque_limit_percentage;
-	if (*torque == 0 && mph > 5) {
-		uint32_t currTime = HAL_GetTick();
-		if (!regenActive) {
-			regenStartTime = currTime;
-			regenActive = true;
-		}
-		if (currTime - regenStartTime < REGEN_RAMP_TIME) {
-			*torque = (((float)currTime - (float)regenStartTime) / REGEN_RAMP_TIME) * -1 * (fmin(REGEN_STRENGTHS[regenLevel], regenTorqueLim));
-		} else {
-			*torque = -1 * fmin(REGEN_STRENGTHS[regenLevel], regenTorqueLim);
-		}
-	} else {
-		regenStartTime = 0;
-		regenActive = false;
-	}
-}
-
 void increase_torque_limit()
 {
 	if (torque_limit_percentage + 0.1 > 1)
@@ -173,6 +109,24 @@ void decrease_torque_limit()
 	}
 }
 
+void handle_endurance(dti_t* mc, float accel_val, float brake_val, uint16_t torque) {
+	if (brake_val > 5) {
+		// braking, do regen
+		// Temporary value for testing purposes
+		uint16_t ccl = 5; //bms->ccl;
+		// % of max brake pressure * limit that cells can charge at
+		float brake_current = (brake_val / (float)MAX_BRAKE_PRESSURE) * ccl;
+	
+		// current must be delivered to DTI as a multiple of 10
+		dti_set_brake_current((uint16_t)brake_current * 10);
+	} else {
+		// accelerating
+		linear_accel_to_torque(accel_val, &torque);
+		torque *= torque_limit_percentage;
+		dti_set_torque(torque);
+	}
+}
+
 void vCalcTorque(void* pv_params)
 {
 	const uint16_t delay_time = 5; /* ms */
@@ -188,6 +142,7 @@ void vCalcTorque(void* pv_params)
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
 		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
+		float brake_value = (float) pedal_data.brake_value / 10.0;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
@@ -205,20 +160,24 @@ void vCalcTorque(void* pv_params)
 
 			switch (drive_state)
 			{
-				case REVERSE:
-					limit_accel_to_torque(mph, accelerator_value, &torque);
-					break;
+				// case REVERSE:
+				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
+				// 	dti_set_torque(torque);
+				// 	break;
 				case SPEED_LIMITED:
 					limit_accel_to_torque(mph, accelerator_value, &torque);
+					dti_set_torque(torque);
 					break;
 				case ENDURANCE:
-					paddle_accel_to_torque(mph, accelerator_value, &torque, mc);
+					handle_endurance(mc, accelerator_value, brake_value, torque);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);
+					dti_set_torque(torque);
 					break;
 				default:
 					torque = 0;
+					dti_set_torque(torque);
 					break;
 			}
 
@@ -227,7 +186,6 @@ void vCalcTorque(void* pv_params)
 			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
 			set_mph(mph);
-			dti_set_torque(torque);
 		}
 	}
 }

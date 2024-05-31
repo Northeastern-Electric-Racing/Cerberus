@@ -126,6 +126,17 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 	}
 }
 
+/**
+ * @brief Return the adjusted pedal value based on its offset and maximum value. Clamps negative values to 0.
+ * 
+ * @param raw the raw pedal value
+ * @param offset the offset for the pedal
+ * @param max the maximum value of the pedal
+ */
+uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max) {
+	return (int16_t)raw - offset <= 0 ? 0 : (uint16_t)(raw - offset) * 100 / (max - offset);
+}
+
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
@@ -160,10 +171,9 @@ void vPedalsMonitor(void* pv_params)
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		uint16_t accel_val1 = adjust_pedal_val(adc_data[ACCELPIN_1], ACCEL1_OFFSET, ACCEL1_MAX_VAL);
 		//printf("Accel 1: %d\r\n", max_pedal1);
-		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		//printf("Accel 2: %d\r\n",max_pedal2);
+		uint16_t accel_val2 = adjust_pedal_val(adc_data[ACCELPIN_2], ACCEL2_OFFSET, ACCEL2_MAX_VAL);		//printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
@@ -176,9 +186,12 @@ void vPedalsMonitor(void* pv_params)
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
 
+		uint16_t brake1_adj = adjust_pedal_val(adc_data[BRAKEPIN_1], BRAKE1_OFFSET, BRAKE1_MAX_VAL);
+		uint16_t brake2_adj = adjust_pedal_val(adc_data[BRAKEPIN_2], BRAKE2_OFFSET, BRAKE2_MAX_VAL);
+
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
-		sensor_data.brake_value = (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) / num_samples;
+		sensor_data.brake_value = (sensor_data.brake_value + (brake1_adj + brake2_adj) / 2) / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);

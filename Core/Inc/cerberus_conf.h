@@ -19,9 +19,15 @@
 #define ACCEL1_MAX_VAL          3319
 #define ACCEL2_OFFSET           1920
 #define ACCEL2_MAX_VAL          3382
+//TODO: might want these :P
+#define BRAKE1_OFFSET           0
+#define BRAKE1_MAX_VAL          0
+#define BRAKE2_OFFSET           0
+#define BRAKE2_MAX_VAL          0
 
 /* Torque Tuning */
 #define MAX_TORQUE              220 /* Nm * 10 */
+#define MAX_BRAKE_PRESSURE      1800 // psi
 #define REGEN_RAMP_TIME         500    // regen ramp time (in ms)
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
