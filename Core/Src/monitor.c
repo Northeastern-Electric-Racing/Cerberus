@@ -27,6 +27,7 @@
  
 
 static bool tsms = false;
+static bool brake_state = false;
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -34,6 +35,11 @@ const osThreadAttr_t temp_monitor_attributes = {
 	.stack_size = 32 * 8,
 	.priority	= (osPriority_t)osPriorityHigh1,
 };
+
+bool get_brake_state()
+{
+	return brake_state;
+}
 
 void vTempMonitor(void* pv_params)
 {
@@ -175,18 +181,19 @@ void vPedalsMonitor(void* pv_params)
 		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Raw ADC for tuning */
-		printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
-		printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
+		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
+		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
 
 		/* Brakelight Control */
 		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
 		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > PEDAL_BRAKE_THRESH;
+		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
-		osMessageQueueReset(brakelight_signal);
-		osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
+		//osMessageQueueReset(break_state_queue);
+		//osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;

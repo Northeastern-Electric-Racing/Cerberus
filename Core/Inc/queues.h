@@ -30,4 +30,6 @@ extern osMessageQueueId_t pedal_data_queue;
 
 extern osMessageQueueId_t break_state_queue;
 
+bool get_brake_state();
+
 #endif // QUEUES_H
