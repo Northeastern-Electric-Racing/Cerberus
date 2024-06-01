@@ -218,8 +218,8 @@ int main(void)
   assert(pedals_monitor_handle);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   assert(fusing_monitor_handle);
-  shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
-  assert(shutdown_monitor_handle);
+  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+  // assert(shutdown_monitor_handle);
 
   /* Messaging */
   //dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
