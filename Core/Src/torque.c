@@ -130,7 +130,6 @@ void vCalcTorque(void* pv_params)
 			if (func_state != ACTIVE)
 			{
 				torque = 0;
-				dti_set_torque(torque);
 				continue;
 			}
 
