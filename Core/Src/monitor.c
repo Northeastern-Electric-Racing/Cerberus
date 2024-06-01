@@ -82,6 +82,7 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 	/* Fault - open circuit (Max ADC value + some a lil bit) */
 	if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20))
 		&& is_timer_active(oc_timer)) {
+			serial_print("SPOT 1\r\n");
 		if (is_timer_expired(oc_timer)) {
 			if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b)) {
 				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
@@ -90,6 +91,7 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 		}
 	} else if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20))
 			   && !is_timer_active(oc_timer)) {
+		serial_print("SPOT 2\r\n");
 		start_timer(oc_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(oc_timer);
@@ -97,7 +99,9 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 
 	/* Fault - short circuit */
 	if ((accel_1 < 500 || accel_2 < 500) && is_timer_active(sc_timer)) {
+		serial.print("SPOT 3\r\n");
 		if (is_timer_expired(sc_timer)) {
+			
 			if ((accel_1 < 500 || accel_2 < 500)) {
 				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
@@ -110,15 +114,12 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 	}
 
 	/* Normalize pedal values */
-	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0
-														 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100
-															   / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0
-														 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100
-															   / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
 	/* Fault - difference between pedal sensing values */
 	if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
+		serial.print("SPOT 4\r\n");
 		/* starting diff timer */
 		if (is_timer_expired(diff_timer)) {
 			if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH)) {
@@ -171,9 +172,6 @@ void vPedalsMonitor(void* pv_params)
 		// printf("Accel 1: %d\r\n", max_pedal1);
 		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 		// printf("Accel 2: %d\r\n",max_pedal2);
-
-		
-
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
