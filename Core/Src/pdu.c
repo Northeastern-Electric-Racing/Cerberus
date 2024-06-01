@@ -51,14 +51,14 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->shutdown_expander);
 	// pca9539_init(pdu->shutdown_expander, pdu->hi2c, SHUTDOWN_ADDR);
-	// // if (status != HAL_OK) {
-	// // 	printf("\n\rshutdown init fail\n\r");
-	// // 	free(pdu->shutdown_expander);
-	// // 	free(pdu);
-	// // 	return NULL;
-	// // }
+	// if (status != HAL_OK) {
+	// 	printf("\n\rshutdown init fail\n\r");
+	// 	free(pdu->shutdown_expander);
+	// 	free(pdu);
+	// 	return NULL;
+	// }
 
-	// // all shutdown expander things are inputs
+	// all shutdown expander things are inputs
 	// uint8_t shutdown_config_directions = 0b00000000;
 	//  HAL_StatusTypeDef status = pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_0_REG,
 	//  shutdown_config_directions);
@@ -84,7 +84,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
 
 	// write everything OFF
-	uint8_t buf = 0b0000000;
+	uint8_t buf = 0b00000000;
 	pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_0_REG, buf);
 	pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_1_REG, buf);
 
@@ -99,7 +99,7 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 		return NULL;
 	}
 	// pin 0 to the right
-	 buf = 0b01111111;
+	buf = 0b01111111;
 	status
 		= pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_1_REG, buf);
 	if (status != HAL_OK) {
@@ -109,30 +109,11 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 		return NULL;
 	}
 
-	// buf = 0b00000000;
-	// pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_0_REG, buf);
-	// pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_1_REG, buf);
-
-
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
 
 	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
-
-
-	// DEBUG To test RTDS
-	//sound_rtds(pdu);
-	// DEBUG brakelight
-	// write_brakelight(pdu, true);
-	//write_pump(pdu, true);
-	// buf = 0b11111111;
-	// pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_0_REG, buf);s
-	//status  = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, PUMP_CTRL, true);
-	//status = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, BRKLIGHT_CTRL, false);
-
-	//while (1) {}
-	
 
 	return pdu;
 }
