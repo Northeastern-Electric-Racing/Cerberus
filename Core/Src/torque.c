@@ -74,7 +74,7 @@ static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
 
 		// The following code is a moving average filter
 		uint16_t ave = 0;
-		uint16_t temp[ACCUMULATOR_SIZE];/
+		uint16_t temp[ACCUMULATOR_SIZE];
 		ave += newVal; // Add the new value to the sum
 		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
 		temp[0] = newVal; // Add the new value to the array
