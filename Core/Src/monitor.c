@@ -310,6 +310,8 @@ void vFusingMonitor(void* pv_params)
 		uint8_t fuse_2;
 	} fuse_data;
 
+	bool tsms_status = false;
+
 	for (;;) {
 		fuse_buf = 0;
 
@@ -338,6 +340,15 @@ void vFusingMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if (!read_tsms_sense(pdu, &tsms_status)) {
+			tsms = tsms_status;
+			if (get_func_state() == ACTIVE && tsms == 0) {
+				set_home_mode();
+			}
+		}
+
+
 		osDelay(FUSES_SAMPLE_DELAY);
 	}
 }
@@ -356,7 +367,6 @@ void vShutdownMonitor(void* pv_params)
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
-	bool tsms_status = false;
 
 	struct __attribute__((__packed__)) {
 		uint8_t shut_1;
@@ -391,14 +401,6 @@ void vShutdownMonitor(void* pv_params)
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
-		}
-
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if (!read_tsms_sense(pdu, &tsms_status)) {
-			tsms = tsms_status;
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
 		}
 
 		// serial_print("TSMS: %d\r\n", tsms_status);

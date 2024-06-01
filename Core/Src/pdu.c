@@ -287,7 +287,7 @@ int8_t read_tsms_sense(pdu_t* pdu, bool* status)
 		return stat;
 
 	/* read pin over i2c */
-	uint8_t tsms_pin = 7;
+	uint8_t tsms_pin = 6;
 	uint8_t config	 = 0;
 	HAL_StatusTypeDef error
 		= pca9539_read_pin(pdu->ctrl_expander, PCA_INPUT_1_REG, tsms_pin, &config);
