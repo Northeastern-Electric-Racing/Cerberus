@@ -3,6 +3,7 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "pdu.h"
+#include "queues.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>
@@ -41,6 +42,7 @@ const osThreadAttr_t sm_director_attributes =
 };
 
 static osMessageQueueId_t state_trans_queue;
+osMessageQueueId_t break_state_queue;
 
 void fault_callback()
 {
@@ -66,6 +68,9 @@ int queue_state_transition(state_req_t new_state)
 
 		/* If we are turning ON the motor, blare RTDS */
 		if (cerberus_state.drive == NOT_DRIVING) {
+			if (!get_brake_state()) {
+				return 0;
+			}
 			serial_print("CALLING RTDS");
 			sound_rtds(pdu);
 		}
@@ -94,6 +99,7 @@ int queue_state_transition(state_req_t new_state)
 				write_fan_battbox(pdu, false);
 				write_pump(pdu, false);
 				write_fault(pdu, true);
+				printf("READY\r\n");
 				break;
 			case ACTIVE:
 				/* Turn on high power peripherals */
@@ -101,6 +107,7 @@ int queue_state_transition(state_req_t new_state)
 				write_pump(pdu, true);
 				write_fault(pdu, true);
 				sound_rtds(pdu); // TEMPORARY
+				printf("ACTIVE STATE\r\n");
 				break;
 			case FAULTED:
 				/* Turn off high power peripherals */
@@ -109,6 +116,7 @@ int queue_state_transition(state_req_t new_state)
 				write_fault(pdu, false);
 				osTimerStart(fault_timer, 5000);
 				HAL_IWDG_Refresh(&hiwdg);
+				printf("FAULTED\r\n");
 				break;
 			default:
 				// Do Nothing
@@ -136,6 +144,7 @@ void vStateMachineDirector(void* pv_params)
 	cerberus_state.drive	  = NOT_DRIVING;
 
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE, sizeof(state_req_t), NULL);
+	break_state_queue = osMessageQueueNew(1, sizeof(bool), NULL);
 
 	pdu_t *pdu_1 = (pdu_t *)pv_params;
 
@@ -169,6 +178,14 @@ void vStateMachineDirector(void* pv_params)
 
 			/* If we are turning ON the motor, blare RTDS */
 			if (cerberus_state.drive == NOT_DRIVING) {
+
+				/* make sure foot is on break */
+				bool break_state = false;
+				//osMessageQueueGet(break_state_queue, &break_state, NULL, 0);
+				if (!break_state) {
+					continue;
+				}
+
 				serial_print("CALLING RTDS");
 				sound_rtds(pdu);
 			}

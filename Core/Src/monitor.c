@@ -24,8 +24,10 @@
 // DEBUG: threshold may need adjusting
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
+ 
 
 static bool tsms = false;
+static bool brake_state = false;
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -33,6 +35,11 @@ const osThreadAttr_t temp_monitor_attributes = {
 	.stack_size = 32 * 8,
 	.priority	= (osPriority_t)osPriorityHigh1,
 };
+
+bool get_brake_state()
+{
+	return brake_state;
+}
 
 void vTempMonitor(void* pv_params)
 {
@@ -96,7 +103,9 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 
 	/* Fault - short circuit */
 	if ((accel_1 < 500 || accel_2 < 500) && is_timer_active(sc_timer)) {
+	
 		if (is_timer_expired(sc_timer)) {
+			
 			if ((accel_1 < 500 || accel_2 < 500)) {
 				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
@@ -109,15 +118,12 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 	}
 
 	/* Normalize pedal values */
-	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0
-														 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100
-															   / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0
-														 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100
-															   / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+	uint16_t accel_1_norm = accel_1 - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+	uint16_t accel_2_norm = accel_2 - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 
 	/* Fault - difference between pedal sensing values */
 	if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
+	
 		/* starting diff timer */
 		if (is_timer_expired(diff_timer)) {
 			if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH)) {
@@ -162,33 +168,32 @@ void vPedalsMonitor(void* pv_params)
 		read_pedals(mpu, adc_data);
 
 		/* Evaluate Pedal Faulting Conditions */
-		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator,
-						 &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
-		// eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake,
-		// &sc_timer_brake, &oc_timer_brake, &fault_data);
-
+		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
+		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
+		
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0
-								  ? 0
-								  : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100
-										/ (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
 		// printf("Accel 1: %d\r\n", max_pedal1);
-		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0
-								  ? 0
-								  : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100
-										/ (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 		// printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
+		/* Raw ADC for tuning */
+		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
+		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
+
 		/* Brakelight Control */
 		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > 650;
+		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > PEDAL_BRAKE_THRESH;
+		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
+		//osMessageQueueReset(break_state_queue);
+		//osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
@@ -313,6 +318,8 @@ void vFusingMonitor(void* pv_params)
 		uint8_t fuse_2;
 	} fuse_data;
 
+	bool tsms_status = false;
+
 	for (;;) {
 		fuse_buf = 0;
 
@@ -341,6 +348,15 @@ void vFusingMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if (!read_tsms_sense(pdu, &tsms_status)) {
+			tsms = tsms_status;
+			if (get_func_state() == ACTIVE && tsms == 0) {
+				set_home_mode();
+			}
+		}
+
+
 		osDelay(FUSES_SAMPLE_DELAY);
 	}
 }
@@ -359,7 +375,6 @@ void vShutdownMonitor(void* pv_params)
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
-	bool tsms_status = false;
 
 	struct __attribute__((__packed__)) {
 		uint8_t shut_1;
@@ -394,14 +409,6 @@ void vShutdownMonitor(void* pv_params)
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
-		}
-
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if (!read_tsms_sense(pdu, &tsms_status)) {
-			tsms = tsms_status;
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
 		}
 
 		// serial_print("TSMS: %d\r\n", tsms_status);

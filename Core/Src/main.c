@@ -83,6 +83,7 @@ osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

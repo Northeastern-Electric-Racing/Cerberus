@@ -83,8 +83,8 @@ pdu_t* init_pdu(I2C_HandleTypeDef* hi2c)
 	assert(pdu->ctrl_expander);
 	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
 
-	// write everything OFF
-	uint8_t buf = 0b00000000;
+	// write everything OFF, FAULT 1 is off
+	uint8_t buf = 0b00000010;
 	pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_0_REG, buf);
 	pca9539_write_reg(pdu->ctrl_expander, PCA_OUTPUT_1_REG, buf);
 
@@ -287,7 +287,7 @@ int8_t read_tsms_sense(pdu_t* pdu, bool* status)
 		return stat;
 
 	/* read pin over i2c */
-	uint8_t tsms_pin = 14;
+	uint8_t tsms_pin = 6;
 	uint8_t config	 = 0;
 	HAL_StatusTypeDef error
 		= pca9539_read_pin(pdu->ctrl_expander, PCA_INPUT_1_REG, tsms_pin, &config);
