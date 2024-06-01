@@ -35,10 +35,6 @@ dti_t* dti_init()
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
 	assert(mc->mutex);
 
-	/* Create Queue for CAN signaling */
-	// dti_router_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	// assert(dti_router_queue);
-
 	return mc;
 }
 
@@ -239,12 +235,12 @@ const osThreadAttr_t dti_router_attributes
 static void dti_set_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in little endian format */
-	uint32_t erpm = 0;
-	for (int i = 3; i >= 0; i--) {
-		erpm |= msg.data[i] << (8 * i);
+	int32_t erpm = 0;
+	for (int i = 0; i < 4; i++) {
+		erpm |= msg.data[i] << (8 * (i - 3));
 	}
 
-	uint32_t rpm = erpm / POLE_PAIRS;
+	int32_t rpm = erpm / POLE_PAIRS;
 
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;

@@ -82,6 +82,7 @@ const osThreadAttr_t defaultTask_attributes = {
 osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
+osMessageQueueId_t dti_router_queue;
 
 
 /* USER CODE END PV */
@@ -201,6 +202,8 @@ int main(void)
   brakelight_signal = osMessageQueueNew(15, sizeof(bool), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
+	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	assert(dti_router_queue);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -222,8 +225,8 @@ int main(void)
   // assert(shutdown_monitor_handle);
 
   /* Messaging */
-  //dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  //assert(dti_router_handle);
+  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
+  assert(dti_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
   bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);

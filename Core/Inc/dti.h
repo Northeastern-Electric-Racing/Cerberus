@@ -22,6 +22,7 @@
 #define DTI_CANID_TEMPS_FAULT 0x456 /* Controller Temp, Motor Temp, Faults */
 #define DTI_CANID_ID_IQ		  0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
+#define DTI_QUEUE_SIZE        5
 
 #define WHEEL_CIRCUMFERENCE 1.2767 /* meters */
 #define GEAR_RATIO 47 / 13.0 /* unitless */ 
