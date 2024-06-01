@@ -143,7 +143,7 @@ void vCalcTorque(void* pv_params)
 			if (brake_value > brakes_engaged_threshold && rel_accel_pedal_travel > 0.25) 
 			{
 				motor_disabled = true;
-				queue_fault(fault_data);
+				queue_fault(&fault_data);
 			}
 
 			if (motor_disabled) 
