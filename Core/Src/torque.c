@@ -136,11 +136,14 @@ void vCalcTorque(void* pv_params)
 
 			/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
+
+			fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
 			float rel_accel_pedal_travel = accelerator_value / (((ACCEL1_MAX_VAL - ACCEL1_OFFSET) + (ACCEL2_MAX_VAL - ACCEL2_OFFSET)) / 2.0);
 			uint16_t brakes_engaged_threshold = 650;
 			if (brake_value > brakes_engaged_threshold && rel_accel_pedal_travel > 0.25) 
 			{
 				motor_disabled = true;
+				queue_fault(fault_data);
 			}
 
 			if (motor_disabled) 
