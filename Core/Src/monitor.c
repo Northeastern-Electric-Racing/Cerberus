@@ -167,20 +167,12 @@ void vPedalsMonitor(void* pv_params)
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 		
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
-		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0
-								  ? 0
-								  : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100
-										/ (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
 		// printf("Accel 1: %d\r\n", max_pedal1);
-		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0
-								  ? 0
-								  : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100
-										/ (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
 		// printf("Accel 2: %d\r\n",max_pedal2);
 
-		// NOTE USE THESE IF SENSORS WERE FLIPPED
-		//uint16_t accel_val1 = (int16_t)(ACCEL1_MAX_VAL - adc_data[ACCELPIN_1]) - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)((ACCEL1_MAX_VAL - adc_data[ACCELPIN_1]) - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		//uint16_t accel_val2 = (int16_t)(ACCEL2_MAX_VAL - adc_data[ACCELPIN_2]) - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)((ACCEL2_MAX_VAL - adc_data[ACCELPIN_2]) - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		
 
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
