@@ -185,6 +185,7 @@ void vPedalsMonitor(void* pv_params)
 		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > PEDAL_BRAKE_THRESH;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
+		osMessageQueueReset(brakelight_signal);
 		osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
