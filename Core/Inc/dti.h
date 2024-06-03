@@ -24,7 +24,7 @@
 #define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE        5
 
-#define WHEEL_CIRCUMFERENCE 1.2767 /* meters */
+#define TIRE_DIAMETER 16 /* inches */
 #define GEAR_RATIO 47 / 13.0 /* unitless */ 
 #define POLE_PAIRS 10 /* unitless */
 

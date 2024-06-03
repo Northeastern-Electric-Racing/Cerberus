@@ -232,7 +232,7 @@ osThreadId_t dti_router_handle;
 const osThreadAttr_t dti_router_attributes
 	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
 
-static void dti_set_rpm(dti_t *mc, can_msg_t msg)
+static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in little endian format */
 	int32_t erpm = 0;
@@ -263,7 +263,7 @@ void vDTIRouter(void* pv_params)
 			switch (message.id) 
 			{
 				case DTI_CANID_ERPM:
-					dti_set_rpm(mc, message);
+					dti_record_rpm(mc, message);
 					break;
 				case DTI_CANID_CURRENTS:
 					break;

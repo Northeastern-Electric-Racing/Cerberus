@@ -45,7 +45,12 @@ static void linear_accel_to_torque(float accel, uint16_t* torque)
 static void rpm_to_mph(uint32_t rpm, float* mph)
 {
 	/* Convert RPM to MPH */
-	*mph = (rpm / 60) * WHEEL_CIRCUMFERENCE * 2.237 / GEAR_RATIO;
+	// rpm * gear ratio = wheel rpm
+	// tire diamter (in) to miles --> tire diamter miles
+	// wheel rpm * 60 --> wheel rph
+	// tire diamter miles * pi --> tire circumference
+	// rph * wheel circumference miles --> mph
+	*mph = (rpm / GEAR_RATIO)*60 * (TIRE_DIAMETER / 63360)*M_PI;
 }
 
 static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
@@ -125,7 +130,10 @@ void vCalcTorque(void* pv_params)
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
-		{
+		{	
+			float mph;
+			rpm_to_mph(dti_get_rpm(mc), &mph);
+
 			func_state_t func_state = get_func_state();
 			if (func_state != ACTIVE)
 			{
@@ -160,9 +168,6 @@ void vCalcTorque(void* pv_params)
 
 			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
 
-			float mph;
-			rpm_to_mph(dti_get_rpm(mc), &mph);
-
 			switch (drive_state)
 			{
 				case REVERSE:
@@ -186,8 +191,6 @@ void vCalcTorque(void* pv_params)
 
 			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
-			set_mph(mph);
-			dti_set_torque(torque);
 		}
 	}
 }
