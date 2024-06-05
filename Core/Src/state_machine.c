@@ -114,6 +114,7 @@ int queue_state_transition(state_req_t new_state)
 				//write_fan_battbox(pdu, true);
 				write_pump(pdu, false);
 				write_fault(pdu, false);
+				// DO NOT CHANGE WITHOUT CHECKING the bms fault timer, as if BMS timer is later could result in a fault/unfault/fault flicker.
 				osTimerStart(fault_timer, 5000);
 				HAL_IWDG_Refresh(&hiwdg);
 				printf("FAULTED\r\n");
