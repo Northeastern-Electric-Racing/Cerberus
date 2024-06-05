@@ -22,9 +22,10 @@
 #define DTI_CANID_TEMPS_FAULT 0x456 /* Controller Temp, Motor Temp, Faults */
 #define DTI_CANID_ID_IQ		  0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS	  0x496 /* Throttle signal, Brake signal, IO, Drive enable */
+#define DTI_QUEUE_SIZE        5
 
-#define WHEEL_CIRCUMFERENCE 1.2767 /* meters */
-#define GEAR_RATIO 4.3 /* unitless */ 
+#define TIRE_DIAMETER 16 /* inches */
+#define GEAR_RATIO 47 / 13.0 /* unitless */ 
 #define POLE_PAIRS 10 /* unitless */
 
 typedef struct 
@@ -44,13 +45,13 @@ typedef struct
 } dti_t;
 
 // TODO: Expand GET interface
-uint32_t dti_get_rpm(dti_t* dti);
+int32_t dti_get_rpm(dti_t* dti);
 
 /* Utilities for Decoding CAN message */
-// extern osThreadId_t dti_router_handle;
-// extern const osThreadAttr_t dti_router_attributes;
-// extern osMessageQueueId_t dti_router_queue;
-// void vDTIRouter(void* pv_params);
+extern osThreadId_t dti_router_handle;
+extern const osThreadAttr_t dti_router_attributes;
+extern osMessageQueueId_t dti_router_queue;
+void vDTIRouter(void* pv_params);
 
 dti_t* dti_init();
 
