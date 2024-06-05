@@ -49,6 +49,7 @@ void increment_nero_index() {
 }
 
 void set_mph(int8_t new_mph) {
+	//printf("mph %d", new_mph);
 	mph = new_mph;
 }
 

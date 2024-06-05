@@ -217,11 +217,12 @@ void dti_set_drive_enable(bool drive_enable)
 	queue_can_msg(msg);
 }
 
-uint32_t dti_get_rpm(dti_t* mc)
+int32_t dti_get_rpm(dti_t* mc)
 {
-	uint32_t rpm;
+	int32_t rpm;
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	rpm = mc->rpm;
+	printf("Rpm %ld",rpm);
 	osMutexRelease(*mc->mutex);
 
 	return rpm;

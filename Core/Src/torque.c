@@ -42,7 +42,7 @@ static void linear_accel_to_torque(float accel, uint16_t* torque)
 	*torque = (uint16_t)(accel * MAX_TORQUE);
 }
 
-static void rpm_to_mph(uint32_t rpm, float* mph)
+static float rpm_to_mph(uint32_t rpm)
 {
 	/* Convert RPM to MPH */
 	// rpm * gear ratio = wheel rpm
@@ -50,7 +50,7 @@ static void rpm_to_mph(uint32_t rpm, float* mph)
 	// wheel rpm * 60 --> wheel rph
 	// tire diamter miles * pi --> tire circumference
 	// rph * wheel circumference miles --> mph
-	*mph = (rpm / GEAR_RATIO)*60 * (TIRE_DIAMETER / 63360)*M_PI;
+	return (rpm / (GEAR_RATIO))*60 * (TIRE_DIAMETER / 63360.0)*M_PI;
 }
 
 static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
@@ -117,6 +117,7 @@ void vCalcTorque(void* pv_params)
 	assert(delay_time < MAX_COMMAND_DELAY);
 	pedals_t pedal_data;
 	uint16_t torque = 0;
+	float mph = 0;
 	osStatus_t stat;
 	bool motor_disabled = false;
 
@@ -131,8 +132,9 @@ void vCalcTorque(void* pv_params)
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{	
-			float mph;
-			rpm_to_mph(dti_get_rpm(mc), &mph);
+			uint32_t rpm = dti_get_rpm(mc);
+			mph = rpm_to_mph(rpm);
+			set_mph(mph);
 
 			func_state_t func_state = get_func_state();
 			if (func_state != ACTIVE)
