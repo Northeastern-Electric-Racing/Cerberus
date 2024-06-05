@@ -96,14 +96,14 @@ int queue_state_transition(state_req_t new_state)
 			case READY:
 				/* Turn off high power peripherals */
 				serial_print("going to ready");
-				write_fan_battbox(pdu, false);
+				//write_fan_battbox(pdu, false);
 				write_pump(pdu, false);
 				write_fault(pdu, true);
 				printf("READY\r\n");
 				break;
 			case ACTIVE:
 				/* Turn on high power peripherals */
-				write_fan_battbox(pdu, true);
+				//write_fan_battbox(pdu, true);
 				write_pump(pdu, true);
 				write_fault(pdu, true);
 				sound_rtds(pdu); // TEMPORARY
@@ -111,7 +111,7 @@ int queue_state_transition(state_req_t new_state)
 				break;
 			case FAULTED:
 				/* Turn off high power peripherals */
-				write_fan_battbox(pdu, true);
+				//write_fan_battbox(pdu, true);
 				write_pump(pdu, false);
 				write_fault(pdu, false);
 				osTimerStart(fault_timer, 5000);
@@ -211,19 +211,19 @@ void vStateMachineDirector(void* pv_params)
 				case READY:
 					/* Turn off high power peripherals */
 					serial_print("going to ready");
-					write_fan_battbox(pdu, false);
+					//write_fan_battbox(pdu, false);
 					write_pump(pdu, true);
 					write_fault(pdu, true);
 					break;
 				case ACTIVE:
 					/* Turn on high power peripherals */
-					write_fan_battbox(pdu, true);
+					//write_fan_battbox(pdu, true);
 					write_pump(pdu, true);
 					write_fault(pdu, true);
 					break;
 				case FAULTED:
 					/* Turn off high power peripherals */
-					write_fan_battbox(pdu, false);
+					//write_fan_battbox(pdu, false);
 					write_pump(pdu, false);
 					write_fault(pdu, false);
 					HAL_IWDG_Refresh(&hiwdg);
