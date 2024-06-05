@@ -41,15 +41,24 @@ void vLVMonitor(void* pv_params)
 {
 	mpu_t* mpu = (mpu_t*)pv_params;
 	fault_data_t fault_data = { .id = LV_MONITOR_FAULT, .severity = DEFCON5 };
-	can_msg_t msg = { .id = 0x124, .len = 4, .data = { 0 } };
+	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
 
-	uint32_t voltage;
+	uint32_t v_int;
 
 	for (;;) {
-		read_lv_voltage(mpu, &voltage);
+		read_lv_voltage(mpu, &v_int);
 
-		endian_swap(&voltage, sizeof(voltage));
-		memcpy(msg.data, &voltage, msg.len);
+		// scale up then truncate
+		// convert to out of 24 volts
+		// since 12 bits / 4096
+		// Magic number bc idk the resistors on the voltage divider
+		float v_dec = v_int * 8.967;
+
+		// get final voltage
+		v_int = (uint32_t) (v_dec *10.0);
+
+		//endian_swap(&v_int, sizeof(v_int));
+		memcpy(msg.data, &v_int, msg.len);
 		if (queue_can_msg(msg)) {
 			fault_data.diag = "Failed to send steering buttons can message";
 			queue_fault(&fault_data);

@@ -211,10 +211,10 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Monitors */
-  lv_monitor_handle = osThreadNew(vLVMonitor, pdu, &lv_monitor_attributes);
+  lv_monitor_handle = osThreadNew(vLVMonitor, mpu, &lv_monitor_attributes);
   assert(lv_monitor_handle);
-  temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
-  assert(temp_monitor_handle);
+  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+  // assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
   steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
