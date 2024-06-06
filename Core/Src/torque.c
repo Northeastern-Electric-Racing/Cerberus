@@ -63,31 +63,31 @@ static float rpm_to_mph(uint32_t rpm)
 	return (rpm / (GEAR_RATIO))*60 * (TIRE_DIAMETER / 63360.0)*M_PI;
 }
 
-static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
-{
-		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
+// static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
+// {
+// 		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
 
-		uint16_t newVal;
-		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
-		if (mph > PIT_MAX_SPEED) {
-			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
-		}
-		else {
-			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
-			newVal = accel * torque_derating_factor;
-		}
+// 		uint16_t newVal;
+// 		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
+// 		if (mph > PIT_MAX_SPEED) {
+// 			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
+// 		}
+// 		else {
+// 			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
+// 			newVal = accel * torque_derating_factor;
+// 		}
 
-		// The following code is a moving average filter
-		uint16_t ave = 0;
-		uint16_t temp[ACCUMULATOR_SIZE];
-		ave += newVal; // Add the new value to the sum
-		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
-		temp[0] = newVal; // Add the new value to the array
-		if(*torque > ave) {
-			*torque = ave; // If the new value is greater than the average, set the torque to the average
-		}
-		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
-}
+// 		// The following code is a moving average filter
+// 		uint16_t ave = 0;
+// 		uint16_t temp[ACCUMULATOR_SIZE];
+// 		ave += newVal; // Add the new value to the sum
+// 		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
+// 		temp[0] = newVal; // Add the new value to the array
+// 		if(*torque > ave) {
+// 			*torque = ave; // If the new value is greater than the average, set the torque to the average
+// 		}
+// 		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
+// }
 
 void increase_torque_limit()
 {
