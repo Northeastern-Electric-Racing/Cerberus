@@ -5,6 +5,10 @@
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
 
+void vLVMonitor(void* pv_params);
+extern osThreadId lv_monitor_handle;
+extern const osThreadAttr_t lv_monitor_attributes;
+
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void* pv_params);
 extern osThreadId_t temp_monitor_handle;
