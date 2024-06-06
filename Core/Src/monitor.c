@@ -29,6 +29,45 @@
 static bool tsms = false;
 static bool brake_state = false;
 
+
+osThreadId lv_monitor_handle;
+const osThreadAttr_t lv_monitor_attributes = {
+	.name		= "LVMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh4,
+};
+
+void vLVMonitor(void* pv_params)
+{
+	mpu_t* mpu = (mpu_t*)pv_params;
+	fault_data_t fault_data = { .id = LV_MONITOR_FAULT, .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+
+	uint32_t v_int;
+
+	for (;;) {
+		read_lv_voltage(mpu, &v_int);
+
+		// scale up then truncate
+		// convert to out of 24 volts
+		// since 12 bits / 4096
+		// Magic number bc idk the resistors on the voltage divider
+		float v_dec = v_int * 8.967;
+
+		// get final voltage
+		v_int = (uint32_t) (v_dec *10.0);
+
+		//endian_swap(&v_int, sizeof(v_int));
+		memcpy(msg.data, &v_int, msg.len);
+		if (queue_can_msg(msg)) {
+			fault_data.diag = "Failed to send steering buttons can message";
+			queue_fault(&fault_data);
+		}
+
+		osDelay(LV_READ_DELAY);
+	}
+}
+
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
 	.name		= "TempMonitor",
@@ -240,8 +279,8 @@ void vIMUMonitor(void* pv_params)
 	const uint8_t num_samples = 10;
 	static imu_data_t sensor_data;
 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
-	can_msg_t imu_accel_msg = { .id = CANID_IMU, .len = 6, .data = { 0 } };
-	can_msg_t imu_gyro_msg	= { .id = CANID_IMU, .len = 6, .data = { 0 } };
+	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL, .len = 6, .data = { 0 } };
+	can_msg_t imu_gyro_msg	= { .id = CANID_IMU_GYRO, .len = 6, .data = { 0 } };
 
 	mpu_t* mpu = (mpu_t*)pv_params;
 

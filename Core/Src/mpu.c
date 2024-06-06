@@ -14,11 +14,12 @@
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
 
-mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc,
+mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc, ADC_HandleTypeDef* lv_adc, 
                 GPIO_TypeDef* led_gpio, GPIO_TypeDef* watchdog_gpio)
 {
 	assert(hi2c);
 	assert(pedals_adc);
+	assert(lv_adc);
 	assert(led_gpio);
 	assert(watchdog_gpio);
 
@@ -28,6 +29,7 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc,
 
 	mpu->hi2c		   = hi2c;
 	mpu->pedals_adc	   = pedals_adc;
+	mpu->lv_adc	   = lv_adc;
 	mpu->led_gpio	   = led_gpio;
 	mpu->watchdog_gpio = watchdog_gpio;
 
@@ -38,6 +40,8 @@ mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc,
 	assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
 
 	assert(!HAL_ADC_Start_DMA(mpu->pedals_adc, mpu->pedal_dma_buf, sizeof(mpu->pedal_dma_buf)/sizeof(uint32_t)));
+
+	assert(!HAL_ADC_Start_DMA(mpu->lv_adc, &mpu->lv_dma_buf, sizeof(mpu->lv_dma_buf)/sizeof(uint32_t)));
 
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
@@ -100,6 +104,11 @@ int8_t pet_watchdog(mpu_t* mpu)
 	HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_RESET);
 	return 0;
+}
+
+void read_lv_voltage(mpu_t* mpu, uint32_t *lv_buf)
+{
+	memcpy(lv_buf, &mpu->lv_dma_buf, sizeof(mpu->lv_dma_buf));
 }
 
 void read_pedals(mpu_t* mpu, uint32_t pedal_buf[4])

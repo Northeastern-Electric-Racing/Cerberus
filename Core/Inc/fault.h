@@ -22,6 +22,7 @@ typedef enum {
 	BMS_CAN_MONITOR_FAULT    = 0x800,
 	BUTTONS_MONITOR_FAULT    = 0xF00,
 	BSPD_PREFAULT 		  	= 0x1000,
+	LV_MONITOR_FAULT    = 0x2000,
 	MAX_FAULTS
 } fault_code_t;
 
