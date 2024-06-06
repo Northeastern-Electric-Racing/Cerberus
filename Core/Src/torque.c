@@ -226,6 +226,7 @@ void vCalcTorque(void* pv_params)
 
 			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
+			dti_set_torque(torque);
 		}
 	}
 }
