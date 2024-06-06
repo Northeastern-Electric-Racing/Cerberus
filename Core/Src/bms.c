@@ -54,7 +54,7 @@ void vBMSCANMonitor(void* pv_params)
 			//serial_print("BMS DCL %d", bms->dcl);
 			if (msg_from_queue.id == BMS_CURR_LIMIT_MSG) {
 				/* Message is big endian, STM32 is *byte* little endian */
-				bms->ccl = (msg_from_queue.data[2] << 8) | msg_from_queue.data[3];
+				bms->ccl = (msg_from_queue.data[0] << 8) | msg_from_queue.data[1];
 			}
 		}
 	}

@@ -120,7 +120,7 @@ void decrease_torque_limit()
  */
 void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, uint16_t* torque) {
 	float rel_brake_travel = (brake_val / (float)MAX_BRAKE_PRESSURE);
-	if (rel_brake_travel > 5 && mph > 5) {
+	if (rel_brake_travel > 5 && (mph*1.609) > 5) {
 		// braking and moving, do regen
 
 		// The % brake travel at which we want maximum regen
@@ -200,7 +200,7 @@ void vCalcTorque(void* pv_params)
 				}
 			}
 
-			drive_state_t drive_state = AUTOCROSS;//get_drive_state();
+			drive_state_t drive_state = get_drive_state();
 
 			switch (drive_state)
 			{
@@ -208,9 +208,9 @@ void vCalcTorque(void* pv_params)
 				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
 				// 	dti_set_torque(torque);
 				// 	break;
-				case SPEED_LIMITED:
-					limit_accel_to_torque(mph, accelerator_value, &torque);
-					break;
+				// case SPEED_LIMITED:
+				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
+				// 	break;
 				case ENDURANCE:
 					handle_endurance(mc, mph, accelerator_value, brake_value, &torque);
 					break;
