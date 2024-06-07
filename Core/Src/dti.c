@@ -37,6 +37,7 @@ dti_t* dti_init()
 	return mc;
 }
 
+
 void dti_set_torque(int16_t torque)
 {
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
@@ -66,6 +67,35 @@ void dti_set_torque(int16_t torque)
 	//serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
+}
+// positive regen as torque for AC current!
+// dont scale past torque!
+void dti_set_regen(int16_t regen_torque) {
+	// copied from dti_set_regen
+	 // Static variables for the buffer and index
+    static float buffer[SAMPLES] = {0};
+    static int index = 0;
+
+    // Add the new value to the buffer
+    buffer[index] = regen_torque;
+
+    // Increment the index, wrapping around if necessary
+    index = (index + 1) % SAMPLES;
+
+    // Calculate the average of the buffer
+    float sum = 0.0;
+    for (int i = 0; i < SAMPLES; ++i) {
+        sum += buffer[i];
+    }
+    float average = sum / SAMPLES;
+
+	if (regen_torque == 0) {
+		average = 0;
+	}
+
+	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
+
+	dti_set_brake_current(ac_current);
 }
 
 void dti_set_current(int16_t current)

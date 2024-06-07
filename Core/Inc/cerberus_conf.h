@@ -27,7 +27,7 @@
 #define PEDAL_BRAKE_THRESH      650
 
 /* Torque Tuning */
-#define MAX_TORQUE              220 /* Nm * 10 */
+#define MAX_TORQUE              22 /* Nm, divded by 10 of torque of car */
 #define MAX_BRAKE_PRESSURE      1800 // psi
 #define REGEN_RAMP_TIME         500    // regen ramp time (in ms)
 

@@ -22,9 +22,6 @@
 #include <stdio.h>
 #include "bms.h"
 
-// TODO: Might want to make these more dynamic to account for MechE tuning
-#define MIN_PEDAL_VAL 0x1DC /* Raw ADC */
-#define MAX_PEDAL_VAL 0x283 /* Raw ADC */
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60					  /* Hz */
@@ -32,24 +29,16 @@
 
 static float torque_limit_percentage = 1.0;
 
-typedef enum {
-	ZILCH,
-	LIGHT,
-	MEDIUM,
-	STRONG
-} Regen_Level_t; 
-
-Regen_Level_t regenLevel = ZILCH;
 
 osThreadId_t torque_calc_handle;
 const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
 												.stack_size = 128 * 8,
 												.priority = (osPriority_t)osPriorityRealtime2 };
 
-static void linear_accel_to_torque(float accel, uint16_t* torque)
+static void linear_accel_to_torque(float accel, int16_t* torque)
 {
 	/* Linearly map acceleration to torque */
-	*torque = (uint16_t)(accel * MAX_TORQUE);
+	*torque = (int16_t)(accel * MAX_TORQUE);
 }
 
 static float rpm_to_mph(uint32_t rpm)
@@ -109,6 +98,10 @@ void decrease_torque_limit()
 	}
 }
 
+
+// comment out to use single pedal mode
+//#define USE_BRAKE_REGEN 1
+
 /**
  * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
  * 
@@ -118,28 +111,54 @@ void decrease_torque_limit()
  * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, uint16_t* torque) {
-	float rel_brake_travel = (brake_val / (float)MAX_BRAKE_PRESSURE);
-	if (rel_brake_travel > 5 && (mph*1.609) > 5) {
-		// braking and moving, do regen
-
-		// The % brake travel at which we want maximum regen
-		static const float travel_scaling_max = 0.25;
-		// % of max brake pressure * limit that cells can charge at
-		float brake_current = (rel_brake_travel / travel_scaling_max) * bms->ccl;
-		if (brake_current > bms->ccl) {
-			// clamp for safety
-			brake_current = bms->ccl;
-		}
+void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, float accel_relative_val, int16_t* torque) {
+	// max ac current to brake with
+	static const float max_ac_brake = -1; // TODO replace	
+	#ifdef USE_BRAKE_REGEN
+		// The brake travel ADC value at which we want maximum regen
+		static const float travel_scaling_max = 1000;
+		if (brake_val > 650 && (mph*1.609) > 6 ) {
+			// % of max brake pressure * ac current limit
+			float brake_current = (brake_val / travel_scaling_max) * max_ac_brake;
+			if (brake_current > max_ac_brake) {
+				// clamp for safety
+				brake_current = max_ac_brake;
+			}
 	
-		// current must be delivered to DTI as a multiple of 10
-		dti_set_brake_current((uint16_t)(brake_current * 10));
-		*torque = 0;
-	} else {
-		// accelerating, limit torque
-		linear_accel_to_torque(accel_val, torque);
-		*torque = (uint16_t) (*torque * torque_limit_percentage);
-	}
+			// current must be delivered to DTI as a multiple of 10
+			dti_set_brake_current((uint16_t)(brake_current * 10));
+			*torque = 0;
+		} else {
+			// accelerating, limit torque
+			linear_accel_to_torque(accel_val, torque);
+			*torque = (uint16_t) (*torque);
+		}
+	#else
+		// percent of accel pedal to be used for regen
+		static const float start_regen = 0.2;
+		static const float regen_factor = 10; // like max torque but instead dictates max regen
+
+		float moved_accel = (accel_val - (start_regen * 100 ));
+		// if the rescaled accel is positive then convert it to torque, and full send
+		if (moved_accel >= 0) {
+			linear_accel_to_torque(moved_accel, torque);
+		}
+		else { 	// if the rescaled accel is negative, then use a different conversion factor
+			// use scale to get the 
+			float regen_torque = (moved_accel*-1.0*regen_factor);
+
+			// clamp to max
+			if (regen_torque > max_ac_brake) {
+				regen_torque = max_ac_brake;
+			}
+
+			// pass in torque to the dti code
+			dti_set_regen(regen_torque);
+			// do not move forward
+			*torque = 0;
+		}
+		
+	#endif
 }
 
 void vCalcTorque(void* pv_params)
@@ -148,7 +167,7 @@ void vCalcTorque(void* pv_params)
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
 	pedals_t pedal_data;
-	uint16_t torque = 0;
+	int16_t torque = 0;
 	float mph = 0;
 	osStatus_t stat;
 	bool motor_disabled = false;
@@ -158,8 +177,8 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
-		float brake_value = (float) pedal_data.brake_value / 10.0;
+		float accelerator_value = (float) pedal_data.accelerator_value;
+		float brake_value = (float) pedal_data.brake_value;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
@@ -212,7 +231,7 @@ void vCalcTorque(void* pv_params)
 				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
 				// 	break;
 				case ENDURANCE:
-					handle_endurance(mc, mph, accelerator_value, brake_value, &torque);
+					handle_endurance(mc, mph, accelerator_value, brake_value, rel_accel_pedal_travel, &torque);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);

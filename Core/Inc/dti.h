@@ -64,7 +64,7 @@ dti_t* dti_init();
 void dti_set_torque(int16_t torque);
 
 // TODO: Regen interface
-// void dti_set_regen(int16_t regen);
+void dti_set_regen(int16_t regen);
 
 /*
  * SCALE: 10
