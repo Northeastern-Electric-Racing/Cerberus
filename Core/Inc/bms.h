@@ -5,11 +5,13 @@
 #include "cmsis_os.h"
 
 #define BMS_DCL_MSG		0x156 /*BMS MONITOR WATCHDOG*/
+#define BMS_TEMP_MSG	0x81  /*BMS FAN BATTBOX CTRL */
 
 typedef struct
 {
     osTimerId bms_monitor_timer;
     uint16_t dcl;
+    int8_t average_temp;
 } bms_t;
 
 extern bms_t* bms;

@@ -531,3 +531,29 @@ void vBrakelightMonitor(void* pv_params)
 		}
 	}
 }
+
+osThreadId fan_battbox_monitor_handle;
+const osThreadAttr_t fan_battbox_monitor_attributes = {
+	.name		= "FanBattboxMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityAboveNormal1,
+};
+
+void vFanBattboxMonitor(void* pv_params)
+{
+	pdu_t* pdu = (pdu_t*)pv_params;
+
+	uint8_t temperature;
+	osStatus_t status;
+
+	for (;;) {
+		status = osMessageQueueGet(fan_battbox_state, &temperature, NULL, osWaitForever);
+		if (!status) {
+			if (temperature > 35) {
+				write_fan_battbox(pdu, true);
+			} else {
+				write_fan_battbox(pdu, false);
+			}
+		}
+	}
+}

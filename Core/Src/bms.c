@@ -2,6 +2,7 @@
 #include "timer.h"
 #include "fault.h"
 #include "can.h"
+#include "queues.h"
 #include "serial_monitor.h"
 #include "cerberus_conf.h"
 #include <assert.h>
@@ -50,9 +51,20 @@ void vBMSCANMonitor(void* pv_params)
 	for (;;) {
 		if (osOK == osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
 			/*TO-DO: fix duration (ticks)*/
-			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
-			bms->dcl = (uint16_t)((msg_from_queue.data[1] << 8) & msg_from_queue.data[0]);
+			switch (msg_from_queue.id) {
+			case BMS_DCL_MSG:
+				osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
+				bms->dcl = (uint16_t)((msg_from_queue.data[1] << 8) & msg_from_queue.data[0]);
+				break;
+			case BMS_TEMP_MSG:
+				// get the temperature and place it in the queue for battbox processing
+				bms->average_temp = (int8_t) msg_from_queue.data[6];
+				osMessageQueuePut(fan_battbox_state, &bms->average_temp, 0U, 0U);
+				break;
+			default:
+				break;
 			//serial_print("BMS DCL %d", bms->dcl);
+			}
 		}
 	}
 }

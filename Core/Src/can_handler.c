@@ -83,7 +83,9 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
 		break;
 	case BMS_DCL_MSG:
+	case BMS_TEMP_MSG:
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
+		break;
 	default:
 		break;
 	}

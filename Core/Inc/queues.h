@@ -10,6 +10,8 @@
 
 extern osMessageQueueId_t brakelight_signal;
 
+extern osMessageQueueId_t fan_battbox_state;
+
 typedef struct {
 	uint16_t accel_x;
 	uint16_t accel_y;

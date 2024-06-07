@@ -81,6 +81,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 osMessageQueueId_t brakelight_signal;
+osMessageQueueId_t fan_battbox_state;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 osMessageQueueId_t dti_router_queue;
@@ -202,6 +203,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   brakelight_signal = osMessageQueueNew(15, sizeof(bool), NULL);
+  fan_battbox_state = osMessageQueueNew(5, sizeof(int8_t), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
 	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -247,8 +249,10 @@ int main(void)
   assert(fault_handle);
   sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
   assert(sm_director_handle);
-  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);;
+  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);
   assert(brakelight_monitor_handle);
+  fan_battbox_monitor_handle = osThreadNew(vFanBattboxMonitor, pdu, &fan_battbox_monitor_attributes);
+  assert(fan_battbox_monitor_handle);
 
   /* USER CODE END RTOS_THREADS */
 
