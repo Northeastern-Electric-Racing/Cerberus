@@ -42,7 +42,7 @@ static void linear_accel_to_torque(float accel, uint16_t* torque)
 	*torque = (uint16_t)(accel * MAX_TORQUE);
 }
 
-static float rpm_to_mph(uint32_t rpm)
+static float rpm_to_mph(int32_t rpm)
 {
 	/* Convert RPM to MPH */
 	// rpm * gear ratio = wheel rpm
@@ -126,14 +126,16 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
-		float brake_value = (float) pedal_data.brake_value;
+		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0; // 0 to 1
+		float brake_value = (float) pedal_data.brake_value * 10.0; // ACTUAL PSI
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
 		{	
-			uint32_t rpm = dti_get_rpm(mc);
+			int32_t rpm = dti_get_rpm(mc);
+			//printf("rpm %ld", rpm);
 			mph = rpm_to_mph(rpm);
+			//printf("mph %d", (int8_t) mph);
 			set_mph(mph);
 
 			func_state_t func_state = get_func_state();
@@ -145,21 +147,23 @@ void vCalcTorque(void* pv_params)
 
 			/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
-
-			fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
+			//fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
 			/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
-			if (brake_value > 600 && (accelerator_value * 10.0) > 25)
+			if (brake_value > 600 && (accelerator_value) > 0.25)
 			{
+				printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
 				motor_disabled = true;
 				torque = 0;
-				queue_fault(&fault_data);
+				//queue_fault(&fault_data);
 			}
 
 			if (motor_disabled) 
 			{
-				if (accelerator_value < 5) 
+				printf("\nMotor disabled\n");
+				if (accelerator_value < 0.05) 
 				{
 					motor_disabled = false;
+					printf("\n\nMotor reenabled\n\n");
 				} else {
 					torque = 0;
 					dti_set_torque(torque);

@@ -222,7 +222,7 @@ int32_t dti_get_rpm(dti_t* mc)
 	int32_t rpm;
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	rpm = mc->rpm;
-	printf("Rpm %ld",rpm);
+	//printf("Rpm %ld",rpm);
 	osMutexRelease(*mc->mutex);
 
 	return rpm;
@@ -235,13 +235,12 @@ const osThreadAttr_t dti_router_attributes
 
 static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 {
-	/* ERPM is first four bytes of can message in little endian format */
-	int32_t erpm = 0;
-	for (int i = 0; i < 4; i++) {
-		erpm |= msg.data[i] << (8 * (i - 3));
-	}
+	/* ERPM is first four bytes of can message in big endian format */
+	int32_t erpm = (msg.data[0] << 24) + (msg.data[1] << 16) + (msg.data[2] << 8) + (msg.data[3]);
 
 	int32_t rpm = erpm / POLE_PAIRS;
+
+	//printf("\n\nRPM Rec: %ld\n\n", rpm);
 
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;

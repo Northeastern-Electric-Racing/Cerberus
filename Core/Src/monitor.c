@@ -217,7 +217,7 @@ void vPedalsMonitor(void* pv_params)
 		// printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
-		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
+		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Raw ADC for tuning */
 		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
@@ -241,6 +241,7 @@ void vPedalsMonitor(void* pv_params)
 			  / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
+		//printf("Accel pedal queue %d",  sensor_data.accelerator_value);
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
 		if (check != 0) {
