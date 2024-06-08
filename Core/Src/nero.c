@@ -106,6 +106,10 @@ void select_nero_index() {
 	}
 }
 
+void set_nero_home_mode() {
+	nero_state.home_mode = true;
+}
+
 void set_home_mode() {
 	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
 	if (!get_tsms()) {
