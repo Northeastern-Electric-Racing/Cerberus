@@ -127,7 +127,7 @@ void vCalcTorque(void* pv_params)
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
 		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0;
-		float brake_value = (float) pedal_data.brake_value / 10.0;
+		float brake_value = (float) pedal_data.brake_value;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK)
@@ -147,20 +147,19 @@ void vCalcTorque(void* pv_params)
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 
 			fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
-			float rel_accel_pedal_travel = accelerator_value / (((ACCEL1_MAX_VAL - ACCEL1_OFFSET) + (ACCEL2_MAX_VAL - ACCEL2_OFFSET)) / 2.0);
-			uint16_t brakes_engaged_threshold = 650;
-			if (brake_value > brakes_engaged_threshold && rel_accel_pedal_travel > 0.25) 
+			/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
+			if (brake_value > 600 && (accelerator_value * 10.0) > 25)
 			{
 				motor_disabled = true;
+				torque = 0;
 				queue_fault(&fault_data);
 			}
 
 			if (motor_disabled) 
 			{
-				if (rel_accel_pedal_travel < 0.05) 
+				if (accelerator_value < 0.05) 
 				{
 					motor_disabled = false;
-					continue;
 				} else {
 					torque = 0;
 					dti_set_torque(torque);
