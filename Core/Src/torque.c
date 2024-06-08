@@ -139,26 +139,26 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, fl
 		/**
 		 * regen_factor: coeffecient in linear fit of % pedal travel to torque. torque = regen_factor * accel_val
 		 */
-		static const float regen_factor = max_ac_brake / (start_regen * 100); // like max torque but instead dictates max regen
+		static const float regen_factor = max_ac_brake / (start_regen*100); // like max torque but instead dictates max regen
 
-		float moved_accel = (accel_val - (start_regen * 100 ));
+		float moved_accel = (accel_val - (start_regen));
 		// if the rescaled accel is positive then convert it to torque, and full send
 		if (moved_accel >= 0) {
 			/* Pedal more sensitive but in return max torque doesn't change */
-			moved_accel *= (MAX_TORQUE * (1.0 / (1.0 - start_regen)));
-			linear_accel_to_torque(moved_accel, torque);
+			// this is linear_accel_to_torque with moved_accel applied
+			*torque = moved_accel * (MAX_TORQUE * (1.0 / (1.0 - start_regen)));
 		}
 		else { 	// if the rescaled accel is negative, then use a different conversion factor
 			// use scale to get the 
 			float regen_torque = (moved_accel*-1.0*regen_factor) * ((1.0 / start_regen) + (1.0 / (1.0 - start_regen)));
 
 			// clamp to max
-			if ((regen_torque/0.61)/10 > max_ac_brake) {
-				regen_torque = max_ac_brake * 0.61 * 10.0;	
+			if ((regen_torque/0.61) > max_ac_brake) {
+				regen_torque = max_ac_brake * 0.61;	
 			}
 
-			// pass in torque to the dti code
-			dti_set_regen(regen_torque / 10.0);
+			// pass in torque to the dti code as positive
+			dti_set_regen(regen_torque);
 			// do not move forward
 			*torque = 0;
 		}
