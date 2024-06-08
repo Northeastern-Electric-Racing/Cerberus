@@ -71,7 +71,7 @@ void dti_set_torque(int16_t torque)
 // positive regen as torque for AC current!
 // dont scale past torque!
 void dti_set_regen(int16_t regen_torque) {
-	// copied from dti_set_regen
+	// copied from dti_set_torque
 	 // Static variables for the buffer and index
     static float buffer[SAMPLES] = {0};
     static int index = 0;
