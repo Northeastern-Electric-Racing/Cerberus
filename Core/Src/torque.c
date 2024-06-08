@@ -157,7 +157,7 @@ void vCalcTorque(void* pv_params)
 
 			if (motor_disabled) 
 			{
-				if (accelerator_value < 0.05) 
+				if (accelerator_value < 5) 
 				{
 					motor_disabled = false;
 				} else {
