@@ -181,6 +181,7 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
+	static const uint8_t buffer_size = 10;
 	enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
 
 	static pedals_t sensor_data;
@@ -202,6 +203,7 @@ void vPedalsMonitor(void* pv_params)
 	mpu_t* mpu = (mpu_t*)pv_params;
 
 	uint8_t counter = 0;
+	static int index = 0; 
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -217,7 +219,7 @@ void vPedalsMonitor(void* pv_params)
 		// printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
-		// printf("Avg Pedal Val: %d\r\n\n", accel_val);
+		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
 		/* Raw ADC for tuning */
 		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
@@ -227,7 +229,23 @@ void vPedalsMonitor(void* pv_params)
 		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > PEDAL_BRAKE_THRESH;
+		static float buffer[10] = {0};
+
+		uint16_t brake_avg = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
+   	 	// Add the new value to the buffer
+    	buffer[index] = brake_avg;
+
+    	// Increment the index, wrapping around if necessary
+    	index = (index + 1) % buffer_size;
+
+    	// Calculate the average of the buffer
+    	float sum = 0.0;
+    	for (int i = 0; i < buffer_size; ++i) {
+    	    sum += buffer[i];
+    	}
+    	float average_brake = sum / buffer_size;
+
+		is_braking =  average_brake > PEDAL_BRAKE_THRESH;
 		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
@@ -237,10 +255,10 @@ void vPedalsMonitor(void* pv_params)
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
 		sensor_data.brake_value
-			= (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2)
-			  / num_samples;
+			= average_brake / 10.0; // still divide by 10 since we multiple by 10 on other end
 
 		/* Publish to Onboard Pedals Queue */
+		//printf("Accel pedal queue %d",  sensor_data.accelerator_value);
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
 		if (check != 0) {

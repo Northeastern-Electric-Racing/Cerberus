@@ -47,6 +47,8 @@ void select_nero_index();
 */
 void set_mph(int8_t new_mph);
 
+void set_nero_home_mode();
+
 /*
 * Emits the state of NERO
 */
