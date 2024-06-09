@@ -354,6 +354,48 @@ void vIMUMonitor(void* pv_params)
 	}
 }
 
+osThreadId_t tsms_monitor_handle;
+const osThreadAttr_t tsms_monitor_attributes = {
+	.name		= "TsmsMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh,
+};
+
+void vTsmsMonitor(void *pv_params) {
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
+	pdu_t* pdu				= (pdu_t*)pv_params;
+
+	bool tsms_status = false;
+	nertimer_t tsms_debounce_timer = { .active = false };
+
+	for (;;) {
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if(!read_tsms_sense(pdu, &tsms_status)) {
+			printf("Checking pdu");
+			
+			// Timer has not been started, and there is a change in TSMS, so start the timer
+			if (tsms != tsms_status && !is_timer_active(&tsms_debounce_timer)) {
+				start_timer(&tsms_debounce_timer, 500);
+			} 
+			// During debouncing, the tsms reading changes, so end the debounce period
+			else if (tsms == tsms_status && !is_timer_expired(&tsms_debounce_timer)) {
+				cancel_timer(&tsms_debounce_timer);
+			}
+			// The TSMS reading has been consistent thorughout the debounce period
+			else if (is_timer_expired(&tsms_debounce_timer)) {
+				tsms = tsms_status;
+			}
+			if (get_func_state() == ACTIVE && tsms == false) {
+				set_home_mode();
+			}
+		} else {
+			queue_fault(&fault_data);
+		}
+
+		osDelay(100);
+	}
+}
+
 osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name		= "FusingMonitor",
@@ -374,8 +416,6 @@ void vFusingMonitor(void* pv_params)
 		uint8_t fuse_1;
 		uint8_t fuse_2;
 	} fuse_data;
-
-	bool tsms_status = false;
 
 	for (;;) {
 		fuse_buf = 0;
@@ -405,14 +445,6 @@ void vFusingMonitor(void* pv_params)
 			queue_fault(&fault_data);
 		}
 
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if (!read_tsms_sense(pdu, &tsms_status)) {
-			tsms = tsms_status;
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
-		}
-
 
 		osDelay(FUSES_SAMPLE_DELAY);
 	}
@@ -432,8 +464,6 @@ void vShutdownMonitor(void* pv_params)
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
-	bool tsms_status = false;
-	nertimer_t tsms_debounce_timer = { .active = false };
 
 	struct __attribute__((__packed__)) {
 		uint8_t shut_1;
@@ -469,28 +499,6 @@ void vShutdownMonitor(void* pv_params)
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
-
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if(!read_tsms_sense(pdu, &tsms_status)) {
-			
-			// Timer has not been started, and there is a change in TSMS, so start the timer
-			if (tsms != tsms_status && !is_timer_active(&tsms_debounce_timer)) {
-				start_timer(&tsms_debounce_timer, 1000);
-			} 
-			// During debouncing, the tsms reading changes, so end the debounce period
-			else if (tsms == tsms_status && !is_timer_expired(&tsms_debounce_timer)) {
-				cancel_timer(&tsms_debounce_timer);
-			}
-			// The TSMS reading has been consistent thorughout the debounce period
-			else if (is_timer_expired(&tsms_debounce_timer)) {
-				tsms = tsms_status;
-			}
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
-		}
-
-		// serial_print("TSMS: %d\r\n", tsms_status);
 
 		osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
