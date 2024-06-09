@@ -37,24 +37,29 @@ TORQUE_FACTOR_BACKWARDS = 50
 torque = accelerator_value*TORQUE_FACTOR_FORWARDS
 print("Normal torque", accelerator_value)
 
-print("Ac amps", (torque/0.61) )
+#print("Ac amps", (torque/0.61) )
 
 # ENDURANCE
 max_ac_brake = 15; # Amps AC
-OFFSET_VALUE = 0.2
-regen_factor = max_ac_brake / (OFFSET_VALUE*100)
+OFFSET_VALUE_REGEN = 0.2
+OFFSET_VALUE_ACCEL = 0.25
 
-accelerator_value = accelerator_value - (OFFSET_VALUE)
-if accelerator_value >= 0:
+regen_torque = -1;
+if accelerator_value >= OFFSET_VALUE_ACCEL:
     print("Offset accel go forward", accelerator_value)
-    accelerator_value *= (1 / (1 - OFFSET_VALUE))
+    accelerator_value *= (1 / (1 - OFFSET_VALUE_ACCEL))
     torque = accelerator_value*TORQUE_FACTOR_FORWARDS
-else:
+elif accelerator_value < OFFSET_VALUE_REGEN:
+    regen_factor = max_ac_brake / (OFFSET_VALUE_REGEN*100)
     print("Offset accel go backward", accelerator_value)
-    torque = (accelerator_value*-1.0*regen_factor) * ((1 / OFFSET_VALUE) + (1 / (1 - OFFSET_VALUE))) *10
+    regen_torue = (accelerator_value*-1.0*regen_factor) * ((1 / OFFSET_VALUE) + (1 / (1 - OFFSET_VALUE))) *10
     if (torque/0.61) > max_ac_brake:
         torque = max_ac_brake * 0.61;
-    print("Ac amps", (torque/0.61) )
+else:
+    torque = 0
+    regen = 0
+
+print("Ac amps", (torque/0.61) )
 
 # for num in range(-1,101,1):
 #     PEDAL1_TEN_PERCENT_OF_MAX = (ACCEL1_MAX_VAL - ACCEL1_OFFSET) * (num / 100.0) + ACCEL1_OFFSET

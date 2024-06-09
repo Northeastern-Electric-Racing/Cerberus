@@ -111,7 +111,7 @@ void decrease_torque_limit()
  * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, float accel_relative_val, int16_t* torque) {
+void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, int16_t* torque) {
 	// max ac current to brake with
 	static const float max_ac_brake = 25; // Amps AC
 	#ifdef USE_BRAKE_REGEN
@@ -136,19 +136,23 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, fl
 	#else
 		// percent of accel pedal to be used for regen
 		static const float start_regen = 0.2;
+		static const float start_accel = 0.25;
 		/**
 		 * regen_factor: coeffecient in linear fit of % pedal travel to torque. torque = regen_factor * accel_val
 		 */
 		static const float regen_factor = max_ac_brake / (start_regen*100); // like max torque but instead dictates max regen
 
-		float moved_accel = (accel_val - (start_regen));
+		float deadzone_accel = (accel_val - start_regen - deadzone_size_before);
 		// if the rescaled accel is positive then convert it to torque, and full send
-		if (moved_accel >= 0) {
+		if (accel_val >= start_accel) {
+			float moved_accel = (accel_val - (start_accel));
 			/* Pedal more sensitive but in return max torque doesn't change */
 			// this is linear_accel_to_torque with moved_accel applied
-			*torque = moved_accel * (MAX_TORQUE * (1.0 / (1.0 - start_regen)));
+			*torque = moved_accel * (MAX_TORQUE * (1.0 / (1.0 - start_accel)));
+			dti_set_regen(0);
 		}
-		else { 	// if the rescaled accel is negative, then use a different conversion factor
+		else if (mph*1.609 > 6 && accel_val < start_regen) { 	// if the rescaled accel is negative, then use a different conversion factor
+			float moved_accel = (accel_val - (start_regen));
 			// use scale to get the 
 			float regen_torque = (moved_accel*-1.0*regen_factor) * ((1.0 / start_regen) + (1.0 / (1.0 - start_regen)));
 
@@ -161,6 +165,9 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, fl
 			dti_set_regen(regen_torque);
 			// do not move forward
 			*torque = 0;
+		} else {
+			*torque = 0;
+			dti_set_regen(0);
 		}
 		
 	#endif
@@ -239,7 +246,7 @@ void vCalcTorque(void* pv_params)
 				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
 				// 	break;
 				case ENDURANCE:
-					handle_endurance(mc, mph, accelerator_value, brake_value, rel_accel_pedal_travel, &torque);
+					handle_endurance(mc, mph, accelerator_value, brake_value, &torque);
 					break;
 				case AUTOCROSS:
 					linear_accel_to_torque(accelerator_value, &torque);
