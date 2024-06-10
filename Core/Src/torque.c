@@ -154,7 +154,6 @@ void vCalcTorque(void* pv_params)
 				printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
 				motor_disabled = true;
 				torque = 0;
-				//queue_fault(&fault_data);
 			}
 
 			if (motor_disabled) 
@@ -163,7 +162,8 @@ void vCalcTorque(void* pv_params)
 				if (accelerator_value < 0.05) 
 				{
 					motor_disabled = false;
-					printf("\n\nMotor reenabled\n\n");
+					printf("\n\nMotor reenabled, queuing fault\n\n");
+					//queue_fault(&fault_data);
 				} else {
 					torque = 0;
 					dti_set_torque(torque);
