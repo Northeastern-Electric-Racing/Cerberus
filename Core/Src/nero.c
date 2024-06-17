@@ -4,6 +4,7 @@
 #include "can_handler.h"
 #include "state_machine.h"
 #include "serial_monitor.h"
+#include "queues.h"
 #include "c_utils.h"
 #include "stdio.h"
 #include "cerberus_conf.h"
@@ -48,6 +49,7 @@ void increment_nero_index() {
 }
 
 void set_mph(int8_t new_mph) {
+	//printf("mph %d", new_mph);
 	mph = new_mph;
 }
 
@@ -86,7 +88,7 @@ void select_nero_index() {
 
 	uint8_t max_drive_states = MAX_DRIVE_STATES - 1; // Account for reverse and pit being the same screen
 
-	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms()) {
+	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms() && get_brake_state()) {
 		state_request.id = FUNCTIONAL;
 		state_request.state.functional = ACTIVE;
 		queue_state_transition(state_request);
@@ -102,6 +104,10 @@ void select_nero_index() {
 	} else if (nero_state.nero_index >= max_drive_states) {
 		nero_state.home_mode = false;
 	}
+}
+
+void set_nero_home_mode() {
+	nero_state.home_mode = true;
 }
 
 void set_home_mode() {

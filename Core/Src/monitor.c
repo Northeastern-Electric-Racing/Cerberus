@@ -1,32 +1,72 @@
 #include "monitor.h"
+#include "c_utils.h"
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "fault.h"
+#include "lsm6dso.h"
 #include "mpu.h"
 #include "pdu.h"
 #include "queues.h"
 #include "serial_monitor.h"
 #include "sht30.h"
-#include "c_utils.h"
-#include "stm32f405xx.h"
-#include "task.h"
-#include "lsm6dso.h"
-#include "timer.h"
-#include "serial_monitor.h"
 #include "state_machine.h"
 #include "steeringio.h"
+#include "stm32f405xx.h"
+#include "task.h"
+#include "timer.h"
 #include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Parameters for the pedal monitoring task */
-#define MAX_ADC_VAL_12b	  4096
+#define MAX_ADC_VAL_12b 4096
 // DEBUG: threshold may need adjusting
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
+ 
 
 static bool tsms = false;
+static bool brake_state = false;
+
+
+osThreadId lv_monitor_handle;
+const osThreadAttr_t lv_monitor_attributes = {
+	.name		= "LVMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh4,
+};
+
+void vLVMonitor(void* pv_params)
+{
+	mpu_t* mpu = (mpu_t*)pv_params;
+	fault_data_t fault_data = { .id = LV_MONITOR_FAULT, .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+
+	uint32_t v_int;
+
+	for (;;) {
+		read_lv_voltage(mpu, &v_int);
+
+		// scale up then truncate
+		// convert to out of 24 volts
+		// since 12 bits / 4096
+		// Magic number bc idk the resistors on the voltage divider
+		float v_dec = v_int * 8.967;
+
+		// get final voltage
+		v_int = (uint32_t) (v_dec *10.0);
+
+		//endian_swap(&v_int, sizeof(v_int));
+		memcpy(msg.data, &v_int, msg.len);
+		if (queue_can_msg(msg)) {
+			fault_data.diag = "Failed to send steering buttons can message";
+			queue_fault(&fault_data);
+		}
+
+		osDelay(LV_READ_DELAY);
+	}
+}
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
@@ -35,12 +75,17 @@ const osThreadAttr_t temp_monitor_attributes = {
 	.priority	= (osPriority_t)osPriorityHigh1,
 };
 
+bool get_brake_state()
+{
+	return brake_state;
+}
+
 void vTempMonitor(void* pv_params)
 {
 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON5 };
 	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t* mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		/* Take measurement */
@@ -76,17 +121,20 @@ const osThreadAttr_t pedals_monitor_attributes = {
 	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
-void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer, nertimer_t *sc_timer, nertimer_t *oc_timer, fault_data_t *fault_data)
+void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t* diff_timer,
+					  nertimer_t* sc_timer, nertimer_t* oc_timer, fault_data_t* fault_data)
 {
 	/* Fault - open circuit (Max ADC value + some a lil bit) */
-	if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20)) && is_timer_active(oc_timer)) {
+	if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20))
+		&& is_timer_active(oc_timer)) {
 		if (is_timer_expired(oc_timer)) {
 			if ((accel_1 == MAX_ADC_VAL_12b || accel_2 == MAX_ADC_VAL_12b)) {
 				fault_data->diag = "Pedal open circuit fault - max acceleration value ";
 				queue_fault(fault_data);
 			}
 		}
-	} else if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20)) && !is_timer_active(oc_timer))  {
+	} else if ((accel_1 > (MAX_ADC_VAL_12b - 20) || accel_2 > (MAX_ADC_VAL_12b - 20))
+			   && !is_timer_active(oc_timer)) {
 		start_timer(oc_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(oc_timer);
@@ -94,8 +142,10 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 
 	/* Fault - short circuit */
 	if ((accel_1 < 500 || accel_2 < 500) && is_timer_active(sc_timer)) {
+	
 		if (is_timer_expired(sc_timer)) {
-			if ((accel_1 < 500 || accel_2 < 500 )) {
+			
+			if ((accel_1 < 500 || accel_2 < 500)) {
 				fault_data->diag = "Pedal short circuit fault - no acceleration value ";
 				queue_fault(fault_data);
 			}
@@ -112,6 +162,7 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 
 	/* Fault - difference between pedal sensing values */
 	if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && is_timer_active(diff_timer)) {
+	
 		/* starting diff timer */
 		if (is_timer_expired(diff_timer)) {
 			if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH)) {
@@ -119,7 +170,8 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 				queue_fault(fault_data);
 			}
 		}
-	} else if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) && !is_timer_active(diff_timer)) {
+	} else if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH)
+			   && !is_timer_active(diff_timer)) {
 		start_timer(diff_timer, PEDAL_FAULT_TIME);
 	} else {
 		cancel_timer(diff_timer);
@@ -129,12 +181,13 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2, nertimer_t *diff_timer
 void vPedalsMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
-	enum {ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2};
+	static const uint8_t buffer_size = 10;
+	enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
 
 	static pedals_t sensor_data;
-	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
-	can_msg_t accel_pedals_msg	= { .id = CANID_PEDALS_ACCEL_MSG, .len = 8, .data = { 0 } };
-	can_msg_t brake_pedals_msg	= { .id = CANID_PEDALS_BRAKE_MSG, .len = 8, .data = { 0 } };
+	fault_data_t fault_data	   = { .id = ONBOARD_PEDAL_FAULT, .severity = DEFCON1 };
+	can_msg_t accel_pedals_msg = { .id = CANID_PEDALS_ACCEL_MSG, .len = 8, .data = { 0 } };
+	can_msg_t brake_pedals_msg = { .id = CANID_PEDALS_BRAKE_MSG, .len = 8, .data = { 0 } };
 	uint32_t adc_data[4];
 	bool is_braking = false;
 
@@ -147,10 +200,10 @@ void vPedalsMonitor(void* pv_params)
 	cancel_timer(&oc_timer_accelerator);
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	mpu_t *mpu = (mpu_t *)pv_params;
-
+	mpu_t* mpu = (mpu_t*)pv_params;
 
 	uint8_t counter = 0;
+	static int index = 0; 
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -158,33 +211,57 @@ void vPedalsMonitor(void* pv_params)
 		/* Evaluate Pedal Faulting Conditions */
 		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2], &diff_timer_accelerator, &sc_timer_accelerator, &oc_timer_accelerator, &fault_data);
 		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
-
+		
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = (int16_t)adc_data[ACCELPIN_1] - ACCEL1_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_1] - ACCEL1_OFFSET) * 100 / (ACCEL1_MAX_VAL - ACCEL1_OFFSET);
-		//printf("Accel 1: %d\r\n", max_pedal1);
+		// printf("Accel 1: %d\r\n", max_pedal1);
 		uint16_t accel_val2 = (int16_t)adc_data[ACCELPIN_2] - ACCEL2_OFFSET <= 0 ? 0 : (uint16_t)(adc_data[ACCELPIN_2] - ACCEL2_OFFSET) * 100 / (ACCEL2_MAX_VAL - ACCEL2_OFFSET);
-		//printf("Accel 2: %d\r\n",max_pedal2);
+		// printf("Accel 2: %d\r\n",max_pedal2);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
 
-		/* Brakelight Control */
-		//printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
-		//printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+		/* Raw ADC for tuning */
+		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
+		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 > 650;
+		/* Brakelight Control */
+		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
+		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
+
+		static float buffer[10] = {0};
+
+		uint16_t brake_avg = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
+   	 	// Add the new value to the buffer
+    	buffer[index] = brake_avg;
+
+    	// Increment the index, wrapping around if necessary
+    	index = (index + 1) % buffer_size;
+
+    	// Calculate the average of the buffer
+    	float sum = 0.0;
+    	for (int i = 0; i < buffer_size; ++i) {
+    	    sum += buffer[i];
+    	}
+    	float average_brake = sum / buffer_size;
+
+		is_braking =  average_brake > PEDAL_BRAKE_THRESH;
+		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
+		//osMessageQueueReset(break_state_queue);
+		//osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
-		sensor_data.brake_value = (sensor_data.brake_value + (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) / num_samples;
+		sensor_data.brake_value
+			= average_brake / 10.0; // still divide by 10 since we multiple by 10 on other end
 
 		/* Publish to Onboard Pedals Queue */
+		//printf("Accel pedal queue %d",  sensor_data.accelerator_value);
 		osStatus_t check = osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 
-		if(check != 0)
-		{
+		if (check != 0) {
 			fault_data.diag = "Failed to push pedal data to queue";
 			queue_fault(&fault_data);
 		}
@@ -193,17 +270,17 @@ void vPedalsMonitor(void* pv_params)
 		counter += 1;
 		if (counter >= 5) {
 			counter = 0;
-		endian_swap(&adc_data[ACCELPIN_1], sizeof(adc_data[ACCELPIN_1]));
-		endian_swap(&adc_data[ACCELPIN_2], sizeof(adc_data[ACCELPIN_2]));
-		memcpy(accel_pedals_msg.data, &adc_data, accel_pedals_msg.len);
-		queue_can_msg(accel_pedals_msg);
-		
-		endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_1]));
-		endian_swap(&adc_data[BRAKEPIN_2], sizeof(adc_data[BRAKEPIN_2]));
-		memcpy(brake_pedals_msg.data, adc_data + 2, brake_pedals_msg.len);
-		queue_can_msg(brake_pedals_msg);
+			endian_swap(&adc_data[ACCELPIN_1], sizeof(adc_data[ACCELPIN_1]));
+			endian_swap(&adc_data[ACCELPIN_2], sizeof(adc_data[ACCELPIN_2]));
+			memcpy(accel_pedals_msg.data, &adc_data, accel_pedals_msg.len);
+			queue_can_msg(accel_pedals_msg);
+
+			endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_1]));
+			endian_swap(&adc_data[BRAKEPIN_2], sizeof(adc_data[BRAKEPIN_2]));
+			memcpy(brake_pedals_msg.data, adc_data + 2, brake_pedals_msg.len);
+			queue_can_msg(brake_pedals_msg);
 		}
-		
+
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
 }
@@ -220,17 +297,17 @@ void vIMUMonitor(void* pv_params)
 	const uint8_t num_samples = 10;
 	static imu_data_t sensor_data;
 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
-	can_msg_t imu_accel_msg = { .id = CANID_IMU, .len = 6, .data = { 0 } };
-	can_msg_t imu_gyro_msg	= { .id = CANID_IMU, .len = 6, .data = { 0 } };
+	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL, .len = 6, .data = { 0 } };
+	can_msg_t imu_gyro_msg	= { .id = CANID_IMU_GYRO, .len = 6, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t* mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		// serial_print("IMU Task\r\n");
 		/* Take measurement */
 		uint16_t accel_data[3] = { 0 };
 		uint16_t gyro_data[3]  = { 0 };
-		if (read_accel(mpu,accel_data)) {
+		if (read_accel(mpu, accel_data)) {
 			fault_data.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
@@ -261,10 +338,10 @@ void vIMUMonitor(void* pv_params)
 
 		/* Send CAN message */
 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
-		//if (queue_can_msg(imu_accel_msg)) {
+		// if (queue_can_msg(imu_accel_msg)) {
 		//	fault_data.diag = "Failed to send CAN message";
 		//	queue_fault(&fault_data);
-		//}
+		// }
 
 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
 		if (queue_can_msg(imu_gyro_msg)) {
@@ -274,6 +351,48 @@ void vIMUMonitor(void* pv_params)
 
 		/* Yield to other tasks */
 		osDelay(IMU_SAMPLE_DELAY);
+	}
+}
+
+osThreadId_t tsms_monitor_handle;
+const osThreadAttr_t tsms_monitor_attributes = {
+	.name		= "TsmsMonitor",
+	.stack_size = 32 * 8,
+	.priority	= (osPriority_t)osPriorityHigh,
+};
+
+void vTsmsMonitor(void *pv_params) {
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
+	pdu_t* pdu				= (pdu_t*)pv_params;
+
+	bool tsms_status = false;
+	nertimer_t tsms_debounce_timer = { .active = false };
+
+	for (;;) {
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if(!read_tsms_sense(pdu, &tsms_status)) {
+			printf("Checking pdu");
+			
+			// Timer has not been started, and there is a change in TSMS, so start the timer
+			if (tsms != tsms_status && !is_timer_active(&tsms_debounce_timer)) {
+				start_timer(&tsms_debounce_timer, 500);
+			} 
+			// During debouncing, the tsms reading changes, so end the debounce period
+			else if (tsms == tsms_status && !is_timer_expired(&tsms_debounce_timer)) {
+				cancel_timer(&tsms_debounce_timer);
+			}
+			// The TSMS reading has been consistent thorughout the debounce period
+			else if (is_timer_expired(&tsms_debounce_timer)) {
+				tsms = tsms_status;
+			}
+			if (get_func_state() == ACTIVE && tsms == false) {
+				set_home_mode();
+			}
+		} else {
+			queue_fault(&fault_data);
+		}
+
+		osDelay(100);
 	}
 }
 
@@ -289,26 +408,30 @@ void vFusingMonitor(void* pv_params)
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
 	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 	pdu_t* pdu				= (pdu_t*)pv_params;
-	bool fuses[MAX_FUSES]	= { 0 };
 	uint16_t fuse_buf;
+	bool fuses[MAX_FUSES]
+		= { 0 };
 
-	struct __attribute__((__packed__)){
-        uint8_t fuse_1;
-        uint8_t fuse_2;
-    } fuse_data;
+	struct __attribute__((__packed__)) {
+		uint8_t fuse_1;
+		uint8_t fuse_2;
+	} fuse_data;
 
 	for (;;) {
 		fuse_buf = 0;
 
-		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-			read_fuse(pdu, fuse, &fuses[fuse]); /* Actually read the fuse */
+		if (read_fuses(pdu, fuses)) {
+			fault_data.diag = "Failed to read fuses";
+			queue_fault(&fault_data);
+		}
 
+		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
 			fuse_buf |= fuses[fuse]
 						<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
 
 		// serial_print("Fuses:\t%X\r\n", fuse_buf);
-		
+
 		fuse_data.fuse_1 = fuse_buf & 0xFF;
 		fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
 
@@ -316,12 +439,12 @@ void vFusingMonitor(void* pv_params)
 		fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
 		fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
 
-
 		memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
+
 
 		osDelay(FUSES_SAMPLE_DELAY);
 	}
@@ -341,20 +464,21 @@ void vShutdownMonitor(void* pv_params)
 	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
-	bool tsms_status = false;
 
-	struct __attribute__((__packed__)){
-        uint8_t shut_1;
-        uint8_t shut_2;
-    } shutdown_data ;
+	struct __attribute__((__packed__)) {
+		uint8_t shut_1;
+		uint8_t shut_2;
+	} shutdown_data;
 
 	for (;;) {
 		shutdown_buf = 0;
 
-		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
-			read_shutdown(pdu, stage, &shutdown_loop[stage]); /* Actually read the shutdown loop stage state */
-				
+		if (read_shutdown(pdu,shutdown_loop)) {
+			fault_data.diag = "Failed to read shutdown buffer";
+			queue_fault(&fault_data);
+		}
 
+		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
 			shutdown_buf
 				|= shutdown_loop[stage]
 				   << stage; /* Sets the bit at position `stage` to the state of the stage */
@@ -370,24 +494,13 @@ void vShutdownMonitor(void* pv_params)
 		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
 		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
 
-
 		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
 
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if(!read_tsms_sense(pdu, &tsms_status)) {
-			tsms = tsms_status;
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
-		}
-
-		// serial_print("TSMS: %d\r\n", tsms_status);
-
-	 	osDelay(SHUTDOWN_MONITOR_DELAY);
+		osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
 }
 
@@ -401,8 +514,8 @@ const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 void vSteeringIOButtonsMonitor(void* pv_params)
 {
 	button_data_t buttons;
-	steeringio_t *wheel = (steeringio_t *)pv_params;
-	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
+	steeringio_t* wheel		= (steeringio_t*)pv_params;
+	can_msg_t msg			= { .id = 0x680, .len = 8, .data = { 0 } };
 	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT, .severity = DEFCON5 };
 
 	for (;;) {
@@ -415,20 +528,15 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
-		//serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3, button_4, button_5, button_6, button_7, button_8);
+		// serial_print("%d, %d, %d, %d, %d, %d, %d, %d \r\n", button_1, button_2, button_3,
+		// button_4, button_5, button_6, button_7, button_8);
 
 		//  1, 2, 0 ,0 , 0, 0
 
 		// serial_print("\r\n");
 
-		uint8_t button_data = (button_1 << 7) |
-              (button_2 << 6) |
-              (button_3 << 5) |
-              (button_4 << 4) |
-              (button_5 << 3) |
-              (button_6 << 2) |
-              (button_7 << 1) |
-              (button_8);
+		uint8_t button_data = (button_1 << 7) | (button_2 << 6) | (button_3 << 5) | (button_4 << 4)
+							  | (button_5 << 3) | (button_6 << 2) | (button_7 << 1) | (button_8);
 
 		buttons.data[0] = button_data;
 
@@ -445,7 +553,8 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 	}
 }
 
-bool get_tsms() {
+bool get_tsms()
+{
 	return tsms;
 }
 

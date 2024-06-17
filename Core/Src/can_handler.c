@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include "stdio.h"
 #include <string.h>
+#include "dti.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 static osMessageQueueId_t can_outbound_queue;
@@ -75,14 +76,16 @@ void can1_callback(CAN_HandleTypeDef* hcan)
 	switch (new_msg.id) {
 	/* Messages Relevant to Motor Controller */
 	case DTI_CANID_ERPM:
-	case DTI_CANID_CURRENTS:
-	case DTI_CANID_TEMPS_FAULT:
-	case DTI_CANID_ID_IQ:
+	// case DTI_CANID_CURRENTS:
+	// case DTI_CANID_TEMPS_FAULT:
+	// case DTI_CANID_ID_IQ:
 	// case DTI_CANID_SIGNALS:
-	// 	osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
-	// 	break;
+		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		break;
 	case BMS_DCL_MSG:
+		//printf("Recieved dcl");
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
+		break;
 	default:
 		break;
 	}

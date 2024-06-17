@@ -13,6 +13,10 @@ typedef struct {
 	ADC_HandleTypeDef* pedals_adc;
 	uint32_t pedal_dma_buf[4];
 
+
+	ADC_HandleTypeDef* lv_adc;
+	uint32_t lv_dma_buf;
+
 	GPIO_TypeDef* led_gpio;
 	GPIO_TypeDef* watchdog_gpio;
 	sht30_t* temp_sensor;
@@ -29,7 +33,7 @@ typedef struct
 } brake_adc_channels_t;
 
 
-mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc, GPIO_TypeDef* led_gpio,
+mpu_t* init_mpu(I2C_HandleTypeDef* hi2c, ADC_HandleTypeDef* pedals_adc, ADC_HandleTypeDef* lv_adc, GPIO_TypeDef* led_gpio,
 				GPIO_TypeDef* watchdog_gpio);
 
 int8_t write_rled(mpu_t* mpu, bool status);
@@ -43,6 +47,8 @@ int8_t toggle_yled(mpu_t* mpu);
 int8_t pet_watchdog(mpu_t* mpu);
 
 void read_pedals(mpu_t* mpu, uint32_t pedal_buf[4]);
+
+void read_lv_voltage(mpu_t* mpu, uint32_t *lv_buf);
 
 int8_t read_temp_sensor(mpu_t* mpu, uint16_t* temp, uint16_t* humidity);
 

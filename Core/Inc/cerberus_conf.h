@@ -5,20 +5,22 @@
 #define FUSES_SAMPLE_DELAY	   1000   /* ms */
 #define SHUTDOWN_MONITOR_DELAY 500   /* ms */
 #define NERO_DELAY_TIME        100 /* ms*/
+#define LV_READ_DELAY       1000
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
 #define CAN_DISPATCH_DELAY      5
-#define BMS_CAN_MONITOR_DELAY   7000
+#define BMS_CAN_MONITOR_DELAY   4000
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
 #define PEDALS_SAMPLE_DELAY     20    /* ms */
-#define ACCEL1_OFFSET           2767
-#define ACCEL1_MAX_VAL          3319
-#define ACCEL2_OFFSET           1920
-#define ACCEL2_MAX_VAL          3382
+#define ACCEL1_OFFSET           980
+#define ACCEL1_MAX_VAL          1866
+#define ACCEL2_OFFSET           1780
+#define ACCEL2_MAX_VAL          3365
+#define PEDAL_BRAKE_THRESH      650
 
 /* Torque Tuning */
 #define MAX_TORQUE              220 /* Nm * 10 */
@@ -50,16 +52,17 @@
 #define WATCHDOG_Pin		GPIO_PIN_15
 #define WATCHDOG_GPIO_Port	GPIOB
 
-#define CANID_PEDAL_SENSOR 0x002
-// TODO: GET CORRECT CAN ID
-#define CANID_IMU			0x003
+
 #define CANID_TEMP_SENSOR	0x004
 #define CANID_TORQUE_MSG	0x005
 #define CANID_OUTBOUND_MSG	0xA55
 #define CANID_FUSE			0x111
 #define CANID_SHUTDOWN_LOOP 0x123
+#define CANID_IMU_ACCEL	    0x506
+#define CANID_IMU_GYRO	    0x507
 #define CANID_NERO_MSG      0x501
 #define CANID_FAULT_MSG 	0x502
+#define CANID_LV_MONITOR    0x503
 #define CANID_PEDALS_ACCEL_MSG 	0x504
 #define CANID_PEDALS_BRAKE_MSG 	0x505
 #define CANID_EXTRA_MSG     0x701 // Reserved for MPU debug message, see yaml for format

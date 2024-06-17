@@ -2,16 +2,15 @@
 #define PDU_H
 
 #include "cmsis_os.h"
-#include "pi4ioe.h"
-#include "max7314.h"
+#include "pca9539.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
 	I2C_HandleTypeDef* hi2c;
 	osMutexId_t* mutex;
-	max7314_t* shutdown_expander;
-	max7314_t* ctrl_expander;
+	pca9539_t* shutdown_expander;
+	pca9539_t* ctrl_expander;
 	osTimerId rtds_timer;
 } pdu_t;
 
@@ -40,7 +39,7 @@ typedef enum {
 	MAX_FUSES
 } fuse_t;
 
-int8_t read_fuse(pdu_t* pdu, fuse_t fuse, bool* status);
+int8_t read_fuses(pdu_t* pdu, bool status[MAX_FUSES]);
 
 int8_t read_tsms_sense(pdu_t* pdu, bool* status);
 
@@ -60,6 +59,6 @@ typedef enum {
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
-int8_t read_shutdown(pdu_t* pdu, shutdown_stage_t stage, bool* status);
+int8_t read_shutdown(pdu_t* pdu, bool status[MAX_SHUTDOWN_STAGES]);
 
 #endif /* PDU_H */

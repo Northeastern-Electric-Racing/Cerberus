@@ -5,6 +5,10 @@
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
 
+void vLVMonitor(void* pv_params);
+extern osThreadId lv_monitor_handle;
+extern const osThreadAttr_t lv_monitor_attributes;
+
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void* pv_params);
 extern osThreadId_t temp_monitor_handle;
@@ -24,6 +28,11 @@ extern const osThreadAttr_t pedals_monitor_attributes;
 void vIMUMonitor(void* pv_params);
 extern osThreadId_t imu_monitor_handle;
 extern const osThreadAttr_t imu_monitor_attributes;
+
+/* Task for Monitoring the TSMS sense on PDU  CTRL expander*/
+void vTsmsMonitor(void* pv_params);
+extern osThreadId_t tsms_monitor_handle;
+extern const osThreadAttr_t tsms_monitor_attributes;
 
 /* Task for Monitoring the Fuses on PDU */
 void vFusingMonitor(void* pv_params);
