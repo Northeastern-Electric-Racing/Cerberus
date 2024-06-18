@@ -22,13 +22,13 @@
 #include "serial_monitor.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
-#define SAMPLES 20
+#define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 // osMessageQueueId_t dti_router_queue;
 
-dti_t* dti_init()
+dti_t *dti_init()
 {
-	dti_t* mc = malloc(sizeof(dti_t));
+	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
 
 	/* Create Mutex */
@@ -41,22 +41,22 @@ dti_t* dti_init()
 void dti_set_torque(int16_t torque)
 {
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
-	 // Static variables for the buffer and index
-    static float buffer[SAMPLES] = {0};
-    static int index = 0;
+	// Static variables for the buffer and index
+	static float buffer[SAMPLES] = { 0 };
+	static int index = 0;
 
-    // Add the new value to the buffer
-    buffer[index] = torque;
+	// Add the new value to the buffer
+	buffer[index] = torque;
 
-    // Increment the index, wrapping around if necessary
-    index = (index + 1) % SAMPLES;
+	// Increment the index, wrapping around if necessary
+	index = (index + 1) % SAMPLES;
 
-    // Calculate the average of the buffer
-    float sum = 0.0;
-    for (int i = 0; i < SAMPLES; ++i) {
-        sum += buffer[i];
-    }
-    float average = sum / SAMPLES;
+	// Calculate the average of the buffer
+	float sum = 0.0;
+	for (int i = 0; i < SAMPLES; ++i) {
+		sum += buffer[i];
+	}
+	float average = sum / SAMPLES;
 
 	if (torque == 0) {
 		average = 0;
@@ -217,7 +217,7 @@ void dti_set_drive_enable(bool drive_enable)
 	queue_can_msg(msg);
 }
 
-int32_t dti_get_rpm(dti_t* mc)
+int32_t dti_get_rpm(dti_t *mc)
 {
 	int32_t rpm;
 	osMutexAcquire(*mc->mutex, osWaitForever);
@@ -230,13 +230,17 @@ int32_t dti_get_rpm(dti_t* mc)
 
 /* Inbound Task-specific Info */
 osThreadId_t dti_router_handle;
-const osThreadAttr_t dti_router_attributes
-	= { .name = "DTIRouter", .stack_size = 64 * 8, .priority = (osPriority_t)osPriorityHigh };
+const osThreadAttr_t dti_router_attributes = {
+	.name = "DTIRouter",
+	.stack_size = 64 * 8,
+	.priority = (osPriority_t)osPriorityHigh
+};
 
 static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in big endian format */
-	int32_t erpm = (msg.data[0] << 24) + (msg.data[1] << 16) + (msg.data[2] << 8) + (msg.data[3]);
+	int32_t erpm = (msg.data[0] << 24) + (msg.data[1] << 16) +
+		       (msg.data[2] << 8) + (msg.data[3]);
 
 	int32_t rpm = erpm / POLE_PAIRS;
 
@@ -247,7 +251,7 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexRelease(*mc->mutex);
 }
 
-void vDTIRouter(void* pv_params)
+void vDTIRouter(void *pv_params)
 {
 	can_msg_t message;
 	osStatus_t status;
@@ -257,26 +261,24 @@ void vDTIRouter(void* pv_params)
 
 	for (;;) {
 		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(dti_router_queue, &message, NULL, osWaitForever);
-		if (status == osOK) 
-		{
-			switch (message.id) 
-			{
-				case DTI_CANID_ERPM:
-					dti_record_rpm(mc, message);
-					break;
-				case DTI_CANID_CURRENTS:
-					break;
-				case DTI_CANID_TEMPS_FAULT:
-					break;
-				case DTI_CANID_ID_IQ:
-					break;
-				case DTI_CANID_SIGNALS:
-					break;
-				default:
-					break;
+		status = osMessageQueueGet(dti_router_queue, &message, NULL,
+					   osWaitForever);
+		if (status == osOK) {
+			switch (message.id) {
+			case DTI_CANID_ERPM:
+				dti_record_rpm(mc, message);
+				break;
+			case DTI_CANID_CURRENTS:
+				break;
+			case DTI_CANID_TEMPS_FAULT:
+				break;
+			case DTI_CANID_ID_IQ:
+				break;
+			case DTI_CANID_SIGNALS:
+				break;
+			default:
+				break;
 			}
 		}
 	}
 }
-

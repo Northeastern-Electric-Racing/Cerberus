@@ -12,7 +12,7 @@
 
 osMessageQueueId_t bms_monitor_queue;
 
-bms_t* bms;
+bms_t *bms;
 
 void bms_fault_callback();
 
@@ -25,7 +25,9 @@ const osThreadAttr_t bms_monitor_attributes = {
 
 void bms_fault_callback()
 {
-	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 }; /*TO-DO: update severity*/
+	fault_data_t fault_data = {
+		.id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1
+	}; /*TO-DO: update severity*/
 	fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
 	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 	queue_fault(&fault_data);
@@ -37,22 +39,28 @@ void bms_init()
 	assert(bms);
 
 	/*TO-DO: specify timer attributes*/
-	bms->bms_monitor_timer = osTimerNew(&bms_fault_callback, osTimerOnce, NULL, NULL);
+	bms->bms_monitor_timer =
+		osTimerNew(&bms_fault_callback, osTimerOnce, NULL, NULL);
 
-	bms_monitor_queue = osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	bms_monitor_queue =
+		osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(bms_monitor_queue);
 }
 
-void vBMSCANMonitor(void* pv_params)
+void vBMSCANMonitor(void *pv_params)
 {
 	can_msg_t msg_from_queue;
 
 	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 	for (;;) {
-		if (osOK == osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL, osWaitForever)) {
+		if (osOK == osMessageQueueGet(bms_monitor_queue,
+					      &msg_from_queue, NULL,
+					      osWaitForever)) {
 			/*TO-DO: fix duration (ticks)*/
-			osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
-			bms->dcl = (uint16_t)((msg_from_queue.data[1] << 8) & msg_from_queue.data[0]);
+			osTimerStart(bms->bms_monitor_timer,
+				     BMS_CAN_MONITOR_DELAY);
+			bms->dcl = (uint16_t)((msg_from_queue.data[1] << 8) &
+					      msg_from_queue.data[0]);
 			//serial_print("BMS DCL %d", bms->dcl);
 		}
 	}

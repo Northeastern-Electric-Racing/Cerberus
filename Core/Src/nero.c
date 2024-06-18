@@ -10,32 +10,38 @@
 #include "cerberus_conf.h"
 #include "monitor.h"
 
-static nero_state_t nero_state = { .nero_index = 0, .home_mode = true};
+static nero_state_t nero_state = { .nero_index = 0, .home_mode = true };
 static int8_t mph = 0;
 
-static void send_mode_status() {
-	can_msg_t msg = { .id = 0x501, .len = 4, .data = { nero_state.home_mode, nero_state.nero_index, mph, get_tsms() } };
+static void send_mode_status()
+{
+	can_msg_t msg = { .id = 0x501,
+			  .len = 4,
+			  .data = { nero_state.home_mode, nero_state.nero_index,
+				    mph, get_tsms() } };
 
 	/* Send CAN message */
 	queue_can_msg(msg);
 }
 
-static drive_state_t map_nero_index_to_drive_state(nero_menu_t nero_index) {
+static drive_state_t map_nero_index_to_drive_state(nero_menu_t nero_index)
+{
 	switch (nero_index) {
-		case OFF:
-			return NOT_DRIVING;
-		case PIT:
-			return SPEED_LIMITED;
-		case PERFORMANCE:
-			return AUTOCROSS;
-		case EFFICIENCY:
-			return ENDURANCE;
-		default:
-			return OFF;
+	case OFF:
+		return NOT_DRIVING;
+	case PIT:
+		return SPEED_LIMITED;
+	case PERFORMANCE:
+		return AUTOCROSS;
+	case EFFICIENCY:
+		return ENDURANCE;
+	default:
+		return OFF;
 	}
 }
 
-void increment_nero_index() {
+void increment_nero_index()
+{
 	if (!nero_state.home_mode) {
 		// Do Nothing because we are not in home mode and therefore not tracking the nero index
 		return;
@@ -48,12 +54,14 @@ void increment_nero_index() {
 	}
 }
 
-void set_mph(int8_t new_mph) {
+void set_mph(int8_t new_mph)
+{
 	//printf("mph %d", new_mph);
 	mph = new_mph;
 }
 
-void decrement_nero_index() {
+void decrement_nero_index()
+{
 	serial_print("decrementing with mode, %d", nero_state.home_mode);
 	if (!nero_state.home_mode) {
 		// Do Nothing because we are not in home mode and therefore not tracking the nero index
@@ -67,7 +75,8 @@ void decrement_nero_index() {
 	}
 }
 
-void select_nero_index() {
+void select_nero_index()
+{
 	state_req_t state_request;
 
 	if (!nero_state.home_mode) {
@@ -86,14 +95,19 @@ void select_nero_index() {
 		return;
 	}
 
-	uint8_t max_drive_states = MAX_DRIVE_STATES - 1; // Account for reverse and pit being the same screen
+	uint8_t max_drive_states =
+		MAX_DRIVE_STATES -
+		1; // Account for reverse and pit being the same screen
 
-	if (nero_state.nero_index > 0 && nero_state.nero_index < max_drive_states && get_tsms() && get_brake_state()) {
+	if (nero_state.nero_index > 0 &&
+	    nero_state.nero_index < max_drive_states && get_tsms() &&
+	    get_brake_state()) {
 		state_request.id = FUNCTIONAL;
 		state_request.state.functional = ACTIVE;
 		queue_state_transition(state_request);
 		state_request.id = DRIVE;
-		state_request.state.drive = map_nero_index_to_drive_state(nero_state.nero_index);
+		state_request.state.drive =
+			map_nero_index_to_drive_state(nero_state.nero_index);
 		queue_state_transition(state_request);
 		nero_state.home_mode = false;
 	} else if (nero_state.nero_index == OFF) {
@@ -106,12 +120,15 @@ void select_nero_index() {
 	}
 }
 
-void set_nero_home_mode() {
+void set_nero_home_mode()
+{
 	nero_state.home_mode = true;
 }
 
-void set_home_mode() {
-	state_req_t state_request = {.id = FUNCTIONAL, .state.functional = READY};
+void set_home_mode()
+{
+	state_req_t state_request = { .id = FUNCTIONAL,
+				      .state.functional = READY };
 	if (!get_tsms()) {
 		nero_state.home_mode = true;
 		queue_state_transition(state_request);
@@ -120,12 +137,13 @@ void set_home_mode() {
 
 osThreadId_t nero_monitor_handle;
 const osThreadAttr_t nero_monitor_attributes = {
-	.name		= "NeroMonitor",
+	.name = "NeroMonitor",
 	.stack_size = 32 * 8,
-	.priority	= (osPriority_t)osPriorityHigh2,
+	.priority = (osPriority_t)osPriorityHigh2,
 };
 
-void vNeroMonitor(void* pv_params) {
+void vNeroMonitor(void *pv_params)
+{
 	for (;;) {
 		send_mode_status();
 
