@@ -6,7 +6,7 @@
 
 #define ONBOARD_TEMP_QUEUE_SIZE 8
 #define PEDAL_DATA_QUEUE_SIZE	8
-#define IMU_QUEUE_SIZE			8
+#define IMU_QUEUE_SIZE		8
 
 extern osMessageQueueId_t brakelight_signal;
 
