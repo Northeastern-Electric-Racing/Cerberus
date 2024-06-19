@@ -433,7 +433,7 @@ void vTsmsMonitor(void *pv_params)
 
 			// Timer has not been started, and there is a change in TSMS, so start the timer
 			if (tsms != tsms_status &&
-			    !is_timeur_active(&tsms_debounce_timer)) {
+			    !is_timer_active(&tsms_debounce_timer)) {
 				start_timer(&tsms_debounce_timer, 500);
 			}
 			// During debouncing, the tsms reading changes, so end the debounce period
