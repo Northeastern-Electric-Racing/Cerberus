@@ -63,8 +63,12 @@ dti_t* dti_init();
  */
 void dti_set_torque(int16_t torque);
 
-// TODO: Regen interface
-void dti_set_regen(int16_t regen);
+/**
+ * @brief Set the brake AC current target for regenerative braking.
+ * 
+ * @param current_target The desired AC current to do regenerative braking at.
+ */
+void dti_set_regen(uint16_t current_target);
 
 /*
  * SCALE: 10

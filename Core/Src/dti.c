@@ -68,16 +68,17 @@ void dti_set_torque(int16_t torque)
 
 	dti_set_current(ac_current);
 }
-// positive regen as torque for AC current!
-// dont scale past torque!
-void dti_set_regen(int16_t regen_torque) {
-	// copied from dti_set_torque
-	 // Static variables for the buffer and index
-    static float buffer[SAMPLES] = {0};
+
+void dti_set_regen(uint16_t current_target) {
+
+	/* Simple moving average to smooth change in braking target */
+
+	// Static variables for the buffer and index
+    static uint16_t buffer[SAMPLES] = {0};
     static int index = 0;
 
     // Add the new value to the buffer
-    buffer[index] = regen_torque;
+    buffer[index] = current_target;
 
     // Increment the index, wrapping around if necessary
     index = (index + 1) % SAMPLES;
@@ -89,13 +90,12 @@ void dti_set_regen(int16_t regen_torque) {
     }
     float average = sum / SAMPLES;
 
-	if (regen_torque == 0) {
+	if (current_target == 0) {
 		average = 0;
 	}
 
-	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
-
-	dti_set_brake_current(ac_current);
+	/* DTI CAN manual page 18, scale = 10 */
+	dti_set_brake_current(average * 10);
 }
 
 void dti_set_current(int16_t current)

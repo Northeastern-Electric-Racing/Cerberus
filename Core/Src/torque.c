@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "bms.h"
+#include "emrax.h"
 
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
@@ -135,37 +136,29 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 		}
 	#else
 		// percent of accel pedal to be used for regen
-		static const float start_regen = 0.2;
-		static const float start_accel = 0.25;
-		/**
-		 * regen_factor: coeffecient in linear fit of % pedal travel to torque. torque = regen_factor * accel_val
-		 */
-		static const float regen_factor = max_ac_brake / (start_regen*100); // like max torque but instead dictates max regen
+		static const float regen_thresh = 0.2;
+		static const float accel_thresh = 0.25;
+		static const float mph_to_kmh = 1.609;
 
-		float deadzone_accel = (accel_val - start_regen - deadzone_size_before);
 		// if the rescaled accel is positive then convert it to torque, and full send
-		if (accel_val >= start_accel) {
-			float moved_accel = (accel_val - (start_accel));
-			/* Pedal more sensitive but in return max torque doesn't change */
-			// this is linear_accel_to_torque with moved_accel applied
-			*torque = moved_accel * (MAX_TORQUE * (1.0 / (1.0 - start_accel)));
+		if (accel_val >= accel_thresh) {
+			/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
+			const float adj_accel = (accel_val - (accel_thresh)) *  (1.0 / (1.0 - accel_thresh));
+			*torque = adj_accel * MAX_TORQUE;
 			dti_set_regen(0);
 		}
-		else if (mph*1.609 > 6 && accel_val < start_regen) { 	// if the rescaled accel is negative, then use a different conversion factor
-			float moved_accel = (accel_val - (start_regen));
-			// use scale to get the 
-			float regen_torque = (moved_accel*-1.0*regen_factor) * ((1.0 / start_regen) + (1.0 / (1.0 - start_regen)));
+		else if (mph * mph_to_kmh > 5 && accel_val < regen_thresh) {
+			
+			/* Adjust accel pedal to be from 0 -> regen threshold. */
+			const float adj_accel = regen_thresh - accel_val;
+			float regen_current = adj_accel * (max_ac_brake / regen_thresh);
 
-			// clamp to max
-			if ((regen_torque/0.61) > max_ac_brake) {
-				regen_torque = max_ac_brake * 0.61;	
-			}
-
-			// pass in torque to the dti code as positive
-			dti_set_regen(regen_torque);
-			// do not move forward
+			/* Send regen current to motor controller */
+			dti_set_regen(regen_current);
+			/* Set torque to 0 to disable forward acceleration while doing regen */
 			*torque = 0;
 		} else {
+			/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 			*torque = 0;
 			dti_set_regen(0);
 		}
