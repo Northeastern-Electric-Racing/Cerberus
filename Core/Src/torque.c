@@ -114,7 +114,8 @@ void decrease_torque_limit()
  */
 void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, int16_t* torque) {
 	// max ac current to brake with
-	static const float max_ac_brake = 25; // Amps AC
+	/* Maximum AC braking current */
+	static const int8_t max_curr = -25;
 	#ifdef USE_BRAKE_REGEN
 		// The brake travel ADC value at which we want maximum regen
 		static const float travel_scaling_max = 1000;
@@ -142,16 +143,15 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 
 		// if the rescaled accel is positive then convert it to torque, and full send
 		if (accel_val >= accel_thresh) {
+			/* Coefficient to map accel pedal travel % to the max torque */
+			const float coeff = MAX_TORQUE / (1 - accel_thresh);
 			/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
-			const float adj_accel = (accel_val - (accel_thresh)) *  (1.0 / (1.0 - accel_thresh));
-			*torque = adj_accel * MAX_TORQUE;
+			*torque = coeff * accel_val - (accel_val * accel_thresh);
 			dti_set_regen(0);
 		}
 		else if (mph * mph_to_kmh > 5 && accel_val < regen_thresh) {
 			
-			/* Adjust accel pedal to be from 0 -> regen threshold. */
-			const float adj_accel = regen_thresh - accel_val;
-			float regen_current = adj_accel * (max_ac_brake / regen_thresh);
+			float regen_current = (max_curr / regen_thresh) * (regen_thresh - accel_val);
 
 			/* Send regen current to motor controller */
 			dti_set_regen(regen_current);
@@ -251,7 +251,6 @@ void vCalcTorque(void* pv_params)
 
 			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
 
-			serial_print("torque: %d\r\n", torque);
 			/* Send whatever torque command we have on record */
 			dti_set_torque(torque);
 		}

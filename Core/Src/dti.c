@@ -106,8 +106,6 @@ void dti_set_current(int16_t current)
 
 	//endian_swap(&current, sizeof(current));
 	//memcpy(msg.data, &current, msg.len);
-	serial_print("current: %d\r\n", current);
-
 	int8_t msb = (int8_t)((current >> 8) & 0xFF);
 	int8_t lsb = (uint8_t)(current & 0xFF);
 

@@ -72,7 +72,6 @@ int queue_state_transition(state_req_t new_state)
 			if (!get_brake_state()) {
 				return 0;
 			}
-			serial_print("CALLING RTDS");
 			sound_rtds(pdu);
 		}
 

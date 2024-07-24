@@ -98,7 +98,6 @@ static void debounce_cb(void* arg)
 	steeringio_t *wheel = args->wheel;
 
 	if (wheel->raw_buttons[button]) {
-		serial_print("%d index pressed \r\n",button);
 		switch (button) {
 			case STEERING_PADDLE_LEFT:
 				paddle_left_cb();
@@ -183,7 +182,6 @@ void vSteeringIORouter(void* pv_params)
 		/* Wait until new CAN message comes into queue */
 		status = osMessageQueueGet(steeringio_router_queue, &message, NULL, osWaitForever);
 		if (status == osOK){
-			printf("joe mama");\
 			steeringio_update(wheel, message.data);
 		}
 	}
