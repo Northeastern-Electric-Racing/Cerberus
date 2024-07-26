@@ -137,10 +137,9 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 		}
 	#else
 		// percent of accel pedal to be used for regen
-		static const float regen_thresh = 0.2;
-		static const float accel_thresh = 0.25;
+		static const float regen_thresh = 0.01;
+		static const float accel_thresh = 0.05;
 		// static const float mph_to_kmh = 1.609;
-		// serial_print("%i\n", (int) (accel_val < regen_thresh));
 		// if the rescaled accel is positive then convert it to torque, and full send
 		if (accel_val >= accel_thresh) {
 			/* Coefficient to map accel pedal travel % to the max torque */
@@ -149,7 +148,8 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 			*torque = coeff * accel_val - (accel_val * accel_thresh);
 			dti_set_regen(0);
 		}
-		else if (accel_val < regen_thresh) {
+		else if (//mph * mph_to_kmh > 5 && 
+		accel_val < regen_thresh) {
 			
 			float regen_current = (max_curr / regen_thresh) * (regen_thresh - accel_val);
 
@@ -161,6 +161,10 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 			/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 			*torque = 0;
 			dti_set_regen(0);
+		}
+
+		if (*torque > MAX_TORQUE) {
+			*torque = MAX_TORQUE;
 		}
 		
 	#endif
@@ -182,7 +186,7 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
-		float accelerator_value = (float) pedal_data.accelerator_value  / 10.0; // 0 to 1
+		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0; // 0 to 1
 		float brake_value = (float) pedal_data.brake_value * 10.0; // ACTUAL PSI
 
 		/* If we receive a new message within the time frame, calc new torque */

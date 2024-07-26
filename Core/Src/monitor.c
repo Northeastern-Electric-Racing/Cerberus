@@ -248,7 +248,7 @@ void vPedalsMonitor(void* pv_params)
 		uint16_t brake2_adj = adjust_pedal_val(adc_data[BRAKEPIN_2], BRAKE2_OFFSET, BRAKE2_MAX_VAL);
 
 		/* Low Pass Filter */
-		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / num_samples;
+		sensor_data.accelerator_value = (sensor_data.accelerator_value + (accel_val)) / 2;
 		sensor_data.brake_value = (sensor_data.brake_value + (brake1_adj + brake2_adj) / 2) / num_samples;
 
 		/* Publish to Onboard Pedals Queue */
