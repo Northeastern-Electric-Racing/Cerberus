@@ -68,7 +68,7 @@ void dti_set_torque(int16_t torque);
  * 
  * @param current_target The desired AC current to do regenerative braking at.
  */
-void dti_set_regen(uint16_t current_target);
+void dti_set_regen(int16_t current_target);
 
 /*
  * SCALE: 10

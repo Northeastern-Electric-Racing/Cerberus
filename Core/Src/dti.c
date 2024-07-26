@@ -64,17 +64,17 @@ void dti_set_torque(int16_t torque)
 
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
 
-	//serial_print("Commanded Current: %d \r\n", ac_current);
+	// serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
 }
 
-void dti_set_regen(uint16_t current_target) {
+void dti_set_regen(int16_t current_target) {
 
 	/* Simple moving average to smooth change in braking target */
 
 	// Static variables for the buffer and index
-    static uint16_t buffer[SAMPLES] = {0};
+    static int16_t buffer[SAMPLES] = {0};
     static int index = 0;
 
     // Add the new value to the buffer
@@ -117,12 +117,12 @@ void dti_set_current(int16_t current)
 
 void dti_set_brake_current(int16_t brake_current)
 {
-	can_msg_t msg = { .id = 0x056, .len = 2, .data = { 0 } };
-
+	can_msg_t msg = { .id = 0x056, .len = 8, .data = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
+	// serial_print("Sending regen current: %i", brake_current);
 	/* convert to big endian */
 	endian_swap(&brake_current, sizeof(brake_current));
 	/* Send CAN message */
-	memcpy(&msg.data, &brake_current, msg.len);
+	memcpy(&msg.data, &brake_current, 2);
 	queue_can_msg(msg);
 }
 
