@@ -36,10 +36,11 @@ const osThreadAttr_t torque_calc_attributes = { .name		= "SendTorque",
 												.stack_size = 128 * 8,
 												.priority = (osPriority_t)osPriorityRealtime2 };
 
-static void linear_accel_to_torque(float accel, int16_t* torque)
+static void linear_accel_to_torque(float accel)
 {
 	/* Linearly map acceleration to torque */
-	*torque = (int16_t)(accel * MAX_TORQUE);
+	int16_t torque = (int16_t)(accel * MAX_TORQUE);
+	dti_set_torque(torque);
 }
 
 static float rpm_to_mph(int32_t rpm)
@@ -112,7 +113,7 @@ void decrease_torque_limit()
  * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, int16_t* torque) {
+void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val) {
 	// max ac current to brake with
 	/* Maximum AC braking current */
 	static const int8_t max_curr = -1;
@@ -137,34 +138,29 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val, in
 		}
 	#else
 		// percent of accel pedal to be used for regen
-		static const float regen_thresh = 0.01;
-		static const float accel_thresh = 0.05;
+		static const float regen_thresh = 0.05;
+		static const float accel_thresh = 0.7;
 		// static const float mph_to_kmh = 1.609;
 		// if the rescaled accel is positive then convert it to torque, and full send
 		if (accel_val >= accel_thresh) {
 			/* Coefficient to map accel pedal travel % to the max torque */
 			const float coeff = MAX_TORQUE / (1 - accel_thresh);
 			/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
-			*torque = coeff * accel_val - (accel_val * accel_thresh);
-			dti_set_regen(0);
+			uint16_t torque = coeff * accel_val - (accel_val * accel_thresh);
+			if (torque > MAX_TORQUE) {
+				torque = MAX_TORQUE;
+			}
+			dti_set_torque(torque);
 		}
-		else if (//mph * mph_to_kmh > 5 && 
-		accel_val < regen_thresh) {
+		else if (mph * mph_to_kmh > 2 && accel_val < regen_thresh) {
 			
 			float regen_current = (max_curr / regen_thresh) * (regen_thresh - accel_val);
 
 			/* Send regen current to motor controller */
 			dti_set_regen((int16_t) regen_current);
-			/* Set torque to 0 to disable forward acceleration while doing regen */
-			*torque = 0;
 		} else {
 			/* Pedal travel is between thresholds, so there should not be acceleration or braking */
-			*torque = 0;
-			dti_set_regen(0);
-		}
-
-		if (*torque > MAX_TORQUE) {
-			*torque = MAX_TORQUE;
+			dti_set_torque(0);
 		}
 		
 	#endif
@@ -176,7 +172,6 @@ void vCalcTorque(void* pv_params)
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
 	pedals_t pedal_data;
-	int16_t torque = 0;
 	float mph = 0;
 	osStatus_t stat;
 	bool motor_disabled = false;
@@ -186,6 +181,9 @@ void vCalcTorque(void* pv_params)
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
+		if (pedal_data.accelerator_value == 1) {
+			pedal_data.accelerator_value = 0;
+		}
 		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0; // 0 to 1
 		float brake_value = (float) pedal_data.brake_value * 10.0; // ACTUAL PSI
 
@@ -201,7 +199,7 @@ void vCalcTorque(void* pv_params)
 			func_state_t func_state = get_func_state();
 			if (func_state != ACTIVE)
 			{
-				torque = 0;
+				dti_set_torque(0);
 				continue;
 			}
 
@@ -213,7 +211,7 @@ void vCalcTorque(void* pv_params)
 			{
 				printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
 				motor_disabled = true;
-				torque = 0;
+				dti_set_torque(0);
 				//queue_fault(&fault_data);
 			}
 
@@ -224,10 +222,6 @@ void vCalcTorque(void* pv_params)
 				{
 					motor_disabled = false;
 					printf("\n\nMotor reenabled\n\n");
-				} else {
-					torque = 0;
-					dti_set_torque(torque);
-					continue;
 				}
 			}
 
@@ -243,20 +237,15 @@ void vCalcTorque(void* pv_params)
 				// 	limit_accel_to_torque(mph, accelerator_value, &torque);
 				// 	break;
 				case ENDURANCE:
-					handle_endurance(mc, mph, accelerator_value, brake_value, &torque);
+					handle_endurance(mc, mph, accelerator_value, brake_value);
 					break;
 				case AUTOCROSS:
-					linear_accel_to_torque(accelerator_value, &torque);
+					linear_accel_to_torque(accelerator_value);
 					break;
 				default:
-					torque = 0;
+					dti_set_torque(0);
 					break;
 			}
-
-			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
-
-			/* Send whatever torque command we have on record */
-			dti_set_torque(torque);
 		}
 	}
 }

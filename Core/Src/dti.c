@@ -117,8 +117,8 @@ void dti_set_current(int16_t current)
 
 void dti_set_brake_current(int16_t brake_current)
 {
-	can_msg_t msg = { .id = 0x056, .len = 8, .data = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
-	// serial_print("Sending regen current: %i", brake_current);
+	can_msg_t msg = { .id = 0x056, .len = 8, .data = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
+	// serial_print("Sending regen current: %i", brake_current);0x0
 	/* convert to big endian */
 	endian_swap(&brake_current, sizeof(brake_current));
 	/* Send CAN message */

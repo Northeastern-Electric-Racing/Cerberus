@@ -519,7 +519,7 @@ void vSteeringIOButtonsMonitor(void* pv_params)
 
 bool get_tsms()
 {
-	return true;
+	return tsms;
 }
 
 osThreadId brakelight_monitor_handle;
