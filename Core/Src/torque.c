@@ -116,7 +116,7 @@ void decrease_torque_limit()
 void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val) {
 	// max ac current to brake with
 	/* Maximum AC braking current */
-	static const int8_t max_curr = -1;
+	static const int8_t max_curr = 20;
 	#ifdef USE_BRAKE_REGEN
 		// The brake travel ADC value at which we want maximum regen
 		static const float travel_scaling_max = 1000;
@@ -138,9 +138,9 @@ void handle_endurance(dti_t* mc, float mph, float accel_val, float brake_val) {
 		}
 	#else
 		// percent of accel pedal to be used for regen
-		static const float regen_thresh = 0.05;
-		static const float accel_thresh = 0.7;
-		// static const float mph_to_kmh = 1.609;
+		static const float regen_thresh = 0.01;
+		static const float accel_thresh = 0.05;
+		static const float mph_to_kmh = 1.609;
 		// if the rescaled accel is positive then convert it to torque, and full send
 		if (accel_val >= accel_thresh) {
 			/* Coefficient to map accel pedal travel % to the max torque */
@@ -174,16 +174,18 @@ void vCalcTorque(void* pv_params)
 	pedals_t pedal_data;
 	float mph = 0;
 	osStatus_t stat;
-	bool motor_disabled = false;
+	// bool motor_disabled = false;
 
 	dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U, delay_time);
 
+		/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
 		if (pedal_data.accelerator_value == 1) {
 			pedal_data.accelerator_value = 0;
 		}
+		
 		float accelerator_value = (float) pedal_data.accelerator_value  / 100.0; // 0 to 1
 		float brake_value = (float) pedal_data.brake_value * 10.0; // ACTUAL PSI
 
@@ -207,23 +209,23 @@ void vCalcTorque(void* pv_params)
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 			//fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
 			/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
-			if (brake_value > 600 && (accelerator_value) > 0.25)
-			{
-				printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
-				motor_disabled = true;
-				dti_set_torque(0);
-				//queue_fault(&fault_data);
-			}
+			// if (brake_value > 600 && (accelerator_value) > 0.25)
+			// {
+			// 	printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
+			// 	motor_disabled = true;
+			// 	dti_set_torque(0);
+			// 	//queue_fault(&fault_data);
+			// }
 
-			if (motor_disabled) 
-			{
-				printf("\nMotor disabled\n");
-				if (accelerator_value < 0.05) 
-				{
-					motor_disabled = false;
-					printf("\n\nMotor reenabled\n\n");
-				}
-			}
+			// if (motor_disabled) 
+			// {
+			// 	printf("\nMotor disabled\n");
+			// 	if (accelerator_value < 0.05) 
+			// 	{
+			// 		motor_disabled = false;
+			// 		printf("\n\nMotor reenabled\n\n");
+			// 	}
+			// }
 
 			drive_state_t drive_state = get_drive_state();
 
