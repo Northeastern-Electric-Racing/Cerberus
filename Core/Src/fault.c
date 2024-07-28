@@ -24,16 +24,13 @@ int queue_fault(fault_data_t *fault_data)
 	if (!fault_handle_queue)
 		return -1;
 
-	osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
-	return 0;
+	return osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
 }
 
 void vFaultHandler(void *pv_params)
 {
 	fault_data_t fault_data;
 	osStatus_t status;
-	const state_req_t fault_request = { .id = FUNCTIONAL,
-					    .state.functional = FAULTED };
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
 
@@ -58,13 +55,13 @@ void vFaultHandler(void *pv_params)
 			       fault_data.diag);
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
-				queue_state_transition(fault_request);
+				fault();
 				break;
 			case DEFCON2:
-				queue_state_transition(fault_request);
+				fault();
 				break;
 			case DEFCON3:
-				queue_state_transition(fault_request);
+				fault();
 				break;
 			case DEFCON4:
 				break;
