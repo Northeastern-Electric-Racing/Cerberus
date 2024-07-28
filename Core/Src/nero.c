@@ -16,8 +16,9 @@ static void send_mode_status()
 {
 	can_msg_t msg = { .id = 0x501,
 			  .len = 4,
-			  .data = { get_nero_state().home_mode, get_nero_state().nero_index,
-				    mph, get_tsms() } };
+			  .data = { get_nero_state().home_mode,
+				    get_nero_state().nero_index, mph,
+				    get_tsms() } };
 
 	/* Send CAN message */
 	queue_can_msg(msg);
