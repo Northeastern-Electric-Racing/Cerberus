@@ -1,13 +1,15 @@
 #include "state_machine.h"
-#include "fault.h"
 #include "can_handler.h"
+#include "fault.h"
+#include "nero.h"
+#include "pdu.h"
+#include "queues.h"
 #include "serial_monitor.h"
 #include "nero.h"
 #include "pdu.h"
 #include "queues.h"
 #include <stdbool.h>
 #include <stdio.h>
-#include <assert.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
@@ -31,13 +33,19 @@ static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	{ true, true, false, true }, /* BOOT */
 	{ false, true, true, true }, /* READY */
 	{ false, true, true, true }, /* DRIVING */
+	{ true, true, false, true }, /* BOOT */
+	{ false, true, true, true }, /* READY */
+	{ false, true, true, true }, /* DRIVING */
 	{ false, true, false, true } /* FAULTED */
 };
 
 osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes = {
 	.name = "State Machine Director",
+const osThreadAttr_t sm_director_attributes = {
+	.name = "State Machine Director",
 	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityRealtime2,
 	.priority = (osPriority_t)osPriorityRealtime2,
 };
 
@@ -63,7 +71,7 @@ int queue_state_transition(state_req_t new_state)
 			return 0;
 
 		/* Transitioning between drive states is always allowed */
-		//TODO: Make sure motor is not spinning before switching
+		// TODO: Make sure motor is not spinning before switching
 
 		/* If we are turning ON the motor, blare RTDS */
 		if (cerberus_state.drive == NOT_DRIVING) {
@@ -178,7 +186,7 @@ void vStateMachineDirector(void *pv_params)
 				continue;
 
 			/* Transitioning between drive states is always allowed */
-			//TODO: Make sure motor is not spinning before switching
+			// TODO: Make sure motor is not spinning before switching
 
 			/* If we are turning ON the motor, blare RTDS */
 			if (cerberus_state.drive == NOT_DRIVING) {

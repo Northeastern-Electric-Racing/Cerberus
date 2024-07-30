@@ -23,6 +23,7 @@
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
+#define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 
 dti_t *dti_init()

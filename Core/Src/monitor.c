@@ -239,6 +239,7 @@ void vPedalsMonitor(void *pv_params)
 	mpu_t *mpu = (mpu_t *)pv_params;
 
 	uint8_t counter = 0;
+	static int index = 0;
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -268,8 +269,24 @@ void vPedalsMonitor(void *pv_params)
 		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2 >
-			     PEDAL_BRAKE_THRESH;
+		static float buffer[10] = { 0 };
+
+		uint16_t brake_avg =
+			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
+		// Add the new value to the buffer
+		buffer[index] = brake_avg;
+
+		// Increment the index, wrapping around if necessary
+		index = (index + 1) % buffer_size;
+
+		// Calculate the average of the buffer
+		float sum = 0.0;
+		for (int i = 0; i < buffer_size; ++i) {
+			sum += buffer[i];
+		}
+		float average_brake = sum / buffer_size;
+
+		is_braking = average_brake > PEDAL_BRAKE_THRESH;
 		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
@@ -402,6 +419,52 @@ void vIMUMonitor(void *pv_params)
 	}
 }
 
+osThreadId_t tsms_monitor_handle;
+const osThreadAttr_t tsms_monitor_attributes = {
+	.name = "TsmsMonitor",
+	.stack_size = 32 * 8,
+	.priority = (osPriority_t)osPriorityHigh,
+};
+
+void vTsmsMonitor(void *pv_params)
+{
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	pdu_t *pdu = (pdu_t *)pv_params;
+
+	bool tsms_status = false;
+	nertimer_t tsms_debounce_timer = { .active = false };
+
+	for (;;) {
+		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
+		if (!read_tsms_sense(pdu, &tsms_status)) {
+			printf("Checking pdu");
+
+			// Timer has not been started, and there is a change in TSMS, so start the timer
+			if (tsms != tsms_status &&
+			    !is_timer_active(&tsms_debounce_timer)) {
+				start_timer(&tsms_debounce_timer, 500);
+			}
+			// During debouncing, the tsms reading changes, so end the debounce period
+			else if (tsms == tsms_status &&
+				 !is_timer_expired(&tsms_debounce_timer)) {
+				cancel_timer(&tsms_debounce_timer);
+			}
+			// The TSMS reading has been consistent thorughout the debounce period
+			else if (is_timer_expired(&tsms_debounce_timer)) {
+				tsms = tsms_status;
+			}
+			if (get_func_state() == ACTIVE && tsms == false) {
+				set_home_mode();
+			}
+		} else {
+			queue_fault(&fault_data);
+		}
+
+		osDelay(100);
+	}
+}
+
 osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name = "FusingMonitor",
@@ -519,8 +582,6 @@ void vShutdownMonitor(void *pv_params)
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
 		}
-
-		// serial_print("TSMS: %d\r\n", tsms_status);
 
 		osDelay(SHUTDOWN_MONITOR_DELAY);
 	}

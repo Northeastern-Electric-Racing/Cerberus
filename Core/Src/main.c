@@ -223,6 +223,8 @@ int main(void)
   steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
+  tsms_monitor_handle = osThreadNew(vTsmsMonitor, pdu, &tsms_monitor_attributes);
+  assert(tsms_monitor_handle);
   fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
   assert(fusing_monitor_handle);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);

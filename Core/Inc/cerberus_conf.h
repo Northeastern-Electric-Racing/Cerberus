@@ -6,8 +6,17 @@
 #define SHUTDOWN_MONITOR_DELAY 500 /* ms */
 #define NERO_DELAY_TIME	       100 /* ms*/
 #define LV_READ_DELAY	       1000
+#define YELLOW_LED_BLINK_DELAY 500 /* ms */
+#define TEMP_SENS_SAMPLE_DELAY 200 /* ms */
+#define IMU_SAMPLE_DELAY       500 /* ms */
+#define FUSES_SAMPLE_DELAY     1000 /* ms */
+#define SHUTDOWN_MONITOR_DELAY 500 /* ms */
+#define NERO_DELAY_TIME	       100 /* ms*/
+#define LV_READ_DELAY	       1000
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
+#define CAN_DISPATCH_DELAY    5
+#define BMS_CAN_MONITOR_DELAY 4000
 #define CAN_DISPATCH_DELAY    5
 #define BMS_CAN_MONITOR_DELAY 4000
 #define STATE_MACHINE_DELAY
@@ -16,10 +25,6 @@
 
 /* Pedal tuning */
 #define PEDALS_SAMPLE_DELAY 20 /* ms */
-#define BRAKE1_OFFSET	    0
-#define BRAKE1_MAX_VAL	    0
-#define BRAKE2_OFFSET	    0
-#define BRAKE2_MAX_VAL	    0
 #define ACCEL1_OFFSET	    980
 #define ACCEL1_MAX_VAL	    1866
 #define ACCEL2_OFFSET	    1780
