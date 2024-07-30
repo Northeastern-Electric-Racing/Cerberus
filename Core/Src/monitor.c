@@ -239,7 +239,6 @@ void vPedalsMonitor(void *pv_params)
 	mpu_t *mpu = (mpu_t *)pv_params;
 
 	uint8_t counter = 0;
-	static int index = 0;
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -269,41 +268,20 @@ void vPedalsMonitor(void *pv_params)
 		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
 		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
-		static float buffer[10] = { 0 };
-
-		uint16_t brake_avg =
-			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
-		// Add the new value to the buffer
-		buffer[index] = brake_avg;
-
-		// Increment the index, wrapping around if necessary
-		index = (index + 1) % buffer_size;
-
-		// Calculate the average of the buffer
-		float sum = 0.0;
-		for (int i = 0; i < buffer_size; ++i) {
-			sum += buffer[i];
-		}
-		float average_brake = sum / buffer_size;
-
-		is_braking = average_brake > PEDAL_BRAKE_THRESH;
+		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
 		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
 		//osMessageQueueReset(break_state_queue);
 		//osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
-		uint16_t brake1_adj = adjust_pedal_val(
-			adc_data[BRAKEPIN_1], BRAKE1_OFFSET, BRAKE1_MAX_VAL);
-		uint16_t brake2_adj = adjust_pedal_val(
-			adc_data[BRAKEPIN_2], BRAKE2_OFFSET, BRAKE2_MAX_VAL);
-
 		/* Low Pass Filter */
 		sensor_data.accelerator_value =
 			(sensor_data.accelerator_value + (accel_val)) / 2;
-		sensor_data.brake_value = (sensor_data.brake_value +
-					   (brake1_adj + brake2_adj) / 2) /
-					  num_samples;
+		sensor_data.brake_value =
+			(sensor_data.brake_value +
+			 (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2) /
+			num_samples;
 
 		/* Publish to Onboard Pedals Queue */
 		//printf("Accel pedal queue %d",  sensor_data.accelerator_value);

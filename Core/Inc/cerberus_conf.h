@@ -75,5 +75,5 @@
 #define CANID_LV_MONITOR       0x503
 #define CANID_PEDALS_ACCEL_MSG 0x504
 #define CANID_PEDALS_BRAKE_MSG 0x505
-#define CANID_EXTRA_MSG \
-	0x701 // Reserved for MPU debug message, see yaml for format
+// Reserved for MPU debug message, see yaml for format
+#define CANID_EXTRA_MSG 0x701

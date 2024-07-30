@@ -27,10 +27,10 @@
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE 5
 
-#define TIRE_DIAMETER 16 /* inches */
-#define GEAR_RATIO    47 / 13.0 /* unitless */
-#define POLE_PAIRS    10 /* unitless */
-#define DTI_CANID_ID_IQ	      0x476 /* Id, Iq values */
+#define TIRE_DIAMETER	16 /* inches */
+#define GEAR_RATIO	47 / 13.0 /* unitless */
+#define POLE_PAIRS	10 /* unitless */
+#define DTI_CANID_ID_IQ 0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS \
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE 5
@@ -39,15 +39,6 @@
 #define GEAR_RATIO    47 / 13.0 /* unitless */
 #define POLE_PAIRS    10 /* unitless */
 
-typedef struct {
-	int32_t rpm; /* SCALE: 1         UNITS: Rotations per Minute   */
-	int16_t duty_cycle; /* SCALE: 10        UNITS: Percentage             */
-	int16_t input_voltage; /* SCALE: 1         UNITS: Volts                  */
-	int16_t ac_current; /* SCALE: 10        UNITS: Amps                   */
-	int16_t dc_current; /* SCALE: 10        UNITS: Amps                   */
-	int16_t contr_temp; /* SCALE: 10        UNITS: Degrees Celsius        */
-	int16_t motor_temp; /* SCALE: 10        UNITS: Degrees Celsius        */
-	uint8_t fault_code; /* SCALE: 1         UNITS: No units just a number */
 typedef struct {
 	int32_t rpm; /* SCALE: 1         UNITS: Rotations per Minute   */
 	int16_t duty_cycle; /* SCALE: 10        UNITS: Percentage             */

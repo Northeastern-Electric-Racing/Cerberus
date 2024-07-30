@@ -33,19 +33,13 @@ static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	{ true, true, false, true }, /* BOOT */
 	{ false, true, true, true }, /* READY */
 	{ false, true, true, true }, /* DRIVING */
-	{ true, true, false, true }, /* BOOT */
-	{ false, true, true, true }, /* READY */
-	{ false, true, true, true }, /* DRIVING */
 	{ false, true, false, true } /* FAULTED */
 };
 
 osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes = {
 	.name = "State Machine Director",
-const osThreadAttr_t sm_director_attributes = {
-	.name = "State Machine Director",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime2,
 	.priority = (osPriority_t)osPriorityRealtime2,
 };
 
