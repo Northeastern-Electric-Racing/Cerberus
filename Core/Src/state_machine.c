@@ -22,7 +22,7 @@ extern IWDG_HandleTypeDef hiwdg;
 osTimerId fault_timer;
 
 typedef struct {
-	enum {FUNCTIONAL, NERO} id;
+	enum { FUNCTIONAL, NERO } id;
 	union {
 		func_state_t functional;
 		nero_state_t nero;
@@ -121,7 +121,8 @@ static int transition_functional_state(func_state_t new_state)
 		break;
 	case ACTIVE:
 		serial_print("BRAKE: %d\n", get_brake_state());
-		if (!get_tsms() || !get_brake_state()) return 1; // Cannot go into active if tsms is off
+		if (!get_tsms() || !get_brake_state())
+			return 1; // Cannot go into active if tsms is off
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
@@ -205,7 +206,7 @@ static int transition_nero_state(nero_state_t new_state)
 		if (transition_functional_state(READY))
 			return 1;
 	}
-	
+
 	cerberus_state.nero = new_state;
 	return 0;
 }
@@ -222,53 +223,44 @@ static int queue_state_transition(state_req_t new_state)
 /* HANDLE USER INPUT */
 int increment_nero_index()
 {
-	return queue_state_transition((state_req_t) {
-			.id = NERO,
-			.state.nero = (nero_state_t) { 
-				.home_mode = get_nero_state().home_mode, 
-				.nero_index = get_nero_state().nero_index + 1
-			}
-		});
+	return queue_state_transition((state_req_t){
+		.id = NERO,
+		.state.nero = (nero_state_t){
+			.home_mode = get_nero_state().home_mode,
+			.nero_index = get_nero_state().nero_index + 1 } });
 }
 
 int decrement_nero_index()
 {
-	return queue_state_transition((state_req_t) {
-			.id = NERO,
-			.state.nero = (nero_state_t) { 
-				.home_mode = get_nero_state().home_mode, 
-				.nero_index = get_nero_state().nero_index - 1
-			}
-		});
+	return queue_state_transition((state_req_t){
+		.id = NERO,
+		.state.nero = (nero_state_t){
+			.home_mode = get_nero_state().home_mode,
+			.nero_index = get_nero_state().nero_index - 1 } });
 }
 
 int select_nero_index()
 {
-	return queue_state_transition(
-		(state_req_t) {
-			.id = NERO,
-			.state.nero = (nero_state_t) { 
-				.home_mode = false, 
-				.nero_index = get_nero_state().nero_index 
-			}
-		});
+	return queue_state_transition((state_req_t){
+		.id = NERO,
+		.state.nero = (nero_state_t){
+			.home_mode = false,
+			.nero_index = get_nero_state().nero_index } });
 }
 
 int set_home_mode()
 {
-	return queue_state_transition(
-		(state_req_t) { .id = NERO,
-			   .state.nero = { 
-					.nero_index = get_nero_state().nero_index,
-					.home_mode = true
-				} 
-			});
+	return queue_state_transition((state_req_t){
+		.id = NERO,
+		.state.nero = { .nero_index = get_nero_state().nero_index,
+				.home_mode = true } });
 }
 
 /* HANDLE FAULTS */
 int fault()
 {
-	return queue_state_transition((state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
+	return queue_state_transition(
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -294,7 +286,8 @@ void vStateMachineDirector(void *pv_params)
 
 		if (new_state_req.id == NERO)
 			transition_nero_state(new_state_req.state.nero);
-		else if (new_state_req.id == FUNCTIONAL) 
-			transition_functional_state(new_state_req.state.functional);
+		else if (new_state_req.id == FUNCTIONAL)
+			transition_functional_state(
+				new_state_req.state.functional);
 	}
 }
