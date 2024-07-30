@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PRINTF_QUEUE_SIZE 25  /* Strings */
+#define PRINTF_QUEUE_SIZE 25 /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
 
 osMessageQueueId_t printf_queue;
@@ -15,10 +15,10 @@ const osThreadAttr_t serial_monitor_attributes;
  * Referenced https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Print.cpp
  * Preformat string then put into a buffer
  */
-int serial_print(const char* format, ...)
+int serial_print(const char *format, ...)
 {
 	va_list arg;
-	char* buffer = malloc(sizeof(char) * PRINTF_BUFFER_LEN);
+	char *buffer = malloc(sizeof(char) * PRINTF_BUFFER_LEN);
 	if (buffer == NULL)
 		return -1;
 
@@ -43,16 +43,18 @@ int serial_print(const char* format, ...)
 	return 0;
 }
 
-void vSerialMonitor(void* pv_params)
+void vSerialMonitor(void *pv_params)
 {
-	char* message;
+	char *message;
 	osStatus_t status;
 
-	printf_queue = osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char*), NULL);
+	printf_queue =
+		osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char *), NULL);
 
 	for (;;) {
 		/* Wait until new printf message comes into queue */
-		status = osMessageQueueGet(printf_queue, &message, NULL, osWaitForever);
+		status = osMessageQueueGet(printf_queue, &message, NULL,
+					   osWaitForever);
 		if (status != osOK) {
 			// TODO: Trigger fault ?
 		} else {

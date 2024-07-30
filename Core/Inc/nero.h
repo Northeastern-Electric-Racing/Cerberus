@@ -18,8 +18,8 @@ typedef enum {
 } nero_menu_t;
 
 typedef struct {
-   nero_menu_t nero_index;
-   bool home_mode;
+	nero_menu_t nero_index;
+	bool home_mode;
 } nero_state_t;
 
 /*
@@ -52,7 +52,7 @@ void set_nero_home_mode();
 /*
 * Emits the state of NERO
 */
-void vNeroMonitor(void* pv_params);
+void vNeroMonitor(void *pv_params);
 extern osThreadId_t nero_monitor_handle;
 extern const osThreadAttr_t nero_monitor_attributes;
 

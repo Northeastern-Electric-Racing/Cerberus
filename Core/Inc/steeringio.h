@@ -22,15 +22,16 @@ typedef enum {
 	MAX_STEERING_BUTTONS
 } steeringio_button_t;
 
-typedef struct	{
+typedef struct {
 	uint8_t data[8];
 } button_data_t;
 
 typedef struct {
-	osMutexId_t* button_mutex; /* Necessary to allow multiple threads to access same data */
-	osMutexId_t* ringbuffer_mutex;
+	osMutexId_t *
+		button_mutex; /* Necessary to allow multiple threads to access same data */
+	osMutexId_t *ringbuffer_mutex;
 	osTimerId_t debounce_timers[MAX_STEERING_BUTTONS];
-	ringbuffer_t* debounce_buffer;
+	ringbuffer_t *debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
 } steeringio_t;
@@ -39,12 +40,12 @@ typedef struct {
 extern osThreadId_t steeringio_router_handle;
 extern const osThreadAttr_t steeringio_router_attributes;
 extern osMessageQueueId_t steeringio_router_queue;
-void vSteeringIORouter(void* pv_params);
+void vSteeringIORouter(void *pv_params);
 
 /* Creates a new Steering Wheel interface */
-steeringio_t* steeringio_init();
+steeringio_t *steeringio_init();
 
-bool get_steeringio_button(steeringio_t* wheel, steeringio_button_t button);
+bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button);
 
 void steeringio_update(steeringio_t *wheel, uint8_t button_data[]);
 
