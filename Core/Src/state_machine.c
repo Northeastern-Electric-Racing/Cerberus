@@ -112,6 +112,8 @@ static int transition_functional_state(func_state_t new_state)
 		printf("READY\r\n");
 		break;
 	case ACTIVE:
+		serial_print("BRAKE: %d\n", get_brake_state());
+		if (!get_tsms() || !get_brake_state()) return 1; // Cannot go into active if tsms is off
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
@@ -173,11 +175,11 @@ static int transition_nero_state(nero_state_t new_state)
 		MAX_DRIVE_STATES -
 		1; // Account for reverse and pit being the same screen
 
+	serial_print("NEW HOME MODE, %d \n", new_state.home_mode);
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
 		if (new_state.nero_index > 0 &&
-		    new_state.nero_index < max_drive_states && get_tsms() &&
-		    get_brake_state()) {
+		    new_state.nero_index < max_drive_states) {
 			if (transition_functional_state(ACTIVE))
 				return 1;
 			if (transition_drive_state(
@@ -195,7 +197,7 @@ static int transition_nero_state(nero_state_t new_state)
 		if (transition_functional_state(READY))
 			return 1;
 	}
-
+	
 	cerberus_state.nero = new_state;
 	return 0;
 }
@@ -256,7 +258,7 @@ int fault()
 
 void vStateMachineDirector(void *pv_params)
 {
-	cerberus_state.functional = BOOT;
+	cerberus_state.functional = READY;
 	cerberus_state.drive = NOT_DRIVING;
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
