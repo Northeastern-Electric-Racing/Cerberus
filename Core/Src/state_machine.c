@@ -21,6 +21,14 @@ extern IWDG_HandleTypeDef hiwdg;
 
 osTimerId fault_timer;
 
+typedef struct {
+	enum {FUNCTIONAL, NERO} id;
+	union {
+		func_state_t functional;
+		nero_state_t nero;
+	} state;
+} state_req_t;
+
 /* State Transition Map */
 static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
 	/*BOOT  READY DRIVING FAULTED*/
@@ -202,7 +210,7 @@ static int transition_nero_state(nero_state_t new_state)
 	return 0;
 }
 
-static int queue_state_transition(state_t new_state)
+static int queue_state_transition(state_req_t new_state)
 {
 	if (!state_trans_queue) {
 		return 1;
@@ -214,46 +222,53 @@ static int queue_state_transition(state_t new_state)
 /* HANDLE USER INPUT */
 int increment_nero_index()
 {
-	return queue_state_transition((state_t){
-		.functional = get_func_state(),
-		.drive = get_drive_state(),
-		.nero = { .nero_index = get_nero_state().nero_index + 1,
-			  .home_mode = get_nero_state().home_mode } });
+	return queue_state_transition((state_req_t) {
+			.id = NERO,
+			.state.nero = (nero_state_t) { 
+				.home_mode = get_nero_state().home_mode, 
+				.nero_index = get_nero_state().nero_index + 1
+			}
+		});
 }
 
 int decrement_nero_index()
 {
-	return queue_state_transition((state_t){
-		.functional = get_func_state(),
-		.drive = get_drive_state(),
-		.nero = { .nero_index = get_nero_state().nero_index - 1,
-			  .home_mode = get_nero_state().home_mode } });
+	return queue_state_transition((state_req_t) {
+			.id = NERO,
+			.state.nero = (nero_state_t) { 
+				.home_mode = get_nero_state().home_mode, 
+				.nero_index = get_nero_state().nero_index - 1
+			}
+		});
 }
 
 int select_nero_index()
 {
 	return queue_state_transition(
-		(state_t){ .functional = get_func_state(),
-			   .drive = get_drive_state(),
-			   .nero = { .nero_index = get_nero_state().nero_index,
-				     .home_mode = false } });
+		(state_req_t) {
+			.id = NERO,
+			.state.nero = (nero_state_t) { 
+				.home_mode = false, 
+				.nero_index = get_nero_state().nero_index 
+			}
+		});
 }
 
 int set_home_mode()
 {
 	return queue_state_transition(
-		(state_t){ .functional = get_func_state(),
-			   .drive = get_drive_state(),
-			   .nero = { .nero_index = get_nero_state().nero_index,
-				     .home_mode = true } });
+		(state_req_t) { .id = NERO,
+			   .state.nero = { 
+					.nero_index = get_nero_state().nero_index,
+					.home_mode = true
+				} 
+			});
 }
 
 /* HANDLE FAULTS */
 int fault()
 {
-	return queue_state_transition((state_t){ .functional = FAULTED,
-						 .drive = get_drive_state(),
-						 .nero = get_nero_state() });
+	return queue_state_transition((state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -264,26 +279,22 @@ void vStateMachineDirector(void *pv_params)
 	cerberus_state.nero.home_mode = true;
 
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,
-					      sizeof(state_t), NULL);
+					      sizeof(state_req_t), NULL);
 
 	pdu_t *pdu_1 = (pdu_t *)pv_params;
 
 	pdu = pdu_1;
-	state_t new_state;
+	state_req_t new_state_req;
 
 	serial_print("State Machine Init!\r\n");
 
 	for (;;) {
-		osMessageQueueGet(state_trans_queue, &new_state, NULL,
+		osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				  osWaitForever);
 
-		if (transition_drive_state(new_state.drive))
-			continue;
-
-		if (transition_nero_state(new_state.nero))
-			continue;
-
-		if (transition_functional_state(new_state.functional))
-			continue;
+		if (new_state_req.id == NERO)
+			transition_nero_state(new_state_req.state.nero);
+		else if (new_state_req.id == FUNCTIONAL) 
+			transition_functional_state(new_state_req.state.functional);
 	}
 }
