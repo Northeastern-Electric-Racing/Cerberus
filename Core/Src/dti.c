@@ -68,12 +68,12 @@ void dti_set_torque(int16_t torque)
 	dti_set_current(ac_current);
 }
 
-void dti_set_regen(uint16_t current_target)
+void dti_set_regen(float current_target)
 {
 	/* Simple moving average to smooth change in braking target */
 
 	// Static variables for the buffer and index
-	static int16_t buffer[SAMPLES] = { 0 };
+	static float buffer[SAMPLES] = { 0 };
 	static int index = 0;
 
 	// Add the new value to the buffer
@@ -88,10 +88,6 @@ void dti_set_regen(uint16_t current_target)
 		sum += buffer[i];
 	}
 	float average = sum / SAMPLES;
-
-	if (current_target == 0) {
-		average = 0;
-	}
 
 	dti_send_brake_current(average);
 }
@@ -119,7 +115,7 @@ void dti_send_brake_current(float brake_current)
 			  .len = 8,
 			  .data = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } };
 	/* Motor controller expects int value * 10 */
-	int16_t adjusted_brake_current = brake_current * 10;
+	uint16_t adjusted_brake_current = (uint16_t)(brake_current * 10);
 	/* convert to big endian */
 	endian_swap(&adjusted_brake_current, sizeof(adjusted_brake_current));
 	/* Send CAN message */

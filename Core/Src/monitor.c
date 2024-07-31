@@ -255,7 +255,8 @@ void vPedalsMonitor(void *pv_params)
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
 
-		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
+		is_braking = ((adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) /
+			      2) > PEDAL_BRAKE_THRESH;
 		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
@@ -400,8 +401,6 @@ void vTsmsMonitor(void *pv_params)
 	for (;;) {
 		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
 		if (!read_tsms_sense(pdu, &tsms_status)) {
-			printf("Checking pdu");
-
 			// Timer has not been started, and there is a change in TSMS, so start the timer
 			if (tsms != tsms_status &&
 			    !is_timer_active(&tsms_debounce_timer)) {

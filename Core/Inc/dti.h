@@ -78,7 +78,7 @@ void dti_set_torque(int16_t torque);
  * 
  * @param current_target The desired AC current to do regenerative braking at. Must be positive.
  */
-void dti_set_regen(uint16_t current_target);
+void dti_set_regen(float current_target);
 
 /**
  * @brief Send a CAN message containing the AC current target for regenerative braking.
