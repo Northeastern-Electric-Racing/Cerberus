@@ -24,7 +24,6 @@
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
-// osMessageQueueId_t dti_router_queue;
 
 dti_t *dti_init()
 {
@@ -64,9 +63,33 @@ void dti_set_torque(int16_t torque)
 
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
 
-	//serial_print("Commanded Current: %d \r\n", ac_current);
+	// serial_print("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
+}
+
+void dti_set_regen(uint16_t current_target)
+{
+	/* Simple moving average to smooth change in braking target */
+
+	// Static variables for the buffer and index
+	static uint16_t buffer[SAMPLES] = { 0 };
+	static int index = 0;
+
+	// Add the new value to the buffer
+	buffer[index] = current_target;
+
+	// Increment the index, wrapping around if necessary
+	index = (index + 1) % SAMPLES;
+
+	// Calculate the average of the buffer
+	uint16_t sum = 0;
+	for (int i = 0; i < SAMPLES; ++i) {
+		sum += buffer[i];
+	}
+	uint16_t average = sum / SAMPLES;
+
+	dti_send_brake_current(average);
 }
 
 void dti_set_current(int16_t current)
@@ -77,8 +100,6 @@ void dti_set_current(int16_t current)
 
 	//endian_swap(&current, sizeof(current));
 	//memcpy(msg.data, &current, msg.len);
-	serial_print("current: %d\r\n", current);
-
 	int8_t msb = (int8_t)((current >> 8) & 0xFF);
 	int8_t lsb = (uint8_t)(current & 0xFF);
 
@@ -88,14 +109,17 @@ void dti_set_current(int16_t current)
 	queue_can_msg(msg);
 }
 
-void dti_set_brake_current(int16_t brake_current)
+void dti_send_brake_current(uint16_t brake_current)
 {
-	can_msg_t msg = { .id = 0x056, .len = 2, .data = { 0 } };
+	can_msg_t msg = { .id = 0x056,
+			  .len = 8,
+			  .data = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } };
 
 	/* convert to big endian */
 	endian_swap(&brake_current, sizeof(brake_current));
+
 	/* Send CAN message */
-	memcpy(&msg.data, &brake_current, msg.len);
+	memcpy(&msg.data, &brake_current, 2);
 	queue_can_msg(msg);
 }
 

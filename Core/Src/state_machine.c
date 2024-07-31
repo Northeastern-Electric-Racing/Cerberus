@@ -6,7 +6,9 @@
 #include "queues.h"
 #include "monitor.h"
 #include "serial_monitor.h"
-#include <assert.h>
+#include "nero.h"
+#include "pdu.h"
+#include "queues.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -91,7 +93,6 @@ static int transition_drive_state(drive_state_t new_state)
 		if (!get_brake_state()) {
 			return 0;
 		}
-		serial_print("CALLING RTDS");
 		sound_rtds(pdu);
 	}
 

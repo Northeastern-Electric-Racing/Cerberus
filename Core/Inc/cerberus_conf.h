@@ -6,8 +6,17 @@
 #define SHUTDOWN_MONITOR_DELAY 500 /* ms */
 #define NERO_DELAY_TIME	       100 /* ms*/
 #define LV_READ_DELAY	       1000
+#define YELLOW_LED_BLINK_DELAY 500 /* ms */
+#define TEMP_SENS_SAMPLE_DELAY 200 /* ms */
+#define IMU_SAMPLE_DELAY       500 /* ms */
+#define FUSES_SAMPLE_DELAY     1000 /* ms */
+#define SHUTDOWN_MONITOR_DELAY 500 /* ms */
+#define NERO_DELAY_TIME	       100 /* ms*/
+#define LV_READ_DELAY	       1000
 #define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
+#define CAN_DISPATCH_DELAY    5
+#define BMS_CAN_MONITOR_DELAY 4000
 #define CAN_DISPATCH_DELAY    5
 #define BMS_CAN_MONITOR_DELAY 4000
 #define STATE_MACHINE_DELAY
@@ -23,7 +32,7 @@
 #define PEDAL_BRAKE_THRESH  650
 
 /* Torque Tuning */
-#define MAX_TORQUE 220 /* Nm * 10 */
+#define MAX_TORQUE 220 /* Nm */
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
 // NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't

@@ -19,8 +19,18 @@
 /* Message IDs from DTI CAN Datasheet */
 #define DTI_CANID_ERPM	      0x416 /* ERPM, Duty, Input Voltage */
 #define DTI_CANID_CURRENTS    0x436 /* AC Current, DC Current */
+#define DTI_CANID_ERPM	      0x416 /* ERPM, Duty, Input Voltage */
+#define DTI_CANID_CURRENTS    0x436 /* AC Current, DC Current */
 #define DTI_CANID_TEMPS_FAULT 0x456 /* Controller Temp, Motor Temp, Faults */
 #define DTI_CANID_ID_IQ	      0x476 /* Id, Iq values */
+#define DTI_CANID_SIGNALS \
+	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
+#define DTI_QUEUE_SIZE 5
+
+#define TIRE_DIAMETER	16 /* inches */
+#define GEAR_RATIO	47 / 13.0 /* unitless */
+#define POLE_PAIRS	10 /* unitless */
+#define DTI_CANID_ID_IQ 0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS \
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE 5
@@ -47,6 +57,8 @@ typedef struct {
 // TODO: Expand GET interface
 int32_t dti_get_rpm(dti_t *dti);
 
+uint16_t dti_get_input_voltage(dti_t *dti);
+
 /* Utilities for Decoding CAN message */
 extern osThreadId_t dti_router_handle;
 extern const osThreadAttr_t dti_router_attributes;
@@ -61,14 +73,19 @@ dti_t *dti_init();
  */
 void dti_set_torque(int16_t torque);
 
-// TODO: Regen interface
-// void dti_set_regen(int16_t regen);
-
-/*
- * SCALE: 10
- * UNITS: Amps
+/**
+ * @brief Set the brake AC current target for regenerative braking. Only positive values are accepted by the DTI.
+ * 
+ * @param current_target The desired AC current to do regenerative braking at. Must be positive. This argument must be the actual value to set multiplied by 10.
  */
-void dti_set_brake_current(int16_t brake_current);
+void dti_set_regen(uint16_t current_target);
+
+/**
+ * @brief Send a CAN message containing the AC current target for regenerative braking.
+ * 
+ * @param brake_current AC current target for regenerative braking. The actual value sent to the motor controller must be multiplied by 10.
+ */
+void dti_send_brake_current(uint16_t brake_current);
 
 /*
  * SCALE: 10

@@ -20,10 +20,8 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-
-// TODO: Might want to make these more dynamic to account for MechE tuning
-#define MIN_PEDAL_VAL 0x1DC /* Raw ADC */
-#define MAX_PEDAL_VAL 0x283 /* Raw ADC */
+#include "bms.h"
+#include "emrax.h"
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60 /* Hz */
@@ -38,10 +36,11 @@ const osThreadAttr_t torque_calc_attributes = {
 	.priority = (osPriority_t)osPriorityRealtime2
 };
 
-static void linear_accel_to_torque(float accel, uint16_t *torque)
+static void linear_accel_to_torque(float accel)
 {
 	/* Linearly map acceleration to torque */
-	*torque = (uint16_t)(accel * MAX_TORQUE);
+	int16_t torque = (int16_t)(accel * MAX_TORQUE);
+	dti_set_torque(torque);
 }
 
 static float rpm_to_mph(int32_t rpm)
@@ -55,49 +54,31 @@ static float rpm_to_mph(int32_t rpm)
 	return (rpm / (GEAR_RATIO)) * 60 * (TIRE_DIAMETER / 63360.0) * M_PI;
 }
 
-static void limit_accel_to_torque(float mph, float accel, uint16_t *torque)
-{
-	static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
+// static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
+// {
+// 		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
 
-	uint16_t newVal;
-	//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
-	if (mph > PIT_MAX_SPEED) {
-		newVal =
-			0; // If we are going too fast, we don't want to apply any torque to the moving average
-	} else {
-		float torque_derating_factor = fabs(
-			0.5 +
-			((-0.5 / PIT_MAX_SPEED) *
-			 mph)); // Linearly derate torque from 0.5 to 0 as speed increases
-		newVal = accel * torque_derating_factor;
-	}
+// 		uint16_t newVal;
+// 		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
+// 		if (mph > PIT_MAX_SPEED) {
+// 			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
+// 		}
+// 		else {
+// 			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
+// 			newVal = accel * torque_derating_factor;
+// 		}
 
-	// The following code is a moving average filter
-	uint16_t ave = 0;
-	uint16_t temp[ACCUMULATOR_SIZE];
-	memcpy(torque_accumulator, temp,
-	       ACCUMULATOR_SIZE); // Copy the old values to the new array and shift them by one
-	for (int i = 0; i < ACCUMULATOR_SIZE - 1; i++) {
-		temp[i + 1] = torque_accumulator[i];
-		ave += torque_accumulator[i + 1];
-	}
-	ave += newVal; // Add the new value to the sum
-	ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
-	temp[0] = newVal; // Add the new value to the array
-	if (*torque > ave) {
-		*torque =
-			ave; // If the new value is greater than the average, set the torque to the average
-	}
-	memcpy(temp, torque_accumulator,
-	       ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
-}
-
-static void paddle_accel_to_torque(float accel, uint16_t *torque)
-{
-	*torque = (uint16_t)torque_limit_percentage *
-		  ((accel / MAX_TORQUE) * 0xFFFF);
-	//TODO add regen logic
-}
+// 		// The following code is a moving average filter
+// 		uint16_t ave = 0;
+// 		uint16_t temp[ACCUMULATOR_SIZE];
+// 		ave += newVal; // Add the new value to the sum
+// 		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
+// 		temp[0] = newVal; // Add the new value to the array
+// 		if(*torque > ave) {
+// 			*torque = ave; // If the new value is greater than the average, set the torque to the average
+// 		}
+// 		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
+// }
 
 void increase_torque_limit()
 {
@@ -117,16 +98,82 @@ void decrease_torque_limit()
 	}
 }
 
+/* Comment out to use single pedal mode */
+//#define USE_BRAKE_REGEN 1
+
+/**
+ * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
+ * 
+ * @param mc pointer to struct containing dti data
+ * @param mph mph of the car
+ * @param accel_val adjusted value of the acceleration pedal
+ * @param brake_val adjusted value of the brake pedal
+ * @param torque pointer to torque value
+ */
+void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
+{
+	/* Maximum AC braking current */
+	static const int8_t max_curr = 20;
+#ifdef USE_BRAKE_REGEN
+	// The brake travel ADC value at which we want maximum regen
+	static const float travel_scaling_max = 1000;
+	if (brake_val > 650 && (mph * 1.609) > 6) {
+		// % of max brake pressure * ac current limit
+		float brake_current =
+			(brake_val / travel_scaling_max) * max_ac_brake;
+		if (brake_current > max_ac_brake) {
+			// clamp for safety
+			brake_current = max_ac_brake;
+		}
+
+		// current must be delivered to DTI as a multiple of 10
+		dti_set_brake_current((uint16_t)(brake_current * 10));
+		*torque = 0;
+	} else {
+		// accelerating, limit torque
+		linear_accel_to_torque(accel_val, torque);
+		*torque = (uint16_t)(*torque);
+	}
+#else
+	// percent of accel pedal to be used for regen
+	static const float regen_thresh = 0.01;
+	static const float accel_thresh = 0.05;
+	static const float mph_to_kmh = 1.609;
+	/* Pedal is in acceleration range. Set forward torque target. */
+	if (accel_val >= accel_thresh) {
+		/* Coefficient to map accel pedal travel % to the max torque */
+		const float coeff = MAX_TORQUE / (1 - accel_thresh);
+		/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
+		uint16_t torque =
+			coeff * accel_val - (accel_val * accel_thresh);
+
+		if (torque > MAX_TORQUE) {
+			torque = MAX_TORQUE;
+		}
+
+		dti_set_torque(torque);
+	} else if (mph * mph_to_kmh > 2 && accel_val <= regen_thresh) {
+		float regen_current =
+			(max_curr / regen_thresh) * (regen_thresh - accel_val);
+		/* Send regen current to motor controller */
+		dti_set_regen((uint16_t)(regen_current * 10));
+	} else {
+		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
+		dti_set_torque(0);
+	}
+
+#endif
+}
+
 void vCalcTorque(void *pv_params)
 {
 	const uint16_t delay_time = 5; /* ms */
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
 	pedals_t pedal_data;
-	uint16_t torque = 0;
 	float mph = 0;
 	osStatus_t stat;
-	bool motor_disabled = false;
+	// bool motor_disabled = false;
 
 	dti_t *mc = (dti_t *)pv_params;
 
@@ -134,22 +181,25 @@ void vCalcTorque(void *pv_params)
 		stat = osMessageQueueGet(pedal_data_queue, &pedal_data, 0U,
 					 delay_time);
 
+		/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
+		if (pedal_data.accelerator_value == 1) {
+			pedal_data.accelerator_value = 0;
+		}
+
 		float accelerator_value =
-			(float)pedal_data.accelerator_value / 10.0; // 0 to 1
+			(float)pedal_data.accelerator_value / 100.0; // 0 to 1
 		float brake_value =
 			(float)pedal_data.brake_value * 10.0; // ACTUAL PSI
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK) {
 			int32_t rpm = dti_get_rpm(mc);
-			//printf("rpm %ld", rpm);
 			mph = rpm_to_mph(rpm);
-			//printf("mph %d", (int8_t) mph);
 			set_mph(mph);
 
 			func_state_t func_state = get_func_state();
 			if (func_state != ACTIVE) {
-				torque = 0;
+				dti_set_torque(0);
 				continue;
 			}
 
@@ -157,55 +207,45 @@ void vCalcTorque(void *pv_params)
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 			//fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
 			/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
-			if (brake_value > 600 && (accelerator_value) > 0.25) {
-				printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
-				motor_disabled = true;
-				torque = 0;
-			}
+			// if (brake_value > 600 && (accelerator_value) > 0.25)
+			// {
+			// 	printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
+			// 	motor_disabled = true;
+			// 	dti_set_torque(0);
+			// 	//queue_fault(&fault_data);
+			// }
 
-			if (motor_disabled) {
-				printf("\nMotor disabled\n");
-				if (accelerator_value < 0.05) {
-					motor_disabled = false;
-					printf("\n\nMotor reenabled, queuing fault\n\n");
-					//queue_fault(&fault_data);
-				} else {
-					torque = 0;
-					dti_set_torque(torque);
-					continue;
-				}
-			}
+			// if (motor_disabled)
+			// {
+			// 	printf("\nMotor disabled\n");
+			// 	if (accelerator_value < 0.05)
+			// 	{
+			// 		motor_disabled = false;
+			// 		printf("\n\nMotor reenabled\n\n");
+			// 	}
+			// }
 
-			drive_state_t drive_state =
-				AUTOCROSS; //get_drive_state();
+			drive_state_t drive_state = get_drive_state();
 
 			switch (drive_state) {
-			case REVERSE:
-				limit_accel_to_torque(mph, accelerator_value,
-						      &torque);
-				break;
-			case SPEED_LIMITED:
-				limit_accel_to_torque(mph, accelerator_value,
-						      &torque);
-				break;
+			// case REVERSE:
+			// 	limit_accel_to_torque(mph, accelerator_value, &torque);
+			// 	dti_set_torque(torque);
+			// 	break;
+			// case SPEED_LIMITED:
+			// 	limit_accel_to_torque(mph, accelerator_value, &torque);
+			// 	break;
 			case ENDURANCE:
-				paddle_accel_to_torque(accelerator_value,
-						       &torque);
+				handle_endurance(mc, mph, accelerator_value,
+						 brake_value);
 				break;
 			case AUTOCROSS:
-				linear_accel_to_torque(accelerator_value,
-						       &torque);
+				linear_accel_to_torque(accelerator_value);
 				break;
 			default:
-				torque = 0;
+				dti_set_torque(0);
 				break;
 			}
-
-			// serial_print("accel val: %d\r\n", pedal_data.accelerator_value);
-
-			serial_print("torque: %d\r\n", torque);
-			/* Send whatever torque command we have on record */
-			dti_set_torque(torque);
 		}
 	}
 }
