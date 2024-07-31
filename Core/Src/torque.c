@@ -156,7 +156,7 @@ void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
 		float regen_current =
 			(max_curr / regen_thresh) * (regen_thresh - accel_val);
 		/* Send regen current to motor controller */
-		dti_set_regen(regen_current);
+		dti_set_regen((uint16_t)(regen_current * 10));
 	} else {
 		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 		dti_set_torque(0);

@@ -76,16 +76,16 @@ void dti_set_torque(int16_t torque);
 /**
  * @brief Set the brake AC current target for regenerative braking. Only positive values are accepted by the DTI.
  * 
- * @param current_target The desired AC current to do regenerative braking at. Must be positive.
+ * @param current_target The desired AC current to do regenerative braking at. Must be positive. This argument must be the actual value to set multiplied by 10.
  */
-void dti_set_regen(float current_target);
+void dti_set_regen(uint16_t current_target);
 
 /**
  * @brief Send a CAN message containing the AC current target for regenerative braking.
  * 
- * @param brake_current AC current target for regenerative braking. The motor controler has a maximum resolution of the tenths place.
+ * @param brake_current AC current target for regenerative braking. The actual value sent to the motor controller must be multiplied by 10.
  */
-void dti_send_brake_current(float brake_current);
+void dti_send_brake_current(uint16_t brake_current);
 
 /*
  * SCALE: 10
