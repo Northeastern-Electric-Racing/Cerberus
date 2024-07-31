@@ -98,7 +98,7 @@ void decrease_torque_limit()
 	}
 }
 
-// comment out to use single pedal mode
+/* Comment out to use single pedal mode */
 //#define USE_BRAKE_REGEN 1
 
 /**
@@ -112,7 +112,6 @@ void decrease_torque_limit()
  */
 void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
 {
-	// max ac current to brake with
 	/* Maximum AC braking current */
 	static const int8_t max_curr = 20;
 #ifdef USE_BRAKE_REGEN
@@ -140,23 +139,25 @@ void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
 	static const float regen_thresh = 0.01;
 	static const float accel_thresh = 0.05;
 	static const float mph_to_kmh = 1.609;
-	// if the rescaled accel is positive then convert it to torque, and full send
+	/* Pedal is in acceleration range. Set forward torque target. */
 	if (accel_val >= accel_thresh) {
 		/* Coefficient to map accel pedal travel % to the max torque */
 		const float coeff = MAX_TORQUE / (1 - accel_thresh);
 		/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
 		uint16_t torque =
 			coeff * accel_val - (accel_val * accel_thresh);
+
 		if (torque > MAX_TORQUE) {
 			torque = MAX_TORQUE;
 		}
+
 		dti_set_torque(torque);
 	} else if (mph * mph_to_kmh > 2 && accel_val < regen_thresh) {
 		float regen_current =
 			(max_curr / regen_thresh) * (regen_thresh - accel_val);
 
 		/* Send regen current to motor controller */
-		dti_set_regen((int16_t)regen_current);
+		dti_set_regen((uint16_t)regen_current);
 	} else {
 		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 		dti_set_torque(0);
@@ -194,9 +195,7 @@ void vCalcTorque(void *pv_params)
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK) {
 			int32_t rpm = dti_get_rpm(mc);
-			//printf("rpm %ld", rpm);
 			mph = rpm_to_mph(rpm);
-			//printf("mph %d", (int8_t) mph);
 			set_mph(mph);
 
 			func_state_t func_state = get_func_state();

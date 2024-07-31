@@ -68,7 +68,7 @@ void dti_set_torque(int16_t torque)
 	dti_set_current(ac_current);
 }
 
-void dti_set_regen(int16_t current_target)
+void dti_set_regen(uint16_t current_target)
 {
 	/* Simple moving average to smooth change in braking target */
 
@@ -93,7 +93,6 @@ void dti_set_regen(int16_t current_target)
 		average = 0;
 	}
 
-	/* DTI CAN manual page 18, scale = 10 */
 	dti_send_brake_current(average);
 }
 

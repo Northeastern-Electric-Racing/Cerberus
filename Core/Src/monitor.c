@@ -56,7 +56,6 @@ void vLVMonitor(void *pv_params)
 		// get final voltage
 		v_int = (uint32_t)(v_dec * 10.0);
 
-		//endian_swap(&v_int, sizeof(v_int));
 		memcpy(msg.data, &v_int, msg.len);
 		if (queue_can_msg(msg)) {
 			fault_data.diag =
@@ -247,33 +246,19 @@ void vPedalsMonitor(void *pv_params)
 		eval_pedal_fault(adc_data[ACCELPIN_1], adc_data[ACCELPIN_2],
 				 &diff_timer_accelerator, &sc_timer_accelerator,
 				 &oc_timer_accelerator, &fault_data);
-		//eval_pedal_fault(adc_data[BRAKEPIN_1], adc_data[BRAKEPIN_1], &diff_timer_brake, &sc_timer_brake, &oc_timer_brake, &fault_data);
 
 		/* Offset adjusted per pedal sensor, clamp to be above 0 */
 		uint16_t accel_val1 = adjust_pedal_val(
 			adc_data[ACCELPIN_1], ACCEL1_OFFSET, ACCEL1_MAX_VAL);
-		//printf("Accel 1: %d\r\n", max_pedal1);
 		uint16_t accel_val2 = adjust_pedal_val(
-			adc_data[ACCELPIN_2], ACCEL2_OFFSET,
-			ACCEL2_MAX_VAL); //printf("Accel 2: %d\r\n",max_pedal2);
+			adc_data[ACCELPIN_2], ACCEL2_OFFSET, ACCEL2_MAX_VAL);
 
 		uint16_t accel_val = (uint16_t)(accel_val1 + accel_val2) / 2;
-		//printf("Avg Pedal Val: %d\r\n\n", accel_val);
-
-		/* Raw ADC for tuning */
-		//printf("Accel 1: %ld\r\n", adc_data[ACCELPIN_1]);
-		//printf("Accel 2: %ld\r\n", adc_data[ACCELPIN_2]);
-
-		/* Brakelight Control */
-		// printf("Brake 1: %ld\r\n", adc_data[BRAKEPIN_1]);
-		// printf("Brake 2: %ld\r\n", adc_data[BRAKEPIN_2]);
 
 		is_braking = (adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
 		brake_state = is_braking;
 
 		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
-		//osMessageQueueReset(break_state_queue);
-		//osMessageQueuePut(break_state_queue, &is_braking, 0U, 0U);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value =
@@ -284,7 +269,6 @@ void vPedalsMonitor(void *pv_params)
 			num_samples;
 
 		/* Publish to Onboard Pedals Queue */
-		//printf("Accel pedal queue %d",  sensor_data.accelerator_value);
 		osStatus_t check = osMessageQueuePut(pedal_data_queue,
 						     &sensor_data, 0U, 0U);
 
