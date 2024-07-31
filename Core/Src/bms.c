@@ -56,15 +56,8 @@ void vBMSCANMonitor(void *pv_params)
 		if (osOK == osMessageQueueGet(bms_monitor_queue,
 					      &msg_from_queue, NULL,
 					      osWaitForever)) {
-			/*TO-DO: fix duration (ticks)*/
 			osTimerStart(bms->bms_monitor_timer,
 				     BMS_CAN_MONITOR_DELAY);
-			//serial_print("BMS DCL %d", bms->dcl);
-			if (msg_from_queue.id == BMS_CURR_LIMIT_MSG) {
-				/* Message is big endian, STM32 is *byte* little endian */
-				bms->ccl = (msg_from_queue.data[0] << 8) |
-					   msg_from_queue.data[1];
-			}
 		}
 	}
 }

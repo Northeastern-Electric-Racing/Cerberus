@@ -23,7 +23,6 @@
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
-#define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 
 dti_t *dti_init()
@@ -95,7 +94,7 @@ void dti_set_regen(int16_t current_target)
 	}
 
 	/* DTI CAN manual page 18, scale = 10 */
-	dti_set_brake_current(average * 10);
+	dti_send_brake_current(average);
 }
 
 void dti_set_current(int16_t current)
@@ -115,14 +114,15 @@ void dti_set_current(int16_t current)
 	queue_can_msg(msg);
 }
 
-void dti_set_brake_current(int16_t brake_current)
+void dti_send_brake_current(float brake_current)
 {
 	can_msg_t msg = { .id = 0x056,
 			  .len = 8,
 			  .data = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 } };
-	// serial_print("Sending regen current: %i", brake_current);0x0
+	/* Motor controller expects int value * 10 */
+	int16_t adjusted_brake_current = brake_current * 10;
 	/* convert to big endian */
-	endian_swap(&brake_current, sizeof(brake_current));
+	endian_swap(&adjusted_brake_current, sizeof(adjusted_brake_current));
 	/* Send CAN message */
 	memcpy(&msg.data, &brake_current, 2);
 	queue_can_msg(msg);
@@ -280,23 +280,6 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexRelease(*mc->mutex);
 }
 
-uint16_t dti_get_input_voltage(dti_t *mc)
-{
-	uint16_t voltage;
-	osMutexAcquire(*mc->mutex, osWaitForever);
-	voltage = mc->input_voltage;
-	osMutexRelease(*mc->mutex);
-
-	return voltage;
-}
-
-static void dti_set_input_voltage(dti_t *mc, can_msg_t msg)
-{
-	osMutexAcquire(*mc->mutex, osWaitForever);
-	mc->input_voltage = (msg.data[8] << 8) | msg.data[7];
-	osMutexRelease(*mc->mutex);
-}
-
 void vDTIRouter(void *pv_params)
 {
 	can_msg_t message;
@@ -313,7 +296,6 @@ void vDTIRouter(void *pv_params)
 			switch (message.id) {
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, message);
-				dti_set_input_voltage(mc, message);
 				break;
 			case DTI_CANID_CURRENTS:
 				break;

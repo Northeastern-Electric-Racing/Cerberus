@@ -32,9 +32,7 @@
 #define PEDAL_BRAKE_THRESH  650
 
 /* Torque Tuning */
-#define MAX_TORQUE	   220 /* Nm, divded by 10 of torque of car */
-#define MAX_BRAKE_PRESSURE 1800 // psi
-#define REGEN_RAMP_TIME	   500 // regen ramp time (in ms)
+#define MAX_TORQUE 220 /* Nm */
 
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
 // NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
