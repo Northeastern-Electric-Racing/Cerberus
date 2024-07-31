@@ -88,13 +88,13 @@ static int transition_drive_state(drive_state_t new_state)
 	/* Transitioning between drive states is always allowed */
 	// TODO: Make sure motor is not spinning before switching
 
-		/* If we are turning ON the motor, blare RTDS */
-		if (cerberus_state.drive == NOT_DRIVING) {
-			if (!get_brake_state()) {
-				return 0;
-			}
-			sound_rtds(pdu);
+	/* If we are turning ON the motor, blare RTDS */
+	if (cerberus_state.drive == NOT_DRIVING) {
+		if (!get_brake_state()) {
+			return 0;
 		}
+		sound_rtds(pdu);
+	}
 
 	cerberus_state.drive = new_state;
 	return 0;
