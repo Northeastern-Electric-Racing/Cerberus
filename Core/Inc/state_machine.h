@@ -10,6 +10,7 @@
  * being sub states of the ACTIVE functional state
  */
 typedef enum { BOOT, READY, ACTIVE, FAULTED, MAX_FUNC_STATES } func_state_t;
+
 typedef enum {
 	NOT_DRIVING,
 	REVERSE,
@@ -19,21 +20,33 @@ typedef enum {
 	MAX_DRIVE_STATES
 } drive_state_t;
 
+typedef enum {
+	OFF,
+	PIT,
+	PERFORMANCE,
+	EFFICIENCY,
+	DEBUG,
+	CONFIGURATION,
+	FLAPPY_BIRD,
+	EXIT,
+	MAX_NERO_STATES
+} nero_menu_t;
+
+typedef struct {
+	nero_menu_t nero_index;
+	bool home_mode;
+} nero_state_t;
+
+typedef struct {
+	func_state_t functional;
+	drive_state_t drive;
+	nero_state_t nero;
+} state_t;
+
 extern osThreadId_t sm_director_handle;
 extern const osThreadAttr_t sm_director_attributes;
 
-typedef struct {
-	enum { FUNCTIONAL, DRIVE } id;
-
-	union {
-		func_state_t functional;
-		drive_state_t drive;
-	} state;
-} state_req_t;
-
 void vStateMachineDirector(void *pv_params);
-
-int queue_state_transition(state_req_t request);
 
 /* Retrieves the current functional state */
 func_state_t get_func_state();
@@ -43,5 +56,37 @@ func_state_t get_func_state();
  * Will return negative if functional state is not DRIVING
  */
 drive_state_t get_drive_state();
+
+/*
+ * Retrieves the current nero state
+ */
+nero_state_t get_nero_state();
+
+/**
+ * Increments the nero index in the order of nero_menu_t which will be used to select a drive mode
+ */
+int increment_nero_index();
+
+/**
+ * Decrements the nero index int the order of nero_menu_t which will be used to select a drive mode
+ */
+int decrement_nero_index();
+
+/**
+ * Transitions out of home mode, therefore into a drive mode based on the
+ * current nero index and mapped using the map_nero_index_to_drive_state function
+ * Wil set the functional state to active
+ */
+int select_nero_index();
+
+/**
+ * Sets the home mode to be true, which will turn off the car and set the functional state to ready
+ */
+int set_home_mode();
+
+/**
+ * Handles a fault, setting the functional state to FAULTED
+ */
+int fault();
 
 #endif
