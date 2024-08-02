@@ -96,7 +96,7 @@ osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime5,
+	.priority = (osPriority_t)osPriorityRealtime,
 };
 
 void vCanDispatch(void *pv_params)
@@ -119,8 +119,6 @@ void vCanDispatch(void *pv_params)
 			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
-			} else {
-				//printf("Message sent: %lX\r\n", msg_from_queue.id);
 			}
 		}
 

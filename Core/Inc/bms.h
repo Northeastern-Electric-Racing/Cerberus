@@ -17,7 +17,10 @@ extern bms_t *bms;
 
 void bms_init();
 
-void vBMSCANMonitor(void *pv_params);
+/**
+ * @brief Task for handling CAN messages received from the AMS.
+ */
+void vAMSCANMonitor(void *pv_params);
 extern osThreadId_t bms_monitor_handle;
 extern const osThreadAttr_t bms_monitor_attributes;
 extern osMessageQueueId_t bms_monitor_queue;

@@ -26,7 +26,6 @@ static void send_mode_status()
 
 void set_mph(int8_t new_mph)
 {
-	//printf("mph %d", new_mph);
 	mph = new_mph;
 }
 
@@ -34,7 +33,7 @@ osThreadId_t nero_monitor_handle;
 const osThreadAttr_t nero_monitor_attributes = {
 	.name = "NeroMonitor",
 	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh2,
+	.priority = (osPriority_t)osPriorityNormal,
 };
 
 void vNeroMonitor(void *pv_params)

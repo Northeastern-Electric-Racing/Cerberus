@@ -46,6 +46,12 @@ int8_t pet_watchdog(mpu_t *mpu);
 
 void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4]);
 
+/**
+ * @brief Read the voltage of the low voltage batteries.
+ * 
+ * @param mpu Pointer to struct representing the MPU.
+ * @param lv_buf Pointer to location where raw ADC value will be stored.
+ */
 void read_lv_voltage(mpu_t *mpu, uint32_t *lv_buf);
 
 int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity);

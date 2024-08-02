@@ -4,6 +4,7 @@
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
 
+#define BRAKELIGHT_QUEUE_SIZE	8
 #define ONBOARD_TEMP_QUEUE_SIZE 8
 #define PEDAL_DATA_QUEUE_SIZE	8
 #define IMU_QUEUE_SIZE		8

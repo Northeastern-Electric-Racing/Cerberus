@@ -5,6 +5,9 @@
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
 
+/**
+ * @brief Task monitoring the voltage level of the low voltage batteries.
+ */
 void vLVMonitor(void *pv_params);
 extern osThreadId lv_monitor_handle;
 extern const osThreadAttr_t lv_monitor_attributes;

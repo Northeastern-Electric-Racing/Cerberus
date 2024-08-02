@@ -47,7 +47,7 @@ void bms_init()
 	assert(bms_monitor_queue);
 }
 
-void vBMSCANMonitor(void *pv_params)
+void vAMSCANMonitor(void *pv_params)
 {
 	can_msg_t msg_from_queue;
 

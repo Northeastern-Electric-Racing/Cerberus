@@ -171,14 +171,6 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* I'm kinda defining mutexes here lol */
-
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
   pdu_t *pdu  = init_pdu(&hi2c2);
@@ -189,6 +181,13 @@ int main(void)
   bms_init();
 
   printf("\r\n\n\nInit Success...\r\n\n\n");
+
+  /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -201,7 +200,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  brakelight_signal = osMessageQueueNew(15, sizeof(bool), NULL);
+  brakelight_signal = osMessageQueueNew(BRAKELIGHT_QUEUE_SIZE, sizeof(bool), NULL);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
 	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -213,6 +212,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+
   /* Monitors */
   lv_monitor_handle = osThreadNew(vLVMonitor, mpu, &lv_monitor_attributes);
   assert(lv_monitor_handle);
@@ -221,6 +221,7 @@ int main(void)
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
   steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
+  assert(steeringio_buttons_monitor_handle);
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
   tsms_monitor_handle = osThreadNew(vTsmsMonitor, pdu, &tsms_monitor_attributes);
@@ -235,7 +236,7 @@ int main(void)
   assert(dti_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
+  bms_monitor_handle = osThreadNew(vAMSCANMonitor, NULL, &bms_monitor_attributes);
   assert(bms_monitor_handle);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   assert(serial_monitor_handle);

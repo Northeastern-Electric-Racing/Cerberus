@@ -34,6 +34,13 @@
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
 
+/* Endurance Mode Thresholds */
+#define REGEN_THRESHOLD	       0.01
+#define ACCELERATION_THRESHOLD 0.05
+
+/* Maximum AC braking current */
+#define MAX_REGEN_CURRENT 20
+
 // DEBUGGING: Start with a high debounce period, lower it if it is too slow
 // NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
 // give enough time to differentiate signal from noise.

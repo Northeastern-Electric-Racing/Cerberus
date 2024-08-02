@@ -19,10 +19,19 @@
 
 void can1_callback(CAN_HandleTypeDef *hcan);
 
+/**
+ * @brief Task for sending CAN messages.
+ */
 void vCanDispatch(void *pv_params);
 extern osThreadId_t can_dispatch_handle;
 extern const osThreadAttr_t can_dispatch_attributes;
 
+/**
+ * @brief Place a CAN message in a queue.
+ * 
+ * @param msg CAN message to be sent.
+ * @return int8_t Error code.
+ */
 int8_t queue_can_msg(can_msg_t msg);
 void init_can1(CAN_HandleTypeDef *hcan);
 

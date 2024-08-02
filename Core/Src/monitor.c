@@ -32,7 +32,7 @@ osThreadId lv_monitor_handle;
 const osThreadAttr_t lv_monitor_attributes = {
 	.name = "LVMonitor",
 	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh4,
+	.priority = (osPriority_t)osPriorityNormal,
 };
 
 void vLVMonitor(void *pv_params)
@@ -47,6 +47,8 @@ void vLVMonitor(void *pv_params)
 	for (;;) {
 		read_lv_voltage(mpu, &v_int);
 
+		/* Convert from raw ADC reading to voltage level */
+
 		// scale up then truncate
 		// convert to out of 24 volts
 		// since 12 bits / 4096
@@ -59,7 +61,7 @@ void vLVMonitor(void *pv_params)
 		memcpy(msg.data, &v_int, msg.len);
 		if (queue_can_msg(msg)) {
 			fault_data.diag =
-				"Failed to send steering buttons can message";
+				"Failed to send steering LV monitor CAN message";
 			queue_fault(&fault_data);
 		}
 
@@ -115,13 +117,6 @@ void vTempMonitor(void *pv_params)
 		osDelay(TEMP_SENS_SAMPLE_DELAY);
 	}
 }
-
-osThreadId_t pedals_monitor_handle;
-const osThreadAttr_t pedals_monitor_attributes = {
-	.name = "PedalMonitor",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime1,
-};
 
 void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2,
 		      nertimer_t *diff_timer, nertimer_t *sc_timer,
@@ -209,6 +204,12 @@ uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
 		       (uint16_t)(raw - offset) * 100 / (max - offset);
 }
 
+osThreadId_t pedals_monitor_handle;
+const osThreadAttr_t pedals_monitor_attributes = {
+	.name = "PedalMonitor",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityRealtime,
+};
 void vPedalsMonitor(void *pv_params)
 {
 	const uint8_t num_samples = 10;
@@ -430,7 +431,7 @@ osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name = "FusingMonitor",
 	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityAboveNormal1,
+	.priority = (osPriority_t)osPriorityNormal,
 };
 
 void vFusingMonitor(void *pv_params)
@@ -462,8 +463,6 @@ void vFusingMonitor(void *pv_params)
 				fuses[fuse]
 				<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 		}
-
-		// serial_print("Fuses:\t%X\r\n", fuse_buf);
 
 		fuse_data.fuse_1 = fuse_buf & 0xFF;
 		fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
@@ -528,8 +527,6 @@ void vShutdownMonitor(void *pv_params)
 				<< stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
-		// serial_print("Shutdown status:\t%X\r\n", shutdown_buf);
-
 		/* seperate each byte */
 		shutdown_data.shut_1 = shutdown_buf & 0xFF;
 		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
@@ -552,7 +549,7 @@ osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name = "SteeringIOButtonsMonitor",
 	.stack_size = 200 * 8,
-	.priority = (osPriority_t)osPriorityAboveNormal1,
+	.priority = (osPriority_t)osPriorityNormal,
 };
 
 void vSteeringIOButtonsMonitor(void *pv_params)

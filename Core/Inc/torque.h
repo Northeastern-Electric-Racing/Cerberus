@@ -17,6 +17,9 @@
 #define PIT_MAX_SPEED	 5.0 /* mph */
 #define ACCUMULATOR_SIZE 10 /* size of the accumulator for averaging */
 
+/**
+ * @brief Task for sending commands to the car's motor controller.
+ */
 void vCalcTorque(void *pv_params);
 
 /*
