@@ -14,6 +14,7 @@
 #include "emrax.h"
 #include "fault.h"
 #include "c_utils.h"
+#include <math.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -250,6 +251,18 @@ int32_t dti_get_rpm(dti_t *mc)
 	osMutexRelease(*mc->mutex);
 
 	return rpm;
+}
+
+float dti_get_mph(dti_t *mc)
+{
+	/* Convert RPM to MPH */
+	// rpm * gear ratio = wheel rpm
+	// tire diamter (in) to miles --> tire diamter miles
+	// wheel rpm * 60 --> wheel rph
+	// tire diamter miles * pi --> tire circumference
+	// rph * wheel circumference miles --> mph
+	return (dti_get_rpm(mc) / (GEAR_RATIO)) * 60 *
+	       (TIRE_DIAMETER / 63360.0) * M_PI;
 }
 
 /* Inbound Task-specific Info */

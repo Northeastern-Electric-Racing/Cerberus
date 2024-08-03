@@ -17,7 +17,6 @@
 #include "serial_monitor.h"
 #include "state_machine.h"
 #include "torque.h"
-#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include "bms.h"
@@ -38,17 +37,6 @@ static void linear_accel_to_torque(float accel)
 	/* Linearly map acceleration to torque */
 	int16_t torque = (int16_t)(accel * MAX_TORQUE);
 	dti_set_torque(torque);
-}
-
-static float rpm_to_mph(int32_t rpm)
-{
-	/* Convert RPM to MPH */
-	// rpm * gear ratio = wheel rpm
-	// tire diamter (in) to miles --> tire diamter miles
-	// wheel rpm * 60 --> wheel rph
-	// tire diamter miles * pi --> tire circumference
-	// rph * wheel circumference miles --> mph
-	return (rpm / (GEAR_RATIO)) * 60 * (TIRE_DIAMETER / 63360.0) * M_PI;
 }
 
 // static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
@@ -191,8 +179,7 @@ void vCalcTorque(void *pv_params)
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK) {
-			int32_t rpm = dti_get_rpm(mc);
-			mph = rpm_to_mph(rpm);
+			mph = dti_get_mph(mc);
 			set_mph(mph);
 
 			func_state_t func_state = get_func_state();

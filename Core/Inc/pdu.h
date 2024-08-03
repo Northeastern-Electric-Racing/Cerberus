@@ -41,6 +41,13 @@ typedef enum {
 
 int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
 
+/**
+ * @brief Read the state of the TSMS signal.
+ * 
+ * @param pdu Struct representing the PDU.
+ * @param status Pointer to location in memory where value will be read to.
+ * @return int8_t Error code.
+ */
 int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */

@@ -69,53 +69,23 @@ void vLVMonitor(void *pv_params)
 	}
 }
 
-osThreadId_t temp_monitor_handle;
-const osThreadAttr_t temp_monitor_attributes = {
-	.name = "TempMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh1,
-};
-
 bool get_brake_state()
 {
 	return brake_state;
 }
 
-void vTempMonitor(void *pv_params)
+/**
+ * @brief Return the adjusted pedal value based on its offset and maximum value. Clamps negative values to 0.
+ * 
+ * @param raw the raw pedal value
+ * @param offset the offset for the pedal
+ * @param max the maximum value of the pedal
+ */
+uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
 {
-	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
-			       .len = 4,
-			       .data = { 0 } };
-
-	mpu_t *mpu = (mpu_t *)pv_params;
-
-	for (;;) {
-		/* Take measurement */
-		uint16_t temp = 0;
-		uint16_t humidity = 0;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
-			fault_data.diag = "Failed to get temp";
-			queue_fault(&fault_data);
-		}
-
-		serial_print("MPU Board Temperature:\t%d\r\n", temp);
-
-		temp_msg.data[0] = temp & 0xFF;
-		temp_msg.data[1] = (temp >> 8) & 0xFF;
-		temp_msg.data[2] = humidity & 0xFF;
-		temp_msg.data[3] = (humidity >> 8) & 0xFF;
-
-		/* Send CAN message */
-		if (queue_can_msg(temp_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
-
-		/* Yield to other tasks */
-		osDelay(TEMP_SENS_SAMPLE_DELAY);
-	}
+	return (int16_t)raw - offset <= 0 ?
+		       0 :
+		       (uint16_t)(raw - offset) * 100 / (max - offset);
 }
 
 void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2,
@@ -160,15 +130,9 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2,
 
 	/* Normalize pedal values */
 	uint16_t accel_1_norm =
-		accel_1 - ACCEL1_OFFSET <= 0 ?
-			0 :
-			(uint16_t)(accel_1 - ACCEL1_OFFSET) * 100 /
-				(ACCEL1_MAX_VAL - ACCEL1_OFFSET);
+		adjust_pedal_val(accel_1, ACCEL1_OFFSET, ACCEL1_MAX_VAL);
 	uint16_t accel_2_norm =
-		accel_2 - ACCEL2_OFFSET <= 0 ?
-			0 :
-			(uint16_t)(accel_2 - ACCEL2_OFFSET) * 100 /
-				(ACCEL2_MAX_VAL - ACCEL2_OFFSET);
+		adjust_pedal_val(accel_2, ACCEL1_OFFSET, ACCEL1_MAX_VAL);
 
 	/* Fault - difference between pedal sensing values */
 	if ((abs(accel_1_norm - accel_2_norm) > PEDAL_DIFF_THRESH) &&
@@ -188,20 +152,6 @@ void eval_pedal_fault(uint16_t accel_1, uint16_t accel_2,
 	} else {
 		cancel_timer(diff_timer);
 	}
-}
-
-/**
- * @brief Return the adjusted pedal value based on its offset and maximum value. Clamps negative values to 0.
- * 
- * @param raw the raw pedal value
- * @param offset the offset for the pedal
- * @param max the maximum value of the pedal
- */
-uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
-{
-	return (int16_t)raw - offset <= 0 ?
-		       0 :
-		       (uint16_t)(raw - offset) * 100 / (max - offset);
 }
 
 osThreadId_t pedals_monitor_handle;
@@ -448,8 +398,6 @@ void vFusingMonitor(void *pv_params)
 		uint8_t fuse_2;
 	} fuse_data;
 
-	bool tsms_status = false;
-
 	for (;;) {
 		fuse_buf = 0;
 
@@ -477,12 +425,9 @@ void vFusingMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if (!read_tsms_sense(pdu, &tsms_status)) {
-			tsms = tsms_status;
-			if (get_func_state() == ACTIVE && tsms == 0) {
-				set_home_mode();
-			}
+		/* If the TSMS is off, the car should no longer be active. */
+		if (!get_tsms() && get_func_state() == ACTIVE) {
+			set_home_mode();
 		}
 
 		osDelay(FUSES_SAMPLE_DELAY);
@@ -548,7 +493,7 @@ void vShutdownMonitor(void *pv_params)
 osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name = "SteeringIOButtonsMonitor",
-	.stack_size = 200 * 8,
+	.stack_size = 400,
 	.priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -623,5 +568,49 @@ void vBrakelightMonitor(void *pv_params)
 		if (!status) {
 			write_brakelight(pdu, state);
 		}
+	}
+}
+
+osThreadId_t temp_monitor_handle;
+const osThreadAttr_t temp_monitor_attributes = {
+	.name = "TempMonitor",
+	.stack_size = 32 * 8,
+	.priority = (osPriority_t)osPriorityHigh1,
+};
+
+void vTempMonitor(void *pv_params)
+{
+	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
+			       .len = 4,
+			       .data = { 0 } };
+
+	mpu_t *mpu = (mpu_t *)pv_params;
+
+	for (;;) {
+		/* Take measurement */
+		uint16_t temp = 0;
+		uint16_t humidity = 0;
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
+
+		serial_print("MPU Board Temperature:\t%d\r\n", temp);
+
+		temp_msg.data[0] = temp & 0xFF;
+		temp_msg.data[1] = (temp >> 8) & 0xFF;
+		temp_msg.data[2] = humidity & 0xFF;
+		temp_msg.data[3] = (humidity >> 8) & 0xFF;
+
+		/* Send CAN message */
+		if (queue_can_msg(temp_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
+
+		/* Yield to other tasks */
+		osDelay(TEMP_SENS_SAMPLE_DELAY);
 	}
 }

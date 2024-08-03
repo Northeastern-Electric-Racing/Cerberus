@@ -175,29 +175,3 @@ void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[])
 	}
 	osMutexRelease(wheel->button_mutex);
 }
-
-/* Inbound Task-specific Info */
-osThreadId_t steeringio_router_handle;
-const osThreadAttr_t steeringio_router_attributes = {
-	.name = "SteeringIORouter",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityHigh1
-};
-
-void vSteeringIORouter(void *pv_params)
-{
-	button_data_t message;
-	osStatus_t status;
-	// fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
-
-	steeringio_t *wheel = (steeringio_t *)pv_params;
-
-	for (;;) {
-		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(steeringio_router_queue, &message,
-					   NULL, osWaitForever);
-		if (status == osOK) {
-			steeringio_update(wheel, message.data);
-		}
-	}
-}

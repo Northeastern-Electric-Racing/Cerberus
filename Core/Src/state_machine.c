@@ -118,18 +118,16 @@ static int transition_functional_state(func_state_t new_state)
 		write_pump(pdu, false);
 		write_fault(pdu, true);
 		transition_drive_state(OFF);
-		printf("READY\r\n");
+		serial_print("READY\r\n");
 		break;
 	case ACTIVE:
-		serial_print("BRAKE: %d\n", get_brake_state());
 		if (!get_tsms() || !get_brake_state())
 			return 1; // Cannot go into active if tsms is off
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
 		write_fault(pdu, true);
-		sound_rtds(pdu); // TEMPORARY
-		printf("ACTIVE STATE\r\n");
+		serial_print("ACTIVE STATE\r\n");
 		break;
 	case FAULTED:
 		/* Turn off high power peripherals */
@@ -142,7 +140,7 @@ static int transition_functional_state(func_state_t new_state)
 		transition_drive_state(OFF);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = true };
-		printf("FAULTED\r\n");
+		serial_print("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing

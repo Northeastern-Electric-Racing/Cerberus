@@ -35,10 +35,6 @@
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE 5
 
-#define TIRE_DIAMETER 16 /* inches */
-#define GEAR_RATIO    47 / 13.0 /* unitless */
-#define POLE_PAIRS    10 /* unitless */
-
 typedef struct {
 	int32_t rpm; /* SCALE: 1         UNITS: Rotations per Minute   */
 	int16_t duty_cycle; /* SCALE: 10        UNITS: Percentage             */
@@ -56,6 +52,8 @@ typedef struct {
 
 // TODO: Expand GET interface
 int32_t dti_get_rpm(dti_t *dti);
+
+float dti_get_mph(dti_t *dti);
 
 uint16_t dti_get_input_voltage(dti_t *dti);
 

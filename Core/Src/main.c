@@ -201,8 +201,11 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   brakelight_signal = osMessageQueueNew(BRAKELIGHT_QUEUE_SIZE, sizeof(bool), NULL);
+  assert(brakelight_signal);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
+  assert(imu_queue);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
+  assert(pedal_data_queue);
 	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(dti_router_queue);
   /* USER CODE END RTOS_QUEUES */

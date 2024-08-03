@@ -48,7 +48,8 @@ void vFaultHandler(void *pv_params)
 			msg.len = 8;
 			uint8_t msg_data[8];
 			memcpy(msg_data, &fault_id, sizeof(fault_id));
-			memcpy(msg_data + sizeof(fault_id), &defcon, sizeof(defcon));
+			memcpy(msg_data + sizeof(fault_id), &defcon,
+			       sizeof(defcon));
 			memcpy(msg.data, msg_data, msg.len);
 			queue_can_msg(msg);
 			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
