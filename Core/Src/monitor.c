@@ -14,6 +14,7 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "timer.h"
+#include "processing.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,6 @@
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
 
-static bool tsms = false;
 static bool brake_state = false;
 
 osThreadId lv_monitor_handle;
@@ -160,6 +160,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityRealtime,
 };
+
 void vPedalsMonitor(void *pv_params)
 {
 	const uint8_t num_samples = 10;
@@ -345,35 +346,20 @@ void vTsmsMonitor(void *pv_params)
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
 				    .severity = DEFCON5 };
 	pdu_t *pdu = (pdu_t *)pv_params;
-
 	bool tsms_status = false;
-	nertimer_t tsms_debounce_timer = { .active = false };
+	static const uint8_t TSMS_SENSE_DELAY = 100;
 
 	for (;;) {
-		/* If we got a reliable TSMS reading, handle transition to and out of ACTIVE*/
-		if (!read_tsms_sense(pdu, &tsms_status)) {
-			// Timer has not been started, and there is a change in TSMS, so start the timer
-			if (tsms != tsms_status &&
-			    !is_timer_active(&tsms_debounce_timer)) {
-				start_timer(&tsms_debounce_timer, 500);
-			}
-			// During debouncing, the tsms reading changes, so end the debounce period
-			else if (tsms == tsms_status &&
-				 !is_timer_expired(&tsms_debounce_timer)) {
-				cancel_timer(&tsms_debounce_timer);
-			}
-			// The TSMS reading has been consistent thorughout the debounce period
-			else if (is_timer_expired(&tsms_debounce_timer)) {
-				tsms = tsms_status;
-			}
-			if (get_func_state() == ACTIVE && tsms == false) {
-				set_home_mode();
-			}
-		} else {
+		/* If the TSMS reading throws an error, queue TSMS fault */
+		if (read_tsms_sense(pdu, &tsms_status)) {
 			queue_fault(&fault_data);
+		} else {
+			osMessageQueuePut(tsms_data_queue, &tsms_status, 0U,
+					  0U);
+			osThreadFlagsSet(process_tsms_thread_id,
+					 TSMS_UPDATE_FLAG);
 		}
-
-		osDelay(100);
+		osDelay(TSMS_SENSE_DELAY);
 	}
 }
 
@@ -541,11 +527,6 @@ void vSteeringIOButtonsMonitor(void *pv_params)
 
 		osDelay(25);
 	}
-}
-
-bool get_tsms()
-{
-	return tsms;
 }
 
 osThreadId brakelight_monitor_handle;

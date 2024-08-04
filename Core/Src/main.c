@@ -40,6 +40,7 @@
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
+#include "processing.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -84,6 +85,7 @@ osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 osMessageQueueId_t dti_router_queue;
+osMessageQueueId_t tsms_data_queue;
 
 
 /* USER CODE END PV */
@@ -208,6 +210,8 @@ int main(void)
   assert(pedal_data_queue);
 	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(dti_router_queue);
+  tsms_data_queue = osMessageQueueNew(TSMS_QUEUE_SIZE, sizeof(bool), NULL);
+  assert(tsms_data_queue);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -233,6 +237,10 @@ int main(void)
   assert(fusing_monitor_handle);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
+
+  /* Data Processing */
+  process_tsms_thread_id = osThreadNew(vProcessTSMS, NULL, &process_tsms_attributes);
+  assert(process_tsms_thread_id);
 
   /* Messaging */
   dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);

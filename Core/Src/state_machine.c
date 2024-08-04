@@ -9,6 +9,7 @@
 #include "nero.h"
 #include "pdu.h"
 #include "queues.h"
+#include "processing.h"
 #include <stdbool.h>
 #include <stdio.h>
 

@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "cerberus_conf.h"
 #include "monitor.h"
+#include "processing.h"
 
 static int8_t mph = 0;
 

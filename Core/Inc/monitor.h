@@ -55,6 +55,4 @@ void vBrakelightMonitor(void *pv_params);
 extern osThreadId brakelight_monitor_handle;
 extern const osThreadAttr_t brakelight_monitor_attributes;
 
-bool get_tsms();
-
 #endif // MONITOR_H

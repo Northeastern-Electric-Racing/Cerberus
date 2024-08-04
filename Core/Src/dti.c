@@ -281,8 +281,6 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 
 	int32_t rpm = erpm / POLE_PAIRS;
 
-	//printf("\n\nRPM Rec: %ld\n\n", rpm);
-
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);

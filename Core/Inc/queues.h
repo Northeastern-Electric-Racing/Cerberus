@@ -8,6 +8,7 @@
 #define ONBOARD_TEMP_QUEUE_SIZE 8
 #define PEDAL_DATA_QUEUE_SIZE	8
 #define IMU_QUEUE_SIZE		8
+#define TSMS_QUEUE_SIZE		1
 
 extern osMessageQueueId_t brakelight_signal;
 
@@ -28,6 +29,8 @@ typedef struct {
 } pedals_t;
 
 extern osMessageQueueId_t pedal_data_queue;
+
+extern osMessageQueueId_t tsms_data_queue;
 
 bool get_brake_state();
 
