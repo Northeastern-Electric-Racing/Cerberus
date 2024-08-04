@@ -51,8 +51,4 @@ void vSteeringIOButtonsMonitor(void *pv_params);
 extern osThreadId_t steeringio_buttons_monitor_handle;
 extern const osThreadAttr_t steeringio_buttons_monitor_attributes;
 
-void vBrakelightMonitor(void *pv_params);
-extern osThreadId brakelight_monitor_handle;
-extern const osThreadAttr_t brakelight_monitor_attributes;
-
 #endif // MONITOR_H

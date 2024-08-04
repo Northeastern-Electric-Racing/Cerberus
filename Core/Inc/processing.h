@@ -15,6 +15,13 @@
 #include "cmsis_os.h"
 #include "stdbool.h"
 
+#define TSMS_UPDATE_FLAG 0x00000001U
+
+/**
+ * @brief Get the debounced TSMS reading.
+ * 
+ * @return State of TSMS.
+ */
 bool get_tsms();
 
 /**
@@ -23,6 +30,5 @@ bool get_tsms();
 void vProcessTSMS(void *pv_params);
 extern osThreadId_t process_tsms_thread_id;
 extern const osThreadAttr_t process_tsms_attributes;
-#define TSMS_UPDATE_FLAG 0x00000001U
 
 #endif

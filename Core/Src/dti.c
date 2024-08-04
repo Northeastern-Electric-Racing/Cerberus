@@ -295,7 +295,9 @@ void vDTIRouter(void *pv_params)
 	dti_t *mc = (dti_t *)pv_params;
 
 	for (;;) {
-		/* Wait until new CAN message comes into queue */
+		osThreadFlagsWait(NEW_DTI_MSG_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+
 		status = osMessageQueueGet(dti_router_queue, &message, NULL,
 					   osWaitForever);
 		if (status == osOK) {

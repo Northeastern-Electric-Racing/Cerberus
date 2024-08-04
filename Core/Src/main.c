@@ -41,6 +41,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "processing.h"
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,7 +82,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osMessageQueueId_t brakelight_signal;
 osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 osMessageQueueId_t dti_router_queue;
@@ -202,8 +202,6 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  brakelight_signal = osMessageQueueNew(BRAKELIGHT_QUEUE_SIZE, sizeof(bool), NULL);
-  assert(brakelight_signal);
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   assert(imu_queue);
   pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
@@ -261,8 +259,8 @@ int main(void)
   assert(fault_handle);
   sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
   assert(sm_director_handle);
-  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);;
-  assert(brakelight_monitor_handle);
+  brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
+  assert(brakelight_control_thread);
 
   /* USER CODE END RTOS_THREADS */
 

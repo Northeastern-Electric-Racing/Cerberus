@@ -6,6 +6,7 @@
 
 #define PRINTF_QUEUE_SIZE 25 /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
+#define NEW_MESSAGE_FLAG  0x00000001U
 
 osMessageQueueId_t printf_queue;
 osThreadId_t serial_monitor_handle;
@@ -40,6 +41,8 @@ int serial_print(const char *format, ...)
 		return -3;
 	}
 
+	osThreadFlagsSet(serial_monitor_handle, NEW_MESSAGE_FLAG);
+
 	return 0;
 }
 
@@ -52,9 +55,13 @@ void vSerialMonitor(void *pv_params)
 		osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char *), NULL);
 
 	for (;;) {
-		/* Wait until new printf message comes into queue */
+		osThreadFlagsWait(NEW_MESSAGE_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+
+		/* Get message to print */
 		status = osMessageQueueGet(printf_queue, &message, NULL,
 					   osWaitForever);
+
 		if (status != osOK) {
 			// TODO: Trigger fault ?
 		} else {

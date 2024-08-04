@@ -35,7 +35,6 @@ void vProcessTSMS(void *pv_params)
 	nertimer_t tsms_debounce_timer = { .active = false };
 
 	for (;;) {
-		/* Wait until this flag is set by TSMS data collection task */
 		osThreadFlagsWait(TSMS_UPDATE_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 
@@ -66,3 +65,4 @@ void vProcessTSMS(void *pv_params)
 		}
 	}
 }
+

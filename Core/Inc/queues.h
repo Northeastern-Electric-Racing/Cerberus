@@ -10,8 +10,6 @@
 #define IMU_QUEUE_SIZE		8
 #define TSMS_QUEUE_SIZE		1
 
-extern osMessageQueueId_t brakelight_signal;
-
 typedef struct {
 	uint16_t accel_x;
 	uint16_t accel_y;

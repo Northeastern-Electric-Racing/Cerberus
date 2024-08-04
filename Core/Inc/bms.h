@@ -6,6 +6,7 @@
 
 #define BMS_DCL_MSG	   0x156 /*BMS MONITOR WATCHDOG*/
 #define BMS_CURR_LIMIT_MSG 0x176
+#define NEW_AMS_MSG_FLAG   1U
 
 typedef struct {
 	osTimerId bms_monitor_timer;

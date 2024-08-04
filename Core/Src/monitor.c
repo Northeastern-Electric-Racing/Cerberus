@@ -15,6 +15,7 @@
 #include "task.h"
 #include "timer.h"
 #include "processing.h"
+#include "control.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -210,8 +211,8 @@ void vPedalsMonitor(void *pv_params)
 		is_braking = ((adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) /
 			      2) > PEDAL_BRAKE_THRESH;
 		brake_state = is_braking;
-
-		osMessageQueuePut(brakelight_signal, &is_braking, 0U, 0U);
+		osThreadFlagsSet(brakelight_control_thread,
+				 BRAKE_STATE_UPDATE_FLAG);
 
 		/* Low Pass Filter */
 		sensor_data.accelerator_value =
@@ -347,7 +348,8 @@ void vTsmsMonitor(void *pv_params)
 				    .severity = DEFCON5 };
 	pdu_t *pdu = (pdu_t *)pv_params;
 	bool tsms_status = false;
-	static const uint8_t TSMS_SENSE_DELAY = 100;
+	/* ms */
+	static const uint8_t TSMS_SENSE_SAMPLE_RATE = 100;
 
 	for (;;) {
 		/* If the TSMS reading throws an error, queue TSMS fault */
@@ -359,7 +361,7 @@ void vTsmsMonitor(void *pv_params)
 			osThreadFlagsSet(process_tsms_thread_id,
 					 TSMS_UPDATE_FLAG);
 		}
-		osDelay(TSMS_SENSE_DELAY);
+		osDelay(TSMS_SENSE_SAMPLE_RATE);
 	}
 }
 
@@ -409,11 +411,6 @@ void vFusingMonitor(void *pv_params)
 		if (queue_can_msg(fuse_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
-		}
-
-		/* If the TSMS is off, the car should no longer be active. */
-		if (!get_tsms() && get_func_state() == ACTIVE) {
-			set_home_mode();
 		}
 
 		osDelay(FUSES_SAMPLE_DELAY);
@@ -526,29 +523,6 @@ void vSteeringIOButtonsMonitor(void *pv_params)
 		}
 
 		osDelay(25);
-	}
-}
-
-osThreadId brakelight_monitor_handle;
-const osThreadAttr_t brakelight_monitor_attributes = {
-	.name = "BrakelightMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh,
-};
-
-void vBrakelightMonitor(void *pv_params)
-{
-	pdu_t *pdu = (pdu_t *)pv_params;
-
-	bool state;
-	osStatus_t status;
-
-	for (;;) {
-		status = osMessageQueueGet(brakelight_signal, &state, NULL,
-					   osWaitForever);
-		if (!status) {
-			write_brakelight(pdu, state);
-		}
 	}
 }
 

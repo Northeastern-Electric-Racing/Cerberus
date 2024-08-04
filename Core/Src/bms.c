@@ -53,11 +53,10 @@ void vAMSCANMonitor(void *pv_params)
 
 	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 	for (;;) {
-		if (osOK == osMessageQueueGet(bms_monitor_queue,
-					      &msg_from_queue, NULL,
-					      osWaitForever)) {
-			osTimerStart(bms->bms_monitor_timer,
-				     BMS_CAN_MONITOR_DELAY);
-		}
+		osThreadFlagsWait(NEW_AMS_MSG_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+		osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL,
+				  osWaitForever);
+		osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 	}
 }

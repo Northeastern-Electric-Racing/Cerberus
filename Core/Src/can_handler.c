@@ -24,6 +24,8 @@
 #include "dti.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
+#define CAN_NEW_MSG_FLAG   1U
+
 static osMessageQueueId_t can_outbound_queue;
 
 can_t *can1;
@@ -82,14 +84,26 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 		// case DTI_CANID_ID_IQ:
 		// case DTI_CANID_SIGNALS:
 		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
+		osThreadFlagsSet(dti_router_handle, NEW_DTI_MSG_FLAG);
 		break;
 	case BMS_DCL_MSG:
 		//printf("Recieved dcl");
 		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
+		osThreadFlagsSet(bms_monitor_handle, NEW_AMS_MSG_FLAG);
 		break;
 	default:
 		break;
 	}
+}
+
+int8_t queue_can_msg(can_msg_t msg)
+{
+	if (!can_outbound_queue)
+		return -1;
+
+	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
+	osThreadFlagsSet(can_dispatch_handle, CAN_NEW_MSG_FLAG);
+	return 0;
 }
 
 osThreadId_t can_dispatch_handle;
@@ -108,29 +122,20 @@ void vCanDispatch(void *pv_params)
 	HAL_StatusTypeDef msg_status;
 
 	for (;;) {
+		osThreadFlagsWait(CAN_NEW_MSG_FLAG, osFlagsWaitAny,
+				  osWaitForever);
 		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue,
-					      &msg_from_queue, NULL,
-					      osWaitForever)) {
-			msg_status = can_send_msg(can1, &msg_from_queue);
-			if (msg_status == HAL_ERROR) {
-				fault_data.diag = "Failed to send CAN message";
-				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
-				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			}
+		osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL,
+				  osWaitForever);
+
+		msg_status = can_send_msg(can1, &msg_from_queue);
+
+		if (msg_status == HAL_ERROR) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		} else if (msg_status == HAL_BUSY) {
+			fault_data.diag = "Outbound mailbox full!";
+			queue_fault(&fault_data);
 		}
-
-		osDelay(CAN_DISPATCH_DELAY);
 	}
-}
-
-int8_t queue_can_msg(can_msg_t msg)
-{
-	if (!can_outbound_queue)
-		return -1;
-
-	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
-	return 0;
 }

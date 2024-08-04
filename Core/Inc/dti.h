@@ -35,6 +35,8 @@
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 #define DTI_QUEUE_SIZE 5
 
+#define NEW_DTI_MSG_FLAG 1U
+
 typedef struct {
 	int32_t rpm; /* SCALE: 1         UNITS: Rotations per Minute   */
 	int16_t duty_cycle; /* SCALE: 10        UNITS: Percentage             */
