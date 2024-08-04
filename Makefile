@@ -60,6 +60,7 @@ Core/Src/mpu.c \
 Core/Src/steeringio.c \
 Core/Src/processing.c \
 Core/Src/control.c \
+Core/Src/cerb_utils.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \

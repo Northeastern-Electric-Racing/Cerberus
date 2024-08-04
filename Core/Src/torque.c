@@ -175,7 +175,7 @@ void vCalcTorque(void *pv_params)
 
 		float accelerator_value =
 			(float)pedal_data.accelerator_value / 100.0; // 0 to 1
-		float brake_value = (float)pedal_data.brake_value * 10.0;
+		float brake_value = (float)pedal_data.brake_value;
 
 		/* If we receive a new message within the time frame, calc new torque */
 		if (stat == osOK) {

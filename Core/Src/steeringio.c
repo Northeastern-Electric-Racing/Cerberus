@@ -10,6 +10,7 @@
 #include "nero.h"
 #include "stdio.h"
 #include "torque.h"
+#include "cerb_utils.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -142,7 +143,7 @@ static void debounce_cb(void *arg)
 }
 
 /* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[])
+void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 {
 	/* Copy message data to wheelio buffer */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);
@@ -150,7 +151,7 @@ void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[])
 
 	/* Update raw buttons */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS - 2; i++) {
-		wheel->raw_buttons[i] = (wheel_data[0] >> i) & 0x01;
+		wheel->raw_buttons[i] = (button_data >> i) & 0x01;
 	}
 
 	/* Update raw paddle shifters */
@@ -162,16 +163,7 @@ void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[])
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		if (wheel->raw_buttons[i] &&
-		    !osTimerIsRunning(wheel->debounce_timers[i])) {
-			/* Start timer if a button has been pressed */
-			osTimerStart(wheel->debounce_timers[i],
-				     STEERING_WHEEL_DEBOUNCE);
-		} else if (!wheel->raw_buttons[i] &&
-			   osTimerIsRunning(wheel->debounce_timers[i])) {
-			/* Button stopped being pressed. Kill timer. */
-			osTimerStop(wheel->debounce_timers[i]);
-		}
+		debounce(wheel->raw_buttons[i], wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
 	}
 	osMutexRelease(wheel->button_mutex);
 }

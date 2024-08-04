@@ -23,10 +23,6 @@ typedef enum {
 } steeringio_button_t;
 
 typedef struct {
-	uint8_t data[8];
-} button_data_t;
-
-typedef struct {
 	osMutexId_t *
 		button_mutex; /* Necessary to allow multiple threads to access same data */
 	osMutexId_t *ringbuffer_mutex;
@@ -41,6 +37,6 @@ steeringio_t *steeringio_init();
 
 bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button);
 
-void steeringio_update(steeringio_t *wheel, uint8_t button_data[]);
+void steeringio_update(steeringio_t *wheel, uint8_t button_data);
 
 #endif /* STEERING_H */
