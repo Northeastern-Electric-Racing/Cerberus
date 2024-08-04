@@ -28,6 +28,7 @@ static void send_mode_status()
 void set_mph(int8_t new_mph)
 {
 	mph = new_mph;
+	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
 }
 
 osThreadId_t nero_monitor_handle;
@@ -40,8 +41,8 @@ const osThreadAttr_t nero_monitor_attributes = {
 void vNeroMonitor(void *pv_params)
 {
 	for (;;) {
+		osThreadFlagsWait(NERO_UPDATE_FLAG, osFlagsWaitAny,
+				  osWaitForever);
 		send_mode_status();
-
-		osDelay(NERO_DELAY_TIME);
 	}
 }

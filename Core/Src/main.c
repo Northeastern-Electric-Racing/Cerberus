@@ -34,7 +34,6 @@
 #include "serial_monitor.h"
 #include "state_machine.h"
 #include "bms.h"
-#include "torque.h"
 #include "pdu.h"
 #include "nero.h"
 #include "mpu.h"
@@ -138,7 +137,6 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
   printf("BOOT\r\n");
   /* USER CODE END 1 */
@@ -253,11 +251,11 @@ int main(void)
   assert(nero_monitor_handle);
 
   /* Control Logic */
-  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
-  assert(torque_calc_handle);
+  process_pedals_thread = osThreadNew(vProcessPedals, mc, &torque_calc_attributes);
+  assert(process_pedals_thread);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
-  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
+  sm_director_handle = osThreadNew(vStateMachineDirector, mc, &sm_director_attributes);
   assert(sm_director_handle);
   brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
   assert(brakelight_control_thread);
@@ -272,7 +270,6 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)

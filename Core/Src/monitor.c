@@ -204,6 +204,7 @@ void vPedalsMonitor(void *pv_params)
 		/* Publish to Onboard Pedals Queue */
 		osStatus_t check = osMessageQueuePut(pedal_data_queue,
 						     &sensor_data, 0U, 0U);
+		osThreadFlagsSet(process_pedals_thread, PEDAL_DATA_FLAG);
 
 		if (check != 0) {
 			fault_data.diag = "Failed to push pedal data to queue";

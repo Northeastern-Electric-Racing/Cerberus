@@ -10,10 +10,12 @@
 #include "pdu.h"
 #include "queues.h"
 #include "processing.h"
+#include "dti.h"
 #include <stdbool.h>
 #include <stdio.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
+#define STATE_TRANSITION_FLAG  1U
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
@@ -81,13 +83,15 @@ static drive_state_t map_nero_index_to_drive_state(nero_menu_t nero_index)
 	}
 }
 
-static int transition_drive_state(drive_state_t new_state)
+static int transition_drive_state(drive_state_t new_state, dti_t *mc)
 {
+	// TODO: remove this so you can go to home mode from active if motor is not spinning
 	if (get_func_state() != ACTIVE)
 		return 0;
 
-	/* Transitioning between drive states is always allowed */
-	// TODO: Make sure motor is not spinning before switching
+	/* Check that motor is not spinning before changing modes */
+	if (dti_get_mph(mc))
+		return 0;
 
 	/* If we are turning ON the motor, blare RTDS */
 	if (cerberus_state.drive == NOT_DRIVING) {
@@ -98,10 +102,11 @@ static int transition_drive_state(drive_state_t new_state)
 	}
 
 	cerberus_state.drive = new_state;
+
 	return 0;
 }
 
-static int transition_functional_state(func_state_t new_state)
+static int transition_functional_state(func_state_t new_state, dti_t *mc)
 {
 	if (!valid_trans_to_from[cerberus_state.functional][new_state]) {
 		printf("Invalid State transition");
@@ -118,7 +123,7 @@ static int transition_functional_state(func_state_t new_state)
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
 		write_fault(pdu, true);
-		transition_drive_state(OFF);
+		transition_drive_state(OFF, mc);
 		serial_print("READY\r\n");
 		break;
 	case ACTIVE:
@@ -138,7 +143,7 @@ static int transition_functional_state(func_state_t new_state)
 		// DO NOT CHANGE WITHOUT CHECKING the bms fault timer, as if BMS timer is later could result in a fault/unfault/fault flicker.
 		osTimerStart(fault_timer, 5000);
 		HAL_IWDG_Refresh(&hiwdg);
-		transition_drive_state(OFF);
+		transition_drive_state(OFF, mc);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = true };
 		serial_print("FAULTED\r\n");
@@ -152,7 +157,7 @@ static int transition_functional_state(func_state_t new_state)
 	return 0;
 }
 
-static int transition_nero_state(nero_state_t new_state)
+static int transition_nero_state(nero_state_t new_state, dti_t *mc)
 {
 	nero_state_t current_nero_state = get_nero_state();
 
@@ -171,43 +176,46 @@ static int transition_nero_state(nero_state_t new_state)
 		// Only Check if we are in pit mode to toggle direction
 		if (current_nero_state.nero_index == PIT) {
 			if (get_drive_state() == REVERSE) {
-				if (transition_drive_state(SPEED_LIMITED))
+				if (transition_drive_state(SPEED_LIMITED, mc))
 					return 1;
 			} else {
-				if (transition_drive_state(REVERSE))
+				if (transition_drive_state(REVERSE, mc))
 					return 1;
 			}
 		}
 	}
 
-	uint8_t max_drive_states =
-		MAX_DRIVE_STATES -
-		1; // Account for reverse and pit being the same screen
+	/* Account for reverse and pit being the same screen */
+	uint8_t max_drive_states = MAX_DRIVE_STATES - 1;
 
 	serial_print("NEW HOME MODE, %d \n", new_state.home_mode);
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
 		if (new_state.nero_index > 0 &&
 		    new_state.nero_index < max_drive_states) {
-			if (transition_functional_state(ACTIVE))
+			if (transition_functional_state(ACTIVE, mc))
 				return 1;
 			if (transition_drive_state(
 				    map_nero_index_to_drive_state(
-					    new_state.nero_index)))
+					    new_state.nero_index),
+				    mc))
 				return 1;
 		} else if (new_state.nero_index == OFF) {
-			if (transition_functional_state(READY))
+			if (transition_functional_state(READY, mc))
 				return 1;
 		}
 	}
 
 	// Entering home mode
 	if (!current_nero_state.home_mode && new_state.home_mode) {
-		if (transition_functional_state(READY))
+		if (transition_functional_state(READY, mc))
 			return 1;
 	}
 
 	cerberus_state.nero = new_state;
+	/* Notify NERO */
+	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
+
 	return 0;
 }
 
@@ -217,7 +225,10 @@ static int queue_state_transition(state_req_t new_state)
 		return 1;
 	}
 
-	return osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
+	osStatus_t status =
+		osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
+	osThreadFlagsSet(sm_director_handle, STATE_TRANSITION_FLAG);
+	return status;
 }
 
 /* HANDLE USER INPUT */
@@ -273,21 +284,22 @@ void vStateMachineDirector(void *pv_params)
 	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,
 					      sizeof(state_req_t), NULL);
 
-	pdu_t *pdu_1 = (pdu_t *)pv_params;
-
-	pdu = pdu_1;
 	state_req_t new_state_req;
+
+	dti_t *mc = (dti_t *)pv_params;
 
 	serial_print("State Machine Init!\r\n");
 
 	for (;;) {
+		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,
+				  osWaitForever);
 		osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				  osWaitForever);
 
 		if (new_state_req.id == NERO)
-			transition_nero_state(new_state_req.state.nero);
+			transition_nero_state(new_state_req.state.nero, mc);
 		else if (new_state_req.id == FUNCTIONAL)
 			transition_functional_state(
-				new_state_req.state.functional);
+				new_state_req.state.functional, mc);
 	}
 }

@@ -15,7 +15,21 @@
 #include "cmsis_os.h"
 #include "stdbool.h"
 
-#define TSMS_UPDATE_FLAG 0x00000001U
+#define TSMS_UPDATE_FLAG 1U
+#define PEDAL_DATA_FLAG	 1U
+
+#define PIT_MAX_SPEED	 5.0 /* mph */
+#define ACCUMULATOR_SIZE 10 /* size of the accumulator for averaging */
+
+/*
+ * Increases the torque limit by 10%
+*/
+void increase_torque_limit();
+
+/*
+ * Decreases the torque limit by 10%
+*/
+void decrease_torque_limit();
 
 /**
  * @brief Get the debounced TSMS reading.
@@ -30,5 +44,12 @@ bool get_tsms();
 void vProcessTSMS(void *pv_params);
 extern osThreadId_t process_tsms_thread_id;
 extern const osThreadAttr_t process_tsms_attributes;
+
+/**
+ * @brief Task for processing pedal data.
+ */
+void vProcessPedals(void *pv_params);
+extern osThreadId_t process_pedals_thread;
+extern const osThreadAttr_t torque_calc_attributes;
 
 #endif

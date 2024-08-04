@@ -9,8 +9,8 @@
 #include "serial_monitor.h"
 #include "nero.h"
 #include "stdio.h"
-#include "torque.h"
 #include "cerb_utils.h"
+#include "processing.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -163,7 +163,10 @@ void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 
 	/* If the value was set high and is not being debounced, trigger timer for debounce */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		debounce(wheel->raw_buttons[i], wheel->debounce_timers[i], STEERING_WHEEL_DEBOUNCE);
+		if (wheel->raw_buttons[i])
+			debounce(wheel->raw_buttons[i],
+				 wheel->debounce_timers[i],
+				 STEERING_WHEEL_DEBOUNCE);
 	}
 	osMutexRelease(wheel->button_mutex);
 }

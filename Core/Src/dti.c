@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "bms.h"
 #include "serial_monitor.h"
+#include "nero.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
@@ -284,6 +285,7 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
+	set_mph(dti_get_mph(mc));
 }
 
 void vDTIRouter(void *pv_params)

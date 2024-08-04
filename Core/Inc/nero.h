@@ -5,6 +5,8 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 
+#define NERO_UPDATE_FLAG 1U
+
 /*
  * Tells NERO the current MPH
 */
