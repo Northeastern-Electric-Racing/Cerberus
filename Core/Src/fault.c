@@ -27,7 +27,7 @@ int queue_fault(fault_data_t *fault_data)
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name = "FaultHandler",
-	.stack_size = 52 * 8,
+	.stack_size = 32 * 16,
 	.priority = (osPriority_t)osPriorityRealtime7,
 };
 
@@ -41,39 +41,40 @@ void vFaultHandler(void *pv_params)
 		osThreadFlagsWait(NEW_FAULT_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 
-		osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
-				  osWaitForever);
+		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
+					 osWaitForever) == osOK) {
+			uint32_t fault_id = (uint32_t)fault_data.id;
+			endian_swap(&fault_id, sizeof(fault_id));
+			uint8_t defcon = (uint8_t)fault_data.severity;
 
-		uint32_t fault_id = (uint32_t)fault_data.id;
-		endian_swap(&fault_id, sizeof(fault_id));
-		uint8_t defcon = (uint8_t)fault_data.severity;
-
-		can_msg_t msg;
-		msg.id = CANID_FAULT_MSG;
-		msg.len = 8;
-		uint8_t msg_data[8];
-		memcpy(msg_data, &fault_id, sizeof(fault_id));
-		memcpy(msg_data + sizeof(fault_id), &defcon, sizeof(defcon));
-		memcpy(msg.data, msg_data, msg.len);
-		queue_can_msg(msg);
-		printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
-		       fault_data.diag);
-		switch (fault_data.severity) {
-		case DEFCON1: /* Highest(1st) Priority */
-			fault();
-			break;
-		case DEFCON2:
-			fault();
-			break;
-		case DEFCON3:
-			fault();
-			break;
-		case DEFCON4:
-			break;
-		case DEFCON5: /* Lowest Priority */
-			break;
-		default:
-			break;
+			can_msg_t msg;
+			msg.id = CANID_FAULT_MSG;
+			msg.len = 8;
+			uint8_t msg_data[8];
+			memcpy(msg_data, &fault_id, sizeof(fault_id));
+			memcpy(msg_data + sizeof(fault_id), &defcon,
+			       sizeof(defcon));
+			memcpy(msg.data, msg_data, msg.len);
+			queue_can_msg(msg);
+			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
+			       fault_data.diag);
+			switch (fault_data.severity) {
+			case DEFCON1: /* Highest(1st) Priority */
+				fault();
+				break;
+			case DEFCON2:
+				fault();
+				break;
+			case DEFCON3:
+				fault();
+				break;
+			case DEFCON4:
+				break;
+			case DEFCON5: /* Lowest Priority */
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }

@@ -29,7 +29,7 @@
 #define PEDAL_FAULT_TIME  500 /* ms */
 
 /* 25 ms */
-#define WHEEL_BUTTON_SAMPLE_RATE 10 
+#define WHEEL_BUTTON_SAMPLE_RATE 10
 
 static bool brake_state = false;
 
@@ -147,8 +147,8 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 void vPedalsMonitor(void *pv_params)
 {
-	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
-				    .severity = DEFCON1 };
+	// fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
+				    // .severity = DEFCON1 };
 	static pedals_t sensor_data;
 	uint32_t adc_data[4];
 	osTimerId_t send_pedal_data_timer =
@@ -215,14 +215,13 @@ void vPedalsMonitor(void *pv_params)
 		sensor_data.brake_value = brake_val;
 
 		/* Publish to Onboard Pedals Queue */
-		osStatus_t check = osMessageQueuePut(pedal_data_queue,
-						     &sensor_data, 0U, 0U);
+		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 		osThreadFlagsSet(process_pedals_thread, PEDAL_DATA_FLAG);
 
-		if (check != 0) {
-			fault_data.diag = "Failed to push pedal data to queue";
-			queue_fault(&fault_data);
-		}
+		// if (check != 0) {
+		// 	fault_data.diag = "Failed to push pedal data to queue";
+		// 	queue_fault(&fault_data);
+		// }
 
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
@@ -340,7 +339,7 @@ void vTsmsMonitor(void *pv_params)
 osThreadId_t fusing_monitor_handle;
 const osThreadAttr_t fusing_monitor_attributes = {
 	.name = "FusingMonitor",
-	.stack_size = 64 * 8,
+	.stack_size = 64 * 16,
 	.priority = (osPriority_t)osPriorityNormal,
 };
 

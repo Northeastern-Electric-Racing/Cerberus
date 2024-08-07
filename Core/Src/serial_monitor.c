@@ -65,8 +65,7 @@ void vSerialMonitor(void *pv_params)
 			printf(message);
 			free(message);
 			status = osMessageQueueGet(printf_queue, &message, NULL,
-					   0U);
+						   0U);
 		}
-
 	}
 }

@@ -255,8 +255,12 @@ int main(void)
   assert(process_pedals_thread);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
-  sm_director_handle = osThreadNew(vStateMachineDirector, mc, &sm_director_attributes);
+  uint32_t *state_machine_args = malloc(sizeof(uint32_t) * 2);
+  state_machine_args[0] = (uint32_t) pdu;
+  state_machine_args[1] = (uint32_t) mc;
+  sm_director_handle = osThreadNew(vStateMachineDirector, state_machine_args, &sm_director_attributes);
   assert(sm_director_handle);
+  free(state_machine_args);
   brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
   assert(brakelight_control_thread);
 
@@ -274,8 +278,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // write_pump(pdu, false);
-    // sound_rtds(pdu);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

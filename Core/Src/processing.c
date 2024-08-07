@@ -82,7 +82,7 @@ void vProcessTSMS(void *pv_params)
 			debounce(!tsms_reading, tsms_debounce_timer,
 				 TSMS_DEBOUNCE_PERIOD);
 
-		if (get_func_state() == ACTIVE && tsms == false) {
+		if (get_func_state() == ACTIVE && get_tsms() == false) {
 			//TODO: make task notification to check if car should shut off if TSMS goes off, however this works for now
 			set_home_mode();
 		}
@@ -225,7 +225,7 @@ void vProcessPedals(void *pv_params)
 	assert(delay_time < MAX_COMMAND_DELAY);
 	pedals_t pedal_data;
 	float mph = 0;
-	// bool motor_disabled = false;
+	bool motor_disabled = false;
 
 	dti_t *mc = (dti_t *)pv_params;
 
@@ -250,25 +250,26 @@ void vProcessPedals(void *pv_params)
 
 		/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
 			to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
-		//fault_data_t fault_data = { .id = BSPD_PREFAULT, .severity = DEFCON5 };
+		fault_data_t fault_data = { .id = BSPD_PREFAULT,
+					    .severity = DEFCON5,
+					    .diag = "BSPD prefault triggered" };
 		/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
-		// if (brake_value > 600 && (accelerator_value) > 0.25)
-		// {
-		// 	printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
-		// 	motor_disabled = true;
-		// 	dti_set_torque(0);
-		// 	//queue_fault(&fault_data);
-		// }
+		if (brake_value > 700 && (accelerator_value) > 0.25) {
+			printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
+			motor_disabled = true;
+			queue_fault(&fault_data);
+		}
 
-		// if (motor_disabled)
-		// {
-		// 	printf("\nMotor disabled\n");
-		// 	if (accelerator_value < 0.05)
-		// 	{
-		// 		motor_disabled = false;
-		// 		printf("\n\nMotor reenabled\n\n");
-		// 	}
-		// }
+		if (motor_disabled) {
+			printf("\nMotor disabled\n");
+			if (accelerator_value < 0.05) {
+				motor_disabled = false;
+				printf("\n\nMotor reenabled\n\n");
+			} else {
+				dti_set_torque(0);
+				continue;
+			}
+		}
 
 		drive_state_t drive_state = get_drive_state();
 
