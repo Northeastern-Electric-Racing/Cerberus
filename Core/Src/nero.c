@@ -34,7 +34,7 @@ void set_mph(int8_t new_mph)
 osThreadId_t nero_monitor_handle;
 const osThreadAttr_t nero_monitor_attributes = {
 	.name = "NeroMonitor",
-	.stack_size = 32 * 8,
+	.stack_size = 32 * 32,
 	.priority = (osPriority_t)osPriorityNormal,
 };
 

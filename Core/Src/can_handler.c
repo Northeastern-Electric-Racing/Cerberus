@@ -125,17 +125,17 @@ void vCanDispatch(void *pv_params)
 		osThreadFlagsWait(CAN_NEW_MSG_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		/* Send CAN message */
-		osMessageQueueGet(can_outbound_queue, &msg_from_queue, NULL,
-				  osWaitForever);
+		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
+					 NULL, 0U) == osOK) {
+			msg_status = can_send_msg(can1, &msg_from_queue);
 
-		msg_status = can_send_msg(can1, &msg_from_queue);
-
-		if (msg_status == HAL_ERROR) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		} else if (msg_status == HAL_BUSY) {
-			fault_data.diag = "Outbound mailbox full!";
-			queue_fault(&fault_data);
+			if (msg_status == HAL_ERROR) {
+				fault_data.diag = "Failed to send CAN message";
+				queue_fault(&fault_data);
+			} else if (msg_status == HAL_BUSY) {
+				fault_data.diag = "Outbound mailbox full!";
+				queue_fault(&fault_data);
+			}
 		}
 	}
 }

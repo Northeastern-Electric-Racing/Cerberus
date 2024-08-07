@@ -28,6 +28,9 @@
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
 
+/* 25 ms */
+#define WHEEL_BUTTON_SAMPLE_RATE 10 
+
 static bool brake_state = false;
 
 enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
@@ -105,10 +108,17 @@ void pedal_fault_cb(void *arg)
 	queue_fault(&fault_data);
 }
 
+/**
+ * @brief Function to send raw pedal data over CAN.
+ * 
+ * @param arg A pointer to an array of 4 unsigned 32 bit integers.
+ */
 void send_pedal_data(void *arg)
 {
-	// TODO: validate that this works
-	uint32_t *adc_data = (uint32_t *)arg;
+	static const uint8_t adc_data_size = 4;
+	uint32_t adc_data[adc_data_size];
+	/* Copy contents of adc_data to new location in memory because we endian swap them */
+	memcpy(adc_data, (uint32_t *)arg, adc_data_size * sizeof(adc_data[0]));
 
 	can_msg_t accel_pedals_msg = { .id = CANID_PEDALS_ACCEL_MSG,
 				       .len = 8,
@@ -142,7 +152,10 @@ void vPedalsMonitor(void *pv_params)
 	static pedals_t sensor_data;
 	uint32_t adc_data[4];
 	osTimerId_t send_pedal_data_timer =
-		osTimerNew(&send_pedal_data, osTimerOnce, adc_data, NULL);
+		osTimerNew(&send_pedal_data, osTimerPeriodic, adc_data, NULL);
+
+	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
+	osTimerStart(send_pedal_data_timer, 100);
 
 	/* oc = Open Circuit */
 	osTimerId_t oc_fault_timer = osTimerNew(
@@ -210,10 +223,6 @@ void vPedalsMonitor(void *pv_params)
 			fault_data.diag = "Failed to push pedal data to queue";
 			queue_fault(&fault_data);
 		}
-
-		/* Send CAN messages with raw pedal readings, we do not care if it fails*/
-		if (!osTimerIsRunning(send_pedal_data_timer))
-			osTimerStart(send_pedal_data_timer, 100);
 
 		osDelay(PEDALS_SAMPLE_DELAY);
 	}
@@ -301,7 +310,7 @@ void vIMUMonitor(void *pv_params)
 osThreadId_t tsms_monitor_handle;
 const osThreadAttr_t tsms_monitor_attributes = {
 	.name = "TsmsMonitor",
-	.stack_size = 32 * 8,
+	.stack_size = 32 * 16,
 	.priority = (osPriority_t)osPriorityHigh,
 };
 
@@ -311,7 +320,7 @@ void vTsmsMonitor(void *pv_params)
 				    .severity = DEFCON5 };
 	pdu_t *pdu = (pdu_t *)pv_params;
 	bool tsms_status = false;
-	/* ms */
+	/* 100 ms */
 	static const uint8_t TSMS_SENSE_SAMPLE_RATE = 100;
 
 	for (;;) {
@@ -439,7 +448,7 @@ void vShutdownMonitor(void *pv_params)
 osThreadId steeringio_buttons_monitor_handle;
 const osThreadAttr_t steeringio_buttons_monitor_attributes = {
 	.name = "SteeringIOButtonsMonitor",
-	.stack_size = 400,
+	.stack_size = 800,
 	.priority = (osPriority_t)osPriorityNormal,
 };
 
@@ -475,7 +484,7 @@ void vSteeringIOButtonsMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		osDelay(25);
+		osDelay(WHEEL_BUTTON_SAMPLE_RATE);
 	}
 }
 

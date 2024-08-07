@@ -16,7 +16,7 @@
 osThreadId brakelight_control_thread;
 const osThreadAttr_t brakelight_monitor_attributes = {
 	.name = "BrakelightMonitor",
-	.stack_size = 32 * 8,
+	.stack_size = 32 * 16,
 	.priority = (osPriority_t)osPriorityHigh,
 };
 

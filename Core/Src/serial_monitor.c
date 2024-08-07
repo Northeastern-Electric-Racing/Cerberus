@@ -61,12 +61,12 @@ void vSerialMonitor(void *pv_params)
 		/* Get message to print */
 		status = osMessageQueueGet(printf_queue, &message, NULL,
 					   osWaitForever);
-
-		if (status != osOK) {
-			// TODO: Trigger fault ?
-		} else {
+		while (status == osOK) {
 			printf(message);
 			free(message);
+			status = osMessageQueueGet(printf_queue, &message, NULL,
+					   0U);
 		}
+
 	}
 }
