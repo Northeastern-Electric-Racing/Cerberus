@@ -15,7 +15,7 @@ set(CMAKE_C_EXTENSIONS ON)
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release") # ***
+    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 # Set the project name
@@ -37,11 +37,11 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+# set the version for cmake based checking
 set(STM32F405xx "ON")
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
-add_subdirectory(Core)
 add_subdirectory(Drivers/Embedded-Base)
 
 
@@ -68,6 +68,5 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-    cerb_lib
     # Add user defined libraries
 )

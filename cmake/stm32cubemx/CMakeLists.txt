@@ -65,15 +65,33 @@ target_sources(stm32cubemx INTERFACE
     ../../Core/Src/sysmem.c
     ../../Core/Src/syscalls.c
     ../../startup_stm32f405xx.s
+
+    # NER
+    ../../Core/Src/bms.c
+    ../../Core/Src/can_handler.c
+    ../../Core/Src/dti.c
+    ../../Core/Src/fault.c
+    ../../Core/Src/monitor.c
+    ../../Core/Src/mpu.c
+    ../../Core/Src/nero.c
+    ../../Core/Src/pdu.c
+    ../../Core/Src/serial_monitor.c
+    ../../Core/Src/state_machine.c
+    ../../Core/Src/steeringio.c
+    ../../Core/Src/torque.c
 )
 
 target_link_directories(stm32cubemx INTERFACE
 )
 
 target_link_libraries(stm32cubemx INTERFACE
-    embedded_base_general
     embedded_base_platform
-    embedded_base_middleware
+    middleware_ringbuffer
+    middleware_timer
+    middleware_c_utils
+    driver_sht30
+    driver_lsm6dso
+    driver_pca9539
 )
 
 # Validate that STM32CubeMX code is compatible with C standard
