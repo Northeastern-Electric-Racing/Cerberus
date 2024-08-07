@@ -10,7 +10,6 @@
  */
 
 #include "can_handler.h"
-#include "can.h"
 #include "cerberus_conf.h"
 #include "dti.h"
 #include "fault.h"

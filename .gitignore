@@ -72,3 +72,9 @@ ctrlp.root
 
 #html
 *.html
+
+# cmake
+CMakeCache.txt
+CMakeFiles
+Makefile
+build/**
