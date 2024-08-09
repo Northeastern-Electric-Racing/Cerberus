@@ -4,6 +4,8 @@
 #include "cmsis_os.h"
 #include "fault.h"
 #include "nero.h"
+#include "dti.h"
+#include "pdu.h"
 
 /*
  * This is a hierarchical state machine, with "drive modes"
@@ -44,6 +46,11 @@ typedef struct {
 
 extern osThreadId_t sm_director_handle;
 extern const osThreadAttr_t sm_director_attributes;
+
+typedef struct {
+	pdu_t *pdu;
+	dti_t *mc;
+} sm_director_args_t;
 
 void vStateMachineDirector(void *pv_params);
 

@@ -255,13 +255,11 @@ int main(void)
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
 
-  uint32_t *state_machine_args = malloc(sizeof(uint32_t) * 2);
-
-  state_machine_args[0] = (uint32_t) pdu;
-  state_machine_args[1] = (uint32_t) mc;
-  sm_director_handle = osThreadNew(vStateMachineDirector, state_machine_args, &sm_director_attributes);
+  sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
+  sm_args->pdu = pdu;
+  sm_args->mc = mc;
+  sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
-  free(state_machine_args);
   brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
   assert(brakelight_control_thread);
   /* USER CODE END RTOS_THREADS */

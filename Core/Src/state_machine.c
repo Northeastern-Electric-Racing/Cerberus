@@ -2,16 +2,15 @@
 #include "can_handler.h"
 #include "fault.h"
 #include "nero.h"
-#include "pdu.h"
 #include "queues.h"
 #include "monitor.h"
 #include "serial_monitor.h"
 #include "nero.h"
 #include "queues.h"
 #include "processing.h"
-#include "dti.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
 #define STATE_TRANSITION_FLAG  1U
@@ -259,8 +258,10 @@ void vStateMachineDirector(void *pv_params)
 
 	state_req_t new_state_req;
 
-	pdu_t *pdu = (pdu_t *)((uint32_t *)pv_params)[0];
-	dti_t *mc = (dti_t *)((uint32_t *)pv_params)[1];
+	sm_director_args_t *args = (sm_director_args_t *)pv_params;
+	pdu_t *pdu = args->pdu;
+	dti_t *mc = args->mc;
+	free(args);
 
 	for (;;) {
 		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,

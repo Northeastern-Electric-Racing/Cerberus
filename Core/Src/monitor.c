@@ -332,6 +332,7 @@ void vDataCollection(void *pv_params)
 	mpu_t *mpu = args->mpu;
 	pdu_t *pdu = args->pdu;
 	steeringio_t *wheel = args->wheel;
+	free(args);
 	static const uint8_t delay = 20;
 
 	tsms_reading_mutex = osMutexNew(NULL);
