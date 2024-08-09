@@ -328,9 +328,10 @@ const osThreadAttr_t data_collection_attributes = {
 
 void vDataCollection(void *pv_params)
 {
-	mpu_t *mpu = (mpu_t *)((uint32_t *)pv_params)[0];
-	pdu_t *pdu = (pdu_t *)((uint32_t *)pv_params)[1];
-	steeringio_t *wheel = (steeringio_t *)((uint32_t *)pv_params)[2];
+	data_collection_args_t *args = (data_collection_args_t *)pv_params;
+	mpu_t *mpu = args->mpu;
+	pdu_t *pdu = args->pdu;
+	steeringio_t *wheel = args->wheel;
 	static const uint8_t delay = 20;
 
 	tsms_reading_mutex = osMutexNew(NULL);

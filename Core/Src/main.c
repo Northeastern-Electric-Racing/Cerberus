@@ -226,11 +226,11 @@ int main(void)
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 
-  uint32_t *data_collection_args = malloc(3 * sizeof(uint32_t));
-  data_collection_args[0] = (uint32_t) mpu;
-  data_collection_args[1] = (uint32_t) pdu;
-  data_collection_args[2] = (uint32_t) wheel;
-  data_collection_thread = osThreadNew(vDataCollection, data_collection_args, &data_collection_attributes);
+  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
+  data_args->mpu = mpu;
+  data_args->pdu = pdu;
+  data_args->wheel = wheel;
+  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
   assert(data_collection_thread);
 
   /* Data Processing */
@@ -256,9 +256,6 @@ int main(void)
   assert(fault_handle);
 
   uint32_t *state_machine_args = malloc(sizeof(uint32_t) * 2);
-  
-  /* No clue why the memory can only be correctly free'd only after another malloc call. If you free above the malloc the thread does not init correctly working atleast in my experience maybe I am doing something wrong. */
-  free(data_collection_args);
 
   state_machine_args[0] = (uint32_t) pdu;
   state_machine_args[1] = (uint32_t) mc;

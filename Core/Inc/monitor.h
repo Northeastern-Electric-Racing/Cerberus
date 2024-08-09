@@ -4,6 +4,9 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
+#include "mpu.h"
+#include "pdu.h"
+#include "steeringio.h"
 
 typedef struct {
 	uint16_t brake_value;
@@ -39,6 +42,13 @@ extern const osThreadAttr_t imu_monitor_attributes;
 void vShutdownMonitor(void *pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
+
+/* Arguments for the data collection thread */
+typedef struct {
+	mpu_t *mpu;
+	pdu_t *pdu;
+	steeringio_t *wheel;
+} data_collection_args_t;
 
 /* Task for collecting data from the car */
 void vDataCollection(void *pv_params);
