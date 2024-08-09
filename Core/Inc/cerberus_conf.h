@@ -24,7 +24,7 @@
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY 20 /* ms */
+#define PEDALS_SAMPLE_DELAY 10 /* ms */
 #define ACCEL1_OFFSET	    980
 #define ACCEL1_MAX_VAL	    1866
 #define ACCEL2_OFFSET	    1780

@@ -23,62 +23,38 @@
 #include <string.h>
 
 /* Parameters for the pedal monitoring task */
-#define MAX_ADC_VAL_12b 4096
-// DEBUG: threshold may need adjusting
+#define MAX_ADC_VAL_12b	  4096
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
 
-/* 25 ms */
-#define WHEEL_BUTTON_SAMPLE_RATE 10
+static pedals_t pedal_data = {};
+osMutexId_t pedals_mutex;
 
-static bool brake_state = false;
+static bool tsms_reading = false;
+osMutexId_t tsms_reading_mutex;
 
 enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
 
-osThreadId lv_monitor_handle;
-const osThreadAttr_t lv_monitor_attributes = {
-	.name = "LVMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityNormal,
-};
-
-void vLVMonitor(void *pv_params)
+void set_pedal_data(uint16_t accel_val, uint16_t brake_val)
 {
-	mpu_t *mpu = (mpu_t *)pv_params;
-	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+	osMutexAcquire(pedals_mutex, osWaitForever);
+	pedal_data.accelerator_value = accel_val;
+	pedal_data.brake_value = brake_val;
+	osMutexRelease(pedals_mutex);
+}
 
-	uint32_t v_int;
-
-	for (;;) {
-		read_lv_voltage(mpu, &v_int);
-
-		/* Convert from raw ADC reading to voltage level */
-
-		// scale up then truncate
-		// convert to out of 24 volts
-		// since 12 bits / 4096
-		// Magic number bc idk the resistors on the voltage divider
-		float v_dec = v_int * 8.967;
-
-		// get final voltage
-		v_int = (uint32_t)(v_dec * 10.0);
-
-		memcpy(msg.data, &v_int, msg.len);
-		if (queue_can_msg(msg)) {
-			fault_data.diag =
-				"Failed to send steering LV monitor CAN message";
-			queue_fault(&fault_data);
-		}
-
-		osDelay(LV_READ_DELAY);
-	}
+pedals_t get_pedal_data()
+{
+	pedals_t temp;
+	osMutexAcquire(pedals_mutex, osWaitForever);
+	memcpy(&temp, &pedal_data, sizeof(pedals_t));
+	osMutexRelease(pedals_mutex);
+	return temp;
 }
 
 bool get_brake_state()
 {
-	return brake_state;
+	return get_pedal_data().brake_value > PEDAL_BRAKE_THRESH;
 }
 
 /**
@@ -147,9 +123,6 @@ const osThreadAttr_t pedals_monitor_attributes = {
 
 void vPedalsMonitor(void *pv_params)
 {
-	// fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
-	// .severity = DEFCON1 };
-	static pedals_t sensor_data;
 	uint32_t adc_data[4];
 	osTimerId_t send_pedal_data_timer =
 		osTimerNew(&send_pedal_data, osTimerPeriodic, adc_data, NULL);
@@ -174,6 +147,9 @@ void vPedalsMonitor(void *pv_params)
 
 	/* Handle ADC Data for two input accelerator value and two input brake value*/
 	mpu_t *mpu = (mpu_t *)pv_params;
+
+	/* Mutexes for setting and getting pedal values and brake state */
+	pedals_mutex = osMutexNew(NULL);
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -206,24 +182,275 @@ void vPedalsMonitor(void *pv_params)
 		uint16_t brake_val =
 			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
 
-		brake_state = brake_val > PEDAL_BRAKE_THRESH;
 		/* Notify brakelight controls task that there is new brake data */
 		osThreadFlagsSet(brakelight_control_thread,
 				 BRAKE_STATE_UPDATE_FLAG);
 
-		sensor_data.accelerator_value = accel_val;
-		sensor_data.brake_value = brake_val;
+		set_pedal_data(accel_val, brake_val);
 
 		/* Publish to Onboard Pedals Queue */
-		osMessageQueuePut(pedal_data_queue, &sensor_data, 0U, 0U);
 		osThreadFlagsSet(process_pedals_thread, PEDAL_DATA_FLAG);
 
-		// if (check != 0) {
-		// 	fault_data.diag = "Failed to push pedal data to queue";
-		// 	queue_fault(&fault_data);
-		// }
-
 		osDelay(PEDALS_SAMPLE_DELAY);
+	}
+}
+
+void read_lv_sense(mpu_t *mpu)
+{
+	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+
+	uint32_t v_int;
+
+	read_lv_voltage(mpu, &v_int);
+
+	/* Convert from raw ADC reading to voltage level */
+
+	// scale up then truncate
+	// convert to out of 24 volts
+	// since 12 bits / 4096
+	// Magic number bc idk the resistors on the voltage divider
+	float v_dec = v_int * 8.967;
+
+	// get final voltage
+	v_int = (uint32_t)(v_dec * 10.0);
+
+	memcpy(msg.data, &v_int, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag =
+			"Failed to send steering LV monitor CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+bool get_tsms_reading()
+{
+	bool temp;
+	osMutexAcquire(tsms_reading_mutex, osWaitForever);
+	temp = tsms_reading;
+	osMutexRelease(tsms_reading_mutex);
+	return temp;
+}
+
+void read_tsms(pdu_t *pdu)
+{
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	static bool tsms_reading = false;
+
+	/* If the TSMS reading throws an error, queue TSMS fault */
+	osMutexAcquire(tsms_reading_mutex, osWaitForever);
+	if (read_tsms_sense(pdu, &tsms_reading)) {
+		queue_fault(&fault_data);
+	} else {
+		osThreadFlagsSet(process_tsms_thread_id, TSMS_UPDATE_FLAG);
+	}
+	osMutexRelease(tsms_reading_mutex);
+}
+
+void read_fuse_data(pdu_t *pdu)
+{
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
+	uint16_t fuse_buf;
+	bool fuses[MAX_FUSES] = { 0 };
+
+	struct __attribute__((__packed__)) {
+		uint8_t fuse_1;
+		uint8_t fuse_2;
+	} fuse_data;
+
+	fuse_buf = 0;
+
+	if (read_fuses(pdu, fuses)) {
+		fault_data.diag = "Failed to read fuses";
+		queue_fault(&fault_data);
+	}
+
+	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
+		fuse_buf |=
+			fuses[fuse]
+			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
+	}
+
+	fuse_data.fuse_1 = fuse_buf & 0xFF;
+	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
+
+	// reverse the bit order
+	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
+	fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
+
+	memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
+	if (queue_can_msg(fuse_msg)) {
+		fault_data.diag = "Failed to send CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+void steeringio_monitor(steeringio_t *wheel)
+{
+	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
+	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+
+	uint8_t button_1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+	uint8_t button_2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
+	uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+	uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
+	uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
+	uint8_t button_6 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
+	uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+	uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
+
+	uint8_t button_data = (button_1 << 7) | (button_2 << 6) |
+			      (button_3 << 5) | (button_4 << 4) |
+			      (button_5 << 3) | (button_6 << 2) |
+			      (button_7 << 1) | (button_8);
+
+	steeringio_update(wheel, button_data);
+
+	/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
+	msg.data[0] = button_data;
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send steering buttons can message";
+		queue_fault(&fault_data);
+	}
+}
+
+osThreadId_t data_collection_thread;
+const osThreadAttr_t data_collection_attributes = {
+	.name = "DataCollection",
+	.stack_size = 1000 + (32 * 8 + 128 * 8 + 800 + 64 * 16 + 32 * 16),
+	.priority = (osPriority_t)osPriorityBelowNormal,
+};
+
+void vDataCollection(void *pv_params)
+{
+	mpu_t *mpu = (mpu_t *)((uint32_t *)pv_params)[0];
+	pdu_t *pdu = (pdu_t *)((uint32_t *)pv_params)[1];
+	steeringio_t *wheel = (steeringio_t *)((uint32_t *)pv_params)[2];
+	static const uint8_t delay = 20;
+
+	tsms_reading_mutex = osMutexNew(NULL);
+
+	for (;;) {
+		read_lv_sense(mpu);
+		osThreadYield();
+		osDelay(delay);
+
+		read_tsms(pdu);
+		osThreadYield();
+		osDelay(delay);
+
+		read_fuse_data(pdu);
+		osThreadYield();
+		osDelay(delay);
+
+		steeringio_monitor(wheel);
+		osThreadYield();
+		osDelay(delay);
+	}
+}
+
+osThreadId_t temp_monitor_handle;
+const osThreadAttr_t temp_monitor_attributes = {
+	.name = "TempMonitor",
+	.stack_size = 32 * 8,
+	.priority = (osPriority_t)osPriorityHigh1,
+};
+
+void vTempMonitor(void *pv_params)
+{
+	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
+			       .len = 4,
+			       .data = { 0 } };
+
+	mpu_t *mpu = (mpu_t *)pv_params;
+
+	for (;;) {
+		/* Take measurement */
+		uint16_t temp = 0;
+		uint16_t humidity = 0;
+		if (read_temp_sensor(mpu, &temp, &humidity)) {
+			fault_data.diag = "Failed to get temp";
+			queue_fault(&fault_data);
+		}
+
+		serial_print("MPU Board Temperature:\t%d\r\n", temp);
+
+		temp_msg.data[0] = temp & 0xFF;
+		temp_msg.data[1] = (temp >> 8) & 0xFF;
+		temp_msg.data[2] = humidity & 0xFF;
+		temp_msg.data[3] = (humidity >> 8) & 0xFF;
+
+		/* Send CAN message */
+		if (queue_can_msg(temp_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
+
+		/* Yield to other tasks */
+		osDelay(TEMP_SENS_SAMPLE_DELAY);
+	}
+}
+
+osThreadId_t shutdown_monitor_handle;
+const osThreadAttr_t shutdown_monitor_attributes = {
+	.name = "ShutdownMonitor",
+	.stack_size = 64 * 8,
+	.priority = (osPriority_t)osPriorityHigh2,
+};
+
+void vShutdownMonitor(void *pv_params)
+{
+	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
+				   .len = 2,
+				   .data = { 0 } };
+	pdu_t *pdu = (pdu_t *)pv_params;
+	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
+	uint16_t shutdown_buf;
+
+	struct __attribute__((__packed__)) {
+		uint8_t shut_1;
+		uint8_t shut_2;
+	} shutdown_data;
+
+	for (;;) {
+		shutdown_buf = 0;
+
+		if (read_shutdown(pdu, shutdown_loop)) {
+			fault_data.diag = "Failed to read shutdown buffer";
+			queue_fault(&fault_data);
+		}
+
+		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES;
+		     stage++) {
+			shutdown_buf |=
+				shutdown_loop[stage]
+				<< stage; /* Sets the bit at position `stage` to the state of the stage */
+		}
+
+		/* seperate each byte */
+		shutdown_data.shut_1 = shutdown_buf & 0xFF;
+		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
+
+		// reverse the bit order
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
+		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
+
+		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
+		if (queue_can_msg(shutdown_msg)) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		}
+
+		osDelay(SHUTDOWN_MONITOR_DELAY);
 	}
 }
 
@@ -303,230 +530,5 @@ void vIMUMonitor(void *pv_params)
 
 		/* Yield to other tasks */
 		osDelay(IMU_SAMPLE_DELAY);
-	}
-}
-
-osThreadId_t tsms_monitor_handle;
-const osThreadAttr_t tsms_monitor_attributes = {
-	.name = "TsmsMonitor",
-	.stack_size = 32 * 16,
-	.priority = (osPriority_t)osPriorityHigh,
-};
-
-void vTsmsMonitor(void *pv_params)
-{
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	pdu_t *pdu = (pdu_t *)pv_params;
-	bool tsms_status = false;
-	/* 100 ms */
-	static const uint8_t TSMS_SENSE_SAMPLE_RATE = 100;
-
-	for (;;) {
-		/* If the TSMS reading throws an error, queue TSMS fault */
-		if (read_tsms_sense(pdu, &tsms_status)) {
-			queue_fault(&fault_data);
-		} else {
-			osMessageQueuePut(tsms_data_queue, &tsms_status, 0U,
-					  0U);
-			osThreadFlagsSet(process_tsms_thread_id,
-					 TSMS_UPDATE_FLAG);
-		}
-		osDelay(TSMS_SENSE_SAMPLE_RATE);
-	}
-}
-
-osThreadId_t fusing_monitor_handle;
-const osThreadAttr_t fusing_monitor_attributes = {
-	.name = "FusingMonitor",
-	.stack_size = 64 * 16,
-	.priority = (osPriority_t)osPriorityNormal,
-};
-
-void vFusingMonitor(void *pv_params)
-{
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-	pdu_t *pdu = (pdu_t *)pv_params;
-	uint16_t fuse_buf;
-	bool fuses[MAX_FUSES] = { 0 };
-
-	struct __attribute__((__packed__)) {
-		uint8_t fuse_1;
-		uint8_t fuse_2;
-	} fuse_data;
-
-	for (;;) {
-		fuse_buf = 0;
-
-		if (read_fuses(pdu, fuses)) {
-			fault_data.diag = "Failed to read fuses";
-			queue_fault(&fault_data);
-		}
-
-		for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-			fuse_buf |=
-				fuses[fuse]
-				<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
-		}
-
-		fuse_data.fuse_1 = fuse_buf & 0xFF;
-		fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
-
-		// reverse the bit order
-		fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
-		fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
-
-		memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
-		if (queue_can_msg(fuse_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
-
-		osDelay(FUSES_SAMPLE_DELAY);
-	}
-}
-
-osThreadId_t shutdown_monitor_handle;
-const osThreadAttr_t shutdown_monitor_attributes = {
-	.name = "ShutdownMonitor",
-	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh2,
-};
-
-void vShutdownMonitor(void *pv_params)
-{
-	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-				   .len = 2,
-				   .data = { 0 } };
-	pdu_t *pdu = (pdu_t *)pv_params;
-	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
-	uint16_t shutdown_buf;
-
-	struct __attribute__((__packed__)) {
-		uint8_t shut_1;
-		uint8_t shut_2;
-	} shutdown_data;
-
-	for (;;) {
-		shutdown_buf = 0;
-
-		if (read_shutdown(pdu, shutdown_loop)) {
-			fault_data.diag = "Failed to read shutdown buffer";
-			queue_fault(&fault_data);
-		}
-
-		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES;
-		     stage++) {
-			shutdown_buf |=
-				shutdown_loop[stage]
-				<< stage; /* Sets the bit at position `stage` to the state of the stage */
-		}
-
-		/* seperate each byte */
-		shutdown_data.shut_1 = shutdown_buf & 0xFF;
-		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
-
-		// reverse the bit order
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
-
-		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
-		if (queue_can_msg(shutdown_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
-
-		osDelay(SHUTDOWN_MONITOR_DELAY);
-	}
-}
-
-osThreadId steeringio_buttons_monitor_handle;
-const osThreadAttr_t steeringio_buttons_monitor_attributes = {
-	.name = "SteeringIOButtonsMonitor",
-	.stack_size = 800,
-	.priority = (osPriority_t)osPriorityNormal,
-};
-
-void vSteeringIOButtonsMonitor(void *pv_params)
-{
-	steeringio_t *wheel = (steeringio_t *)pv_params;
-	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
-	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-
-	for (;;) {
-		uint8_t button_1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-		uint8_t button_2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
-		uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-		uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
-		uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
-		uint8_t button_6 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
-		uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
-		uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
-
-		uint8_t button_data = (button_1 << 7) | (button_2 << 6) |
-				      (button_3 << 5) | (button_4 << 4) |
-				      (button_5 << 3) | (button_6 << 2) |
-				      (button_7 << 1) | (button_8);
-
-		steeringio_update(wheel, button_data);
-
-		/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
-		msg.data[0] = button_data;
-		if (queue_can_msg(msg)) {
-			fault_data.diag =
-				"Failed to send steering buttons can message";
-			queue_fault(&fault_data);
-		}
-
-		osDelay(WHEEL_BUTTON_SAMPLE_RATE);
-	}
-}
-
-osThreadId_t temp_monitor_handle;
-const osThreadAttr_t temp_monitor_attributes = {
-	.name = "TempMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh1,
-};
-
-void vTempMonitor(void *pv_params)
-{
-	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
-			       .len = 4,
-			       .data = { 0 } };
-
-	mpu_t *mpu = (mpu_t *)pv_params;
-
-	for (;;) {
-		/* Take measurement */
-		uint16_t temp = 0;
-		uint16_t humidity = 0;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
-			fault_data.diag = "Failed to get temp";
-			queue_fault(&fault_data);
-		}
-
-		serial_print("MPU Board Temperature:\t%d\r\n", temp);
-
-		temp_msg.data[0] = temp & 0xFF;
-		temp_msg.data[1] = (temp >> 8) & 0xFF;
-		temp_msg.data[2] = humidity & 0xFF;
-		temp_msg.data[3] = (humidity >> 8) & 0xFF;
-
-		/* Send CAN message */
-		if (queue_can_msg(temp_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
-
-		/* Yield to other tasks */
-		osDelay(TEMP_SENS_SAMPLE_DELAY);
 	}
 }

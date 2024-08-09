@@ -81,7 +81,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
 osMessageQueueId_t dti_router_queue;
 osMessageQueueId_t tsms_data_queue;
@@ -173,10 +172,13 @@ int main(void)
 
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
+  assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2);
   assert(pdu);
   dti_t *mc   = dti_init();
+  assert(mc);
   steeringio_t *wheel = steeringio_init();
+  assert(wheel);
   init_can1(&hcan1);
   bms_init();
 
@@ -202,8 +204,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
   assert(imu_queue);
-  pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
-  assert(pedal_data_queue);
 	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(dti_router_queue);
   tsms_data_queue = osMessageQueueNew(TSMS_QUEUE_SIZE, sizeof(bool), NULL);
@@ -217,22 +217,21 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* Monitors */
-  lv_monitor_handle = osThreadNew(vLVMonitor, mpu, &lv_monitor_attributes);
-  assert(lv_monitor_handle);
+  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
+  assert(pedals_monitor_handle);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   // assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
-  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
-  assert(steeringio_buttons_monitor_handle);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  assert(pedals_monitor_handle);
-  tsms_monitor_handle = osThreadNew(vTsmsMonitor, pdu, &tsms_monitor_attributes);
-  assert(tsms_monitor_handle);
-  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
-  assert(fusing_monitor_handle);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
+
+  uint32_t *data_collection_args = malloc(3 * sizeof(uint32_t));
+  data_collection_args[0] = (uint32_t) mpu;
+  data_collection_args[1] = (uint32_t) pdu;
+  data_collection_args[2] = (uint32_t) wheel;
+  data_collection_thread = osThreadNew(vDataCollection, data_collection_args, &data_collection_attributes);
+  assert(data_collection_thread);
 
   /* Data Processing */
   process_tsms_thread_id = osThreadNew(vProcessTSMS, NULL, &process_tsms_attributes);
@@ -255,7 +254,12 @@ int main(void)
   assert(process_pedals_thread);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
+
   uint32_t *state_machine_args = malloc(sizeof(uint32_t) * 2);
+  
+  /* No clue why the memory can only be correctly free'd only after another malloc call. If you free above the malloc the thread does not init correctly working atleast in my experience maybe I am doing something wrong. */
+  free(data_collection_args);
+
   state_machine_args[0] = (uint32_t) pdu;
   state_machine_args[1] = (uint32_t) mc;
   sm_director_handle = osThreadNew(vStateMachineDirector, state_machine_args, &sm_director_attributes);
@@ -263,7 +267,6 @@ int main(void)
   free(state_machine_args);
   brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
   assert(brakelight_control_thread);
-
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -720,7 +723,6 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  int i = 0;
 
   /* Infinite loop */
   for(;;) {
@@ -728,15 +730,8 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
-
-    if (i % 2 == 1)
-     serial_print(".\r\n");
-    else
-     serial_print("..\r\n");
-
-    i++;
-
+    printf(".\r\n..\r\n");
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

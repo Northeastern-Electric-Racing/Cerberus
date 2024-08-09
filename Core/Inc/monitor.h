@@ -5,12 +5,15 @@
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
 
-/**
- * @brief Task monitoring the voltage level of the low voltage batteries.
- */
-void vLVMonitor(void *pv_params);
-extern osThreadId lv_monitor_handle;
-extern const osThreadAttr_t lv_monitor_attributes;
+typedef struct {
+	uint16_t brake_value;
+	uint16_t accelerator_value; /* 0-100 */
+} pedals_t;
+
+pedals_t get_pedal_data();
+bool get_brake_state();
+
+bool get_tsms_reading();
 
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void *pv_params);
@@ -32,23 +35,14 @@ void vIMUMonitor(void *pv_params);
 extern osThreadId_t imu_monitor_handle;
 extern const osThreadAttr_t imu_monitor_attributes;
 
-/* Task for Monitoring the TSMS sense on PDU  CTRL expander*/
-void vTsmsMonitor(void *pv_params);
-extern osThreadId_t tsms_monitor_handle;
-extern const osThreadAttr_t tsms_monitor_attributes;
-
-/* Task for Monitoring the Fuses on PDU */
-void vFusingMonitor(void *pv_params);
-extern osThreadId_t fusing_monitor_handle;
-extern const osThreadAttr_t fusing_monitor_attributes;
-
 /* Task for Monitoring the Shutdown Loop */
 void vShutdownMonitor(void *pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
 
-void vSteeringIOButtonsMonitor(void *pv_params);
-extern osThreadId_t steeringio_buttons_monitor_handle;
-extern const osThreadAttr_t steeringio_buttons_monitor_attributes;
+/* Task for collecting data from the car */
+void vDataCollection(void *pv_params);
+extern osThreadId_t data_collection_thread;
+extern const osThreadAttr_t data_collection_attributes;
 
 #endif // MONITOR_H

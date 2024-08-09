@@ -110,7 +110,7 @@ osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime,
+	.priority = (osPriority_t)osPriorityRealtime6,
 };
 
 void vCanDispatch(void *pv_params)

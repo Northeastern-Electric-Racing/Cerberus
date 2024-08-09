@@ -33,7 +33,6 @@
 #define DTI_CANID_ID_IQ 0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS \
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
-#define DTI_QUEUE_SIZE 5
 
 #define NEW_DTI_MSG_FLAG 1U
 

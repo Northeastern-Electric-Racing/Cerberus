@@ -21,6 +21,7 @@
 #include "serial_monitor.h"
 #include "bms.h"
 #include "emrax.h"
+#include "monitor.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -35,16 +36,23 @@ static float torque_limit_percentage = 1.0;
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
 static bool tsms = false;
+osMutexId_t tsms_mutex;
 
 bool get_tsms()
 {
-	return tsms;
+	bool temp;
+	osMutexAcquire(tsms_mutex, osWaitForever);
+	temp = tsms;
+	osMutexRelease(tsms_mutex);
+	return temp;
 }
 
 void tsms_debounce_cb(void *arg)
 {
 	/* Set TSMS state to new debounced value */
+	osMutexAcquire(tsms_mutex, osWaitForever);
 	tsms = *((bool *)arg);
+	osMutexRelease(tsms_mutex);
 	/* Tell NERO allaboutit */
 	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
 }
@@ -59,6 +67,7 @@ const osThreadAttr_t process_tsms_attributes = {
 void vProcessTSMS(void *pv_params)
 {
 	bool tsms_reading;
+	tsms_mutex = osMutexNew(NULL);
 
 	/* When the callback is called, the TSMS state will be set to the new reading in tsms_reading */
 	osTimerId_t tsms_debounce_timer =
@@ -69,11 +78,9 @@ void vProcessTSMS(void *pv_params)
 				  osWaitForever);
 
 		/* Get raw TSMS reading */
-		osMessageQueueGet(tsms_data_queue, &tsms_reading, 0U,
-				  osWaitForever);
+		tsms_reading = get_tsms_reading();
 
 		/* Debounce tsms reading */
-
 		if (tsms_reading)
 			debounce(tsms_reading, tsms_debounce_timer,
 				 TSMS_DEBOUNCE_PERIOD);
@@ -273,7 +280,7 @@ osThreadId_t process_pedals_thread;
 const osThreadAttr_t torque_calc_attributes = {
 	.name = "SendTorque",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime
+	.priority = (osPriority_t)osPriorityRealtime1
 };
 
 void vProcessPedals(void *pv_params)
@@ -290,8 +297,7 @@ void vProcessPedals(void *pv_params)
 	for (;;) {
 		osThreadFlagsWait(PEDAL_DATA_FLAG, osFlagsWaitAny,
 				  osWaitForever);
-		osMessageQueueGet(pedal_data_queue, &pedal_data, 0U,
-				  delay_time);
+		pedal_data = get_pedal_data();
 
 		/* 0.0 - 1.0 */
 		float accelerator_value =

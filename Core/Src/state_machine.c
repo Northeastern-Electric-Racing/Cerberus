@@ -43,7 +43,7 @@ osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes = {
 	.name = "State Machine Director",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime2,
+	.priority = (osPriority_t)osPriorityRealtime7,
 };
 
 static osMessageQueueId_t state_trans_queue;

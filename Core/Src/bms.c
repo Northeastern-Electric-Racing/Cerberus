@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "stdio.h"
 
-#define CAN_QUEUE_SIZE 5
+#define BMS_QUEUE_SIZE 5
 
 osMessageQueueId_t bms_monitor_queue;
 
@@ -20,7 +20,7 @@ osThreadId_t bms_monitor_handle;
 const osThreadAttr_t bms_monitor_attributes = {
 	.name = "BMSCANMonitor",
 	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh2
+	.priority = (osPriority_t)osPriorityHigh
 };
 
 void bms_fault_callback()
@@ -43,7 +43,7 @@ void bms_init()
 		osTimerNew(&bms_fault_callback, osTimerOnce, NULL, NULL);
 
 	bms_monitor_queue =
-		osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+		osMessageQueueNew(BMS_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 	assert(bms_monitor_queue);
 }
 

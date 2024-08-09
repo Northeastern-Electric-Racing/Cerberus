@@ -10,7 +10,11 @@
 
 osMessageQueueId_t printf_queue;
 osThreadId_t serial_monitor_handle;
-const osThreadAttr_t serial_monitor_attributes;
+const osThreadAttr_t serial_monitor_attributes = {
+	.name = "SerialMonitor",
+	.stack_size = 32 * 32,
+	.priority = (osPriority_t)osPriorityHigh,
+};
 
 /*
  * Referenced https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Print.cpp

@@ -12,6 +12,8 @@
 #include "pdu.h"
 #include "queues.h"
 #include "control.h"
+#include "monitor.h"
+#include "cerberus_conf.h"
 
 osThreadId brakelight_control_thread;
 const osThreadAttr_t brakelight_monitor_attributes = {

@@ -4,7 +4,6 @@
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
 
-#define BRAKELIGHT_QUEUE_SIZE	8
 #define ONBOARD_TEMP_QUEUE_SIZE 8
 #define PEDAL_DATA_QUEUE_SIZE	1
 #define IMU_QUEUE_SIZE		8
@@ -21,15 +20,6 @@ typedef struct {
 
 extern osMessageQueueId_t imu_queue;
 
-typedef struct {
-	uint16_t brake_value;
-	uint16_t accelerator_value; /* 0-100 */
-} pedals_t;
-
-extern osMessageQueueId_t pedal_data_queue;
-
 extern osMessageQueueId_t tsms_data_queue;
-
-bool get_brake_state();
 
 #endif // QUEUES_H

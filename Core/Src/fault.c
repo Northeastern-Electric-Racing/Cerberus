@@ -44,6 +44,7 @@ void vFaultHandler(void *pv_params)
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
 			uint32_t fault_id = (uint32_t)fault_data.id;
+			if (fault_id == CAN_DISPATCH_FAULT) continue;
 			endian_swap(&fault_id, sizeof(fault_id));
 			uint8_t defcon = (uint8_t)fault_data.severity;
 
