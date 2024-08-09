@@ -30,6 +30,8 @@ typedef struct {
 	ringbuffer_t *debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
+	/* Array indicating that a button has already been pressed and not unpressed */
+	bool pressed_once[MAX_STEERING_BUTTONS];
 } steeringio_t;
 
 /* Creates a new Steering Wheel interface */

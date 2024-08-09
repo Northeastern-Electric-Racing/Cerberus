@@ -106,7 +106,8 @@ static void debounce_cb(void *arg)
 
 	steeringio_t *wheel = args->wheel;
 
-	if (wheel->raw_buttons[button]) {
+	if (wheel->raw_buttons[button] && !wheel->pressed_once[button]) {
+		wheel->pressed_once[button] = true;
 		switch (button) {
 		case STEERING_PADDLE_LEFT:
 			paddle_left_cb();
@@ -139,6 +140,9 @@ static void debounce_cb(void *arg)
 		default:
 			break;
 		}
+	} else if (!wheel->raw_buttons[button]) {
+		/* Button is no longer pressed, so it can be pressed again */
+		wheel->pressed_once[button] = false;
 	}
 }
 
@@ -165,6 +169,11 @@ void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
 		if (wheel->raw_buttons[i])
 			debounce(wheel->raw_buttons[i],
+				 wheel->debounce_timers[i],
+				 STEERING_WHEEL_DEBOUNCE);
+		/* Debounce that the button has been unpressed */
+		else
+			debounce(!wheel->raw_buttons[i],
 				 wheel->debounce_timers[i],
 				 STEERING_WHEEL_DEBOUNCE);
 	}
