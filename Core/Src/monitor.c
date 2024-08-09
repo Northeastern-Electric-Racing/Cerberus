@@ -148,7 +148,7 @@ const osThreadAttr_t pedals_monitor_attributes = {
 void vPedalsMonitor(void *pv_params)
 {
 	// fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
-				    // .severity = DEFCON1 };
+	// .severity = DEFCON1 };
 	static pedals_t sensor_data;
 	uint32_t adc_data[4];
 	osTimerId_t send_pedal_data_timer =

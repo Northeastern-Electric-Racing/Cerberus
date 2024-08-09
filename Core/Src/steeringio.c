@@ -80,14 +80,14 @@ bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
 
 static void paddle_left_cb()
 {
-	if (get_drive_state() == ENDURANCE) {
+	if (get_func_state() == F_EFFICIENCY) {
 		increase_torque_limit();
 	}
 }
 
 static void paddle_right_cb()
 {
-	if (get_drive_state() == ENDURANCE) {
+	if (get_func_state() == F_EFFICIENCY) {
 		decrease_torque_limit();
 	}
 }

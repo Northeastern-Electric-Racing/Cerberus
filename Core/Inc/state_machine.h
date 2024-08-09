@@ -9,22 +9,22 @@
  * This is a hierarchical state machine, with "drive modes"
  * being sub states of the ACTIVE functional state
  */
-typedef enum { BOOT, READY, ACTIVE, FAULTED, MAX_FUNC_STATES } func_state_t;
-
 typedef enum {
-	NOT_DRIVING,
+	READY,
+	/* F means functional */
+	F_PIT,
+	F_PERFORMANCE,
+	F_EFFICIENCY,
 	REVERSE,
-	SPEED_LIMITED,
-	AUTOCROSS,
-	ENDURANCE,
-	MAX_DRIVE_STATES
-} drive_state_t;
+	FAULTED,
+	MAX_FUNC_STATES
+} func_state_t;
 
 typedef enum {
 	OFF,
-	PIT,
-	PERFORMANCE,
-	EFFICIENCY,
+	PIT, //SPEED_LIMITIED
+	PERFORMANCE, //AUTOCROSS
+	EFFICIENCY, //ENDURANCE
 	DEBUG,
 	CONFIGURATION,
 	FLAPPY_BIRD,
@@ -39,7 +39,6 @@ typedef struct {
 
 typedef struct {
 	func_state_t functional;
-	drive_state_t drive;
 	nero_state_t nero;
 } state_t;
 
@@ -51,11 +50,12 @@ void vStateMachineDirector(void *pv_params);
 /* Retrieves the current functional state */
 func_state_t get_func_state();
 
-/*
- * Retrieves the current drive state
- * Will return negative if functional state is not DRIVING
+/**
+ * @brief Returns true if car is in active state (pit, performance, efficiency)
+ * 
+ * @return Whether or not the car is in an active state.
  */
-drive_state_t get_drive_state();
+bool get_active();
 
 /*
  * Retrieves the current nero state

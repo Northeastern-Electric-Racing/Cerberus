@@ -82,7 +82,7 @@ void vProcessTSMS(void *pv_params)
 			debounce(!tsms_reading, tsms_debounce_timer,
 				 TSMS_DEBOUNCE_PERIOD);
 
-		if (get_func_state() == ACTIVE && get_tsms() == false) {
+		if (get_active() && get_tsms() == false) {
 			//TODO: make task notification to check if car should shut off if TSMS goes off, however this works for now
 			set_home_mode();
 		}
@@ -100,31 +100,89 @@ static void linear_accel_to_torque(float accel)
 	dti_set_torque(torque);
 }
 
-// static void limit_accel_to_torque(float mph, float accel, uint16_t* torque)
-// {
-// 		static uint16_t torque_accumulator[ACCUMULATOR_SIZE];
+/**
+ * @brief Drive forward with a speed limit of 5 mph.
+ * 
+ * @param mph Current speed of the car.
+ * @param accel % pedal travel of the accelerator pedal.
+ */
+static void handle_pit(float mph, float accel)
+{
+	static int16_t torque_accumulator[ACCUMULATOR_SIZE];
+	/* index in moving average */
+	static uint8_t index = 0;
 
-// 		uint16_t newVal;
-// 		//Results in a value from 0.5 to 0 (at least halving the max torque at all times in pit or reverse)
-// 		if (mph > PIT_MAX_SPEED) {
-// 			newVal = 0; // If we are going too fast, we don't want to apply any torque to the moving average
-// 		}
-// 		else {
-// 			float torque_derating_factor = fabs(0.5 + ((-0.5/PIT_MAX_SPEED) * mph)); // Linearly derate torque from 0.5 to 0 as speed increases
-// 			newVal = accel * torque_derating_factor;
-// 		}
+	int16_t torque;
 
-// 		// The following code is a moving average filter
-// 		uint16_t ave = 0;
-// 		uint16_t temp[ACCUMULATOR_SIZE];
-// 		ave += newVal; // Add the new value to the sum
-// 		ave /= ACCUMULATOR_SIZE; // Divide by the number of values to get the average
-// 		temp[0] = newVal; // Add the new value to the array
-// 		if(*torque > ave) {
-// 			*torque = ave; // If the new value is greater than the average, set the torque to the average
-// 		}
-// 		memcpy(temp, torque_accumulator, ACCUMULATOR_SIZE); // Copy the new array back to the old array to set the moving average
-// }
+	/* If we are going too fast, we don't want to apply any torque to the moving average */
+	if (mph > PIT_MAX_SPEED) {
+		torque = 0;
+	} else {
+		/* Highest torque % in pit mode */
+		static const float max_torque_percent = 0.3;
+		/* Linearly derate torque from 30% to 0% as speed increases */
+		float torque_derating_factor =
+			max_torque_percent -
+			(max_torque_percent / PIT_MAX_SPEED);
+		accel *= torque_derating_factor;
+		torque = MAX_TORQUE * accel;
+	}
+
+	/* Add value to moving average */
+	torque_accumulator[index] = torque;
+	index = (index + 1) % ACCUMULATOR_SIZE;
+
+	/* Get moving average then send torque command to dti motor controller */
+	int16_t sum = 0;
+	for (uint8_t i = 0; i < ACCUMULATOR_SIZE; i++) {
+		sum += torque_accumulator[i];
+	}
+	int16_t avg = sum / ACCUMULATOR_SIZE;
+
+	dti_set_torque(avg);
+}
+
+/**
+ * @brief Drive in speed limited reverse mode.
+ * 
+ * @param mph Current speed of the car.
+ * @param accel % pedal travel of the accelerator pedal.
+ */
+static void handle_reverse(float mph, float accel)
+{
+	static int16_t torque_accumulator[ACCUMULATOR_SIZE];
+	/* index in moving average */
+	static uint8_t index = 0;
+
+	int16_t torque;
+
+	/* If we are going too fast, we don't want to apply any torque to the moving average */
+	if (mph > PIT_MAX_SPEED) {
+		torque = 0;
+	} else {
+		/* Highest torque % in pit mode */
+		static const float max_torque_percent = 0.3;
+		/* Linearly derate torque from 30% to 0% as speed increases */
+		float torque_derating_factor =
+			max_torque_percent -
+			(max_torque_percent / PIT_MAX_SPEED);
+		accel *= torque_derating_factor;
+		torque = MAX_TORQUE * accel;
+	}
+
+	/* Add value to moving average */
+	torque_accumulator[index] = torque;
+	index = (index + 1) % ACCUMULATOR_SIZE;
+
+	/* Get moving average then send torque command to dti motor controller */
+	int16_t sum = 0;
+	for (uint8_t i = 0; i < ACCUMULATOR_SIZE; i++) {
+		sum += torque_accumulator[i];
+	}
+	int16_t avg = sum / ACCUMULATOR_SIZE;
+
+	dti_set_torque(-1 * avg);
+}
 
 void increase_torque_limit()
 {
@@ -243,7 +301,7 @@ void vProcessPedals(void *pv_params)
 		mph = dti_get_mph(mc);
 
 		func_state_t func_state = get_func_state();
-		if (func_state != ACTIVE) {
+		if (!get_active()) {
 			dti_set_torque(0);
 			continue;
 		}
@@ -271,22 +329,19 @@ void vProcessPedals(void *pv_params)
 			}
 		}
 
-		drive_state_t drive_state = get_drive_state();
-
-		switch (drive_state) {
-		// case REVERSE:
-		// 	limit_accel_to_torque(mph, accelerator_value, &torque);
-		// 	dti_set_torque(torque);
-		// 	break;
-		// case SPEED_LIMITED:
-		// 	limit_accel_to_torque(mph, accelerator_value, &torque);
-		// 	break;
-		case ENDURANCE:
+		switch (func_state) {
+		case F_EFFICIENCY:
 			handle_endurance(mc, mph, accelerator_value,
 					 brake_value);
 			break;
-		case AUTOCROSS:
+		case F_PERFORMANCE:
 			linear_accel_to_torque(accelerator_value);
+			break;
+		case F_PIT:
+			handle_pit(mph, accelerator_value);
+			break;
+		case REVERSE:
+			handle_reverse(mph, accelerator_value);
 			break;
 		default:
 			dti_set_torque(0);

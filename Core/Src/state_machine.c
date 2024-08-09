@@ -32,13 +32,12 @@ typedef struct {
 } state_req_t;
 
 /* State Transition Map */
-static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
-	/*BOOT  READY DRIVING FAULTED*/
-	{ true, true, false, true }, /* BOOT */
-	{ false, true, true, true }, /* READY */
-	{ false, true, true, true }, /* DRIVING */
-	{ false, true, false, true } /* FAULTED */
-};
+// static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
+// 	/*READY DRIVING FAULTED*/
+// 	{ true, true, true }, /* READY */
+// 	{ true, true, true }, /* PERFORMANCE */
+// 	{ true, false, true } /* FAULTED */
+// };
 
 osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes = {
@@ -54,9 +53,11 @@ func_state_t get_func_state()
 	return cerberus_state.functional;
 }
 
-drive_state_t get_drive_state()
+bool get_active()
 {
-	return cerberus_state.drive;
+	return cerberus_state.functional == F_EFFICIENCY ||
+	       cerberus_state.functional == F_PERFORMANCE ||
+	       cerberus_state.functional == F_PIT;
 }
 
 nero_state_t get_nero_state()
@@ -64,74 +65,52 @@ nero_state_t get_nero_state()
 	return cerberus_state.nero;
 }
 
-static drive_state_t map_nero_index_to_drive_state(nero_menu_t nero_index)
-{
-	switch (nero_index) {
-	case OFF:
-		return NOT_DRIVING;
-	case PIT:
-		return SPEED_LIMITED;
-	case PERFORMANCE:
-		return AUTOCROSS;
-	case EFFICIENCY:
-		return ENDURANCE;
-	default:
-		return OFF;
-	}
-}
-
-static int transition_drive_state(drive_state_t new_state, pdu_t *pdu,
-				  dti_t *mc)
-{
-	if (get_func_state() != ACTIVE)
-		return 0;
-
-	/* Check that motor is not spinning before changing modes */
-	if (dti_get_mph(mc) > 1)
-		return 0;
-
-	/* If we are turning ON the motor, blare RTDS */
-	if (cerberus_state.drive == NOT_DRIVING) {
-		if (!get_brake_state()) {
-			return 0;
-		}
-		sound_rtds(pdu);
-	}
-
-	cerberus_state.drive = new_state;
-
-	return 0;
-}
-
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc)
 {
-	if (!valid_trans_to_from[cerberus_state.functional][new_state]) {
-		printf("Invalid State transition");
-		return -1;
-	}
+	// if (!valid_trans_to_from[cerberus_state.functional][new_state]) {
+	// 	printf("Invalid State transition");
+	// 	return -1;
+	// }
 
 	/* Catching state transitions */
 	switch (new_state) {
-	case BOOT:
-		/* Do Nothing */
-		break;
 	case READY:
+		/* Make sure wheels are not spinning before changing modes */
+		if (dti_get_mph(mc) > 1)
+			return 1;
+
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
 		write_fault(pdu, true);
-		transition_drive_state(OFF, pdu, mc);
 		serial_print("READY\r\n");
 		break;
-	case ACTIVE:
-		if (!get_tsms() || !get_brake_state())
-			return 1; // Cannot go into active if tsms is off
+	case F_PIT:
+	case F_PERFORMANCE:
+	case F_EFFICIENCY:
+		if (cerberus_state.functional != REVERSE) {
+			/* Check that motor is not spinning before changing modes */
+			if (dti_get_mph(mc) > 1)
+				return 2;
+
+			/* Only turn on motor if brakes engaged and tsms is on */
+			if (!get_brake_state() || !get_tsms()) {
+				return 3;
+			}
+		}
+		sound_rtds(pdu);
+
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
-		write_pump(pdu, false);
+		write_pump(pdu, true);
 		write_fault(pdu, true);
 		serial_print("ACTIVE STATE\r\n");
+		break;
+	case REVERSE:
+		/* Can only enter reverse mode if already in pit mode */
+		if (cerberus_state.functional != F_PIT)
+			return 4;
 		break;
 	case FAULTED:
 		/* Turn off high power peripherals */
@@ -141,7 +120,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// DO NOT CHANGE WITHOUT CHECKING the bms fault timer, as if BMS timer is later could result in a fault/unfault/fault flicker.
 		osTimerStart(fault_timer, 5000);
 		HAL_IWDG_Refresh(&hiwdg);
-		transition_drive_state(OFF, pdu, mc);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = true };
 		serial_print("FAULTED\r\n");
@@ -173,40 +151,29 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
 	if (!current_nero_state.home_mode && !new_state.home_mode) {
 		// Only Check if we are in pit mode to toggle direction
 		if (current_nero_state.nero_index == PIT) {
-			if (get_drive_state() == REVERSE) {
-				if (transition_drive_state(SPEED_LIMITED, pdu,
-							   mc))
+			if (get_func_state() == REVERSE) {
+				if (transition_functional_state(F_PIT, pdu, mc))
 					return 1;
-			} else {
-				if (transition_drive_state(REVERSE, pdu, mc))
+			} else if (get_func_state() == F_PIT) {
+				if (transition_functional_state(REVERSE, pdu,
+								mc))
 					return 1;
 			}
 		}
 	}
 
-	/* Account for reverse and pit being the same screen */
-	uint8_t max_drive_states = MAX_DRIVE_STATES - 1;
-
-	serial_print("NEW HOME MODE, %d \n", new_state.home_mode);
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
-		if (new_state.nero_index > 0 &&
-		    new_state.nero_index < max_drive_states) {
-			if (transition_functional_state(ACTIVE, pdu, mc))
-				return 1;
-			if (transition_drive_state(
-				    map_nero_index_to_drive_state(
-					    new_state.nero_index),
-				    pdu, mc))
-				return 1;
-		} else if (new_state.nero_index == OFF) {
-			if (transition_functional_state(READY, pdu, mc))
+		if (new_state.nero_index < DEBUG &&
+		    new_state.nero_index > OFF) {
+			if (transition_functional_state(new_state.nero_index,
+							pdu, mc))
 				return 1;
 		}
 	}
+
 	// Entering home mode
 	if (!current_nero_state.home_mode && new_state.home_mode) {
-		serial_print("NEW HOME MODE, %d \n", new_state.home_mode);
 		if (transition_functional_state(READY, pdu, mc))
 			return 1;
 	}
@@ -284,7 +251,6 @@ int fault()
 void vStateMachineDirector(void *pv_params)
 {
 	cerberus_state.functional = READY;
-	cerberus_state.drive = NOT_DRIVING;
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
 
