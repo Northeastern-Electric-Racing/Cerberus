@@ -243,8 +243,6 @@ int main(void)
   assert(can_receive_thread);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   assert(serial_monitor_handle);
-  nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
-  assert(nero_monitor_handle);
 
   /* Control Logic */
   process_pedals_args_t *proc_pedal_args = malloc(sizeof(process_pedals_args_t));
@@ -727,7 +725,7 @@ void StartDefaultTask(void *argument)
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
     /* Send NERO state data continuously */
-    send_mode_status();
+    send_nero_msg();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

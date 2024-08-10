@@ -13,7 +13,7 @@
 
 static int8_t mph = 0;
 
-void send_mode_status()
+void send_nero_msg()
 {
 	can_msg_t msg = { .id = 0x501,
 			  .len = 4,
@@ -28,21 +28,5 @@ void send_mode_status()
 void set_mph(int8_t new_mph)
 {
 	mph = new_mph;
-	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
-}
-
-osThreadId_t nero_monitor_handle;
-const osThreadAttr_t nero_monitor_attributes = {
-	.name = "NeroMonitor",
-	.stack_size = 32 * 32,
-	.priority = (osPriority_t)osPriorityRealtime2,
-};
-
-void vNeroMonitor(void *pv_params)
-{
-	for (;;) {
-		osThreadFlagsWait(NERO_UPDATE_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		send_mode_status();
-	}
+	send_nero_msg();
 }

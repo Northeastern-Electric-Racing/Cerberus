@@ -168,7 +168,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
 
 	cerberus_state.nero = new_state;
 	/* Notify NERO */
-	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
+	send_nero_msg();
 
 	return 0;
 }
@@ -178,6 +178,7 @@ static int queue_state_transition(state_req_t new_state)
 	if (!state_trans_queue) {
 		return 1;
 	}
+
 	return queue_and_set_flag(state_trans_queue, &new_state,
 				  sm_director_handle, STATE_TRANSITION_FLAG);
 }

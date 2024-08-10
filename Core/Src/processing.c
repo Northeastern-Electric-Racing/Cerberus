@@ -55,7 +55,7 @@ void tsms_debounce_cb(void *arg)
 	tsms = *((bool *)arg);
 	osMutexRelease(tsms_mutex);
 	/* Tell NERO allaboutit */
-	osThreadFlagsSet(nero_monitor_handle, NERO_UPDATE_FLAG);
+	send_nero_msg();
 }
 
 osThreadId_t process_tsms_thread_id;

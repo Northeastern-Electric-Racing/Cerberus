@@ -19,8 +19,7 @@ int queue_fault(fault_data_t *fault_data)
 	if (!fault_handle_queue)
 		return -1;
 
-	return queue_and_set_flag(fault_handle_queue, fault_data,
-				  fault_handle,
+	return queue_and_set_flag(fault_handle_queue, fault_data, fault_handle,
 				  NEW_FAULT_FLAG);
 }
 
