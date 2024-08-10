@@ -18,6 +18,11 @@
 #include "cmsis_os.h"
 #include "dti.h"
 
+/**
+ * @brief Callback to be called when a message is received on CAN line 1.
+ * 
+ * @param hcan Pointer to struct representing CAN hardware.
+ */
 void can1_callback(CAN_HandleTypeDef *hcan);
 
 /**
@@ -27,10 +32,18 @@ void can1_callback(CAN_HandleTypeDef *hcan);
  * @return int8_t Error code.
  */
 int8_t queue_can_msg(can_msg_t msg);
+
+/**
+ * @brief Initialize CAN line 1.
+ * 
+ * @param hcan Pointer to struct representing CAN hardware.
+ */
 void init_can1(CAN_HandleTypeDef *hcan);
 
 /**
  * @brief Task for sending CAN messages.
+ * 
+ * @param pv_params CAN_HandleTypeDef for the CAN line that messages will be sent out on.
  */
 void vCanDispatch(void *pv_params);
 extern osThreadId_t can_dispatch_handle;

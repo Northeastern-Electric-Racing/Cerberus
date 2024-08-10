@@ -34,69 +34,6 @@
 
 static float torque_limit_percentage = 1.0;
 
-#define TSMS_DEBOUNCE_PERIOD 500 /* ms */
-
-static bool tsms = false;
-osMutexId_t tsms_mutex;
-
-bool get_tsms()
-{
-	bool temp;
-	osMutexAcquire(tsms_mutex, osWaitForever);
-	temp = tsms;
-	osMutexRelease(tsms_mutex);
-	return temp;
-}
-
-void tsms_debounce_cb(void *arg)
-{
-	/* Set TSMS state to new debounced value */
-	osMutexAcquire(tsms_mutex, osWaitForever);
-	tsms = *((bool *)arg);
-	osMutexRelease(tsms_mutex);
-	/* Tell NERO allaboutit */
-	send_nero_msg();
-}
-
-osThreadId_t process_tsms_thread_id;
-const osThreadAttr_t process_tsms_attributes = {
-	.name = "ProcessTSMS",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh,
-};
-
-void vProcessTSMS(void *pv_params)
-{
-	bool tsms_reading;
-	tsms_mutex = osMutexNew(NULL);
-
-	/* When the callback is called, the TSMS state will be set to the new reading in tsms_reading */
-	osTimerId_t tsms_debounce_timer =
-		osTimerNew(&tsms_debounce_cb, osTimerOnce, &tsms_reading, NULL);
-
-	for (;;) {
-		osThreadFlagsWait(TSMS_UPDATE_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-
-		/* Get raw TSMS reading */
-		tsms_reading = get_tsms_reading();
-
-		/* Debounce tsms reading */
-		if (tsms_reading)
-			debounce(tsms_reading, tsms_debounce_timer,
-				 TSMS_DEBOUNCE_PERIOD);
-		else
-			/* Since debounce only debounces logic high signals, the reading must be inverted if it is low. Think of this as debouncing a "TSMS off is active" debounce. */
-			debounce(!tsms_reading, tsms_debounce_timer,
-				 TSMS_DEBOUNCE_PERIOD);
-
-		if (get_active() && get_tsms() == false) {
-			//TODO: make task notification to check if car should shut off if TSMS goes off, however this works for now
-			set_home_mode();
-		}
-	}
-}
-
 static void linear_accel_to_torque(float accel)
 {
 	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
@@ -325,8 +262,8 @@ void vProcessPedals(void *pv_params)
 		fault_data_t fault_data = { .id = BSPD_PREFAULT,
 					    .severity = DEFCON5,
 					    .diag = "BSPD prefault triggered" };
-		/* 600 is an arbitrary threshold to consider the brakes mechanically activated */
-		if (brake_value > 700 && (accelerator_value) > 0.25) {
+		/* BSPD braking theshold is arbitrary */
+		if (brake_value > 700 && accelerator_value > 0.25) {
 			printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
 			motor_disabled = true;
 			queue_fault(&fault_data);

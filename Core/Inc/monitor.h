@@ -14,9 +14,29 @@ typedef struct {
 } pedals_t;
 
 pedals_t get_pedal_data();
+
 bool get_brake_state();
 
-bool get_tsms_reading();
+/**
+ * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
+ * 
+ * @param arg Pointer to mpu_t.
+ */
+void read_lv_sense(void *arg);
+
+/**
+ * @brief Read data from the fuse monitor GPIO expander on the PDU.
+ * 
+ * @param pdu Pointer to pdu_t.
+ */
+void read_fuse_data(void *arg);
+
+/**
+ * @brief Get the debounced TSMS reading.
+ * 
+ * @return State of TSMS.
+ */
+bool get_tsms();
 
 /* Defining Temperature Monitor Task */
 void vTempMonitor(void *pv_params);
@@ -45,7 +65,6 @@ extern const osThreadAttr_t shutdown_monitor_attributes;
 
 /* Arguments for the data collection thread */
 typedef struct {
-	mpu_t *mpu;
 	pdu_t *pdu;
 	steeringio_t *wheel;
 } data_collection_args_t;

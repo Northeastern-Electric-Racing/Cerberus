@@ -5,9 +5,7 @@
 #include "cmsis_os.h"
 
 #define ONBOARD_TEMP_QUEUE_SIZE 8
-#define PEDAL_DATA_QUEUE_SIZE	1
 #define IMU_QUEUE_SIZE		8
-#define TSMS_QUEUE_SIZE		1
 
 typedef struct {
 	uint16_t accel_x;
@@ -19,7 +17,5 @@ typedef struct {
 } imu_data_t;
 
 extern osMessageQueueId_t imu_queue;
-
-extern osMessageQueueId_t tsms_data_queue;
 
 #endif // QUEUES_H

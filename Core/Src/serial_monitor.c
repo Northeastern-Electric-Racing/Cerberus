@@ -54,7 +54,6 @@ int serial_print(const char *format, ...)
 void vSerialMonitor(void *pv_params)
 {
 	char *message;
-	osStatus_t status;
 
 	printf_queue =
 		osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char *), NULL);
@@ -64,13 +63,10 @@ void vSerialMonitor(void *pv_params)
 				  osWaitForever);
 
 		/* Get message to print */
-		status = osMessageQueueGet(printf_queue, &message, NULL,
-					   osWaitForever);
-		while (status == osOK) {
+		while (osMessageQueueGet(printf_queue, &message, NULL, 0U) ==
+		       osOK) {
 			printf(message);
 			free(message);
-			status = osMessageQueueGet(printf_queue, &message, NULL,
-						   0U);
 		}
 	}
 }

@@ -33,9 +33,7 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM,	     DTI_CANID_CURRENTS,
-			      DTI_CANID_TEMPS_FAULT, DTI_CANID_ID_IQ,
-			      DTI_CANID_SIGNALS,     BMS_DCL_MSG };
+static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -107,12 +105,19 @@ void vCanDispatch(void *pv_params)
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
 
+	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
+
 	for (;;) {
 		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		/* Send CAN message */
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
 					 NULL, 0U) == osOK) {
+			/* Wait if CAN outbound queue is full */
+			while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+				osDelay(1);
+			}
+
 			msg_status = can_send_msg(can1, &msg_from_queue);
 
 			if (msg_status == HAL_ERROR) {
@@ -149,10 +154,6 @@ void vCanReceive(void *pv_params)
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
-				// case DTI_CANID_CURRENTS:
-				// case DTI_CANID_TEMPS_FAULT:
-				// case DTI_CANID_ID_IQ:
-				// case DTI_CANID_SIGNALS:
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
 				break;

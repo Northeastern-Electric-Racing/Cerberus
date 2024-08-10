@@ -50,6 +50,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+/* One second with a tick rate of 1000 Hz */
+#define ONE_SECOND 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -81,9 +83,9 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 osMessageQueueId_t imu_queue;
-osMessageQueueId_t dti_router_queue;
-osMessageQueueId_t tsms_data_queue;
 
+osTimerId_t lv_sense_timer;
+osTimerId_t fuse_timer;
 
 /* USER CODE END PV */
 
@@ -201,12 +203,6 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
-  assert(imu_queue);
-	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	assert(dti_router_queue);
-  tsms_data_queue = osMessageQueueNew(TSMS_QUEUE_SIZE, sizeof(bool), NULL);
-  assert(tsms_data_queue);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -218,6 +214,17 @@ int main(void)
   /* Monitors */
   pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
   assert(pedals_monitor_handle);
+  
+  lv_sense_timer = osTimerNew(&read_lv_sense, osTimerPeriodic, mpu, NULL);
+  osTimerStart(lv_sense_timer, ONE_SECOND);
+  fuse_timer = osTimerNew(&read_fuse_data, osTimerPeriodic, pdu, NULL);
+  osTimerStart(fuse_timer, ONE_SECOND);
+
+  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
+  data_args->pdu = pdu;
+  data_args->wheel = wheel;
+  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
+  assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   // assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
@@ -225,19 +232,8 @@ int main(void)
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 
-  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
-  data_args->mpu = mpu;
-  data_args->pdu = pdu;
-  data_args->wheel = wheel;
-  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
-  assert(data_collection_thread);
-
-  /* Data Processing */
-  process_tsms_thread_id = osThreadNew(vProcessTSMS, NULL, &process_tsms_attributes);
-  assert(process_tsms_thread_id);
-
   /* Messaging */
-  can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
+  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
   can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
@@ -245,13 +241,14 @@ int main(void)
   assert(serial_monitor_handle);
 
   /* Control Logic */
+  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  assert(fault_handle);
+
   process_pedals_args_t *proc_pedal_args = malloc(sizeof(process_pedals_args_t));
   proc_pedal_args->mc = mc;
   proc_pedal_args->pdu = pdu;
   process_pedals_thread = osThreadNew(vProcessPedals, proc_pedal_args, &torque_calc_attributes);
   assert(process_pedals_thread);
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  assert(fault_handle);
 
   sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
   sm_args->pdu = pdu;

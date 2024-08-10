@@ -21,8 +21,6 @@ static state_t cerberus_state;
 
 extern IWDG_HandleTypeDef hiwdg;
 
-osTimerId fault_timer;
-
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
 	union {
@@ -105,8 +103,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
 		write_fault(pdu, false);
-		// DO NOT CHANGE WITHOUT CHECKING the bms fault timer, as if BMS timer is later could result in a fault/unfault/fault flicker.
-		osTimerStart(fault_timer, 5000);
 		HAL_IWDG_Refresh(&hiwdg);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };

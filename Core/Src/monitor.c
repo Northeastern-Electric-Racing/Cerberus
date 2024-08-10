@@ -29,10 +29,83 @@
 static pedals_t pedal_data = {};
 osMutexId_t pedals_mutex;
 
-static bool tsms_reading = false;
-osMutexId_t tsms_reading_mutex;
+#define TSMS_DEBOUNCE_PERIOD 500 /* ms */
+
+static bool tsms = false;
+osMutexId_t tsms_mutex;
 
 enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
+
+void read_lv_sense(void *arg)
+{
+	mpu_t *mpu = (mpu_t *)arg;
+	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+
+	uint32_t v_int;
+
+	read_lv_voltage(mpu, &v_int);
+
+	/* Convert from raw ADC reading to voltage level */
+
+	// scale up then truncate
+	// convert to out of 24 volts
+	// since 12 bits / 4096
+	// Magic number bc idk the resistors on the voltage divider
+	float v_dec = v_int * 8.967;
+
+	// get final voltage
+	v_int = (uint32_t)(v_dec * 10.0);
+
+	memcpy(msg.data, &v_int, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag =
+			"Failed to send steering LV monitor CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+void read_fuse_data(void *arg)
+{
+	pdu_t *pdu = (pdu_t *)arg;
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
+	uint16_t fuse_buf;
+	bool fuses[MAX_FUSES] = { 0 };
+
+	struct __attribute__((__packed__)) {
+		uint8_t fuse_1;
+		uint8_t fuse_2;
+	} fuse_data;
+
+	fuse_buf = 0;
+
+	if (read_fuses(pdu, fuses)) {
+		fault_data.diag = "Failed to read fuses";
+		queue_fault(&fault_data);
+	}
+
+	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
+		fuse_buf |=
+			fuses[fuse]
+			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
+	}
+
+	fuse_data.fuse_1 = fuse_buf & 0xFF;
+	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
+
+	// reverse the bit order
+	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
+	fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
+
+	memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
+	if (queue_can_msg(fuse_msg)) {
+		fault_data.diag = "Failed to send CAN message";
+		queue_fault(&fault_data);
+	}
+}
 
 void set_pedal_data(uint16_t accel_val, uint16_t brake_val)
 {
@@ -190,97 +263,53 @@ void vPedalsMonitor(void *pv_params)
 	}
 }
 
-void read_lv_sense(mpu_t *mpu)
-{
-	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
-
-	uint32_t v_int;
-
-	read_lv_voltage(mpu, &v_int);
-
-	/* Convert from raw ADC reading to voltage level */
-
-	// scale up then truncate
-	// convert to out of 24 volts
-	// since 12 bits / 4096
-	// Magic number bc idk the resistors on the voltage divider
-	float v_dec = v_int * 8.967;
-
-	// get final voltage
-	v_int = (uint32_t)(v_dec * 10.0);
-
-	memcpy(msg.data, &v_int, msg.len);
-	if (queue_can_msg(msg)) {
-		fault_data.diag =
-			"Failed to send steering LV monitor CAN message";
-		queue_fault(&fault_data);
-	}
-}
-
-bool get_tsms_reading()
+bool get_tsms()
 {
 	bool temp;
-	osMutexAcquire(tsms_reading_mutex, osWaitForever);
-	temp = tsms_reading;
-	osMutexRelease(tsms_reading_mutex);
+	osMutexAcquire(tsms_mutex, osWaitForever);
+	temp = tsms;
+	osMutexRelease(tsms_mutex);
 	return temp;
 }
 
-void read_tsms(pdu_t *pdu)
+void tsms_debounce_cb(void *arg)
 {
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	static bool tsms_reading = false;
-
-	/* If the TSMS reading throws an error, queue TSMS fault */
-	osMutexAcquire(tsms_reading_mutex, osWaitForever);
-	if (read_tsms_sense(pdu, &tsms_reading)) {
-		queue_fault(&fault_data);
-	} else {
-		osThreadFlagsSet(process_tsms_thread_id, TSMS_UPDATE_FLAG);
-	}
-	osMutexRelease(tsms_reading_mutex);
+	/* Set TSMS state to new debounced value */
+	osMutexAcquire(tsms_mutex, osWaitForever);
+	tsms = *((bool *)arg);
+	osMutexRelease(tsms_mutex);
+	/* Tell NERO allaboutit */
+	send_nero_msg();
 }
 
-void read_fuse_data(pdu_t *pdu)
+/**
+ * @brief Read the TSMS signal and debounce it.
+ * 
+ * @param pdu Pointer to struct representing the PDU.
+ * @param tsms_debounce_timer Timer for debouncing the TSMS.
+ * @param tsms_reading Pointer to raw TSMS reading.
+ */
+void read_tsms(pdu_t *pdu, osTimerId_t tsms_debounce_timer, bool *tsms_reading)
 {
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
 				    .severity = DEFCON5 };
-	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-	uint16_t fuse_buf;
-	bool fuses[MAX_FUSES] = { 0 };
 
-	struct __attribute__((__packed__)) {
-		uint8_t fuse_1;
-		uint8_t fuse_2;
-	} fuse_data;
-
-	fuse_buf = 0;
-
-	if (read_fuses(pdu, fuses)) {
-		fault_data.diag = "Failed to read fuses";
+	/* If the TSMS reading throws an error, queue TSMS fault */
+	if (read_tsms_sense(pdu, tsms_reading)) {
 		queue_fault(&fault_data);
 	}
 
-	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-		fuse_buf |=
-			fuses[fuse]
-			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
-	}
+	/* Debounce tsms reading */
+	if (*tsms_reading)
+		debounce(tsms_reading, tsms_debounce_timer,
+			 TSMS_DEBOUNCE_PERIOD);
+	else
+		/* Since debounce only debounces logic high signals, the reading must be inverted if it is low. Think of this as debouncing a "TSMS off is active" debounce. */
+		debounce(!tsms_reading, tsms_debounce_timer,
+			 TSMS_DEBOUNCE_PERIOD);
 
-	fuse_data.fuse_1 = fuse_buf & 0xFF;
-	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
-
-	// reverse the bit order
-	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
-	fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
-
-	memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
-	if (queue_can_msg(fuse_msg)) {
-		fault_data.diag = "Failed to send CAN message";
-		queue_fault(&fault_data);
+	if (get_active() && get_tsms() == false) {
+		set_home_mode();
 	}
 }
 
@@ -324,32 +353,27 @@ const osThreadAttr_t data_collection_attributes = {
 void vDataCollection(void *pv_params)
 {
 	data_collection_args_t *args = (data_collection_args_t *)pv_params;
-	mpu_t *mpu = args->mpu;
 	pdu_t *pdu = args->pdu;
 	steeringio_t *wheel = args->wheel;
 	free(args);
 	static const uint8_t delay = 20;
 
-	tsms_reading_mutex = osMutexNew(NULL);
+	tsms_mutex = osMutexNew(NULL);
+	bool tsms_reading;
+	/* When the callback is called, the TSMS state will be set to the new reading in tsms_reading */
+	osTimerId_t tsms_debounce_timer =
+		osTimerNew(&tsms_debounce_cb, osTimerOnce, &tsms_reading, NULL);
 
 	for (;;) {
-		read_lv_sense(mpu);
-		osThreadYield();
-		osDelay(delay);
-
-		read_tsms(pdu);
-		osThreadYield();
-		osDelay(delay);
-
-		read_fuse_data(pdu);
-		osThreadYield();
+		read_tsms(pdu, tsms_debounce_timer, &tsms_reading);
 		osDelay(delay);
 
 		steeringio_monitor(wheel);
-		osThreadYield();
 		osDelay(delay);
 	}
 }
+
+/* Unused -----------------------------------------------*/
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
