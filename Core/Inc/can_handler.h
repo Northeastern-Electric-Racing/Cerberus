@@ -16,15 +16,9 @@
 
 #include "can.h"
 #include "cmsis_os.h"
+#include "dti.h"
 
 void can1_callback(CAN_HandleTypeDef *hcan);
-
-/**
- * @brief Task for sending CAN messages.
- */
-void vCanDispatch(void *pv_params);
-extern osThreadId_t can_dispatch_handle;
-extern const osThreadAttr_t can_dispatch_attributes;
 
 /**
  * @brief Place a CAN message in a queue.
@@ -34,5 +28,21 @@ extern const osThreadAttr_t can_dispatch_attributes;
  */
 int8_t queue_can_msg(can_msg_t msg);
 void init_can1(CAN_HandleTypeDef *hcan);
+
+/**
+ * @brief Task for sending CAN messages.
+ */
+void vCanDispatch(void *pv_params);
+extern osThreadId_t can_dispatch_handle;
+extern const osThreadAttr_t can_dispatch_attributes;
+
+/**
+ * @brief Task for processing received can messages.
+ * 
+ * @param pv_params A can_receive_args_t*.
+ */
+void vCanReceive(void *pv_params);
+extern osThreadId_t can_receive_thread;
+extern const osThreadAttr_t can_receive_attributes;
 
 #endif

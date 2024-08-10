@@ -10,9 +10,7 @@
  */
 
 #include "can_handler.h"
-#include "can.h"
 #include "cerberus_conf.h"
-#include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
@@ -21,12 +19,15 @@
 #include <stdlib.h>
 #include "stdio.h"
 #include <string.h>
-#include "dti.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
-#define CAN_NEW_MSG_FLAG   1U
+
+#define CAN_DISPATCH_FLAG 1U
+
+#define NEW_CAN_MSG_FLAG 1U
 
 static osMessageQueueId_t can_outbound_queue;
+static osMessageQueueId_t can_inbound_queue;
 
 can_t *can1;
 
@@ -50,6 +51,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(!can_init(can1));
 
 	can_outbound_queue =
+		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	can_inbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 }
 
@@ -75,25 +78,8 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	new_msg.len = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
-	// TODO: Switch to hash map
-	switch (new_msg.id) {
-	/* Messages Relevant to Motor Controller */
-	case DTI_CANID_ERPM:
-		// case DTI_CANID_CURRENTS:
-		// case DTI_CANID_TEMPS_FAULT:
-		// case DTI_CANID_ID_IQ:
-		// case DTI_CANID_SIGNALS:
-		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
-		osThreadFlagsSet(dti_router_handle, NEW_DTI_MSG_FLAG);
-		break;
-	case BMS_DCL_MSG:
-		//printf("Recieved dcl");
-		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
-		osThreadFlagsSet(bms_monitor_handle, NEW_AMS_MSG_FLAG);
-		break;
-	default:
-		break;
-	}
+	osMessageQueuePut(can_inbound_queue, &new_msg, 0U, 0U);
+	osThreadFlagsSet(can_receive_thread, NEW_CAN_MSG_FLAG);
 }
 
 int8_t queue_can_msg(can_msg_t msg)
@@ -102,7 +88,7 @@ int8_t queue_can_msg(can_msg_t msg)
 		return -1;
 
 	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
-	osThreadFlagsSet(can_dispatch_handle, CAN_NEW_MSG_FLAG);
+	osThreadFlagsSet(can_dispatch_handle, CAN_DISPATCH_FLAG);
 	return 0;
 }
 
@@ -122,7 +108,7 @@ void vCanDispatch(void *pv_params)
 	HAL_StatusTypeDef msg_status;
 
 	for (;;) {
-		osThreadFlagsWait(CAN_NEW_MSG_FLAG, osFlagsWaitAny,
+		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		/* Send CAN message */
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
@@ -135,6 +121,43 @@ void vCanDispatch(void *pv_params)
 			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
+			}
+		}
+	}
+}
+
+osThreadId_t can_receive_thread;
+const osThreadAttr_t can_receive_attributes = {
+	.name = "CanProcessing",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityRealtime,
+};
+
+void vCanReceive(void *pv_params)
+{
+	dti_t *mc = (dti_t *)pv_params;
+
+	can_msg_t msg;
+
+	for (;;) {
+		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+		while (osOK ==
+		       osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
+			switch (msg.id) {
+			/* Messages Relevant to Motor Controller */
+			case DTI_CANID_ERPM:
+				dti_record_rpm(mc, msg);
+				break;
+				// case DTI_CANID_CURRENTS:
+				// case DTI_CANID_TEMPS_FAULT:
+				// case DTI_CANID_ID_IQ:
+				// case DTI_CANID_SIGNALS:
+			case BMS_DCL_MSG:
+				handle_dcl_msg();
+				break;
+			default:
+				break;
 			}
 		}
 	}

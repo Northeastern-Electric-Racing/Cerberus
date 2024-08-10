@@ -8,10 +8,6 @@
 #include <stdlib.h>
 #include "stdio.h"
 
-#define BMS_QUEUE_SIZE 5
-
-osMessageQueueId_t bms_monitor_queue;
-
 bms_t *bms;
 
 void bms_fault_callback();
@@ -41,22 +37,9 @@ void bms_init()
 	/*TO-DO: specify timer attributes*/
 	bms->bms_monitor_timer =
 		osTimerNew(&bms_fault_callback, osTimerOnce, NULL, NULL);
-
-	bms_monitor_queue =
-		osMessageQueueNew(BMS_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	assert(bms_monitor_queue);
 }
 
-void vAMSCANMonitor(void *pv_params)
+void handle_dcl_msg()
 {
-	can_msg_t msg_from_queue;
-
 	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
-	for (;;) {
-		osThreadFlagsWait(NEW_AMS_MSG_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		osMessageQueueGet(bms_monitor_queue, &msg_from_queue, NULL,
-				  osWaitForever);
-		osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
-	}
 }

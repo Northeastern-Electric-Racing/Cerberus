@@ -10,8 +10,6 @@
 
 typedef struct {
 	osTimerId bms_monitor_timer;
-	uint16_t dcl;
-	uint16_t ccl;
 } bms_t;
 
 extern bms_t *bms;
@@ -19,11 +17,8 @@ extern bms_t *bms;
 void bms_init();
 
 /**
- * @brief Task for handling CAN messages received from the AMS.
+ * @brief Callback for when a DCL message is received from the AMS.
  */
-void vAMSCANMonitor(void *pv_params);
-extern osThreadId_t bms_monitor_handle;
-extern const osThreadAttr_t bms_monitor_attributes;
-extern osMessageQueueId_t bms_monitor_queue;
+void handle_dcl_msg();
 
 #endif /*BMS_H*/

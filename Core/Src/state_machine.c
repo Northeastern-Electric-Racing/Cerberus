@@ -30,14 +30,6 @@ typedef struct {
 	} state;
 } state_req_t;
 
-/* State Transition Map */
-// static const bool valid_trans_to_from[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
-// 	/*READY DRIVING FAULTED*/
-// 	{ true, true, true }, /* READY */
-// 	{ true, true, true }, /* PERFORMANCE */
-// 	{ true, false, true } /* FAULTED */
-// };
-
 osThreadId_t sm_director_handle;
 const osThreadAttr_t sm_director_attributes = {
 	.name = "State Machine Director",
@@ -67,11 +59,6 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc)
 {
-	// if (!valid_trans_to_from[cerberus_state.functional][new_state]) {
-	// 	printf("Invalid State transition");
-	// 	return -1;
-	// }
-
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
@@ -120,7 +107,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		osTimerStart(fault_timer, 5000);
 		HAL_IWDG_Refresh(&hiwdg);
 		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = true };
+			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		serial_print("FAULTED\r\n");
 		break;
 	default:
@@ -200,7 +187,7 @@ static int queue_state_transition(state_req_t new_state)
 int increment_nero_index()
 {
 	/* Wrap around if end of menu reached */
-	if (get_nero_state().nero_index + 1 == MAX_NERO_STATES) {
+	if (get_nero_state().nero_index + 1 >= MAX_NERO_STATES) {
 		return queue_state_transition((state_req_t){
 			.id = NERO,
 			.state.nero = (nero_state_t){

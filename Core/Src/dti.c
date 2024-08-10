@@ -266,15 +266,7 @@ float dti_get_mph(dti_t *mc)
 	       (TIRE_DIAMETER / 63360.0) * M_PI;
 }
 
-/* Inbound Task-specific Info */
-osThreadId_t dti_router_handle;
-const osThreadAttr_t dti_router_attributes = {
-	.name = "DTIRouter",
-	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh
-};
-
-static void dti_record_rpm(dti_t *mc, can_msg_t msg)
+void dti_record_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in big endian format */
 	int32_t erpm = (msg.data[0] << 24) + (msg.data[1] << 16) +
@@ -286,38 +278,4 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
 	set_mph(dti_get_mph(mc));
-}
-
-void vDTIRouter(void *pv_params)
-{
-	can_msg_t message;
-	osStatus_t status;
-	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
-
-	dti_t *mc = (dti_t *)pv_params;
-
-	for (;;) {
-		osThreadFlagsWait(NEW_DTI_MSG_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-
-		status = osMessageQueueGet(dti_router_queue, &message, NULL,
-					   osWaitForever);
-		if (status == osOK) {
-			switch (message.id) {
-			case DTI_CANID_ERPM:
-				dti_record_rpm(mc, message);
-				break;
-			case DTI_CANID_CURRENTS:
-				break;
-			case DTI_CANID_TEMPS_FAULT:
-				break;
-			case DTI_CANID_ID_IQ:
-				break;
-			case DTI_CANID_SIGNALS:
-				break;
-			default:
-				break;
-			}
-		}
-	}
 }

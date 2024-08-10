@@ -4,8 +4,8 @@
 #include "cmsis_os.h"
 #include "fault.h"
 #include "nero.h"
-#include "dti.h"
 #include "pdu.h"
+#include "dti.h"
 
 /*
  * This is a hierarchical state machine, with "drive modes"

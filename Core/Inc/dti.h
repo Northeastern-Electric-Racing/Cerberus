@@ -54,15 +54,17 @@ typedef struct {
 // TODO: Expand GET interface
 int32_t dti_get_rpm(dti_t *dti);
 
+/**
+ * @brief Process DTI ERPM CAN message.
+ * 
+ * @param mc Pointer to struct representing motor controller.
+ * @param msg CAN message to process.
+ */
+void dti_record_rpm(dti_t *mc, can_msg_t msg);
+
 float dti_get_mph(dti_t *dti);
 
 uint16_t dti_get_input_voltage(dti_t *dti);
-
-/* Utilities for Decoding CAN message */
-extern osThreadId_t dti_router_handle;
-extern const osThreadAttr_t dti_router_attributes;
-extern osMessageQueueId_t dti_router_queue;
-void vDTIRouter(void *pv_params);
 
 dti_t *dti_init();
 

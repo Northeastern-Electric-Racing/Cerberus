@@ -238,12 +238,10 @@ int main(void)
   assert(process_tsms_thread_id);
 
   /* Messaging */
-  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  assert(dti_router_handle);
   can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  bms_monitor_handle = osThreadNew(vAMSCANMonitor, NULL, &bms_monitor_attributes);
-  assert(bms_monitor_handle);
+  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
+  assert(can_receive_thread);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   assert(serial_monitor_handle);
   nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
