@@ -21,3 +21,10 @@ void debounce(bool input, osTimerAttr_t *timer, uint32_t period)
 		osTimerStop(timer);
 	}
 }
+
+osStatus_t queue_and_set_flag(osMessageQueueId_t queue, const void *msg_ptr,
+			      osThreadId_t thread_id, uint32_t flags)
+{
+	osThreadFlagsSet(thread_id, flags);
+	return osMessageQueuePut(queue, msg_ptr, 0U, 0U);
+}

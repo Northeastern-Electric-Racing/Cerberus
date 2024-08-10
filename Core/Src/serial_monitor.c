@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "cerb_utils.h"
 
 #define PRINTF_QUEUE_SIZE 25 /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
@@ -39,13 +40,13 @@ int serial_print(const char *format, ...)
 	}
 
 	/* If string can't be queued */
-	osStatus_t stat = osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
+
+	osStatus_t stat = queue_and_set_flag(
+		printf_queue, &buffer, serial_monitor_handle, NEW_MESSAGE_FLAG);
 	if (stat) {
 		free(buffer);
 		return -3;
 	}
-
-	osThreadFlagsSet(serial_monitor_handle, NEW_MESSAGE_FLAG);
 
 	return 0;
 }

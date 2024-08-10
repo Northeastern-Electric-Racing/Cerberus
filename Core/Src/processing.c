@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60 /* Hz */
@@ -292,12 +293,19 @@ void vProcessPedals(void *pv_params)
 	float mph = 0;
 	bool motor_disabled = false;
 
-	dti_t *mc = (dti_t *)pv_params;
+	process_pedals_args_t *args = (process_pedals_args_t *)pv_params;
+	dti_t *mc = args->mc;
+	pdu_t *pdu = args->pdu;
+	free(args);
 
 	for (;;) {
 		osThreadFlagsWait(PEDAL_DATA_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		pedal_data = get_pedal_data();
+
+		/* Turn brakelight on or off */
+		write_brakelight(pdu,
+				 pedal_data.brake_value > PEDAL_BRAKE_THRESH);
 
 		/* 0.0 - 1.0 */
 		float accelerator_value =

@@ -15,7 +15,6 @@
 #include "task.h"
 #include "timer.h"
 #include "processing.h"
-#include "control.h"
 #include "cerb_utils.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -182,13 +181,9 @@ void vPedalsMonitor(void *pv_params)
 		uint16_t brake_val =
 			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
 
-		/* Notify brakelight controls task that there is new brake data */
-		osThreadFlagsSet(brakelight_control_thread,
-				 BRAKE_STATE_UPDATE_FLAG);
-
 		set_pedal_data(accel_val, brake_val);
 
-		/* Publish to Onboard Pedals Queue */
+		/* Notify of new pedal data */
 		osThreadFlagsSet(process_pedals_thread, PEDAL_DATA_FLAG);
 
 		osDelay(PEDALS_SAMPLE_DELAY);

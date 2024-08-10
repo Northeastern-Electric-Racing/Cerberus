@@ -12,6 +12,12 @@
 */
 void set_mph(int8_t new_mph);
 
+/**
+ * @brief Send NERO information over CAN.
+ * 
+ */
+void send_mode_status();
+
 /*
 * Emits the state of NERO
 */

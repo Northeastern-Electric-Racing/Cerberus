@@ -40,7 +40,6 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "processing.h"
-#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -248,7 +247,10 @@ int main(void)
   assert(nero_monitor_handle);
 
   /* Control Logic */
-  process_pedals_thread = osThreadNew(vProcessPedals, mc, &torque_calc_attributes);
+  process_pedals_args_t *proc_pedal_args = malloc(sizeof(process_pedals_args_t));
+  proc_pedal_args->mc = mc;
+  proc_pedal_args->pdu = pdu;
+  process_pedals_thread = osThreadNew(vProcessPedals, proc_pedal_args, &torque_calc_attributes);
   assert(process_pedals_thread);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
@@ -258,8 +260,6 @@ int main(void)
   sm_args->mc = mc;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
-  brakelight_control_thread = osThreadNew(vBrakelightControl, pdu, &brakelight_monitor_attributes);;
-  assert(brakelight_control_thread);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -725,6 +725,9 @@ void StartDefaultTask(void *argument)
     /* Toggle LED at certain frequency */
     printf(".\r\n..\r\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
+
+    /* Send NERO state data continuously */
+    send_mode_status();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

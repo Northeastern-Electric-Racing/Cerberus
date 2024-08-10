@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "cerb_utils.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
 #define STATE_TRANSITION_FLAG  1U
@@ -48,7 +49,8 @@ bool get_active()
 {
 	return cerberus_state.functional == F_EFFICIENCY ||
 	       cerberus_state.functional == F_PERFORMANCE ||
-	       cerberus_state.functional == F_PIT;
+	       cerberus_state.functional == F_PIT ||
+	       cerberus_state.functional == REVERSE;
 }
 
 nero_state_t get_nero_state()
@@ -176,11 +178,8 @@ static int queue_state_transition(state_req_t new_state)
 	if (!state_trans_queue) {
 		return 1;
 	}
-
-	osStatus_t status =
-		osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
-	osThreadFlagsSet(sm_director_handle, STATE_TRANSITION_FLAG);
-	return status;
+	return queue_and_set_flag(state_trans_queue, &new_state,
+				  sm_director_handle, STATE_TRANSITION_FLAG);
 }
 
 /* HANDLE USER INPUT */

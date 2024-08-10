@@ -13,7 +13,7 @@
 
 static int8_t mph = 0;
 
-static void send_mode_status()
+void send_mode_status()
 {
 	can_msg_t msg = { .id = 0x501,
 			  .len = 4,

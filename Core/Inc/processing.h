@@ -14,6 +14,8 @@
 
 #include "cmsis_os.h"
 #include "stdbool.h"
+#include "dti.h"
+#include "pdu.h"
 
 #define TSMS_UPDATE_FLAG 1U
 #define PEDAL_DATA_FLAG	 1U
@@ -44,6 +46,11 @@ bool get_tsms();
 void vProcessTSMS(void *pv_params);
 extern osThreadId_t process_tsms_thread_id;
 extern const osThreadAttr_t process_tsms_attributes;
+
+typedef struct {
+	dti_t *mc;
+	pdu_t *pdu;
+} process_pedals_args_t;
 
 /**
  * @brief Task for processing pedal data.

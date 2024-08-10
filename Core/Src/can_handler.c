@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include "stdio.h"
 #include <string.h>
+#include "cerb_utils.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
@@ -78,8 +79,8 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	new_msg.len = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
-	osMessageQueuePut(can_inbound_queue, &new_msg, 0U, 0U);
-	osThreadFlagsSet(can_receive_thread, NEW_CAN_MSG_FLAG);
+	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
+			   NEW_CAN_MSG_FLAG);
 }
 
 int8_t queue_can_msg(can_msg_t msg)
@@ -87,9 +88,8 @@ int8_t queue_can_msg(can_msg_t msg)
 	if (!can_outbound_queue)
 		return -1;
 
-	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
-	osThreadFlagsSet(can_dispatch_handle, CAN_DISPATCH_FLAG);
-	return 0;
+	return queue_and_set_flag(can_outbound_queue, &msg, can_dispatch_handle,
+				  CAN_DISPATCH_FLAG);
 }
 
 osThreadId_t can_dispatch_handle;
