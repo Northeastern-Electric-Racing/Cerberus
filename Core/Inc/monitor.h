@@ -8,29 +8,6 @@
 #include "pdu.h"
 #include "steeringio.h"
 
-typedef struct {
-	uint16_t brake_value;
-	uint16_t accelerator_value; /* 0-100 */
-} pedals_t;
-
-pedals_t get_pedal_data();
-
-bool get_brake_state();
-
-/**
- * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
- * 
- * @param arg Pointer to mpu_t.
- */
-void read_lv_sense(void *arg);
-
-/**
- * @brief Read data from the fuse monitor GPIO expander on the PDU.
- * 
- * @param pdu Pointer to pdu_t.
- */
-void read_fuse_data(void *arg);
-
 /**
  * @brief Get the debounced TSMS reading.
  * 
@@ -38,20 +15,37 @@ void read_fuse_data(void *arg);
  */
 bool get_tsms();
 
-/* Defining Temperature Monitor Task */
-void vTempMonitor(void *pv_params);
-extern osThreadId_t temp_monitor_handle;
-extern const osThreadAttr_t temp_monitor_attributes;
+typedef struct {
+	mpu_t *mpu;
+	pdu_t *pdu;
+} non_func_data_args_t;
 
-/* Task for Petting the Watchdog */
-void vWatchdogMonitor(void *pv_params);
-extern osThreadId_t watchdog_monitor_handle;
-extern const osThreadAttr_t watchdog_monitor_attributes;
+/**
+ * @brief Task for collecting non functional data from the car. Includes LV battery voltage reading and fuse monitor reading.
+ * 
+ * @param pv_params Pointer to non_func_data_args_t
+ */
+void vNonFunctionalDataCollection(void *pv_params);
+extern osThreadId_t non_functional_data_thead;
+extern const osThreadAttr_t non_functional_data_attributes;
 
-/* Task for Reading in Pedal Inputs (Brakes + Accelerator) */
-void vPedalsMonitor(void *pv_params);
-extern osThreadId_t pedals_monitor_handle;
-extern const osThreadAttr_t pedals_monitor_attributes;
+/* Arguments for the data collection thread */
+typedef struct {
+	mpu_t *mpu;
+	pdu_t *pdu;
+	steeringio_t *wheel;
+} data_collection_args_t;
+
+/**
+ * @brief Task for collecting functional data from the car. Includes TSMS and steering wheel button monitoring.
+ * 
+ * @param pv_params Pointer to data_collection_args_t
+ */
+void vDataCollection(void *pv_params);
+extern osThreadId_t data_collection_thread;
+extern const osThreadAttr_t data_collection_attributes;
+
+/* Unused -------------------------------------------------------------------------------------------------------*/
 
 /* Task for Monitoring the IMU */
 void vIMUMonitor(void *pv_params);
@@ -63,15 +57,9 @@ void vShutdownMonitor(void *pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
 
-/* Arguments for the data collection thread */
-typedef struct {
-	pdu_t *pdu;
-	steeringio_t *wheel;
-} data_collection_args_t;
-
-/* Task for collecting data from the car */
-void vDataCollection(void *pv_params);
-extern osThreadId_t data_collection_thread;
-extern const osThreadAttr_t data_collection_attributes;
+/* Defining Temperature Monitor Task */
+void vTempMonitor(void *pv_params);
+extern osThreadId_t temp_monitor_handle;
+extern const osThreadAttr_t temp_monitor_attributes;
 
 #endif // MONITOR_H

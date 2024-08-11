@@ -14,28 +14,23 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "timer.h"
-#include "processing.h"
+#include "pedals.h"
 #include "cerb_utils.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Parameters for the pedal monitoring task */
-#define MAX_ADC_VAL_12b	  4096
-#define PEDAL_DIFF_THRESH 30
-#define PEDAL_FAULT_TIME  500 /* ms */
-
-static pedals_t pedal_data = {};
-osMutexId_t pedals_mutex;
-
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
 static bool tsms = false;
 osMutexId_t tsms_mutex;
 
-enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
-
+/**
+ * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
+ * 
+ * @param arg Pointer to mpu_t.
+ */
 void read_lv_sense(void *arg)
 {
 	mpu_t *mpu = (mpu_t *)arg;
@@ -66,6 +61,11 @@ void read_lv_sense(void *arg)
 	}
 }
 
+/**
+ * @brief Read data from the fuse monitor GPIO expander on the PDU.
+ * 
+ * @param pdu Pointer to pdu_t.
+ */
 void read_fuse_data(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
@@ -107,159 +107,22 @@ void read_fuse_data(void *arg)
 	}
 }
 
-void set_pedal_data(uint16_t accel_val, uint16_t brake_val)
+osThreadId_t non_functional_data_thead;
+const osThreadAttr_t non_functional_data_attributes;
+
+void vNonFunctionalDataCollection(void *pv_params)
 {
-	osMutexAcquire(pedals_mutex, osWaitForever);
-	pedal_data.accelerator_value = accel_val;
-	pedal_data.brake_value = brake_val;
-	osMutexRelease(pedals_mutex);
-}
-
-pedals_t get_pedal_data()
-{
-	pedals_t temp;
-	osMutexAcquire(pedals_mutex, osWaitForever);
-	memcpy(&temp, &pedal_data, sizeof(pedals_t));
-	osMutexRelease(pedals_mutex);
-	return temp;
-}
-
-bool get_brake_state()
-{
-	return get_pedal_data().brake_value > PEDAL_BRAKE_THRESH;
-}
-
-/**
- * @brief Return the adjusted pedal value based on its offset and maximum value. Clamps negative values to 0.
- * 
- * @param raw the raw pedal value
- * @param offset the offset for the pedal
- * @param max the maximum value of the pedal
- */
-uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
-{
-	return (int16_t)raw - offset <= 0 ?
-		       0 :
-		       (uint16_t)(raw - offset) * 100 / (max - offset);
-}
-
-/**
- * @brief Callback for pedal fault debouncing.
- * 
- * @param arg The fault message as a char*.
- */
-void pedal_fault_cb(void *arg)
-{
-	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
-				    .severity = DEFCON1 };
-	fault_data.diag = (char *)arg;
-	queue_fault(&fault_data);
-}
-
-/**
- * @brief Function to send raw pedal data over CAN.
- * 
- * @param arg A pointer to an array of 4 unsigned 32 bit integers.
- */
-void send_pedal_data(void *arg)
-{
-	static const uint8_t adc_data_size = 4;
-	uint32_t adc_data[adc_data_size];
-	/* Copy contents of adc_data to new location in memory because we endian swap them */
-	memcpy(adc_data, (uint32_t *)arg, adc_data_size * sizeof(adc_data[0]));
-
-	can_msg_t accel_pedals_msg = { .id = CANID_PEDALS_ACCEL_MSG,
-				       .len = 8,
-				       .data = { 0 } };
-	can_msg_t brake_pedals_msg = { .id = CANID_PEDALS_BRAKE_MSG,
-				       .len = 8,
-				       .data = { 0 } };
-
-	endian_swap(&adc_data[ACCELPIN_1], sizeof(adc_data[ACCELPIN_1]));
-	endian_swap(&adc_data[ACCELPIN_2], sizeof(adc_data[ACCELPIN_2]));
-	memcpy(accel_pedals_msg.data, &adc_data, accel_pedals_msg.len);
-	queue_can_msg(accel_pedals_msg);
-
-	endian_swap(&adc_data[BRAKEPIN_1], sizeof(adc_data[BRAKEPIN_1]));
-	endian_swap(&adc_data[BRAKEPIN_2], sizeof(adc_data[BRAKEPIN_2]));
-	memcpy(brake_pedals_msg.data, adc_data + 2, brake_pedals_msg.len);
-	queue_can_msg(brake_pedals_msg);
-}
-
-osThreadId_t pedals_monitor_handle;
-const osThreadAttr_t pedals_monitor_attributes = {
-	.name = "PedalMonitor",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime,
-};
-
-void vPedalsMonitor(void *pv_params)
-{
-	uint32_t adc_data[4];
-	osTimerId_t send_pedal_data_timer =
-		osTimerNew(&send_pedal_data, osTimerPeriodic, adc_data, NULL);
-
-	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
-	osTimerStart(send_pedal_data_timer, 100);
-
-	/* oc = Open Circuit */
-	osTimerId_t oc_fault_timer = osTimerNew(
-		&pedal_fault_cb, osTimerOnce,
-		"Pedal open circuit fault - max acceleration value", NULL);
-
-	/* sc = Short Circuit */
-	osTimerId_t sc_fault_timer = osTimerNew(
-		&pedal_fault_cb, osTimerOnce,
-		"Pedal short circuit fault - no acceleration value", NULL);
-
-	/* Pedal difference too large fault */
-	osTimerId_t diff_fault_timer = osTimerNew(
-		&pedal_fault_cb, osTimerOnce,
-		"Pedal fault - pedal values are too different", NULL);
-
-	/* Handle ADC Data for two input accelerator value and two input brake value*/
-	mpu_t *mpu = (mpu_t *)pv_params;
-
-	/* Mutexes for setting and getting pedal values and brake state */
-	pedals_mutex = osMutexNew(NULL);
+	non_func_data_args_t *args = (non_func_data_args_t *)pv_params;
+	mpu_t *mpu = args->mpu;
+	pdu_t *pdu = args->pdu;
+	free(args);
 
 	for (;;) {
-		read_pedals(mpu, adc_data);
+		read_lv_sense(mpu);
+		read_fuse_data(pdu);
 
-		uint32_t accel1_raw = adc_data[ACCELPIN_1];
-		uint32_t accel2_raw = adc_data[ACCELPIN_2];
-
-		/* Pedal open circuit fault */
-		bool open_circuit = accel1_raw > (MAX_ADC_VAL_12b - 20) ||
-				    accel2_raw > (MAX_ADC_VAL_12b - 20);
-		debounce(open_circuit, oc_fault_timer, PEDAL_FAULT_TIME);
-
-		/* Pedal short circuit fault */
-		bool short_circuit = accel1_raw < 500 || accel2_raw < 500;
-		debounce(short_circuit, sc_fault_timer, PEDAL_FAULT_TIME);
-
-		/* Normalize pedal values to be from 0-100 */
-		uint16_t accel1_norm = adjust_pedal_val(
-			adc_data[ACCELPIN_1], ACCEL1_OFFSET, ACCEL1_MAX_VAL);
-		uint16_t accel2_norm = adjust_pedal_val(
-			adc_data[ACCELPIN_2], ACCEL2_OFFSET, ACCEL2_MAX_VAL);
-
-		/* Pedal difference fault evaluation */
-		bool pedals_too_diff = abs(accel1_norm - accel2_norm) >
-				       PEDAL_DIFF_THRESH;
-		debounce(pedals_too_diff, diff_fault_timer, PEDAL_FAULT_TIME);
-
-		/* Combine normalized values from both accel pedal sensors */
-		uint16_t accel_val = (uint16_t)(accel1_norm + accel2_norm) / 2;
-		uint16_t brake_val =
-			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
-
-		set_pedal_data(accel_val, brake_val);
-
-		/* Notify of new pedal data */
-		osThreadFlagsSet(process_pedals_thread, PEDAL_DATA_FLAG);
-
-		osDelay(PEDALS_SAMPLE_DELAY);
+		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
+		osDelay(1000);
 	}
 }
 
@@ -286,27 +149,27 @@ void tsms_debounce_cb(void *arg)
  * @brief Read the TSMS signal and debounce it.
  * 
  * @param pdu Pointer to struct representing the PDU.
- * @param tsms_debounce_timer Timer for debouncing the TSMS.
- * @param tsms_reading Pointer to raw TSMS reading.
  */
-void read_tsms(pdu_t *pdu, osTimerId_t tsms_debounce_timer, bool *tsms_reading)
+void read_tsms(pdu_t *pdu)
 {
+	static nertimer_t timer;
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
 				    .severity = DEFCON5 };
+	bool tsms_reading;
 
 	/* If the TSMS reading throws an error, queue TSMS fault */
-	if (read_tsms_sense(pdu, tsms_reading)) {
+	if (read_tsms_sense(pdu, &tsms_reading)) {
 		queue_fault(&fault_data);
 	}
 
 	/* Debounce tsms reading */
-	if (*tsms_reading)
-		debounce(tsms_reading, tsms_debounce_timer,
-			 TSMS_DEBOUNCE_PERIOD);
+	if (tsms_reading)
+		debounce(tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD,
+			 &tsms_debounce_cb, &tsms_reading);
 	else
 		/* Since debounce only debounces logic high signals, the reading must be inverted if it is low. Think of this as debouncing a "TSMS off is active" debounce. */
-		debounce(!tsms_reading, tsms_debounce_timer,
-			 TSMS_DEBOUNCE_PERIOD);
+		debounce(!tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD,
+			 &tsms_debounce_cb, &tsms_reading);
 
 	if (get_active() && get_tsms() == false) {
 		set_home_mode();
@@ -325,7 +188,7 @@ void steeringio_monitor(steeringio_t *wheel)
 	uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
 	uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
 	uint8_t button_6 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
-	uint8_t button_7 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+	uint8_t button_7 = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 	uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 
 	uint8_t button_data = (button_1 << 7) | (button_2 << 6) |
@@ -346,7 +209,7 @@ void steeringio_monitor(steeringio_t *wheel)
 osThreadId_t data_collection_thread;
 const osThreadAttr_t data_collection_attributes = {
 	.name = "DataCollection",
-	.stack_size = 1000 + (32 * 8 + 128 * 8 + 800 + 64 * 16 + 32 * 16),
+	.stack_size = 32 * 32,
 	.priority = (osPriority_t)osPriorityBelowNormal,
 };
 
@@ -359,13 +222,9 @@ void vDataCollection(void *pv_params)
 	static const uint8_t delay = 20;
 
 	tsms_mutex = osMutexNew(NULL);
-	bool tsms_reading;
-	/* When the callback is called, the TSMS state will be set to the new reading in tsms_reading */
-	osTimerId_t tsms_debounce_timer =
-		osTimerNew(&tsms_debounce_cb, osTimerOnce, &tsms_reading, NULL);
 
 	for (;;) {
-		read_tsms(pdu, tsms_debounce_timer, &tsms_reading);
+		read_tsms(pdu);
 		osDelay(delay);
 
 		steeringio_monitor(wheel);

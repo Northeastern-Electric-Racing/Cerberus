@@ -9,16 +9,21 @@
 #include "stdio.h"
 #include "cerberus_conf.h"
 #include "monitor.h"
-#include "processing.h"
+#include "pedals.h"
 
 static int8_t mph = 0;
 
 void send_nero_msg()
 {
+	uint8_t nero_index;
+	if (get_func_state() == REVERSE) {
+		nero_index = 255;
+	} else {
+		nero_index = get_nero_state().nero_index;
+	}
 	can_msg_t msg = { .id = 0x501,
 			  .len = 4,
-			  .data = { get_nero_state().home_mode,
-				    get_nero_state().nero_index, mph,
+			  .data = { get_nero_state().home_mode, nero_index, mph,
 				    get_tsms() } };
 
 	/* Send CAN message */

@@ -1,5 +1,6 @@
 #include "pdu.h"
 #include "serial_monitor.h"
+#include "fault.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,26 +16,75 @@
 
 #define SHUTDOWN_ADDR PCA_I2C_ADDR_3
 #define CTRL_ADDR     PCA_I2C_ADDR_2
-#define RTDS_DURATION 2500
+#define RTDS_DURATION 2500 /* ms at 1kHz tick rate */
 
 static osMutexAttr_t pdu_mutex_attributes;
 
-static void rtds_shutoff_cb(void *pv_params)
+static uint8_t sound_rtds(pdu_t *pdu)
+{
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* write RTDS over i2c */
+	HAL_StatusTypeDef error = pca9539_write_pin(
+		pdu->ctrl_expander, PCA_OUTPUT_1_REG, RTDS_CTRL, true);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	osMutexRelease(pdu->mutex);
+
+	return 0;
+}
+
+static uint8_t rtds_shutoff(void *pv_params)
 {
 	pdu_t *pdu = (pdu_t *)pv_params;
 	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
 	if (stat)
-		return;
+		return stat;
 
 	/* write RTDS over i2c */
 	HAL_StatusTypeDef error = pca9539_write_pin(
 		pdu->ctrl_expander, PCA_OUTPUT_1_REG, RTDS_CTRL, false);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
-		return;
+		return error;
 	}
 
 	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+osThreadId_t rtds_thread;
+const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
+					 .stack_size = 300,
+					 /* The task will run infrequently */
+					 .priority = osPriorityRealtime7 };
+void vRTDS(void *arg)
+{
+	pdu_t *pdu = (pdu_t *)arg;
+
+	fault_data_t rtds_fault = { .id = RTDS_FAULT, .severity = DEFCON4 };
+
+	for (;;) {
+		osThreadFlagsWait(SOUND_RTDS_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+		if (sound_rtds(pdu)) {
+			rtds_fault.diag = "Unable to sound RTDS";
+			queue_fault(&rtds_fault);
+		}
+		osDelay(RTDS_DURATION);
+		if (rtds_shutoff(pdu)) {
+			rtds_fault.diag = "Unable to stop RTDS";
+			queue_fault(&rtds_fault);
+		}
+	}
 }
 
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
@@ -110,8 +160,6 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	/* Create Mutex */
 	pdu->mutex = osMutexNew(&pdu_mutex_attributes);
 	assert(pdu->mutex);
-
-	pdu->rtds_timer = osTimerNew(&rtds_shutoff_cb, osTimerOnce, pdu, NULL);
 
 	return pdu;
 }
@@ -199,30 +247,6 @@ int8_t write_fan_battbox(pdu_t *pdu, bool status)
 	}
 
 	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
-int8_t sound_rtds(pdu_t *pdu)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	osTimerStart(pdu->rtds_timer, RTDS_DURATION);
-
-	/* write RTDS over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_1_REG, RTDS_CTRL, true);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-
 	return 0;
 }
 
@@ -333,7 +357,7 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	deconstruct_buf(bank1_d, bank1);
 
 	status[CKPT_BRB_CLR] = bank0[0];
-	status[BMS_OK] = bank0[2];
+	status[AMS_OK] = bank0[2];
 	status[INERTIA_SW_OK] = bank0[3];
 	status[SPARE_GPIO1_OK] = bank0[4];
 	status[IMD_OK] = bank0[5];

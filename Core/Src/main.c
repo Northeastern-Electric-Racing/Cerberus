@@ -33,13 +33,13 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
-#include "bms.h"
+#include "ams.h"
 #include "pdu.h"
 #include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
-#include "processing.h"
+#include "pedals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,8 +50,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-/* One second with a tick rate of 1000 Hz */
-#define ONE_SECOND 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -83,9 +81,6 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 osMessageQueueId_t imu_queue;
-
-osTimerId_t lv_sense_timer;
-osTimerId_t fuse_timer;
 
 /* USER CODE END PV */
 
@@ -181,7 +176,7 @@ int main(void)
   steeringio_t *wheel = steeringio_init();
   assert(wheel);
   init_can1(&hcan1);
-  bms_init();
+  ams_init();
 
   printf("\r\n\n\nInit Success...\r\n\n\n");
 
@@ -212,15 +207,14 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* Monitors */
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  assert(pedals_monitor_handle);
-  
-  lv_sense_timer = osTimerNew(&read_lv_sense, osTimerPeriodic, mpu, NULL);
-  osTimerStart(lv_sense_timer, ONE_SECOND);
-  fuse_timer = osTimerNew(&read_fuse_data, osTimerPeriodic, pdu, NULL);
-  osTimerStart(fuse_timer, ONE_SECOND);
+  non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
+  nfd_args->mpu = mpu;
+  nfd_args->pdu = pdu;
+  non_functional_data_thead = osThreadNew(vNonFunctionalDataCollection, nfd_args, &non_functional_data_attributes);
+  assert(non_functional_data_thead);
 
   data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
+  data_args->mpu = mpu;
   data_args->pdu = pdu;
   data_args->wheel = wheel;
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
@@ -244,10 +238,14 @@ int main(void)
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
 
-  process_pedals_args_t *proc_pedal_args = malloc(sizeof(process_pedals_args_t));
-  proc_pedal_args->mc = mc;
-  proc_pedal_args->pdu = pdu;
-  process_pedals_thread = osThreadNew(vProcessPedals, proc_pedal_args, &torque_calc_attributes);
+  rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
+  assert(rtds_thread);
+
+  pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
+  pedals_args->mpu = mpu;
+  pedals_args->mc = mc;
+  pedals_args->pdu = pdu;
+  process_pedals_thread = osThreadNew(vProcessPedals, pedals_args, &process_pedals_attributes);
   assert(process_pedals_thread);
 
   sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));

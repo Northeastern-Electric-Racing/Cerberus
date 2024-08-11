@@ -14,7 +14,7 @@
 
 osMessageQueueId_t fault_handle_queue;
 
-int queue_fault(fault_data_t *fault_data)
+osStatus_t queue_fault(fault_data_t *fault_data)
 {
 	if (!fault_handle_queue)
 		return -1;

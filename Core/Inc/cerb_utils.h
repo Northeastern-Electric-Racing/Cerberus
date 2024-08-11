@@ -14,18 +14,22 @@
 
 #include "cmsis_os.h"
 #include "stdbool.h"
+#include "timer.h"
 
 /**
- * @brief Function to debounce an input with an RTOS timer. Debounce is started and maintained by a high signal, and it is interrupted by a low signal.
+ * @brief Function to debounce a signal. Debounce is started and maintained by a high signal, and it is interrupted by a low signal. The callback is called in a thread context.
  * 
  * @param input Input to debounce.
- * @param timer RTOS timer with callback to be called at end of debounce period.
+ * @param timer Timer for debouncing input.
  * @param period The period of time, in milliseconds, to debounce the input for.
+ * @param cb Callback to be called if the input is successfully debounced.
+ * @param arg Argument of the callback function.
  */
-void debounce(bool input, osTimerAttr_t *timer, uint32_t period);
+void debounce(bool input, nertimer_t *timer, uint32_t period,
+	      void (*cb)(void *arg), void *arg);
 
 /**
- * @brief Queue a message and set a thread noticication flag.
+ * @brief Queue a message and set a thread noticication flag. The message is queued with a timeout of 0.
  * 
  * @param queue Queue to put message in.
  * @param msg_ptr Pointer to message to put in queue.

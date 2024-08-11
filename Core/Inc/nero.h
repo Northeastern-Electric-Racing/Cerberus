@@ -5,9 +5,11 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 
-/*
- * Tells NERO the current MPH
-*/
+/**
+ * @brief Record new MPH data and send it to NERO.
+ * 
+ * @param new_mph New MPH data
+ */
 void set_mph(int8_t new_mph);
 
 /**

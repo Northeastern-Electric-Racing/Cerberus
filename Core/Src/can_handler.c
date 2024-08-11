@@ -14,7 +14,7 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
-#include "bms.h"
+#include "ams.h"
 #include <assert.h>
 #include <stdlib.h>
 #include "stdio.h"
@@ -33,7 +33,7 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG };
+static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, AMS_DCL_MSG };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -154,7 +154,7 @@ void vCanReceive(void *pv_params)
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
-			case BMS_DCL_MSG:
+			case AMS_DCL_MSG:
 				handle_dcl_msg();
 				break;
 			default:

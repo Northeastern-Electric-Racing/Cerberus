@@ -19,10 +19,11 @@ typedef enum {
 	STEERINGIO_ROUTING_FAULT = 0x100,
 	STATE_RECEIVED_FAULT = 0x200,
 	INVALID_TRANSITION_FAULT = 0x400,
-	BMS_CAN_MONITOR_FAULT = 0x800,
+	AMS_CAN_MONITOR_FAULT = 0x800,
 	BUTTONS_MONITOR_FAULT = 0xF00,
 	BSPD_PREFAULT = 0x1000,
 	LV_MONITOR_FAULT = 0x2000,
+	RTDS_FAULT = 0x4000,
 	MAX_FAULTS
 } fault_code_t;
 
@@ -32,10 +33,19 @@ typedef struct {
 	char *diag;
 } fault_data_t;
 
-/* Function to queue a fault */
-int queue_fault(fault_data_t *fault_data);
+/**
+ * @brief Put a fault in the fault queue.
+ * 
+ * @param fault_data Pointer to struct containing data about the fault
+ * @return osStatus_t Error code of osMessageQueuePut operation
+ */
+osStatus_t queue_fault(fault_data_t *fault_data);
 
-/* Defining Fault Hanlder Task */
+/**
+ * @brief Task for processing faults.
+ * 
+ * @param pv_params NULL
+ */
 void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;

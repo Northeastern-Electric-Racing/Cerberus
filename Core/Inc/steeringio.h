@@ -3,6 +3,7 @@
 
 #include "cmsis_os.h"
 #include "ringbuffer.h"
+#include "timer.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -26,19 +27,23 @@ typedef struct {
 	osMutexId_t *
 		button_mutex; /* Necessary to allow multiple threads to access same data */
 	osMutexId_t *ringbuffer_mutex;
-	osTimerId_t debounce_timers[MAX_STEERING_BUTTONS];
+	nertimer_t *debounce_timers[MAX_STEERING_BUTTONS];
 	ringbuffer_t *debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
 	/* Array indicating that a button has already been pressed and not unpressed */
-	bool pressed_once[MAX_STEERING_BUTTONS];
+	bool debounced[MAX_STEERING_BUTTONS];
 } steeringio_t;
 
 /* Creates a new Steering Wheel interface */
 steeringio_t *steeringio_init();
 
-bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button);
-
+/**
+ * @brief Update the status of the steering wheel buttons.
+ * 
+ * @param wheel Pointer to struct representing the steering wheel
+ * @param button_data Unsigned 8 bit integer where each bit is a button status
+ */
 void steeringio_update(steeringio_t *wheel, uint8_t button_data);
 
 #endif /* STEERING_H */

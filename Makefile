@@ -52,12 +52,12 @@ Core/Src/can_handler.c \
 Core/Src/serial_monitor.c \
 Core/Src/dti.c \
 Core/Src/state_machine.c \
-Core/Src/bms.c \
+Core/Src/ams.c \
 Core/Src/nero.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
 Core/Src/steeringio.c \
-Core/Src/processing.c \
+Core/Src/pedals.c \
 Core/Src/cerb_utils.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
