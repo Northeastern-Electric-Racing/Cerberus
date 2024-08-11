@@ -31,7 +31,6 @@ extern const osThreadAttr_t non_functional_data_attributes;
 
 /* Arguments for the data collection thread */
 typedef struct {
-	mpu_t *mpu;
 	pdu_t *pdu;
 	steeringio_t *wheel;
 } data_collection_args_t;

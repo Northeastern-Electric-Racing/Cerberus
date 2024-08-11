@@ -4,7 +4,7 @@
 
 #include "cmsis_os.h"
 
-#define AMS_DCL_MSG	   0x156 /* AMS MONITOR WATCHDOG*/
+#define AMS_DCL_MSG 0x156 /* AMS MONITOR WATCHDOG*/
 
 typedef struct {
 	osTimerId ams_monitor_timer;

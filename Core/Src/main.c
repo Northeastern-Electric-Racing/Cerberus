@@ -214,7 +214,6 @@ int main(void)
   assert(non_functional_data_thead);
 
   data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
-  data_args->mpu = mpu;
   data_args->pdu = pdu;
   data_args->wheel = wheel;
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);

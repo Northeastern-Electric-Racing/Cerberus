@@ -209,7 +209,7 @@ void steeringio_monitor(steeringio_t *wheel)
 osThreadId_t data_collection_thread;
 const osThreadAttr_t data_collection_attributes = {
 	.name = "DataCollection",
-	.stack_size = 32 * 32,
+	.stack_size = 1500,
 	.priority = (osPriority_t)osPriorityBelowNormal,
 };
 

@@ -159,7 +159,7 @@ void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 			malloc(sizeof(debounce_cb_args_t));
 		debounce_args->wheel = wheel;
 		debounce_args->button = i;
-	
+
 		if (wheel->raw_buttons[i])
 			debounce(wheel->raw_buttons[i],
 				 wheel->debounce_timers[i],
