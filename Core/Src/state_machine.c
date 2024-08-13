@@ -223,7 +223,6 @@ int set_home_mode()
 				.home_mode = true } });
 }
 
-/* HANDLE FAULTS */
 int fault()
 {
 	return queue_state_transition(

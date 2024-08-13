@@ -198,16 +198,13 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 
 	/* BSPD braking theshold is arbitrary */
 	if (brake_val > 700 && accel_val > 0.25) {
-		printf("\n\n\n\rENTER MOTOR DISABLED\r\n\n\n");
 		motor_disabled = true;
 		queue_fault(&fault_data);
 	}
 
 	if (motor_disabled) {
-		printf("\nMotor disabled\n");
 		if (accel_val < 0.05) {
 			motor_disabled = false;
-			printf("\n\nMotor reenabled\n\n");
 		} else {
 			dti_set_torque(0);
 		}
@@ -414,7 +411,7 @@ void vProcessPedals(void *pv_params)
 	/* Mutexes for setting and getting pedal values and brake state */
 	brake_mutex = osMutexNew(NULL);
 
-	const uint16_t delay_time = 15; /* ms */
+	const uint16_t delay_time = 10; /* ms */
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
 
@@ -445,6 +442,8 @@ void vProcessPedals(void *pv_params)
 		float accelerator_value = (float)accel_val / 100.0;
 
 		if (calc_bspd_prefault(accelerator_value, brake_val)) {
+			/* Prefault triggered */
+			osDelay(delay_time);
 			continue;
 		}
 
@@ -469,6 +468,6 @@ void vProcessPedals(void *pv_params)
 			break;
 		}
 
-		osDelay(50);
+		osDelay(delay_time);
 	}
 }

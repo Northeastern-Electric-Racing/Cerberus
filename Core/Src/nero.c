@@ -16,6 +16,7 @@ static int8_t mph = 0;
 void send_nero_msg()
 {
 	uint8_t nero_index;
+	/* Since the screen on NERO relies on the NERO index, and reverse and pit have the same index, reverse gets a special index */
 	if (get_func_state() == REVERSE) {
 		nero_index = 255;
 	} else {

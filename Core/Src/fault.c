@@ -49,14 +49,15 @@ void vFaultHandler(void *pv_params)
 			can_msg_t msg;
 			msg.id = CANID_FAULT_MSG;
 			msg.len = 8;
-			uint8_t msg_data[8];
-			memcpy(msg_data, &fault_id, sizeof(fault_id));
-			memcpy(msg_data + sizeof(fault_id), &defcon,
+
+			memcpy(msg.data, &fault_id, sizeof(fault_id));
+			memcpy(msg.data + sizeof(fault_id), &defcon,
 			       sizeof(defcon));
-			memcpy(msg.data, msg_data, msg.len);
+
 			queue_can_msg(msg);
-			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
+			serial_print("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
 			       fault_data.diag);
+
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
 				fault();

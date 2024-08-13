@@ -28,8 +28,6 @@ osMutexId_t tsms_mutex;
 
 /**
  * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
- * 
- * @param arg Pointer to mpu_t.
  */
 void read_lv_sense(void *arg)
 {
@@ -62,9 +60,7 @@ void read_lv_sense(void *arg)
 }
 
 /**
- * @brief Read data from the fuse monitor GPIO expander on the PDU.
- * 
- * @param pdu Pointer to pdu_t.
+ * @brief Read data from the fuse monitor GPIO expander on the PDU and send a CAN message with the resulting data.
  */
 void read_fuse_data(void *arg)
 {
@@ -176,6 +172,11 @@ void read_tsms(pdu_t *pdu)
 	}
 }
 
+/**
+ * @brief Read the buttons of the steering wheel, debounce them, and send a CAN message containing the raw data.
+ * 
+ * @param wheel Pointer to struct defining wheel interface
+ */
 void steeringio_monitor(steeringio_t *wheel)
 {
 	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
@@ -219,6 +220,7 @@ void vDataCollection(void *pv_params)
 	pdu_t *pdu = args->pdu;
 	steeringio_t *wheel = args->wheel;
 	free(args);
+
 	static const uint8_t delay = 20;
 
 	tsms_mutex = osMutexNew(NULL);

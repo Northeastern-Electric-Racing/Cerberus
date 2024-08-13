@@ -15,7 +15,6 @@
 #define CAN_QUEUE_SIZE 5 /* messages */
 
 static osMutexAttr_t steeringio_data_mutex_attributes;
-static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
 
 static void debounce_cb(void *arg);
 
@@ -26,16 +25,10 @@ typedef struct debounce_cb_args_t {
 	steeringio_button_t button;
 } debounce_cb_args_t;
 
-/* Creates a new Steering Wheel interface */
 steeringio_t *steeringio_init()
 {
 	steeringio_t *steeringio = malloc(sizeof(steeringio_t));
 	assert(steeringio);
-
-	/* Create Mutexes */
-	steeringio->ringbuffer_mutex =
-		osMutexNew(&steeringio_ringbuffer_mutex_attributes);
-	assert(steeringio->ringbuffer_mutex);
 
 	steeringio->button_mutex =
 		osMutexNew(&steeringio_data_mutex_attributes);
@@ -46,9 +39,6 @@ steeringio_t *steeringio_init()
 		steeringio->debounce_timers[i] = malloc(sizeof(nertimer_t));
 		assert(steeringio->debounce_timers[i]);
 	}
-	steeringio->debounce_buffer =
-		ringbuffer_create(MAX_STEERING_BUTTONS, sizeof(uint8_t));
-	assert(steeringio->debounce_buffer);
 
 	return steeringio;
 }
@@ -81,7 +71,11 @@ static void paddle_right_cb()
 	}
 }
 
-/* Callback to see if we have successfully debounced */
+/**
+ * @brief Callback after a button has been debounced.
+ * 
+ * @param arg Pointer to debounce_cb_args_t
+ */
 static void debounce_cb(void *arg)
 {
 	debounce_cb_args_t *args = (debounce_cb_args_t *)arg;
@@ -135,7 +129,12 @@ static void debounce_cb(void *arg)
 	}
 }
 
-/* For updating values via the wheel's CAN message */
+/**
+ * @brief Debounce every button input and update the state of the steering wheel.
+ * 
+ * @param wheel Pointer to struct defining steering wheel interface.
+ * @param button_data Buffer containing button data where each bit is a button.
+ */
 void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 {
 	/* Copy message data to wheelio buffer */

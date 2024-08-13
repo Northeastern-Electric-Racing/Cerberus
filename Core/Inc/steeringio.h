@@ -24,18 +24,20 @@ typedef enum {
 } steeringio_button_t;
 
 typedef struct {
-	osMutexId_t *
-		button_mutex; /* Necessary to allow multiple threads to access same data */
-	osMutexId_t *ringbuffer_mutex;
+	/* Necessary to allow multiple threads to access same data */
+	osMutexId_t *button_mutex;
 	nertimer_t *debounce_timers[MAX_STEERING_BUTTONS];
-	ringbuffer_t *debounce_buffer;
 	bool raw_buttons[MAX_STEERING_BUTTONS];
 	bool debounced_buttons[MAX_STEERING_BUTTONS];
 	/* Array indicating that a button has already been pressed and not unpressed */
 	bool debounced[MAX_STEERING_BUTTONS];
 } steeringio_t;
 
-/* Creates a new Steering Wheel interface */
+/**
+ * @brief Creates a new steering wheel interface.
+ * 
+ * @return steeringio_t* Pointer to struct defining steering wheel interface
+ */
 steeringio_t *steeringio_init();
 
 /**

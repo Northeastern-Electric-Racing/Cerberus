@@ -7,9 +7,9 @@
 #include "pdu.h"
 #include "dti.h"
 
-/*
- * This is a hierarchical state machine, with "drive modes"
- * being sub states of the ACTIVE functional state
+/**
+ * @brief Enum defining the functional states of the car.
+ * 
  */
 typedef enum {
 	READY,
@@ -22,6 +22,10 @@ typedef enum {
 	MAX_FUNC_STATES
 } func_state_t;
 
+/**
+ * @brief Emum that maps to NERO indexes to the menu on the NERO screen.
+ * 
+ */
 typedef enum {
 	OFF,
 	PIT, //SPEED_LIMITIED
@@ -39,22 +43,34 @@ typedef struct {
 	bool home_mode;
 } nero_state_t;
 
+/**
+ * @brief Struct for defining the state of the car.
+ * 
+ */
 typedef struct {
 	func_state_t functional;
 	nero_state_t nero;
 } state_t;
-
-extern osThreadId_t sm_director_handle;
-extern const osThreadAttr_t sm_director_attributes;
 
 typedef struct {
 	pdu_t *pdu;
 	dti_t *mc;
 } sm_director_args_t;
 
+/**
+ * @brief Task for handling state transitions.
+ * 
+ * @param pv_params Pointer to sm_director_args_t.
+ */
 void vStateMachineDirector(void *pv_params);
+extern osThreadId_t sm_director_handle;
+extern const osThreadAttr_t sm_director_attributes;
 
-/* Retrieves the current functional state */
+/**
+ * @brief Retrieve the current functional state.
+ * 
+ * @return func_state_t Struct containing the current functional state
+ */
 func_state_t get_func_state();
 
 /**
@@ -64,35 +80,49 @@ func_state_t get_func_state();
  */
 bool get_active();
 
-/*
- * Retrieves the current nero state
+/**
+ * @brief Retrieves the current NERO state.
+ * 
+ * @return nero_state_t The current NERO state
  */
 nero_state_t get_nero_state();
 
 /**
- * Increments the nero index in the order of nero_menu_t which will be used to select a drive mode
+ * @brief Increments the nero index in the order of nero_menu_t which will be used to select a drive mode.
+ * 
+ * @return int Error code resulting from queueing a state transition
  */
 int increment_nero_index();
 
 /**
- * Decrements the nero index int the order of nero_menu_t which will be used to select a drive mode
+ * @brief Decrements the nero index int the order of nero_menu_t which will be used to select a drive mode.
+ * 
+ * @return int Error code resulting from queueing a state transition
  */
 int decrement_nero_index();
 
 /**
- * Transitions out of home mode, therefore into a drive mode based on the
- * current nero index and mapped using the map_nero_index_to_drive_state function
- * Wil set the functional state to active
+ * @brief Enter the mode defined by the NERO index.
+ * 
+ * @return int Error code resulting from queueing a state transition
  */
 int select_nero_index();
 
 /**
  * Sets the home mode to be true, which will turn off the car and set the functional state to ready
  */
+
+/**
+ * @brief Queue a state transition to enter home mode.
+ * 
+ * @return int Error code resulting from queueing a state transition
+ */
 int set_home_mode();
 
 /**
- * Handles a fault, setting the functional state to FAULTED
+ * @brief Queue a state transition to set the functinoal mode of the car to the faulted state.
+ * 
+ * @return int Error code resulting from queueing a state transition
  */
 int fault();
 

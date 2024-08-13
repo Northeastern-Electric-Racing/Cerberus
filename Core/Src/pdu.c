@@ -16,7 +16,7 @@
 
 #define SHUTDOWN_ADDR PCA_I2C_ADDR_3
 #define CTRL_ADDR     PCA_I2C_ADDR_2
-#define RTDS_DURATION 2500 /* ms at 1kHz tick rate */
+#define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
 static osMutexAttr_t pdu_mutex_attributes;
 
@@ -66,6 +66,7 @@ const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 					 .stack_size = 300,
 					 /* The task will run infrequently */
 					 .priority = osPriorityRealtime7 };
+
 void vRTDS(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
