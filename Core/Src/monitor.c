@@ -104,8 +104,11 @@ void read_fuse_data(void *arg)
 }
 
 osThreadId_t non_functional_data_thead;
-const osThreadAttr_t non_functional_data_attributes;
-
+const osThreadAttr_t non_functional_data_attributes = {
+	.name = "NonFunctionalDataCollection",
+	.stack_size = 1500,
+	.priority = (osPriority_t)osPriorityBelowNormal,
+};
 void vNonFunctionalDataCollection(void *pv_params)
 {
 	non_func_data_args_t *args = (non_func_data_args_t *)pv_params;
