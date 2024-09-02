@@ -1,6 +1,5 @@
 /**
  * @file processing.c
- * @author Scott Abramson
  * @brief Definitions for tasks for processing data.
  * @version 0.1
  * @date 2024-08-04
@@ -19,7 +18,7 @@
 #include "dti.h"
 #include "queues.h"
 #include "serial_monitor.h"
-#include "ams.h"
+#include "bms.h"
 #include "emrax.h"
 #include "monitor.h"
 #include <assert.h>

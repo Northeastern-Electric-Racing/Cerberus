@@ -1,6 +1,5 @@
 /**
  * @file pedals.h
- * @author Scott Abramson
  * @brief Functions and tasks for processing data.
  * @version 0.1
  * @date 2024-08-04

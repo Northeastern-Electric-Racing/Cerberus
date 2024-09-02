@@ -59,7 +59,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
 	CKPT_BRB_CLR, /* Cockpit BRB */
-	AMS_OK, /* Battery Management System (Shepherd) */
+	BMS_OK, /* Battery Management System (Shepherd) */
 	INERTIA_SW_OK, /* Inertia Switch */
 	SPARE_GPIO1_OK,
 	IMD_OK, /* Insulation Monitoring Device */

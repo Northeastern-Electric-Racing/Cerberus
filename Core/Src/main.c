@@ -33,7 +33,7 @@
 #include "can_handler.h"
 #include "serial_monitor.h"
 #include "state_machine.h"
-#include "ams.h"
+#include "bms.h"
 #include "pdu.h"
 #include "nero.h"
 #include "mpu.h"
@@ -176,7 +176,7 @@ int main(void)
   steeringio_t *wheel = steeringio_init();
   assert(wheel);
   init_can1(&hcan1);
-  ams_init();
+  bms_init();
 
   printf("\r\n\n\nInit Success...\r\n\n\n");
 

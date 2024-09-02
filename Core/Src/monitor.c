@@ -106,7 +106,7 @@ void read_fuse_data(void *arg)
 osThreadId_t non_functional_data_thead;
 const osThreadAttr_t non_functional_data_attributes = {
 	.name = "NonFunctionalDataCollection",
-	.stack_size = 1500,
+	.stack_size = 2048,
 	.priority = (osPriority_t)osPriorityBelowNormal,
 };
 void vNonFunctionalDataCollection(void *pv_params)
@@ -213,7 +213,7 @@ void steeringio_monitor(steeringio_t *wheel)
 osThreadId_t data_collection_thread;
 const osThreadAttr_t data_collection_attributes = {
 	.name = "DataCollection",
-	.stack_size = 1500,
+	.stack_size = 2048,
 	.priority = (osPriority_t)osPriorityBelowNormal,
 };
 

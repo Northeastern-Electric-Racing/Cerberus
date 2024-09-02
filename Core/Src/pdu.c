@@ -63,7 +63,7 @@ static uint8_t rtds_shutoff(void *pv_params)
 
 osThreadId_t rtds_thread;
 const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
-					 .stack_size = 300,
+					 .stack_size = 512,
 					 /* The task will run infrequently */
 					 .priority = osPriorityRealtime7 };
 
@@ -358,7 +358,7 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	deconstruct_buf(bank1_d, bank1);
 
 	status[CKPT_BRB_CLR] = bank0[0];
-	status[AMS_OK] = bank0[2];
+	status[BMS_OK] = bank0[2];
 	status[INERTIA_SW_OK] = bank0[3];
 	status[SPARE_GPIO1_OK] = bank0[4];
 	status[IMD_OK] = bank0[5];

@@ -1,6 +1,5 @@
 /**
  * @file cerb_utils.c
- * @author Scott Abramson
  * @brief Utility functions for Cerberus.
  * @date 2024-08-04
  * 
