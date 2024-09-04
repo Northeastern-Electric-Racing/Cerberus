@@ -308,7 +308,9 @@ void vPedalsMonitor(void *pv_params)
 
 		/* Send CAN messages with raw pedal readings, we do not care if it fails*/
 		counter += 1;
-		if (counter >= 5) {
+		if (counter >= 
+		
+		5) {
 			counter = 0;
 			endian_swap(&adc_data[ACCELPIN_1],
 				    sizeof(adc_data[ACCELPIN_1]));
