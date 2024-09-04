@@ -311,7 +311,8 @@ void vPedalsMonitor(void *pv_params)
 		if (counter >= 
 		
 		5) {
-			counter = 0;
+			counter = 
+			0;
 			endian_swap(&adc_data[ACCELPIN_1],
 				    sizeof(adc_data[ACCELPIN_1]));
 			endian_swap(&adc_data[ACCELPIN_2],
