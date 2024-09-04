@@ -14,11 +14,9 @@ osMessageQueueId_t fault_handle_queue;
 
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
-	.name = "FaultHandler",
-	.stack_size =
-
-		52 * 8,
-	.priority = (osPriority_t)osPriorityRealtime1,
+	.name		= "FaultHandler",
+	.stack_size = 52 * 8,
+	.priority	= (osPriority_t)osPriorityRealtime1,
 };
 
 int queue_fault(fault_data_t* fault_data)

@@ -8,3 +8,4 @@ repos:
           pass_filenames: false
           always_run: true
           stages: [pre-commit]
+          files: \.(c|h|cpp|hpp)$
