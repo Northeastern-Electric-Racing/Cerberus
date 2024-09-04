@@ -1,16 +1,15 @@
-# Cerberus
+#Cerberus
 FreeRTOS Application that runs on MPU22A
 
-## Setting up Docker Environment
-> For initial installation and more info, visit here: https://nerdocs.atlassian.net/wiki/spaces/NER/pages/108888108/Setting+Up+STM32+Dev+Env
+	##Setting up Environment
+	> For initial installation and more info,
+	visit here : https
+	: // nerdocs.atlassian.net/wiki/spaces/NER/pages/524451844/2024+Firmware+Onboarding+Master
 
+	  After clone,
+	  run : 
+
+``` precommit install
 ```
-# TLDR:
-# Pull Container:
-docker compose pull
 
-# Run Container
-docker compose run --rm ner-gcc-arm
-```
-
-
+	before attempting to make a commit
