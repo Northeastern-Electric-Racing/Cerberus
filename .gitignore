@@ -1,5 +1,8 @@
 # https://github.com/github/gitignore/blob/master/C.gitignore
 
+# nix
+*.nix
+
 # VSCode files
 .vs/
 .vscode/
