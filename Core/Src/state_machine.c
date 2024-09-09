@@ -242,6 +242,10 @@ void vStateMachineDirector(void *pv_params)
 	dti_t *mc = args->mc;
 	free(args);
 
+	/* Write to GPIO expander to set initial state */
+	write_pump(pdu, false);
+	write_fault(pdu, false);
+
 	for (;;) {
 		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,
 				  osWaitForever);
