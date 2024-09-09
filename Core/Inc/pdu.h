@@ -6,12 +6,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define SOUND_RTDS_FLAG 1U
+
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
 	osMutexId_t *mutex;
 	pca9539_t *shutdown_expander;
 	pca9539_t *ctrl_expander;
-	osTimerId rtds_timer;
 } pdu_t;
 
 /* Creates a new PDU interface */
@@ -22,8 +23,6 @@ int8_t write_pump(pdu_t *pdu, bool status);
 int8_t write_fault(pdu_t *pdu, bool status);
 int8_t write_brakelight(pdu_t *pdu, bool status);
 int8_t write_fan_battbox(pdu_t *pdu, bool status);
-int8_t sound_rtds(pdu_t *pdu);
-int8_t write_rtds(pdu_t *pdu, bool status);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
@@ -39,8 +38,22 @@ typedef enum {
 	MAX_FUSES
 } fuse_t;
 
+/**
+ * @brief Read the status of the PDU fuses.
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
+ */
 int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
 
+/**
+ * @brief Read the state of the TSMS signal.
+ * 
+ * @param pdu Struct representing the PDU.
+ * @param status Pointer to location in memory where value will be read to.
+ * @return int8_t Error code.
+ */
 int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
@@ -59,6 +72,22 @@ typedef enum {
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
+/**
+ * @brief Read the status of the shutdown loop.
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
+ */
 int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+
+/**
+ * @brief Taskf for sounding RTDS.
+ * 
+ * @param arg Pointer to struct representing the PDU.
+ */
+void vRTDS(void *arg);
+extern osThreadId_t rtds_thread;
+extern const osThreadAttr_t rtds_attributes;
 
 #endif /* PDU_H */

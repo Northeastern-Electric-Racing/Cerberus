@@ -14,12 +14,14 @@
 #include "emrax.h"
 #include "fault.h"
 #include "c_utils.h"
+#include <math.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "bms.h"
 #include "serial_monitor.h"
+#include "nero.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
@@ -61,7 +63,8 @@ void dti_set_torque(int16_t torque)
 		average = 0;
 	}
 
-	int16_t ac_current = (((float)average / EMRAX_KT) * 10); /* times 10 */
+	/* Motor controller expects AC current target to be received as multiplied by 10 */
+	int16_t ac_current = (((float)average / EMRAX_KT) * 10);
 
 	// serial_print("Commanded Current: %d \r\n", ac_current);
 
@@ -252,15 +255,19 @@ int32_t dti_get_rpm(dti_t *mc)
 	return rpm;
 }
 
-/* Inbound Task-specific Info */
-osThreadId_t dti_router_handle;
-const osThreadAttr_t dti_router_attributes = {
-	.name = "DTIRouter",
-	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh
-};
+float dti_get_mph(dti_t *mc)
+{
+	/* Convert RPM to MPH */
+	// rpm * gear ratio = wheel rpm
+	// tire diamter (in) to miles --> tire diamter miles
+	// wheel rpm * 60 --> wheel rph
+	// tire diamter miles * pi --> tire circumference
+	// rph * wheel circumference miles --> mph
+	return (dti_get_rpm(mc) / (GEAR_RATIO)) * 60 *
+	       (TIRE_DIAMETER / 63360.0) * M_PI;
+}
 
-static void dti_record_rpm(dti_t *mc, can_msg_t msg)
+void dti_record_rpm(dti_t *mc, can_msg_t msg)
 {
 	/* ERPM is first four bytes of can message in big endian format */
 	int32_t erpm = (msg.data[0] << 24) + (msg.data[1] << 16) +
@@ -268,41 +275,8 @@ static void dti_record_rpm(dti_t *mc, can_msg_t msg)
 
 	int32_t rpm = erpm / POLE_PAIRS;
 
-	//printf("\n\nRPM Rec: %ld\n\n", rpm);
-
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
-}
-
-void vDTIRouter(void *pv_params)
-{
-	can_msg_t message;
-	osStatus_t status;
-	// fault_data_t fault_data = { .id = DTI_ROUTING_FAULT, .severity = DEFCON2 };
-
-	dti_t *mc = (dti_t *)pv_params;
-
-	for (;;) {
-		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(dti_router_queue, &message, NULL,
-					   osWaitForever);
-		if (status == osOK) {
-			switch (message.id) {
-			case DTI_CANID_ERPM:
-				dti_record_rpm(mc, message);
-				break;
-			case DTI_CANID_CURRENTS:
-				break;
-			case DTI_CANID_TEMPS_FAULT:
-				break;
-			case DTI_CANID_ID_IQ:
-				break;
-			case DTI_CANID_SIGNALS:
-				break;
-			default:
-				break;
-			}
-		}
-	}
+	set_mph(dti_get_mph(mc));
 }

@@ -10,9 +10,7 @@
  */
 
 #include "can_handler.h"
-#include "can.h"
 #include "cerberus_conf.h"
-#include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
 #include "serial_monitor.h"
@@ -21,17 +19,21 @@
 #include <stdlib.h>
 #include "stdio.h"
 #include <string.h>
-#include "dti.h"
+#include "cerb_utils.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
+
+#define CAN_DISPATCH_FLAG 1U
+
+#define NEW_CAN_MSG_FLAG 1U
+
 static osMessageQueueId_t can_outbound_queue;
+static osMessageQueueId_t can_inbound_queue;
 
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM,	     DTI_CANID_CURRENTS,
-			      DTI_CANID_TEMPS_FAULT, DTI_CANID_ID_IQ,
-			      DTI_CANID_SIGNALS,     BMS_DCL_MSG };
+static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -48,6 +50,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(!can_init(can1));
 
 	can_outbound_queue =
+		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
+	can_inbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
 }
 
@@ -73,30 +77,24 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	new_msg.len = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
-	// TODO: Switch to hash map
-	switch (new_msg.id) {
-	/* Messages Relevant to Motor Controller */
-	case DTI_CANID_ERPM:
-		// case DTI_CANID_CURRENTS:
-		// case DTI_CANID_TEMPS_FAULT:
-		// case DTI_CANID_ID_IQ:
-		// case DTI_CANID_SIGNALS:
-		osMessageQueuePut(dti_router_queue, &new_msg, 0U, 0U);
-		break;
-	case BMS_DCL_MSG:
-		//printf("Recieved dcl");
-		osMessageQueuePut(bms_monitor_queue, &new_msg, 0U, 0U);
-		break;
-	default:
-		break;
-	}
+	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
+			   NEW_CAN_MSG_FLAG);
+}
+
+int8_t queue_can_msg(can_msg_t msg)
+{
+	if (!can_outbound_queue)
+		return -1;
+
+	return queue_and_set_flag(can_outbound_queue, &msg, can_dispatch_handle,
+				  CAN_DISPATCH_FLAG);
 }
 
 osThreadId_t can_dispatch_handle;
 const osThreadAttr_t can_dispatch_attributes = {
 	.name = "CanDispatch",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime5,
+	.priority = (osPriority_t)osPriorityRealtime6,
 };
 
 void vCanDispatch(void *pv_params)
@@ -107,32 +105,61 @@ void vCanDispatch(void *pv_params)
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
 
+	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
+
 	for (;;) {
+		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
+				  osWaitForever);
 		/* Send CAN message */
-		if (osOK == osMessageQueueGet(can_outbound_queue,
-					      &msg_from_queue, NULL,
-					      osWaitForever)) {
+		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
+					 NULL, 0U) == osOK) {
+			/* Wait if CAN outbound queue is full */
+			while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+				osDelay(1);
+			}
+
 			msg_status = can_send_msg(can1, &msg_from_queue);
+
 			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
 				queue_fault(&fault_data);
 			} else if (msg_status == HAL_BUSY) {
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
-			} else {
-				//printf("Message sent: %lX\r\n", msg_from_queue.id);
 			}
 		}
-
-		osDelay(CAN_DISPATCH_DELAY);
 	}
 }
 
-int8_t queue_can_msg(can_msg_t msg)
-{
-	if (!can_outbound_queue)
-		return -1;
+osThreadId_t can_receive_thread;
+const osThreadAttr_t can_receive_attributes = {
+	.name = "CanProcessing",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityRealtime,
+};
 
-	osMessageQueuePut(can_outbound_queue, &msg, 0U, 0U);
-	return 0;
+void vCanReceive(void *pv_params)
+{
+	dti_t *mc = (dti_t *)pv_params;
+
+	can_msg_t msg;
+
+	for (;;) {
+		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+		while (osOK ==
+		       osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
+			switch (msg.id) {
+			/* Messages Relevant to Motor Controller */
+			case DTI_CANID_ERPM:
+				dti_record_rpm(mc, msg);
+				break;
+			case BMS_DCL_MSG:
+				handle_dcl_msg();
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }

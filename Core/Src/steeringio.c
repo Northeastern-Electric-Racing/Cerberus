@@ -9,13 +9,12 @@
 #include "serial_monitor.h"
 #include "nero.h"
 #include "stdio.h"
-#include "torque.h"
+#include "cerb_utils.h"
+#include "pedals.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
 static osMutexAttr_t steeringio_data_mutex_attributes;
-static osMutexAttr_t steeringio_ringbuffer_mutex_attributes;
-osMessageQueueId_t steeringio_router_queue;
 
 static void debounce_cb(void *arg);
 
@@ -26,16 +25,10 @@ typedef struct debounce_cb_args_t {
 	steeringio_button_t button;
 } debounce_cb_args_t;
 
-/* Creates a new Steering Wheel interface */
 steeringio_t *steeringio_init()
 {
 	steeringio_t *steeringio = malloc(sizeof(steeringio_t));
 	assert(steeringio);
-
-	/* Create Mutexes */
-	steeringio->ringbuffer_mutex =
-		osMutexNew(&steeringio_ringbuffer_mutex_attributes);
-	assert(steeringio->ringbuffer_mutex);
 
 	steeringio->button_mutex =
 		osMutexNew(&steeringio_data_mutex_attributes);
@@ -43,22 +36,9 @@ steeringio_t *steeringio_init()
 
 	/* Create debounce utilities */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		debounce_cb_args_t *debounce_args =
-			malloc(sizeof(debounce_cb_args_t));
-		debounce_args->wheel = steeringio;
-		debounce_args->button = i;
-		steeringio->debounce_timers[i] = osTimerNew(
-			debounce_cb, osTimerOnce, debounce_args, NULL);
+		steeringio->debounce_timers[i] = malloc(sizeof(nertimer_t));
 		assert(steeringio->debounce_timers[i]);
 	}
-	steeringio->debounce_buffer =
-		ringbuffer_create(MAX_STEERING_BUTTONS, sizeof(uint8_t));
-	assert(steeringio->debounce_buffer);
-
-	/* Create Queue for CAN signaling */
-	steeringio_router_queue =
-		osMessageQueueNew(CAN_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	assert(steeringio_router_queue);
 
 	return steeringio;
 }
@@ -79,19 +59,23 @@ bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
 
 static void paddle_left_cb()
 {
-	if (get_drive_state() == ENDURANCE) {
+	if (get_func_state() == F_EFFICIENCY) {
 		increase_torque_limit();
 	}
 }
 
 static void paddle_right_cb()
 {
-	if (get_drive_state() == ENDURANCE) {
+	if (get_func_state() == F_EFFICIENCY) {
 		decrease_torque_limit();
 	}
 }
 
-/* Callback to see if we have successfully debounced */
+/**
+ * @brief Callback after a button has been debounced.
+ * 
+ * @param arg Pointer to debounce_cb_args_t
+ */
 static void debounce_cb(void *arg)
 {
 	debounce_cb_args_t *args = (debounce_cb_args_t *)arg;
@@ -105,7 +89,8 @@ static void debounce_cb(void *arg)
 
 	steeringio_t *wheel = args->wheel;
 
-	if (wheel->raw_buttons[button]) {
+	if (wheel->raw_buttons[button] && !wheel->debounced[button]) {
+		wheel->debounced[button] = true;
 		switch (button) {
 		case STEERING_PADDLE_LEFT:
 			paddle_left_cb();
@@ -138,66 +123,56 @@ static void debounce_cb(void *arg)
 		default:
 			break;
 		}
+	} else if (!wheel->raw_buttons[button]) {
+		/* Button is no longer pressed, so it can be pressed again */
+		wheel->debounced[button] = false;
 	}
 }
 
-/* For updating values via the wheel's CAN message */
-void steeringio_update(steeringio_t *wheel, uint8_t wheel_data[])
+/**
+ * @brief Debounce every button input and update the state of the steering wheel.
+ * 
+ * @param wheel Pointer to struct defining steering wheel interface.
+ * @param button_data Buffer containing button data where each bit is a button.
+ */
+void steeringio_update(steeringio_t *wheel, uint8_t button_data)
 {
 	/* Copy message data to wheelio buffer */
 	osMutexAcquire(wheel->button_mutex, osWaitForever);
-	// Data is formatted with each bit within the first byte representing a button and the first two bits of the second byte representing the paddle shifters
+	/* Data is formatted with each bit within the first byte representing a button and the first two bits of the second byte representing the paddle shifters */
 
 	/* Update raw buttons */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS - 2; i++) {
-		wheel->raw_buttons[i] = (wheel_data[0] >> i) & 0x01;
+		wheel->raw_buttons[i] = (button_data >> i) & 0x01;
 	}
 
 	/* Update raw paddle shifters */
-
 	wheel->raw_buttons[STEERING_PADDLE_LEFT] =
 		NOT_PRESSED; //(wheel_data[1] >> 0) & 0x01;
 	wheel->raw_buttons[STEERING_PADDLE_RIGHT] =
 		NOT_PRESSED; //(wheel_data[1] >> 1) & 0x01;
 
-	/* If the value was set high and is not being debounced, trigger timer for debounce */
+	/* Debounce buttons */
 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-		if (wheel->raw_buttons[i] &&
-		    !osTimerIsRunning(wheel->debounce_timers[i])) {
-			/* Start timer if a button has been pressed */
-			osTimerStart(wheel->debounce_timers[i],
-				     STEERING_WHEEL_DEBOUNCE);
-		} else if (!wheel->raw_buttons[i] &&
-			   osTimerIsRunning(wheel->debounce_timers[i])) {
-			/* Button stopped being pressed. Kill timer. */
-			osTimerStop(wheel->debounce_timers[i]);
-		}
+		debounce_cb_args_t *debounce_args =
+			malloc(sizeof(debounce_cb_args_t));
+		debounce_args->wheel = wheel;
+		debounce_args->button = i;
+
+		if (wheel->raw_buttons[i])
+			debounce(wheel->raw_buttons[i],
+				 wheel->debounce_timers[i],
+				 STEERING_WHEEL_DEBOUNCE, &debounce_cb,
+				 debounce_args);
+
+		/* Debounce that the button has been unpressed */
+		else
+			debounce(!wheel->raw_buttons[i],
+				 wheel->debounce_timers[i],
+				 STEERING_WHEEL_DEBOUNCE, &debounce_cb,
+				 debounce_args);
+
+		free(debounce_args);
 	}
 	osMutexRelease(wheel->button_mutex);
-}
-
-/* Inbound Task-specific Info */
-osThreadId_t steeringio_router_handle;
-const osThreadAttr_t steeringio_router_attributes = {
-	.name = "SteeringIORouter",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityHigh1
-};
-
-void vSteeringIORouter(void *pv_params)
-{
-	button_data_t message;
-	osStatus_t status;
-	// fault_data_t fault_data = { .id = STEERINGIO_ROUTING_FAULT, .severity = DEFCON2 };
-
-	steeringio_t *wheel = (steeringio_t *)pv_params;
-
-	for (;;) {
-		/* Wait until new CAN message comes into queue */
-		status = osMessageQueueGet(steeringio_router_queue, &message,
-					   NULL, osWaitForever);
-		if (status == osOK) {
-			steeringio_update(wheel, message.data);
-		}
-	}
 }

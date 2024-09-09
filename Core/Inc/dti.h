@@ -25,15 +25,6 @@
 #define DTI_CANID_ID_IQ	      0x476 /* Id, Iq values */
 #define DTI_CANID_SIGNALS \
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
-#define DTI_QUEUE_SIZE 5
-
-#define TIRE_DIAMETER	16 /* inches */
-#define GEAR_RATIO	47 / 13.0 /* unitless */
-#define POLE_PAIRS	10 /* unitless */
-#define DTI_CANID_ID_IQ 0x476 /* Id, Iq values */
-#define DTI_CANID_SIGNALS \
-	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
-#define DTI_QUEUE_SIZE 5
 
 #define TIRE_DIAMETER 16 /* inches */
 #define GEAR_RATIO    47 / 13.0 /* unitless */
@@ -54,22 +45,49 @@ typedef struct {
 	osMutexId_t *mutex;
 } dti_t;
 
-// TODO: Expand GET interface
-int32_t dti_get_rpm(dti_t *dti);
-
-uint16_t dti_get_input_voltage(dti_t *dti);
-
-/* Utilities for Decoding CAN message */
-extern osThreadId_t dti_router_handle;
-extern const osThreadAttr_t dti_router_attributes;
-extern osMessageQueueId_t dti_router_queue;
-void vDTIRouter(void *pv_params);
-
+/**
+ * @brief Initialize DTI interface.
+ * 
+ * @return dti_t* Pointer to DTI struct
+ */
 dti_t *dti_init();
 
-/*
- * SCALE: 10
- * UNITS: Nm
+/**
+ * @brief Get the RPM of the motor.
+ * 
+ * @param dti Pointer to DTI struct
+ * @return int32_t The RPM of the motor
+ */
+int32_t dti_get_rpm(dti_t *dti);
+
+/**
+ * @brief Process DTI ERPM CAN message.
+ * 
+ * @param mc Pointer to struct representing motor controller
+ * @param msg CAN message to process
+ */
+void dti_record_rpm(dti_t *mc, can_msg_t msg);
+
+/**
+ * @brief Get the MPH of the motor.
+ * 
+ * @param dti Pointer to DTI struct
+ * @return float 
+ */
+float dti_get_mph(dti_t *dti);
+
+/**
+ * @brief Get the input voltage of the DTI.
+ * 
+ * @param dti Pointer to DTI struct
+ * @return uint16_t Input voltage of the DTI
+ */
+uint16_t dti_get_input_voltage(dti_t *dti);
+
+/**
+ * @brief Send CAN message to command torque from the motor controller. The torque to command is smoothed with a moving average before being send to the motor controller.
+ * 
+ * @param torque The torque target.
  */
 void dti_set_torque(int16_t torque);
 
@@ -87,27 +105,31 @@ void dti_set_regen(uint16_t current_target);
  */
 void dti_send_brake_current(uint16_t brake_current);
 
-/*
- * SCALE: 10
- * UNITS: Percentage of max
+/**
+ * @brief Send message for relative brake current target.
+ * 
+ * @param relative_brake_current Percentage of brake current maximum multiplied by 10
  */
 void dti_set_relative_brake_current(int16_t relative_brake_current);
 
-/*
- * SCALE: 10
- * UNITS: Amps
+/**
+ * @brief Send AC current target command to DTI.
+ * 
+ * @param current AC current target multiplied by 10
  */
 void dti_set_current(int16_t current);
 
-/*
- * SCALE: 10
- * UNITS: Percentage of max
+/**
+ * @brief Send relative AC current target command to DTI.
+ * 
+ * @param relative_current Percent of the maximum AC current multiplied by 10
  */
 void dti_set_relative_current(int16_t relative_current);
 
-/*
- * SCALE: bool
- * UNITS: No units
+/**
+ * @brief Send drive enable command to DTI.
+ * 
+ * @param drive_enable True to enable driving, false to disable
  */
 void dti_set_drive_enable(bool drive_enable);
 

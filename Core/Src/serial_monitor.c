@@ -3,13 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "cerb_utils.h"
 
 #define PRINTF_QUEUE_SIZE 25 /* Strings */
 #define PRINTF_BUFFER_LEN 128 /* Characters */
+#define NEW_MESSAGE_FLAG  0x00000001U
 
 osMessageQueueId_t printf_queue;
 osThreadId_t serial_monitor_handle;
-const osThreadAttr_t serial_monitor_attributes;
+const osThreadAttr_t serial_monitor_attributes = {
+	.name = "SerialMonitor",
+	.stack_size = 32 * 32,
+	.priority = (osPriority_t)osPriorityHigh,
+};
 
 /*
  * Referenced https://github.com/esp8266/Arduino/blob/master/cores/esp8266/Print.cpp
@@ -34,7 +40,9 @@ int serial_print(const char *format, ...)
 	}
 
 	/* If string can't be queued */
-	osStatus_t stat = osMessageQueuePut(printf_queue, &buffer, 0U, 0U);
+
+	osStatus_t stat = queue_and_set_flag(
+		printf_queue, &buffer, serial_monitor_handle, NEW_MESSAGE_FLAG);
 	if (stat) {
 		free(buffer);
 		return -3;
@@ -46,18 +54,17 @@ int serial_print(const char *format, ...)
 void vSerialMonitor(void *pv_params)
 {
 	char *message;
-	osStatus_t status;
 
 	printf_queue =
 		osMessageQueueNew(PRINTF_QUEUE_SIZE, sizeof(char *), NULL);
 
 	for (;;) {
-		/* Wait until new printf message comes into queue */
-		status = osMessageQueueGet(printf_queue, &message, NULL,
-					   osWaitForever);
-		if (status != osOK) {
-			// TODO: Trigger fault ?
-		} else {
+		osThreadFlagsWait(NEW_MESSAGE_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+
+		/* Get message to print */
+		while (osMessageQueueGet(printf_queue, &message, NULL, 0U) ==
+		       osOK) {
 			printf(message);
 			free(message);
 		}

@@ -34,12 +34,12 @@
 #include "serial_monitor.h"
 #include "state_machine.h"
 #include "bms.h"
-#include "torque.h"
 #include "pdu.h"
 #include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
+#include "pedals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,11 +80,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osMessageQueueId_t brakelight_signal;
-osMessageQueueId_t pedal_data_queue;
 osMessageQueueId_t imu_queue;
-osMessageQueueId_t dti_router_queue;
-
 
 /* USER CODE END PV */
 
@@ -136,7 +132,6 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
   printf("BOOT\r\n");
   /* USER CODE END 1 */
@@ -171,24 +166,26 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  /* Create Interfaces to Represent Relevant Hardware */
+  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
+  assert(mpu);
+  pdu_t *pdu  = init_pdu(&hi2c2);
+  assert(pdu);
+  dti_t *mc   = dti_init();
+  assert(mc);
+  steeringio_t *wheel = steeringio_init();
+  assert(wheel);
+  init_can1(&hcan1);
+  bms_init();
+
+  printf("\r\n\n\nInit Success...\r\n\n\n");
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* I'm kinda defining mutexes here lol */
-
-  /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
-  pdu_t *pdu  = init_pdu(&hi2c2);
-  assert(pdu);
-  dti_t *mc   = dti_init();
-  steeringio_t *wheel = steeringio_init();
-  init_can1(&hcan1);
-  bms_init();
-
-  printf("\r\n\n\nInit Success...\r\n\n\n");
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -201,11 +198,6 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  brakelight_signal = osMessageQueueNew(15, sizeof(bool), NULL);
-  imu_queue = osMessageQueueNew(IMU_QUEUE_SIZE, sizeof(imu_data_t), NULL);
-  pedal_data_queue = osMessageQueueNew(PEDAL_DATA_QUEUE_SIZE, sizeof(pedals_t), NULL);
-	dti_router_queue = osMessageQueueNew(DTI_QUEUE_SIZE, sizeof(can_msg_t), NULL);
-	assert(dti_router_queue);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -213,45 +205,53 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+
   /* Monitors */
-  lv_monitor_handle = osThreadNew(vLVMonitor, mpu, &lv_monitor_attributes);
-  assert(lv_monitor_handle);
+  non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
+  nfd_args->mpu = mpu;
+  nfd_args->pdu = pdu;
+  non_functional_data_thead = osThreadNew(vNonFunctionalDataCollection, nfd_args, &non_functional_data_attributes);
+  assert(non_functional_data_thead);
+
+  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
+  data_args->pdu = pdu;
+  data_args->wheel = wheel;
+  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
+  assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   // assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
   //assert(imu_monitor_handle);
-  steeringio_buttons_monitor_handle = osThreadNew(vSteeringIOButtonsMonitor, wheel, &steeringio_buttons_monitor_attributes);
-  pedals_monitor_handle = osThreadNew(vPedalsMonitor, mpu, &pedals_monitor_attributes);
-  assert(pedals_monitor_handle);
-  tsms_monitor_handle = osThreadNew(vTsmsMonitor, pdu, &tsms_monitor_attributes);
-  assert(tsms_monitor_handle);
-  fusing_monitor_handle = osThreadNew(vFusingMonitor, pdu, &fusing_monitor_attributes);
-  assert(fusing_monitor_handle);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 
   /* Messaging */
-  dti_router_handle = osThreadNew(vDTIRouter, mc, &dti_router_attributes);
-  assert(dti_router_handle);
-  can_dispatch_handle = osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
+  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  bms_monitor_handle = osThreadNew(vBMSCANMonitor, NULL, &bms_monitor_attributes);
-  assert(bms_monitor_handle);
+  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
+  assert(can_receive_thread);
   serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
   assert(serial_monitor_handle);
-  nero_monitor_handle = osThreadNew(vNeroMonitor, NULL, &nero_monitor_attributes);
-  assert(nero_monitor_handle);
 
   /* Control Logic */
-  torque_calc_handle = osThreadNew(vCalcTorque, mc, &torque_calc_attributes);
-  assert(torque_calc_handle);
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
-  sm_director_handle = osThreadNew(vStateMachineDirector, pdu, &sm_director_attributes);
-  assert(sm_director_handle);
-  brakelight_monitor_handle = osThreadNew(vBrakelightMonitor, pdu, &brakelight_monitor_attributes);;
-  assert(brakelight_monitor_handle);
 
+  rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
+  assert(rtds_thread);
+
+  pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
+  pedals_args->mpu = mpu;
+  pedals_args->mc = mc;
+  pedals_args->pdu = pdu;
+  process_pedals_thread = osThreadNew(vProcessPedals, pedals_args, &process_pedals_attributes);
+  assert(process_pedals_thread);
+
+  sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
+  sm_args->pdu = pdu;
+  sm_args->mc = mc;
+  sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
+  assert(sm_director_handle);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -262,13 +262,10 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // write_pump(pdu, false);
-    // sound_rtds(pdu);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -711,7 +708,6 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  int i = 0;
 
   /* Infinite loop */
   for(;;) {
@@ -719,15 +715,11 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8); // I am not using MPU interface because I'm lazy
+    printf(".\r\n..\r\n");
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
-    if (i % 2 == 1)
-     serial_print(".\r\n");
-    else
-     serial_print("..\r\n");
-
-    i++;
-
+    /* Send NERO state data continuously */
+    send_nero_msg();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

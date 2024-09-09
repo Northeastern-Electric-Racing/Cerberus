@@ -9,15 +9,22 @@
 #include "stdio.h"
 #include "cerberus_conf.h"
 #include "monitor.h"
+#include "pedals.h"
 
 static int8_t mph = 0;
 
-static void send_mode_status()
+void send_nero_msg()
 {
+	uint8_t nero_index;
+	/* Since the screen on NERO relies on the NERO index, and reverse and pit have the same index, reverse gets a special index */
+	if (get_func_state() == REVERSE) {
+		nero_index = 255;
+	} else {
+		nero_index = get_nero_state().nero_index;
+	}
 	can_msg_t msg = { .id = 0x501,
 			  .len = 4,
-			  .data = { get_nero_state().home_mode,
-				    get_nero_state().nero_index, mph,
+			  .data = { get_nero_state().home_mode, nero_index, mph,
 				    get_tsms() } };
 
 	/* Send CAN message */
@@ -26,22 +33,6 @@ static void send_mode_status()
 
 void set_mph(int8_t new_mph)
 {
-	//printf("mph %d", new_mph);
 	mph = new_mph;
-}
-
-osThreadId_t nero_monitor_handle;
-const osThreadAttr_t nero_monitor_attributes = {
-	.name = "NeroMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh2,
-};
-
-void vNeroMonitor(void *pv_params)
-{
-	for (;;) {
-		send_mode_status();
-
-		osDelay(NERO_DELAY_TIME);
-	}
+	send_nero_msg();
 }

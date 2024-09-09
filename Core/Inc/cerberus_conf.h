@@ -17,14 +17,12 @@
 #define CAN_ROUTER_DELAY
 #define CAN_DISPATCH_DELAY    5
 #define BMS_CAN_MONITOR_DELAY 4000
-#define CAN_DISPATCH_DELAY    5
-#define BMS_CAN_MONITOR_DELAY 4000
 #define STATE_MACHINE_DELAY
 #define TORQUE_CALC_DELAY
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY 20 /* ms */
+#define PEDALS_SAMPLE_DELAY 10 /* ms */
 #define ACCEL1_OFFSET	    980
 #define ACCEL1_MAX_VAL	    1866
 #define ACCEL2_OFFSET	    1780
@@ -34,10 +32,14 @@
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
 
-// DEBUGGING: Start with a high debounce period, lower it if it is too slow
-// NOTE: SteeringIOMonitor updates every 25 ms. Previous value of 25 ms doesn't
-// give enough time to differentiate signal from noise.
-#define STEERING_WHEEL_DEBOUNCE 100 /* ms */
+/* Endurance Mode Thresholds */
+#define REGEN_THRESHOLD	       0.01
+#define ACCELERATION_THRESHOLD 0.05
+
+/* Maximum AC braking current */
+#define MAX_REGEN_CURRENT 20
+
+#define STEERING_WHEEL_DEBOUNCE 10 /* ms */
 
 /* Pin Assignments */
 #define FAULT_MCU_Pin	    GPIO_PIN_3

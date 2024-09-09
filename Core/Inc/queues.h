@@ -5,10 +5,7 @@
 #include "cmsis_os.h"
 
 #define ONBOARD_TEMP_QUEUE_SIZE 8
-#define PEDAL_DATA_QUEUE_SIZE	8
 #define IMU_QUEUE_SIZE		8
-
-extern osMessageQueueId_t brakelight_signal;
 
 typedef struct {
 	uint16_t accel_x;
@@ -20,14 +17,5 @@ typedef struct {
 } imu_data_t;
 
 extern osMessageQueueId_t imu_queue;
-
-typedef struct {
-	uint16_t brake_value; /* 0-1 */
-	uint16_t accelerator_value; /* 0-1 */
-} pedals_t;
-
-extern osMessageQueueId_t pedal_data_queue;
-
-bool get_brake_state();
 
 #endif // QUEUES_H
