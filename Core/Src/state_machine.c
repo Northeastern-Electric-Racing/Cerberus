@@ -19,8 +19,6 @@
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-extern IWDG_HandleTypeDef hiwdg;
-
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
 	union {
@@ -103,7 +101,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
 		write_fault(pdu, false);
-		HAL_IWDG_Refresh(&hiwdg);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		serial_print("FAULTED\r\n");
