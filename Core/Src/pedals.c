@@ -242,14 +242,14 @@ static int16_t derate_torque(float mph, float accel)
 	if (mph > PIT_MAX_SPEED) {
 		torque = 0;
 	} else {
-		/* Highest torque % in pit mode */
-		static const float max_torque_percent = 0.3;
-		/* Linearly derate torque from 30% to 0% as speed increases */
-		float torque_derating_factor =
-			max_torque_percent -
-			(max_torque_percent / PIT_MAX_SPEED);
-		accel *= torque_derating_factor;
-		torque = MAX_TORQUE * accel;
+		/* Linearly derate torque as speed increases */
+		torque = accel * PIT_MAX_TORQUE;
+		/* Max torque based on mph */
+		int16_t max_torque = PIT_MAX_TORQUE -
+				     (mph * (PIT_MAX_TORQUE / PIT_MAX_SPEED));
+
+		if (torque > max_torque)
+			torque = max_torque;
 	}
 
 	/* Add value to moving average */

@@ -31,6 +31,7 @@
 
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
+#define PIT_MAX_TORQUE 0.3 * MAX_TORQUE
 
 /* Endurance Mode Thresholds */
 #define REGEN_THRESHOLD	       0.01
