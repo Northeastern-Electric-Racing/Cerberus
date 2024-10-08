@@ -126,8 +126,9 @@ int _write(int file, char* ptr, int len) {
   return len;
 }
 
+/*Callback for UART*/
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) { //jake
-  HAL_UART_DMAStop(&husart3);
+  HAL_UART_DMAStop(&huart3);
 }
 
 /* USER CODE END 0 */
