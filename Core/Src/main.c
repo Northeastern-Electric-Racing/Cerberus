@@ -87,9 +87,9 @@ osMessageQueueId_t imu_queue;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /*static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
+static void MX_DMA_Init(void);*/
 static void MX_CAN1_Init(void);
-static void MX_I2C1_Init(void);
+/*static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
@@ -451,8 +451,8 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-/*static void MX_CAN1_Init(void)
-{*/
+static void MX_CAN1_Init(void)
+{
 
   /* USER CODE BEGIN CAN1_Init 0 */
 
@@ -461,7 +461,7 @@ void SystemClock_Config(void)
   /* USER CODE BEGIN CAN1_Init 1 */
 
   /* USER CODE END CAN1_Init 1 */
-  /*hcan1.Instance = CAN1;
+  hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
@@ -476,12 +476,12 @@ void SystemClock_Config(void)
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
-  }*/
+  }
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
 
-//}
+}
 
 /**
   * @brief I2C1 Initialization Function
