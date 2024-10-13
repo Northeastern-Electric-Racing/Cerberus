@@ -86,7 +86,7 @@ osMessageQueueId_t imu_queue;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
+/*static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
@@ -94,7 +94,7 @@ static void MX_I2C2_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC3_Init(void);
-static void MX_IWDG_Init(void);
+static void MX_IWDG_Init(void);*/
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -166,7 +166,7 @@ int main(void)
   MX_IWDG_Init();
   USER CODE BEGIN 2
 
-  /* Create Interfaces to Represent Relevant Hardware */
+  Create Interfaces to Represent Relevant Hardware */
   /*mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
   assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2);
