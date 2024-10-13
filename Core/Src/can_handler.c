@@ -110,7 +110,7 @@ void vCanDispatch(void *pv_params)
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
 
 	for (;;) {
-		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
+		osThreadFlagsWait(CAN_DISPATCxH_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		/* Send CAN message */
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
@@ -144,27 +144,25 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	//dti_t *mc = (dti_t *)pv_params;
+	dti_t *mc = (dti_t *)pv_params;
 
 	can_msg_t msg;
 
 	for (;;) {
-		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		while (osOK ==
-		       osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
-			//switch (msg.id) {
-			/* Messages Relevant to Motor Controller */ /*
-			case DTI_CANID_ERPM:
-				dti_record_rpm(mc, msg);
-				break;
-			case BMS_DCL_MSG:
-				handle_dcl_msg();
-				break;
-			default:
-				break;
-			}*/
+		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny, osWaitForever);
+		while (osOK == osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
+			switch (msg.id) {
+				/* Messages Relevant to Motor Controller */
+				case DTI_CANID_ERPM:
+					dti_record_rpm(mc, msg);
+					break;
+				case BMS_DCL_MSG:
+					handle_dcl_msg();
+					break;
+				default:
+					break;
+			}
 			printf("Recieve: %s", msg.data);
-		}	
+		}
 	}
 }
