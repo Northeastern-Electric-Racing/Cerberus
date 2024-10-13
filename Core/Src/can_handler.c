@@ -152,7 +152,7 @@ void vCanReceive(void *pv_params)
 		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny, osWaitForever);
 		while (osOK == osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
 			/* Print Receive Messages */
-			printf("Recieve: %s", msg.data);x
+			printf("Recieve: %s", msg.data);
 		}
 	}
 }
