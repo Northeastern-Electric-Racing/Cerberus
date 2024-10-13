@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "c_utils.h"
 
 #define YLED_PIN      GPIO_PIN_8
 #define RLED_PIN      GPIO_PIN_9
@@ -13,12 +14,30 @@
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
+I2C_HandleTypeDef *hi2c;
 
-mpu_t *init_mpu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pedals_adc,
+
+
+static inline int read_reg(uint8_t *data,
+						   uint8_t reg,
+						   uint8_t length) {
+
+  return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+                          I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY);
+}
+
+static inline int write_reg(uint8_t *data,
+							uint8_t reg,
+							uint8_t length) {
+  
+  return HAL_I2C_Mem_Write(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+                           I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY);
+}
+
+mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc,
 		ADC_HandleTypeDef *lv_adc, GPIO_TypeDef *led_gpio,
 		GPIO_TypeDef *watchdog_gpio)
 {
-	assert(hi2c);
 	assert(pedals_adc);
 	assert(lv_adc);
 	assert(led_gpio);
@@ -50,7 +69,7 @@ mpu_t *init_mpu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pedals_adc,
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
 	assert(mpu->imu);
-	//assert(!lsm6dso_init(mpu->imu, mpu->hi2c)); /* This is always connected */
+	assert(!lsm6dso_init(mpu->imu, read_reg, write_reg)); /* This is always connected */
 
 	/* Create Mutexes */
 	mpu->i2c_mutex = osMutexNew(&mpu_i2c_mutex_attr);
