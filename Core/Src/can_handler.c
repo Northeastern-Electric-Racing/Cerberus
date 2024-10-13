@@ -79,6 +79,8 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 
 	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
 			   NEW_CAN_MSG_FLAG);
+
+	printf("Callback: %s", new_msg.data);
 }
 
 int8_t queue_can_msg(can_msg_t msg)
@@ -127,6 +129,8 @@ void vCanDispatch(void *pv_params)
 				fault_data.diag = "Outbound mailbox full!";
 				queue_fault(&fault_data);
 			}
+
+			printf("Dispatch: %s", msg_from_queue.data);
 		}
 	}
 }
@@ -140,7 +144,7 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	dti_t *mc = (dti_t *)pv_params;
+	//dti_t *mc = (dti_t *)pv_params;
 
 	can_msg_t msg;
 
@@ -149,8 +153,8 @@ void vCanReceive(void *pv_params)
 				  osWaitForever);
 		while (osOK ==
 		       osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
-			switch (msg.id) {
-			/* Messages Relevant to Motor Controller */
+			//switch (msg.id) {
+			/* Messages Relevant to Motor Controller */ /*
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
@@ -159,7 +163,8 @@ void vCanReceive(void *pv_params)
 				break;
 			default:
 				break;
-			}
-		}
+			}*/
+			printf("Recieve: %s", msg.data);
+		}	
 	}
 }

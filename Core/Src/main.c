@@ -139,26 +139,26 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  //HAL_Init();
 
   /* USER CODE BEGIN Init */
 
-  HAL_Delay(500);
+  //HAL_Delay(500);
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+  //SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
+  /*MX_GPIO_Init();
+  MX_DMA_Init();*/
   MX_CAN1_Init();
-  MX_I2C1_Init();
+  /*MX_I2C1_Init();
   MX_I2C2_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
@@ -167,16 +167,16 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
+  /*mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
   assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2);
   assert(pdu);
   dti_t *mc   = dti_init();
   assert(mc);
   steeringio_t *wheel = steeringio_init();
-  assert(wheel);
+  assert(wheel);8*/
   init_can1(&hcan1);
-  bms_init();
+  //bms_init();
 
   printf("\r\n\n\nInit Success...\r\n\n\n");
 
@@ -207,7 +207,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* Monitors */
-  non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
+  /*non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
   nfd_args->mpu = mpu;
   nfd_args->pdu = pdu;
   non_functional_data_thead = osThreadNew(vNonFunctionalDataCollection, nfd_args, &non_functional_data_attributes);
@@ -234,7 +234,7 @@ int main(void)
   assert(serial_monitor_handle);
 
   /* Control Logic */
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+  /*fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
 
   rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
