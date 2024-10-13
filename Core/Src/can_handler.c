@@ -80,6 +80,7 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
 			   NEW_CAN_MSG_FLAG);
 
+	/* Print Callback Messages */
 	printf("Callback: %s", new_msg.data);
 }
 
@@ -130,6 +131,7 @@ void vCanDispatch(void *pv_params)
 				queue_fault(&fault_data);
 			}
 
+			/* Print Dispatch Messages */
 			printf("Dispatch: %s", msg_from_queue.data);
 		}
 	}
@@ -162,6 +164,8 @@ void vCanReceive(void *pv_params)
 				default:
 					break;
 			}
+
+			/* Print Receive Messages */
 			printf("Recieve: %s", msg.data);
 		}
 	}
