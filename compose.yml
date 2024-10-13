@@ -10,6 +10,10 @@ services:
             - type: bind
               source: .
               target: /home/app
+        ulimits:
+          nofile:
+            soft: 1024
+            hard: 1048576
         tty: true
         expose:
             - "3240"

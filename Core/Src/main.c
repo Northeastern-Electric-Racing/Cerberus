@@ -71,6 +71,7 @@ I2C_HandleTypeDef hi2c2;
 IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -112,7 +113,7 @@ void StartDefaultTask(void *argument);
 
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)&ch, 1);
   return ch;
 }
 
@@ -124,6 +125,16 @@ int _write(int file, char* ptr, int len) {
   }
   return len;
 }
+
+/**
+ * @brief Callback for UART
+ * @param phuart: UART_HandleTypeDef
+ * @return None
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) { 
+  HAL_UART_DMAStop(phuart);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -607,7 +618,7 @@ static void MX_USART3_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART3_Init 2 */
-
+  
   /* USER CODE END USART3_Init 2 */
 
 }
@@ -620,6 +631,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
 
