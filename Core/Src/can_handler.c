@@ -105,35 +105,33 @@ void vCanDispatch(void *pv_params)
 	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT,
 				    .severity = DEFCON1 };
 
-	can_msg_t msg_from_queue;
-	HAL_StatusTypeDef msg_status;
+	can_msg_t msg_from_queue = {
+		.id = 0x069,
+		.len = 4,
+		.data = { 69 }
+	};
 
+	HAL_StatusTypeDef msg_status;
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
 
 	for (;;) {
-		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		/* Send CAN message */
-		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
-					 NULL, 0U) == osOK) {
-			/* Wait if CAN outbound queue is full */
-			while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
-				osDelay(1);
-			}
-
-			msg_status = can_send_msg(can1, &msg_from_queue);
-
-			if (msg_status == HAL_ERROR) {
-				fault_data.diag = "Failed to send CAN message";
-				queue_fault(&fault_data);
-			} else if (msg_status == HAL_BUSY) {
-				fault_data.diag = "Outbound mailbox full!";
-				queue_fault(&fault_data);
-			}
-
-			/* Print Dispatch Messages */
-			printf("Dispatch: %s", msg_from_queue.data);
+		/* Wait if CAN outbound queue is full */
+		while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+			osDelay(1);
 		}
+
+		msg_status = can_send_msg(can1, &msg_from_queue);
+
+		if (msg_status == HAL_ERROR) {
+			fault_data.diag = "Failed to send CAN message";
+			queue_fault(&fault_data);
+		} else if (msg_status == HAL_BUSY) {
+			fault_data.diag = "Outbound mailbox full!";
+			queue_fault(&fault_data);
+		}
+
+		/* Print Dispatch Messages */
+		printf("Dispatch: %s", msg_from_queue.data);
 	}
 }
 
@@ -153,18 +151,6 @@ void vCanReceive(void *pv_params)
 	for (;;) {
 		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny, osWaitForever);
 		while (osOK == osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
-			switch (msg.id) {
-				/* Messages Relevant to Motor Controller */
-				case DTI_CANID_ERPM:
-					dti_record_rpm(mc, msg);
-					break;
-				case BMS_DCL_MSG:
-					handle_dcl_msg();
-					break;
-				default:
-					break;
-			}
-
 			/* Print Receive Messages */
 			printf("Recieve: %s", msg.data);
 		}
