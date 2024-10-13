@@ -144,7 +144,7 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	dti_t *mc = (dti_t *)pv_params;
+	//dti_t *mc = (dti_t *)pv_params;
 
 	can_msg_t msg;
 
@@ -152,7 +152,7 @@ void vCanReceive(void *pv_params)
 		osThreadFlagsWait(NEW_CAN_MSG_FLAG, osFlagsWaitAny, osWaitForever);
 		while (osOK == osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
 			/* Print Receive Messages */
-			printf("Recieve: %s", msg.data);
+			printf("Recieve: %s", msg.data);x
 		}
 	}
 }
