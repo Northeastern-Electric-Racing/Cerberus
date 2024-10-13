@@ -110,7 +110,7 @@ void vCanDispatch(void *pv_params)
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
 
 	for (;;) {
-		osThreadFlagsWait(CAN_DISPATCxH_FLAG, osFlagsWaitAny,
+		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		/* Send CAN message */
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
