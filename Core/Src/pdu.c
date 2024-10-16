@@ -130,7 +130,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->ctrl_expander);
-	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
+	pca9539_init(pdu->ctrl_expander, pdu->ctrl_expander->Write, pdu->ctrl_expander->Read, pdu->hi2c, CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
