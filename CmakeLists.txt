@@ -1,0 +1,148 @@
+cmake_minimum_required(VERSION 3.16)
+project(cerberus C ASM)
+
+# Set the target name
+set(TARGET cerberus)
+
+# Set the C standard
+set(CMAKE_C_STANDARD 11)
+
+# Debug build?
+if(DEBUG)
+    set(CMAKE_BUILD_TYPE Debug)
+else()
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Optimization
+set(OPT "-O2")
+
+# Include paths
+include_directories(
+    Core/Inc
+    Drivers/STM32F4xx_HAL_Driver/Inc
+    Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
+    Drivers/Embedded-Base/general/include
+    Drivers/Embedded-Base/platforms/stm32f405/include
+    Drivers/Embedded-Base/middleware/include
+    Middlewares/Third_Party/FreeRTOS/Source/include
+    Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+    Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+    Drivers/CMSIS/Device/ST/STM32F4xx/Include
+    Drivers/CMSIS/Include
+)
+
+# Define macros
+add_definitions(
+    -DUSE_HAL_DRIVER
+    -DSTM32F405xx
+)
+
+# ASM source
+set(ASM_SOURCES
+    startup_stm32f405xx.s
+)
+
+# C sources
+set(C_SOURCES
+    Core/Src/main.c
+    Core/Src/freertos.c
+    Core/Src/stm32f4xx_it.c
+    Core/Src/stm32f4xx_hal_msp.c
+    Core/Src/monitor.c
+    Core/Src/fault.c
+    Core/Src/can_handler.c
+    Core/Src/serial_monitor.c
+    Core/Src/dti.c
+    Core/Src/state_machine.c
+    Core/Src/bms.c
+    Core/Src/nero.c
+    Core/Src/torque.c
+    Core/Src/pdu.c
+    Core/Src/mpu.c
+    Core/Src/steeringio.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c
+    Drivers/Embedded-Base/general/src/lsm6dso.c
+    Drivers/Embedded-Base/general/src/sht30.c
+    Drivers/Embedded-Base/general/src/max7314.c
+    Drivers/Embedded-Base/platforms/stm32f405/src/can.c
+    Drivers/Embedded-Base/general/src/pi4ioe.c
+    Drivers/Embedded-Base/general/src/pca9539.c
+    Drivers/Embedded-Base/middleware/src/timer.c
+    Drivers/Embedded-Base/middleware/src/ringbuffer.c
+    Drivers/Embedded-Base/middleware/src/c_utils.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
+    Core/Src/system_stm32f4xx.c
+    Middlewares/Third_Party/FreeRTOS/Source/croutine.c
+    Middlewares/Third_Party/FreeRTOS/Source/event_groups.c
+    Middlewares/Third_Party/FreeRTOS/Source/list.c
+    Middlewares/Third_Party/FreeRTOS/Source/queue.c
+    Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c
+    Middlewares/Third_Party/FreeRTOS/Source/tasks.c
+    Middlewares/Third_Party/FreeRTOS/Source/timers.c
+    Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c
+    Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
+    Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c
+    Core/Src/sysmem.c
+    Core/Src/syscalls.c
+    Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_iwdg.c
+)
+
+# Add executable
+add_executable(${TARGET} ${C_SOURCES} ${ASM_SOURCES})
+
+# Set compiler flags
+target_compile_options(${TARGET} PRIVATE
+    ${MCU}
+    ${OPT}
+    -Wall
+    -Werror
+    -fdata-sections
+    -ffunction-sections
+    $<$<CONFIG:Debug>:-g -gdwarf-2>
+)
+
+# Linker flags
+target_link_options(${TARGET} PRIVATE
+    ${MCU}
+    -specs=nano.specs
+    -TSTM32F405RGTx_FLASH.ld
+    -Wl,-Map=${TARGET}.map,--cref
+    -Wl,--gc-sections
+)
+
+# Set the size command
+add_custom_command(TARGET ${TARGET} POST_BUILD
+    COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${TARGET}>
+)
+
+# Create hex and bin files after build
+add_custom_command(TARGET ${TARGET} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${TARGET}> ${TARGET}.hex
+    COMMAND ${CMAKE_OBJCOPY} -O binary -S $<TARGET_FILE:${TARGET}> ${TARGET}.bin
+)
+
+# Clean up
+add_custom_target(clean
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
+)
