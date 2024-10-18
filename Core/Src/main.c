@@ -718,6 +718,7 @@ void StartDefaultTask(void *argument)
     printf(".\r\n..\r\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
+    
     /* Send NERO state data continuously */
     send_nero_msg();
     osDelay(500);

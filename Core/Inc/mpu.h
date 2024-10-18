@@ -74,8 +74,8 @@ int8_t pet_watchdog(mpu_t *mpu);
 
 int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity);
 
-int8_t read_accel(mpu_t *mpu, uint16_t accel[3]);
+int8_t read_accel(mpu_t *mpu);
 
-int8_t read_gyro(mpu_t *mpu, uint16_t gyro[3]);
+int8_t read_gyro(mpu_t *mpu);
 
 #endif /* MPU */
