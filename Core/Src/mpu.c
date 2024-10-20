@@ -134,7 +134,7 @@ int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
     // updated to use int return type
     int status = sht30_get_temp_humid(&mpu->temp_sensor);
     if (status != 0)
-        return status;s
+        return status;
 
 	*temp = mpu->temp_sensor.temp;
 	*humidity = mpu->temp_sensor.humidity;
