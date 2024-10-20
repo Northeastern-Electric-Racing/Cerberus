@@ -34,14 +34,15 @@ mpu_t *init_mpu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pedals_adc,
 	mpu->led_gpio = led_gpio;
 	mpu->watchdog_gpio = watchdog_gpio;
 
-    /* Initialize the Onboard Temperature Sensor */
-    // CHANGE: Updated SHT30 initialization
-    mpu->temp_sensor.i2c_handle = hi2c;
-    mpu->temp_sensor.write = (Write_ptr)HAL_I2C_Master_Transmit;
-    mpu->temp_sensor.read = (Read_Ptr)HAL_I2C_Master_Receive;
-    mpu->temp_sensor.mem_read = (Mem_Read_Ptr)HAL_I2C_Mem_Read;
-    mpu->temp_sensor.delay = HAL_Delay;
-    assert(sht30_init(&mpu->temp_sensor) == 0);
+	/* Initialize the Onboard Temperature Sensor */
+	// updated the sht30 initialization
+	mpu->temp_sensor.i2c_handle = hi2c;
+	mpu->temp_sensor.write = (Write_ptr)HAL_I2C_Master_Transmit;
+	mpu->temp_sensor.read = (Read_Ptr)HAL_I2C_Master_Receive;
+	mpu->temp_sensor.mem_read = (Mem_Read_Ptr)HAL_I2C_Mem_Read;
+	mpu->temp_sensor.delay = HAL_Delay;
+	assert(sht30_init(&mpu->temp_sensor) == 0);
+
 	assert(!HAL_ADC_Start_DMA(mpu->pedals_adc, mpu->pedal_dma_buf,
 				  sizeof(mpu->pedal_dma_buf) /
 					  sizeof(uint32_t)));
@@ -131,10 +132,10 @@ int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
 	if (mut_stat)
 		return mut_stat;
 
-    // updated to use int return type
-    int status = sht30_get_temp_humid(&mpu->temp_sensor);
-    if (status != 0)
-        return status;
+	// Updated to use int return type
+	int status = sht30_get_temp_humid(&mpu->temp_sensor);
+	if (status != 0)
+		return status;
 
 	*temp = mpu->temp_sensor.temp;
 	*humidity = mpu->temp_sensor.humidity;
