@@ -153,9 +153,10 @@ int8_t read_accel(mpu_t *mpu, uint16_t accel[3])
 	if (mut_stat)
 		return mut_stat;
 
+	// this was causing errors on my local machine so I thought it was an error
     HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
-    if (hal_stat != HAL_OK)
-        return hal_stat;
+	if (hal_stat)
+		return hal_stat;
 	memcpy(accel, mpu->imu->accel_data, 3);
 
 	osMutexRelease(mpu->i2c_mutex);
