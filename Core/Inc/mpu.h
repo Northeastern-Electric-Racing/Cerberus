@@ -18,7 +18,7 @@ typedef struct {
 
 	GPIO_TypeDef *led_gpio;
 	GPIO_TypeDef *watchdog_gpio;
-	sht30_t *temp_sensor;
+	sht30_t temp_sensor;
 	lsm6dso_t *imu;
 	osMutexId_t *adc_mutex;
 	osMutexId_t *i2c_mutex;
