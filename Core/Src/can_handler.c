@@ -77,11 +77,12 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	new_msg.len = rx_header.DLC;
 	new_msg.id = rx_header.StdId;
 
-	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
-			   NEW_CAN_MSG_FLAG);
+	//queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
+	//		   NEW_CAN_MSG_FLAG);
 
 	/* Print Callback Messages */
-	printf("Callback: %s", new_msg.data);
+	if (new_msg.id == 2)
+		printf("Callback: %s", new_msg.data);
 }
 
 int8_t queue_can_msg(can_msg_t msg)
@@ -106,7 +107,7 @@ void vCanDispatch(void *pv_params)
 				    .severity = DEFCON1 };
 
 	can_msg_t msg_from_queue = {
-		.id = 0x069,
+		.id = 0x002,
 		.len = 4,
 		.data = { 69 }
 	};
@@ -115,6 +116,8 @@ void vCanDispatch(void *pv_params)
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
 
 	for (;;) {
+		osDelay(500);
+
 		/* Wait if CAN outbound queue is full */
 		while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
 			osDelay(1);
