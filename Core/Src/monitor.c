@@ -260,7 +260,7 @@ void vTempMonitor(void *pv_params)
 		/* Take measurement */
 		uint16_t temp = 0;
 		uint16_t humidity = 0;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
+		if (read_temp_sensor(mpu, &temp, &humidity) != 0) {
 			fault_data.diag = "Failed to get temp";
 			queue_fault(&fault_data);
 		}
