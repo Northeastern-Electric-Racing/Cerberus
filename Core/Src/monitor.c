@@ -120,9 +120,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 	for (;;) {
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
-		 
-		read_accel(mpu);
-
+		
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
 	}
