@@ -40,9 +40,8 @@ typedef struct {
  * @param watchdog_gpio Pointer to struct represneting watchdog GPIO
  * @return mpu_t* Pointer to struct representing the MPU
  */
-mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc,
-		ADC_HandleTypeDef *lv_adc, GPIO_TypeDef *led_gpio,
-		GPIO_TypeDef *watchdog_gpio);
+mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
+		GPIO_TypeDef *led_gpio, GPIO_TypeDef *watchdog_gpio);
 
 /**
  * @brief Read pedal ADCs with DMA.
