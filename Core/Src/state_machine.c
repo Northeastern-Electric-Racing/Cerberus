@@ -4,7 +4,6 @@
 #include "nero.h"
 #include "queues.h"
 #include "monitor.h"
-#include "serial_monitor.h"
 #include "nero.h"
 #include "queues.h"
 #include "pedals.h"
@@ -68,7 +67,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
 		write_fault(pdu, false);
-		serial_print("READY\r\n");
+		printf("READY\r\n");
 		break;
 	case F_PIT:
 	case F_PERFORMANCE:
@@ -89,7 +88,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
 		write_fault(pdu, false);
-		serial_print("ACTIVE STATE\r\n");
+		printf("ACTIVE STATE\r\n");
 		break;
 	case REVERSE:
 		/* Can only enter reverse mode if already in pit mode */
@@ -103,7 +102,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		write_fault(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
-		serial_print("FAULTED\r\n");
+		printf("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing

@@ -1,5 +1,4 @@
 #include "pdu.h"
-#include "serial_monitor.h"
 #include "fault.h"
 #include <assert.h>
 #include <stdio.h>
