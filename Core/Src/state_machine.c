@@ -104,6 +104,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
+		// delay for one second before faulting the car 
+		osDelay(pdMS_TO_TICKS(1000));
 		write_fault(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
@@ -233,6 +235,7 @@ int fault()
 }
 
 void unfault_timer_callback(void *args) {
+	printf("UNFAULTING");
 	queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
