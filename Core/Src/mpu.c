@@ -16,27 +16,22 @@ static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
 I2C_HandleTypeDef *hi2c;
 
-
-
-static inline int read_reg(uint8_t *data,
-						   uint8_t reg,
-						   uint8_t length) {
-
-  return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
-                          I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY);
+static inline int read_reg(uint8_t *data, uint8_t reg, uint8_t length)
+{
+	return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+				I2C_MEMADD_SIZE_8BIT, data, length,
+				HAL_MAX_DELAY);
 }
 
-static inline int write_reg(uint8_t *data,
-							uint8_t reg,
-							uint8_t length) {
-  
-  return HAL_I2C_Mem_Write(hi2c, LSM6DSO_I2C_ADDRESS, reg,
-                           I2C_MEMADD_SIZE_8BIT, data, length, HAL_MAX_DELAY);
+static inline int write_reg(uint8_t *data, uint8_t reg, uint8_t length)
+{
+	return HAL_I2C_Mem_Write(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+				 I2C_MEMADD_SIZE_8BIT, data, length,
+				 HAL_MAX_DELAY);
 }
 
-mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc,
-		ADC_HandleTypeDef *lv_adc, GPIO_TypeDef *led_gpio,
-		GPIO_TypeDef *watchdog_gpio)
+mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
+		GPIO_TypeDef *led_gpio, GPIO_TypeDef *watchdog_gpio)
 {
 	assert(pedals_adc);
 	assert(lv_adc);
@@ -69,7 +64,8 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc,
 	/* Initialize the IMU */
 	mpu->imu = malloc(sizeof(lsm6dso_t));
 	assert(mpu->imu);
-	assert(!lsm6dso_init(mpu->imu, read_reg, write_reg)); /* This is always connected */
+	assert(!lsm6dso_init(mpu->imu, read_reg,
+			     write_reg)); /* This is always connected */
 
 	/* Create Mutexes */
 	mpu->i2c_mutex = osMutexNew(&mpu_i2c_mutex_attr);
