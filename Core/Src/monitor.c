@@ -120,7 +120,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 	for (;;) {
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
-		
+
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
 	}
@@ -376,17 +376,23 @@ void vIMUMonitor(void *pv_params)
 
 		/* Run values through LPF of sample size  */
 		sensor_data.accel_x =
-			(sensor_data.accel_x + mpu->imu->accel_data[0]) / num_samples;
+			(sensor_data.accel_x + mpu->imu->accel_data[0]) /
+			num_samples;
 		sensor_data.accel_y =
-			(sensor_data.accel_y + mpu->imu->accel_data[1]) / num_samples;
+			(sensor_data.accel_y + mpu->imu->accel_data[1]) /
+			num_samples;
 		sensor_data.accel_z =
-			(sensor_data.accel_z + mpu->imu->accel_data[2]) / num_samples;
+			(sensor_data.accel_z + mpu->imu->accel_data[2]) /
+			num_samples;
 		sensor_data.gyro_x =
-			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) / num_samples;
+			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) /
+			num_samples;
 		sensor_data.gyro_y =
-			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) / num_samples;
+			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) /
+			num_samples;
 		sensor_data.gyro_z =
-			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) / num_samples;
+			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) /
+			num_samples;
 
 		/* Publish to IMU Queue */
 		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
