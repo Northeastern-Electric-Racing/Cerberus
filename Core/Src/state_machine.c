@@ -103,9 +103,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
-		write_fault(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+		osDelay(1000); /* Delay for 1 sec before faulting car */
+		write_fault(pdu, true);
 		serial_print("FAULTED\r\n");
 		break;
 	default:
@@ -227,11 +228,8 @@ int fault()
 {
 	// count 5 seconds before unfaulting
 	osTimerStart(unfault_timer, pdMS_TO_TICKS(5 * 1000));
-	int status = queue_state_transition(
+	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
-	// delay for one second before faulting the car
-	osDelay(pdMS_TO_TICKS(1000));
-	return status;
 }
 
 void unfault_timer_callback(void *args)
