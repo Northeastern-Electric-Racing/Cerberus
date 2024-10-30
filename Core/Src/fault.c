@@ -55,8 +55,8 @@ void vFaultHandler(void *pv_params)
 			       sizeof(defcon));
 
 			queue_can_msg(msg);
-			serial_print(
-				"\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
+				printf(
+				"\nFault Handler! Diagnostic Info:\t%s\n\n",
 				fault_data.diag);
 
 			switch (fault_data.severity) {

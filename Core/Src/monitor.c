@@ -265,7 +265,7 @@ void vTempMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		serial_print("MPU Board Temperature:\t%d\r\n", temp);
+		printf("MPU Board Temperature:\t%d\n", temp);
 
 		temp_msg.data[0] = temp & 0xFF;
 		temp_msg.data[1] = (temp >> 8) & 0xFF;

@@ -114,15 +114,14 @@ void StartDefaultTask(void *argument);
 PUTCHAR_PROTOTYPE
 {
   HAL_UART_Transmit_DMA(&huart3, (uint8_t *)&ch, 1);
+  
   return ch;
 }
 
 int _write(int file, char* ptr, int len) {
-  int DataIdx;
 
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
-  }
+  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)ptr, len);
+
   return len;
 }
 
@@ -144,7 +143,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  printf("BOOT\r\n");
+  printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -189,7 +188,7 @@ int main(void)
   init_can1(&hcan1);
   bms_init();
 
-  printf("\r\n\n\nInit Success...\r\n\n\n");
+  printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -732,7 +731,7 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    printf(".\r\n..\r\n");
+    printf(".\n..\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
     /* Send NERO state data continuously */

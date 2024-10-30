@@ -3,9 +3,6 @@
 
 #include "cmsis_os.h"
 
-/* Function to queue a message to be sent on the UART stream */
-int serial_print(const char *format, ...);
-
 /* Task for printing values to USART output */
 void vSerialMonitor(void *pv_params);
 extern osThreadId_t serial_monitor_handle;
