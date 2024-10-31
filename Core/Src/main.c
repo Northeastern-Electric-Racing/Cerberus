@@ -177,7 +177,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
+  mpu_t *mpu  = init_mpu(&hadc3, &hadc1, GPIOC, GPIOB);
   assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2);
   assert(pdu);
@@ -734,6 +734,7 @@ void StartDefaultTask(void *argument)
     printf(".\n..\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
+    
     /* Send NERO state data continuously */
     send_nero_msg();
     osDelay(500);
