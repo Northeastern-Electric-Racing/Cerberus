@@ -32,7 +32,7 @@ extern const osThreadAttr_t non_functional_data_attributes;
 /* Arguments for the data collection thread */
 typedef struct {
 	pdu_t *pdu;
-	steeringio_t *wheel;
+	steeringio_t *wheel; // TODO: this should be deprecated?
 } data_collection_args_t;
 
 /**

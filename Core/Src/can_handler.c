@@ -138,6 +138,9 @@ const osThreadAttr_t can_receive_attributes = {
 	.priority = (osPriority_t)osPriorityRealtime,
 };
 
+
+
+
 void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
@@ -156,6 +159,9 @@ void vCanReceive(void *pv_params)
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
+				break;
+			case STEERING_CANID_IO:
+				steeringio_update(msg);
 				break;
 			default:
 				break;

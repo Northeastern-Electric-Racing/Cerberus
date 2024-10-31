@@ -173,8 +173,8 @@ int main(void)
   assert(pdu);
   dti_t *mc   = dti_init();
   assert(mc);
-  steeringio_t *wheel = steeringio_init();
-  assert(wheel);
+  // steeringio_t *wheel = steeringio_init();
+  // assert(wheel);
   init_can1(&hcan1);
   bms_init();
 
@@ -215,7 +215,7 @@ int main(void)
 
   data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
   data_args->pdu = pdu;
-  data_args->wheel = wheel;
+  data_args->wheel = NULL; // TODO: clean up wheel
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
   assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);

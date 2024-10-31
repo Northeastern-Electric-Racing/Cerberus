@@ -176,40 +176,6 @@ void read_tsms(pdu_t *pdu)
 	}
 }
 
-/**
- * @brief Read the buttons of the steering wheel, debounce them, and send a CAN message containing the raw data.
- * 
- * @param wheel Pointer to struct defining wheel interface
- */
-void steeringio_monitor(steeringio_t *wheel)
-{
-	can_msg_t msg = { .id = 0x680, .len = 8, .data = { 0 } };
-	fault_data_t fault_data = { .id = BUTTONS_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-
-	uint8_t button_1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-	uint8_t button_2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
-	uint8_t button_3 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-	uint8_t button_4 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
-	uint8_t button_5 = !HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
-	uint8_t button_6 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
-	uint8_t button_7 = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
-	uint8_t button_8 = !HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
-
-	uint8_t button_data = (button_1 << 7) | (button_2 << 6) |
-			      (button_3 << 5) | (button_4 << 4) |
-			      (button_5 << 3) | (button_6 << 2) |
-			      (button_7 << 1) | (button_8);
-
-	steeringio_update(wheel, button_data);
-
-	/* Set the first byte to be the first 8 buttons with each bit representing the pin status */
-	msg.data[0] = button_data;
-	if (queue_can_msg(msg)) {
-		fault_data.diag = "Failed to send steering buttons can message";
-		queue_fault(&fault_data);
-	}
-}
 
 osThreadId_t data_collection_thread;
 const osThreadAttr_t data_collection_attributes = {
@@ -222,7 +188,6 @@ void vDataCollection(void *pv_params)
 {
 	data_collection_args_t *args = (data_collection_args_t *)pv_params;
 	pdu_t *pdu = args->pdu;
-	steeringio_t *wheel = args->wheel;
 	free(args);
 
 	static const uint8_t delay = 20;
@@ -231,9 +196,6 @@ void vDataCollection(void *pv_params)
 
 	for (;;) {
 		read_tsms(pdu);
-		osDelay(delay);
-
-		steeringio_monitor(wheel);
 		osDelay(delay);
 	}
 }
