@@ -35,13 +35,13 @@ mpu_t *init_mpu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pedals_adc,
 	mpu->watchdog_gpio = watchdog_gpio;
 
 	/* Initialize the Onboard Temperature Sensor */
-	// updated the sht30 initialization
-	mpu->temp_sensor.i2c_handle = hi2c;
-	mpu->temp_sensor.write = (Write_ptr)HAL_I2C_Master_Transmit;
-	mpu->temp_sensor.read = (Read_Ptr)HAL_I2C_Master_Receive;
-	mpu->temp_sensor.mem_read = (Mem_Read_Ptr)HAL_I2C_Mem_Read;
-	mpu->temp_sensor.delay = HAL_Delay;
-	assert(sht30_init(&mpu->temp_sensor) == 0);
+	mpu->temp_sensor = malloc(sizeof(sht30_t));
+	assert(mpu->temp_sensor);
+	// updated sht 
+	Write_ptr write_func = HAL_I2C_Mem_Write;
+	Read_ptr read_func = HAL_I2C_Mem_Read;
+	DelayFunc delay_func = HAL_Delay;
+	assert(!sht30_init(mpu->temp_sensor, write_func, read_func, delay_func)); /* This is always connected */
 
 	assert(!HAL_ADC_Start_DMA(mpu->pedals_adc, mpu->pedal_dma_buf,
 				  sizeof(mpu->pedal_dma_buf) /
@@ -132,13 +132,14 @@ int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
 	if (mut_stat)
 		return mut_stat;
 
-	// Updated to use int return type
-	int status = sht30_get_temp_humid(&mpu->temp_sensor);
-	if (status != 0)
-		return status;
+	int hal_stat = sht30_get_temp_humid(mpu->temp_sensor);
+	if (hal_stat) {
+		osMutexRelease(mpu->i2c_mutex);
+		return hal_stat;
+	}
 
-	*temp = mpu->temp_sensor.temp;
-	*humidity = mpu->temp_sensor.humidity;
+	*temp = mpu->temp_sensor->temp;
+	*humidity = mpu->temp_sensor->humidity;
 
 	osMutexRelease(mpu->i2c_mutex);
 	return 0;
@@ -154,8 +155,9 @@ int8_t read_accel(mpu_t *mpu, uint16_t accel[3])
 		return mut_stat;
 
 	HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
-	if (hal_stat != HAL_OK)
+	if (hal_stat)
 		return hal_stat;
+
 	memcpy(accel, mpu->imu->accel_data, 3);
 
 	osMutexRelease(mpu->i2c_mutex);
