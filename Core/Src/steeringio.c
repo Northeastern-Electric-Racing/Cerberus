@@ -1,16 +1,16 @@
 #include "steeringio.h"
 #include "can.h"
+#include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
+#include "nero.h"
+#include "pedals.h"
+#include "serial_monitor.h"
+#include "state_machine.h"
+#include "stdio.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "state_machine.h"
-#include "serial_monitor.h"
-#include "nero.h"
-#include "stdio.h"
-#include "cerb_utils.h"
-#include "pedals.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
@@ -65,4 +65,3 @@ void steeringio_update(can_msg_t msg)
 		break;
 	}
 }
-

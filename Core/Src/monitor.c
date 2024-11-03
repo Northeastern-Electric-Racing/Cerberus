@@ -1,11 +1,13 @@
 #include "monitor.h"
 #include "c_utils.h"
 #include "can_handler.h"
+#include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "lsm6dso.h"
 #include "mpu.h"
 #include "pdu.h"
+#include "pedals.h"
 #include "queues.h"
 #include "serial_monitor.h"
 #include "sht30.h"
@@ -14,13 +16,11 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "timer.h"
-#include "pedals.h"
-#include "cerb_utils.h"
+#include <lsm6dso.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lsm6dso.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -30,12 +30,11 @@ osMutexId_t tsms_mutex;
 /**
  * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
  */
-void read_lv_sense(void *arg)
+void read_lv_sense(void* arg)
 {
-	mpu_t *mpu = (mpu_t *)arg;
-	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+	mpu_t* mpu				= (mpu_t*)arg;
+	fault_data_t fault_data = { .id = LV_MONITOR_FAULT, .severity = DEFCON5 };
+	can_msg_t msg			= { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
 
 	uint32_t v_int;
 
@@ -54,21 +53,20 @@ void read_lv_sense(void *arg)
 
 	memcpy(msg.data, &v_int, msg.len);
 	if (queue_can_msg(msg)) {
-		fault_data.diag =
-			"Failed to send steering LV monitor CAN message";
+		fault_data.diag = "Failed to send steering LV monitor CAN message";
 		queue_fault(&fault_data);
 	}
 }
 
 /**
- * @brief Read data from the fuse monitor GPIO expander on the PDU and send a CAN message with the resulting data.
+ * @brief Read data from the fuse monitor GPIO expander on the PDU and send a CAN message with the
+ * resulting data.
  */
-void read_fuse_data(void *arg)
+void read_fuse_data(void* arg)
 {
-	pdu_t *pdu = (pdu_t *)arg;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
+	pdu_t* pdu				= (pdu_t*)arg;
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
+	can_msg_t fuse_msg		= { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 	uint16_t fuse_buf;
 	bool fuses[MAX_FUSES] = { 0 };
 
@@ -85,9 +83,8 @@ void read_fuse_data(void *arg)
 	}
 
 	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-		fuse_buf |=
-			fuses[fuse]
-			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
+		fuse_buf
+			|= fuses[fuse] << fuse; /* Sets the bit at position `fuse` to the state of the fuse */
 	}
 
 	fuse_data.fuse_1 = fuse_buf & 0xFF;
@@ -106,15 +103,15 @@ void read_fuse_data(void *arg)
 
 osThreadId_t non_functional_data_thead;
 const osThreadAttr_t non_functional_data_attributes = {
-	.name = "NonFunctionalDataCollection",
+	.name		= "NonFunctionalDataCollection",
 	.stack_size = 2048,
-	.priority = (osPriority_t)osPriorityBelowNormal,
+	.priority	= (osPriority_t)osPriorityBelowNormal,
 };
-void vNonFunctionalDataCollection(void *pv_params)
+void vNonFunctionalDataCollection(void* pv_params)
 {
-	non_func_data_args_t *args = (non_func_data_args_t *)pv_params;
-	mpu_t *mpu = args->mpu;
-	pdu_t *pdu = args->pdu;
+	non_func_data_args_t* args = (non_func_data_args_t*)pv_params;
+	mpu_t* mpu				   = args->mpu;
+	pdu_t* pdu				   = args->pdu;
 	free(args);
 
 	for (;;) {
@@ -135,11 +132,11 @@ bool get_tsms()
 	return temp;
 }
 
-void tsms_debounce_cb(void *arg)
+void tsms_debounce_cb(void* arg)
 {
 	/* Set TSMS state to new debounced value */
 	osMutexAcquire(tsms_mutex, osWaitForever);
-	tsms = *((bool *)arg);
+	tsms = *((bool*)arg);
 	osMutexRelease(tsms_mutex);
 	/* Tell NERO allaboutit */
 	send_nero_msg();
@@ -147,14 +144,13 @@ void tsms_debounce_cb(void *arg)
 
 /**
  * @brief Read the TSMS signal and debounce it.
- * 
+ *
  * @param pdu Pointer to struct representing the PDU.
  */
-void read_tsms(pdu_t *pdu)
+void read_tsms(pdu_t* pdu)
 {
 	static nertimer_t timer;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT, .severity = DEFCON5 };
 	bool tsms_reading;
 
 	/* If the TSMS reading throws an error, queue TSMS fault */
@@ -164,30 +160,28 @@ void read_tsms(pdu_t *pdu)
 
 	/* Debounce tsms reading */
 	if (tsms_reading)
-		debounce(tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD,
-			 &tsms_debounce_cb, &tsms_reading);
+		debounce(tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD, &tsms_debounce_cb, &tsms_reading);
 	else
-		/* Since debounce only debounces logic high signals, the reading must be inverted if it is low. Think of this as debouncing a "TSMS off is active" debounce. */
-		debounce(!tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD,
-			 &tsms_debounce_cb, &tsms_reading);
+		/* Since debounce only debounces logic high signals, the reading must be inverted if it is
+		 * low. Think of this as debouncing a "TSMS off is active" debounce. */
+		debounce(!tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD, &tsms_debounce_cb, &tsms_reading);
 
 	if (get_active() && get_tsms() == false) {
 		set_home_mode();
 	}
 }
 
-
 osThreadId_t data_collection_thread;
 const osThreadAttr_t data_collection_attributes = {
-	.name = "DataCollection",
+	.name		= "DataCollection",
 	.stack_size = 2048,
-	.priority = (osPriority_t)osPriorityBelowNormal,
+	.priority	= (osPriority_t)osPriorityBelowNormal,
 };
 
-void vDataCollection(void *pv_params)
+void vDataCollection(void* pv_params)
 {
-	data_collection_args_t *args = (data_collection_args_t *)pv_params;
-	pdu_t *pdu = args->pdu;
+	data_collection_args_t* args = (data_collection_args_t*)pv_params;
+	pdu_t* pdu					 = args->pdu;
 	free(args);
 
 	static const uint8_t delay = 20;
@@ -204,24 +198,21 @@ void vDataCollection(void *pv_params)
 
 osThreadId_t temp_monitor_handle;
 const osThreadAttr_t temp_monitor_attributes = {
-	.name = "TempMonitor",
+	.name		= "TempMonitor",
 	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh1,
+	.priority	= (osPriority_t)osPriorityHigh1,
 };
 
-void vTempMonitor(void *pv_params)
+void vTempMonitor(void* pv_params)
 {
-	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
-			       .len = 4,
-			       .data = { 0 } };
+	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT, .severity = DEFCON5 };
+	can_msg_t temp_msg		= { .id = CANID_TEMP_SENSOR, .len = 4, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t* mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		/* Take measurement */
-		uint16_t temp = 0;
+		uint16_t temp	  = 0;
 		uint16_t humidity = 0;
 		if (read_temp_sensor(mpu, &temp, &humidity)) {
 			fault_data.diag = "Failed to get temp";
@@ -248,19 +239,16 @@ void vTempMonitor(void *pv_params)
 
 osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
-	.name = "ShutdownMonitor",
+	.name		= "ShutdownMonitor",
 	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh2,
+	.priority	= (osPriority_t)osPriorityHigh2,
 };
 
-void vShutdownMonitor(void *pv_params)
+void vShutdownMonitor(void* pv_params)
 {
-	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-				   .len = 2,
-				   .data = { 0 } };
-	pdu_t *pdu = (pdu_t *)pv_params;
+	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT, .severity = DEFCON5 };
+	can_msg_t shutdown_msg	= { .id = CANID_SHUTDOWN_LOOP, .len = 2, .data = { 0 } };
+	pdu_t* pdu				= (pdu_t*)pv_params;
 	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
 	uint16_t shutdown_buf;
 
@@ -277,11 +265,10 @@ void vShutdownMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES;
-		     stage++) {
-			shutdown_buf |=
-				shutdown_loop[stage]
-				<< stage; /* Sets the bit at position `stage` to the state of the stage */
+		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES; stage++) {
+			shutdown_buf
+				|= shutdown_loop[stage]
+				   << stage; /* Sets the bit at position `stage` to the state of the stage */
 		}
 
 		/* seperate each byte */
@@ -304,24 +291,20 @@ void vShutdownMonitor(void *pv_params)
 
 osThreadId_t imu_monitor_handle;
 const osThreadAttr_t imu_monitor_attributes = {
-	.name = "IMUMonitor",
+	.name		= "IMUMonitor",
 	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh,
+	.priority	= (osPriority_t)osPriorityHigh,
 };
 
-void vIMUMonitor(void *pv_params)
+void vIMUMonitor(void* pv_params)
 {
 	const uint8_t num_samples = 10;
 	static imu_data_t sensor_data;
 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
-	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
-				    .len = 6,
-				    .data = { 0 } };
-	can_msg_t imu_gyro_msg = { .id = CANID_IMU_GYRO,
-				   .len = 6,
-				   .data = { 0 } };
+	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL, .len = 6, .data = { 0 } };
+	can_msg_t imu_gyro_msg	= { .id = CANID_IMU_GYRO, .len = 6, .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+	mpu_t* mpu = (mpu_t*)pv_params;
 
 	for (;;) {
 		// serial_print("IMU Task\r\n");
@@ -337,24 +320,12 @@ void vIMUMonitor(void *pv_params)
 		}
 
 		/* Run values through LPF of sample size  */
-		sensor_data.accel_x =
-			(sensor_data.accel_x + mpu->imu->accel_data[0]) /
-			num_samples;
-		sensor_data.accel_y =
-			(sensor_data.accel_y + mpu->imu->accel_data[1]) /
-			num_samples;
-		sensor_data.accel_z =
-			(sensor_data.accel_z + mpu->imu->accel_data[2]) /
-			num_samples;
-		sensor_data.gyro_x =
-			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) /
-			num_samples;
-		sensor_data.gyro_y =
-			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) /
-			num_samples;
-		sensor_data.gyro_z =
-			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) /
-			num_samples;
+		sensor_data.accel_x = (sensor_data.accel_x + mpu->imu->accel_data[0]) / num_samples;
+		sensor_data.accel_y = (sensor_data.accel_y + mpu->imu->accel_data[1]) / num_samples;
+		sensor_data.accel_z = (sensor_data.accel_z + mpu->imu->accel_data[2]) / num_samples;
+		sensor_data.gyro_x	= (sensor_data.gyro_x + mpu->imu->gyro_data[0]) / num_samples;
+		sensor_data.gyro_y	= (sensor_data.gyro_y + mpu->imu->gyro_data[1]) / num_samples;
+		sensor_data.gyro_z	= (sensor_data.gyro_z + mpu->imu->gyro_data[2]) / num_samples;
 
 		/* Publish to IMU Queue */
 		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
