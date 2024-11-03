@@ -144,7 +144,6 @@ const osThreadAttr_t can_receive_attributes = {
 void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
-
 	can_msg_t msg;
 
 	for (;;) {

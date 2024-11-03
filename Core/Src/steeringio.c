@@ -14,27 +14,6 @@
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
-enum { NOT_PRESSED, PRESSED };
-
-
-// steeringio_t *steeringio_init()
-// {
-// 	steeringio_t *steeringio = malloc(sizeof(steeringio_t));
-// 	assert(steeringio);
-
-// 	steeringio->button_mutex =
-// 		osMutexNew(&steeringio_data_mutex_attributes);
-// 	assert(steeringio->button_mutex);
-
-// 	/* Initialize button states */
-// 	for (uint8_t i = 0; i < MAX_STEERING_BUTTONS; i++) {
-// 		steeringio->button_state[i] = NOT_PRESSED;
-// 	}
-// 	return steeringio;
-// }
-
-
-
 static void paddle_left_cb()
 {
 	if (get_func_state() == F_EFFICIENCY) {
