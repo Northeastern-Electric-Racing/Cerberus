@@ -62,10 +62,10 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 				  sizeof(mpu->lv_dma_buf) / sizeof(uint32_t)));
 
 	/* Initialize the IMU */
-	mpu->imu = malloc(sizeof(lsm6dso_t));
-	assert(mpu->imu);
-	assert(!lsm6dso_init(mpu->imu, read_reg,
-			     write_reg)); /* This is always connected */
+	// mpu->imu = malloc(sizeof(lsm6dso_t));
+	// assert(mpu->imu);
+	// assert(!lsm6dso_init(mpu->imu, read_reg,
+	// 		     write_reg)); /* This is always connected */
 
 	/* Create Mutexes */
 	mpu->i2c_mutex = osMutexNew(&mpu_i2c_mutex_attr);
