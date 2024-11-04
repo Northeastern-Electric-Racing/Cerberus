@@ -30,6 +30,20 @@ static inline int write_reg(uint8_t *data, uint8_t reg, uint8_t length)
 				 HAL_MAX_DELAY);
 }
 
+static inline int temp_read_reg(uint8_t *data, uint8_t reg, uint8_t length)
+{
+	return HAL_I2C_Mem_Read(hi2c, SHT30_I2C_ADDRESS, reg,
+				I2C_MEMADD_SIZE_8BIT, data, length,
+				HAL_MAX_DELAY);
+}
+
+static inline int temp_write_reg(uint8_t *data, uint8_t reg, uint8_t length)
+{
+	return HAL_I2C_Mem_Write(hi2c, SHT30_I2C_ADDRESS, reg,
+				 I2C_MEMADD_SIZE_8BIT, data, length,
+				 HAL_MAX_DELAY);
+}
+
 mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 		GPIO_TypeDef *led_gpio, GPIO_TypeDef *watchdog_gpio)
 {
@@ -51,8 +65,8 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 	/* Initialize the Onboard Temperature Sensor */
 	mpu->temp_sensor = malloc(sizeof(sht30_t));
 	assert(mpu->temp_sensor);
-	mpu->temp_sensor->i2c_handle = hi2c;
-	assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
+	assert(!sht30_init(mpu->temp_sensor, temp_write_reg,
+			     temp_read_reg)); /* This is always connected */
 
 	assert(!HAL_ADC_Start_DMA(mpu->pedals_adc, mpu->pedal_dma_buf,
 				  sizeof(mpu->pedal_dma_buf) /
