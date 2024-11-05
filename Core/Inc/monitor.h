@@ -16,8 +16,8 @@
 bool get_tsms();
 
 typedef struct {
-	mpu_t* mpu;
-	pdu_t* pdu;
+	mpu_t *mpu;
+	pdu_t *pdu;
 } non_func_data_args_t;
 
 /**
@@ -26,13 +26,13 @@ typedef struct {
  *
  * @param pv_params Pointer to non_func_data_args_t
  */
-void vNonFunctionalDataCollection(void* pv_params);
+void vNonFunctionalDataCollection(void *pv_params);
 extern osThreadId_t non_functional_data_thead;
 extern const osThreadAttr_t non_functional_data_attributes;
 
 /* Arguments for the data collection thread */
 typedef struct {
-	pdu_t* pdu;
+	pdu_t *pdu;
 } data_collection_args_t;
 
 /**
@@ -41,7 +41,7 @@ typedef struct {
  *
  * @param pv_params Pointer to data_collection_args_t
  */
-void vDataCollection(void* pv_params);
+void vDataCollection(void *pv_params);
 extern osThreadId_t data_collection_thread;
 extern const osThreadAttr_t data_collection_attributes;
 
@@ -49,17 +49,17 @@ extern const osThreadAttr_t data_collection_attributes;
  * -------------------------------------------------------------------------------------------------------*/
 
 /* Task for Monitoring the IMU */
-void vIMUMonitor(void* pv_params);
+void vIMUMonitor(void *pv_params);
 extern osThreadId_t imu_monitor_handle;
 extern const osThreadAttr_t imu_monitor_attributes;
 
 /* Task for Monitoring the Shutdown Loop */
-void vShutdownMonitor(void* pv_params);
+void vShutdownMonitor(void *pv_params);
 extern osThreadId_t shutdown_monitor_handle;
 extern const osThreadAttr_t shutdown_monitor_attributes;
 
 /* Defining Temperature Monitor Task */
-void vTempMonitor(void* pv_params);
+void vTempMonitor(void *pv_params);
 extern osThreadId_t temp_monitor_handle;
 extern const osThreadAttr_t temp_monitor_attributes;
 

@@ -173,8 +173,6 @@ int main(void)
   assert(pdu);
   dti_t *mc   = dti_init();
   assert(mc);
-  // steeringio_t *wheel = steeringio_init();
-  // assert(wheel);
   init_can1(&hcan1);
   bms_init();
 
