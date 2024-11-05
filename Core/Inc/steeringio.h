@@ -1,12 +1,12 @@
 #ifndef STEERING_H
 #define STEERING_H
 
+#include "can.h"
 #include "cmsis_os.h"
 #include "ringbuffer.h"
 #include "timer.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "can.h"
 
 #define STEERING_CANID_IO 0x680
 
@@ -23,20 +23,6 @@ typedef enum {
 	STEERING_PADDLE_RIGHT,
 	MAX_STEERING_BUTTONS
 } steeringio_button_t;
-
-typedef struct {
-	/* Necessary to allow multiple threads to access same data */
-	osMutexId_t *button_mutex;
-	/* Array indicating state of each button */
-	bool button_state[MAX_STEERING_BUTTONS];
-} steeringio_t;
-
-// /**
-//  * @brief Creates a new steering wheel interface.
-//  *
-//  * @return steeringio_t* Pointer to struct defining steering wheel interface
-//  */
-// steeringio_t *steeringio_init();
 
 /**
  * @brief Update the status of the steering wheel buttons.
