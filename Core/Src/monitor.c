@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <lsm6dso.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -362,31 +363,35 @@ void vIMUMonitor(void *pv_params)
 	for (;;) {
 		// printf("IMU Task\r\n");
 		/* Take measurement */
-		uint16_t accel_data[3] = { 0 };
-		uint16_t gyro_data[3] = { 0 };
-		if (read_accel(mpu, accel_data)) {
+		if (read_accel(mpu)) {
 			fault_data.diag = "Failed to get IMU acceleration";
 			queue_fault(&fault_data);
 		}
 
-		if (read_gyro(mpu, gyro_data)) {
+		if (read_gyro(mpu)) {
 			fault_data.diag = "Failed to get IMU gyroscope";
 			queue_fault(&fault_data);
 		}
 
 		/* Run values through LPF of sample size  */
 		sensor_data.accel_x =
-			(sensor_data.accel_x + accel_data[0]) / num_samples;
+			(sensor_data.accel_x + mpu->imu->accel_data[0]) /
+			num_samples;
 		sensor_data.accel_y =
-			(sensor_data.accel_y + accel_data[1]) / num_samples;
+			(sensor_data.accel_y + mpu->imu->accel_data[1]) /
+			num_samples;
 		sensor_data.accel_z =
-			(sensor_data.accel_z + accel_data[2]) / num_samples;
+			(sensor_data.accel_z + mpu->imu->accel_data[2]) /
+			num_samples;
 		sensor_data.gyro_x =
-			(sensor_data.gyro_x + gyro_data[0]) / num_samples;
+			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) /
+			num_samples;
 		sensor_data.gyro_y =
-			(sensor_data.gyro_y + gyro_data[1]) / num_samples;
+			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) /
+			num_samples;
 		sensor_data.gyro_z =
-			(sensor_data.gyro_z + gyro_data[2]) / num_samples;
+			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) /
+			num_samples;
 
 		/* Publish to IMU Queue */
 		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
