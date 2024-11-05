@@ -104,7 +104,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		write_pump(pdu, false);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
-      
+
 		osDelay(1000); /* Delay for 1 sec before faulting car */
 		write_fault(pdu, true);
 		printf("FAULTED\r\n");
