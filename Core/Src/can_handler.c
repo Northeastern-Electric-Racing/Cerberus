@@ -44,9 +44,10 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(can1);
 
 	can1->hcan = hcan;
-	can1->id_list = id_list;
-	can1->id_list_len = sizeof(id_list) / sizeof(uint32_t);
 
+	uint32_t id_list_size_four[4] = { id_list[0], id_list[1], id_list[2],
+					  id_list[2] };
+	assert(!can_add_filter(can1, id_list_size_four));
 	assert(!can_init(can1));
 
 	can_outbound_queue =
