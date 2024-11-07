@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "state_machine.h"
-#include "serial_monitor.h"
 #include "nero.h"
 #include "stdio.h"
 #include "cerb_utils.h"
@@ -99,11 +98,11 @@ static void debounce_cb(void *arg)
 			paddle_right_cb();
 			break;
 		case NERO_BUTTON_UP:
-			serial_print("Up button pressed \r\n");
+			printf("Up button pressed \r\n");
 			decrement_nero_index();
 			break;
 		case NERO_BUTTON_DOWN:
-			serial_print("Down button pressed \r\n");
+			printf("Down button pressed \r\n");
 			increment_nero_index();
 			break;
 		case NERO_BUTTON_LEFT:
@@ -117,7 +116,7 @@ static void debounce_cb(void *arg)
 			select_nero_index();
 			break;
 		case NERO_HOME:
-			serial_print("Home button pressed \r\n");
+			printf("Home button pressed \r\n");
 			set_home_mode();
 			break;
 		default:

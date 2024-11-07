@@ -13,7 +13,6 @@
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "steeringio.h"
-#include "serial_monitor.h"
 #include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
