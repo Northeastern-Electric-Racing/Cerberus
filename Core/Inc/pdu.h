@@ -3,6 +3,7 @@
 
 #include "cmsis_os.h"
 #include "pca9539.h"
+#include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -13,6 +14,10 @@ typedef struct {
 	osMutexId_t *mutex;
 	pca9539_t *shutdown_expander;
 	pca9539_t *ctrl_expander;
+	ina226_t *motor_controller_current_sensor;
+	ina226_t *battbox_fans_current_sensor;
+	ina226_t *pumps_current_sensor;
+	ina226_t *lv_boards_current_sensor;
 } pdu_t;
 
 /* Creates a new PDU interface */
@@ -80,6 +85,12 @@ typedef enum {
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
 int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+
+// Functions for reading current
+int8_t read_motor_controller_current(pdu_t *pdu, float *data);
+int8_t read_battbox_fans_current(pdu_t *pdu, float *data);
+int8_t read_pumps_current(pdu_t *pdu, float *data);
+int8_t read_lv_boards_current(pdu_t *pdu, float *data);
 
 /**
  * @brief Taskf for sounding RTDS.

@@ -75,5 +75,9 @@
 #define CANID_LV_MONITOR       0x503
 #define CANID_PEDALS_ACCEL_MSG 0x504
 #define CANID_PEDALS_BRAKE_MSG 0x505
+#define CANID_MOTOR_CONT_CURR  0x8000
+#define CANID_BATT_FANS_CURR   0xC000
+#define CANID_PUMPS_CURR       0xE000
+#define CANID_LV_BOARDS_CURR   0xF000
 // Reserved for MPU debug message, see yaml for format
 #define CANID_EXTRA_MSG 0x701

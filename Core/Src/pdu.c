@@ -18,7 +18,39 @@
 #define CTRL_ADDR     PCA_I2C_ADDR_2
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
+#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40 // add INA_I2C_ADDR to driver?
+#define BATTBOX_FANS_CURRENT_SENSOR_ADDR 	 0x42
+#define PUMPS_CURRENT_SENSOR_ADDR 			 0x44
+#define LV_BOARDS_CURRENT_SENSOR_ADDR		 0x45
+
 static osMutexAttr_t pdu_mutex_attributes;
+static I2C_HandleTypeDef *hi2c = NULL; // added this since i need it for wrapper functions (a similar change was made in mpu.c for lsm6dso PR im pretty sure). it's still a param in init_pdu tho
+
+// Wrapper for reading ina226 (current sensor) registers
+static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
+{
+	uint8_t buff[2];
+	HAL_StatusTypeDef status;
+
+	status = HAL_I2C_Mem_Read(hi2c, dev_addr, reg, I2C_MEMADD_SIZE_16BIT, buff, 2, HAL_MAX_DELAY);
+	if(status != HAL_OK) {return -1;}
+
+	*data = (buff[0] << 8) | buff[1];
+	return 0;
+}
+
+// Wrapper for writing ina226 (current sensor) registers
+static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
+{
+	uint8_t buff[2];
+	HAL_StatusTypeDef status;
+
+	status = HAL_I2C_Mem_Write(hi2c, dev_addr, reg, I2C_MEMADD_SIZE_16BIT, buff, 2, HAL_MAX_DELAY);
+	if(status != HAL_OK) {return -1;}
+
+	*data = (buff[0] << 8) | buff[1];
+	return 0;
+}
 
 static uint8_t sound_rtds(pdu_t *pdu)
 {
@@ -97,6 +129,58 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu);
 
 	pdu->hi2c = hi2c;
+
+	/* Initialize Motor Controller Current Sensor */
+	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->motor_controller_current_sensor);
+	ina226_init(pdu->motor_controller_current_sensor, ina_write_reg, ina_read_reg, MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR);
+	int status_init = ina226_calibrate(pdu->motor_controller_current_sensor, 0.01f, 3.0f);
+	if (status_init != 0)
+	{
+		printf("\n\rmotor controller current sensor init fail\n\r");
+		free(pdu->motor_controller_current_sensor);
+		free(pdu);
+		return NULL;
+	}
+
+	/* Initialize Battbox Fans Current Sensor */
+	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->battbox_fans_current_sensor);
+	ina226_init(pdu->battbox_fans_current_sensor, ina_write_reg, ina_read_reg, BATTBOX_FANS_CURRENT_SENSOR_ADDR);
+	status_init = ina226_calibrate(pdu->battbox_fans_current_sensor, 0.01f, 5.0f);
+	if (status_init != 0)
+	{
+		printf("\n\rbattbox fans current sensor init fail\n\r");
+		free(pdu->battbox_fans_current_sensor);
+		free(pdu);
+		return NULL;
+	}
+
+	/* Initialize Pumps Current Sensor */
+	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->pumps_current_sensor);
+	ina226_init(pdu->pumps_current_sensor, ina_write_reg, ina_read_reg, PUMPS_CURRENT_SENSOR_ADDR);
+	status_init = ina226_calibrate(pdu->pumps_current_sensor, 0.01f, 2.0f);
+	if (status_init != 0)
+	{
+		printf("\n\rpumps current sensor init fail\n\r");
+		free(pdu->pumps_current_sensor);
+		free(pdu);
+		return NULL;
+	}
+
+	/* Initialize LV Boards Current Sensor */
+	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->lv_boards_current_sensor);
+	ina226_init(pdu->lv_boards_current_sensor, ina_write_reg, ina_read_reg, LV_BOARDS_CURRENT_SENSOR_ADDR);
+	status_init = ina226_calibrate(pdu->lv_boards_current_sensor, 0.01f, 1.25f);
+	if (status_init != 0)
+	{
+		printf("\n\rlv boards current sensor init fail\n\r");
+		free(pdu->lv_boards_current_sensor);
+		free(pdu);
+		return NULL;
+	}
 
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
@@ -370,3 +454,53 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	osMutexRelease(pdu->mutex);
 	return 0;
 }
+
+
+static int8_t read_current(pdu_t *pdu, ina226_t *ina, float *data)
+{
+	if(!pdu || !ina || !data) return -1;
+
+	float current;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat) return stat;
+
+	I2C_HandleTypeDef *previous_hi2c = hi2c; // Saves current global hi2c to previous_hi2c
+	hi2c = pdu->hi2c; // Sets global hi2c to pdu's hi2c before ina226_read_current is called
+
+	int status = ina226_read_current(ina, &current);
+	hi2c = previous_hi2c; // After ina226_read_current is called, restores global hi2c to previous
+	if(status != 0)
+	{
+		osMutexRelease(pdu->mutex);
+		return status;
+	}
+
+	*data = current;
+	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+int8_t read_motor_controller_current(pdu_t *pdu, float *data)
+{
+	return read_current(pdu, pdu->motor_controller_current_sensor, data);
+}
+
+int8_t read_battbox_fans_current(pdu_t *pdu, float *data)
+{
+	return read_current(pdu, pdu->battbox_fans_current_sensor, data);
+}
+
+int8_t read_pumps_current(pdu_t *pdu, float *data)
+{
+	return read_current(pdu, pdu->pumps_current_sensor, data);
+}
+
+int8_t read_lv_boards_current(pdu_t *pdu, float *data)
+{
+	return read_current(pdu, pdu->lv_boards_current_sensor, data);
+}
+
+
+
+
