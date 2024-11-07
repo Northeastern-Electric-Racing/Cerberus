@@ -29,65 +29,69 @@ osMutexId_t tsms_mutex;
 
 void read_motor_controller_current_data(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = MOTOR_CONTROLLER_CURRENT_FAULT, .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_MOTOR_CONT_CURR, .len = 4, .data = { 0 } };
-	
+	fault_data_t fault_data = { .id = MOTOR_CONTROLLER_CURRENT_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_MOTOR_CONT_CURR,
+			  .len = 4,
+			  .data = { 0 } };
+
 	float current;
-	if(read_motor_controller_current(pdu, &current))
-	{
+	if (read_motor_controller_current(pdu, &current)) {
 		fault_data.diag = "Failed to read motor controller current";
 		queue_fault(&fault_data);
 	}
 
-	uint32_t current_int = (uint32_t)(current * 10000); // idk how precise it needs to be
+	uint32_t current_int =
+		(uint32_t)(current * 10000); // idk how precise it needs to be
 
 	memcpy(msg.data, &current_int, msg.len);
-	if(queue_can_msg(msg))
-	{
-		fault_data.diag = "Failed to send motor controller current CAN message";
+	if (queue_can_msg(msg)) {
+		fault_data.diag =
+			"Failed to send motor controller current CAN message";
 		queue_fault(&fault_data);
 	}
 }
 
 void read_battbox_fans_current_data(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = BATTBOX_FANS_CURRENT_FAULT, .severity = DEFCON5 };
+	fault_data_t fault_data = { .id = BATTBOX_FANS_CURRENT_FAULT,
+				    .severity = DEFCON5 };
 	can_msg_t msg = { .id = CANID_BATT_FANS_CURR, .len = 4, .data = { 0 } };
-	
+
 	float current;
-	if(read_battbox_fans_current(pdu, &current))
-	{
+	if (read_battbox_fans_current(pdu, &current)) {
 		fault_data.diag = "Failed to read battbox fans current";
 		queue_fault(&fault_data);
 	}
 
-	uint32_t current_int = (uint32_t)(current * 10000); // idk how precise it needs to be
+	uint32_t current_int =
+		(uint32_t)(current * 10000); // idk how precise it needs to be
 
 	memcpy(msg.data, &current_int, msg.len);
-	if(queue_can_msg(msg))
-	{
-		fault_data.diag = "Failed to send battbox fans current CAN message";
+	if (queue_can_msg(msg)) {
+		fault_data.diag =
+			"Failed to send battbox fans current CAN message";
 		queue_fault(&fault_data);
 	}
 }
 
 void read_pumps_current_data(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = PUMPS_CURRENT_FAULT, .severity = DEFCON5 };
+	fault_data_t fault_data = { .id = PUMPS_CURRENT_FAULT,
+				    .severity = DEFCON5 };
 	can_msg_t msg = { .id = CANID_PUMPS_CURR, .len = 4, .data = { 0 } };
-	
+
 	float current;
-	if(read_pumps_current(pdu, &current))
-	{
+	if (read_pumps_current(pdu, &current)) {
 		fault_data.diag = "Failed to read pumps current";
 		queue_fault(&fault_data);
 	}
 
-	uint32_t current_int = (uint32_t)(current * 10000); // idk how precise it needs to be
+	uint32_t current_int =
+		(uint32_t)(current * 10000); // idk how precise it needs to be
 
 	memcpy(msg.data, &current_int, msg.len);
-	if(queue_can_msg(msg))
-	{
+	if (queue_can_msg(msg)) {
 		fault_data.diag = "Failed to send pumps current CAN message";
 		queue_fault(&fault_data);
 	}
@@ -95,22 +99,23 @@ void read_pumps_current_data(pdu_t *pdu)
 
 void read_lv_boards_current_data(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = LV_BOARDS_CURRENT_FAULT, .severity = DEFCON5 };
+	fault_data_t fault_data = { .id = LV_BOARDS_CURRENT_FAULT,
+				    .severity = DEFCON5 };
 	can_msg_t msg = { .id = CANID_LV_BOARDS_CURR, .len = 4, .data = { 0 } };
-	
+
 	float current;
-	if(read_lv_boards_current(pdu, &current))
-	{
+	if (read_lv_boards_current(pdu, &current)) {
 		fault_data.diag = "Failed to read lv boards current";
 		queue_fault(&fault_data);
 	}
 
-	uint32_t current_int = (uint32_t)(current * 10000); // idk how precise it needs to be
+	uint32_t current_int =
+		(uint32_t)(current * 10000); // idk how precise it needs to be
 
 	memcpy(msg.data, &current_int, msg.len);
-	if(queue_can_msg(msg))
-	{
-		fault_data.diag = "Failed to send lv boards current CAN message";
+	if (queue_can_msg(msg)) {
+		fault_data.diag =
+			"Failed to send lv boards current CAN message";
 		queue_fault(&fault_data);
 	}
 }
