@@ -2,7 +2,7 @@
 #define PDU_H
 
 #include "cmsis_os.h"
-#include "pca9539.h"
+#include "tca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,8 +12,8 @@
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
 	osMutexId_t *mutex;
-	pca9539_t *shutdown_expander;
-	pca9539_t *ctrl_expander;
+	tca9539_t *shutdown_expander;
+	tca9539_t *ctrl_expander;
 	ina226_t *motor_controller_current_sensor;
 	ina226_t *battbox_fans_current_sensor;
 	ina226_t *pumps_current_sensor;
@@ -91,6 +91,7 @@ int8_t read_motor_controller_current(pdu_t *pdu, float *data);
 int8_t read_battbox_fans_current(pdu_t *pdu, float *data);
 int8_t read_pumps_current(pdu_t *pdu, float *data);
 int8_t read_lv_boards_current(pdu_t *pdu, float *data);
+int8_t read_all_current(pdu_t *pdu, float *motor_controller_current, float *battbox_fans_current, float *pumps_current, float *lv_boards_current);
 
 /**
  * @brief Taskf for sounding RTDS.
