@@ -2,7 +2,7 @@
 #define PDU_H
 
 #include "cmsis_os.h"
-#include "tca9539.h"
+#include "pca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,8 +12,8 @@
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
 	osMutexId_t *mutex;
-	tca9539_t *shutdown_expander;
-	tca9539_t *ctrl_expander;
+	pca9539_t *shutdown_expander;
+	pca9539_t *ctrl_expander;
 	ina226_t *motor_controller_current_sensor;
 	ina226_t *battbox_fans_current_sensor;
 	ina226_t *pumps_current_sensor;
