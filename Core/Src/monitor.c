@@ -29,7 +29,8 @@ osMutexId_t tsms_mutex;
 
 void read_current(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT, .severity = DEFCON5 };
+	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
+				    .severity = DEFCON5 };
 	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
 
 	float motor_controller_current;
@@ -37,14 +38,17 @@ void read_current(pdu_t *pdu)
 	float pumps_current;
 	float lv_boards_current;
 
-	if(read_all_current(pdu, &motor_controller_current, &battbox_fans_current, &pumps_current, &lv_boards_current))
-	{
+	if (read_all_current(pdu, &motor_controller_current,
+			     &battbox_fans_current, &pumps_current,
+			     &lv_boards_current)) {
 		fault_data.diag = "Failed to read current";
 		queue_fault(&fault_data);
 	}
 
-	uint16_t int_motor_controller_current = (uint16_t)(motor_controller_current * 1000);
-	uint16_t int_battbox_fans_current = (uint16_t)(battbox_fans_current * 1000);
+	uint16_t int_motor_controller_current =
+		(uint16_t)(motor_controller_current * 1000);
+	uint16_t int_battbox_fans_current =
+		(uint16_t)(battbox_fans_current * 1000);
 	uint16_t int_pumps_current = (uint16_t)(pumps_current * 1000);
 	uint16_t int_lv_boards_current = (uint16_t)(lv_boards_current * 1000);
 
@@ -61,8 +65,7 @@ void read_current(pdu_t *pdu)
 	current_data.lv_boards = int_lv_boards_current;
 
 	memcpy(msg.data, &current_data, msg.len);
-	if(queue_can_msg(msg)) 
-	{
+	if (queue_can_msg(msg)) {
 		fault_data.diag = "Failed to send current CAN message";
 		queue_fault(&fault_data);
 	}

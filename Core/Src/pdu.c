@@ -492,11 +492,21 @@ static int8_t read_current(pdu_t *pdu, ina226_t *ina, float *data)
 	return 0;
 }
 
-int8_t read_all_current(pdu_t *pdu, float *motor_controller_current, float *battbox_fans_current, float *pumps_current, float *lv_boards_current)
+int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
+			float *battbox_fans_current, float *pumps_current,
+			float *lv_boards_current)
 {
-	if(!read_current(pdu, pdu->motor_controller_current_sensor, motor_controller_current)) return -1;
-	if(!read_current(pdu, pdu->battbox_fans_current_sensor, battbox_fans_current)) return -1;
-	if(!read_current(pdu, pdu->pumps_current_sensor, motor_controller_current)) return -1;
-	if(!read_current(pdu, pdu->lv_boards_current_sensor, battbox_fans_current)) return -1;
+	if (!read_current(pdu, pdu->motor_controller_current_sensor,
+			  motor_controller_current))
+		return -1;
+	if (!read_current(pdu, pdu->battbox_fans_current_sensor,
+			  battbox_fans_current))
+		return -1;
+	if (!read_current(pdu, pdu->pumps_current_sensor,
+			  motor_controller_current))
+		return -1;
+	if (!read_current(pdu, pdu->lv_boards_current_sensor,
+			  battbox_fans_current))
+		return -1;
 	return 0;
 }
