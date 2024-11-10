@@ -15,8 +15,8 @@
 // #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT osWaitForever /* ms */
 
-#define SHUTDOWN_ADDR PCA_I2C_ADDR_3 // change to PCA_I2C_ADDR_1? (due to datasheet)
-#define CTRL_ADDR     PCA_I2C_ADDR_2 // change to PCA_I2C_ADDR 0? (due to datasheet)
+#define SHUTDOWN_ADDR PCA_I2C_ADDR_1
+#define CTRL_ADDR     PCA_I2C_ADDR_0
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40 // add INA_I2C_ADDR to driver?
