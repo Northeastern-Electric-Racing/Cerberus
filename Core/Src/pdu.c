@@ -5,18 +5,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PUMP_CTRL 0 // Don't need to change!
+#define PUMP_CTRL 		 0
 //#define RADFAN_CTRL    1
-#define MPU_FAULT	2
-#define BRKLIGHT_CTRL	3 // Changed from 2 to 3
-#define FANBATTBOX_CTRL 4 // Changed from 3 to 4
-#define RTDS_CTRL	7 // PORT 17 BANK 1 (so read with 1_REG)
+#define MPU_FAULT	     2
+#define BRKLIGHT_CTRL	 3
+#define FANBATTBOX_CTRL  4
+#define RTDS_CTRL	     7 // PORT 17 BANK 1 (so read with 1_REG)
 // #define TSMS_CTRL	   0x04
 // #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT osWaitForever /* ms */
 
-#define SHUTDOWN_ADDR \
-	PCA_I2C_ADDR_3 // change to PCA_I2C_ADDR_1? (due to datasheet)
+#define SHUTDOWN_ADDR PCA_I2C_ADDR_3 // change to PCA_I2C_ADDR_1? (due to datasheet)
 #define CTRL_ADDR     PCA_I2C_ADDR_2 // change to PCA_I2C_ADDR 0? (due to datasheet)
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
