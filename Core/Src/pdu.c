@@ -383,15 +383,15 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 	bool bank1[8];
 	deconstruct_buf(bank1_d, bank1);
 
-	status[FUSE_BATTBOX] = bank0[4];
-	status[FUSE_LVBOX] = bank0[5];
-	status[FUSE_FAN_RADIATOR] = bank0[6];
-	status[FUSE_MC] = bank0[7];
-	status[FUSE_FAN_BATTBOX] = bank1[0];
-	status[FUSE_PUMP] = bank1[1];
-	status[FUSE_DASHBOARD] = bank1[2];
-	status[FUSE_BRAKELIGHT] = bank1[3];
-	status[FUSE_BRB] = bank1[4];
+	status[FUSE_BATTBOX] = bank0[5];
+	status[FUSE_LVBOX] = bank0[6];
+	status[FUSE_FAN_RADIATOR] = bank0[7];
+	status[FUSE_MC] = bank0[7]; // HAVEN'T CHANGED THIS YET! Probably bank1[0] but not sure
+	status[FUSE_FAN_BATTBOX] = bank1[1];
+	status[FUSE_PUMP] = bank1[2];
+	status[FUSE_DASHBOARD] = bank1[3];
+	status[FUSE_BRAKELIGHT] = bank1[4];
+	status[FUSE_BRB] = bank1[5];
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -453,11 +453,11 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	deconstruct_buf(bank1_d, bank1);
 
 	status[CKPT_BRB_CLR] = bank0[0];
-	status[BMS_OK] = bank0[2];
-	status[INERTIA_SW_OK] = bank0[3];
-	status[SPARE_GPIO1_OK] = bank0[4];
-	status[IMD_OK] = bank0[5];
-	status[BSPD_OK] = bank1[0];
+	status[BMS_OK] = bank0[1];
+	status[INERTIA_SW_OK] = bank0[2];
+	status[SPARE_GPIO1_OK] = bank0[3];
+	status[IMD_OK] = bank0[4];
+	status[BSPD_OK] = bank0[5];
 	status[BOTS_OK] = bank1[5];
 	status[HVD_INTLK_OK] = bank1[6];
 	status[HVC_INTLK_OK] = bank1[7];
