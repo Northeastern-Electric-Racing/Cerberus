@@ -70,6 +70,7 @@ I2C_HandleTypeDef hi2c2;
 IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -102,22 +103,19 @@ void StartDefaultTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/* Snippet of code from Digikey Example of printf redirection */
-#ifdef __GNUC__
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif
-
-PUTCHAR_PROTOTYPE
-{
-  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)&ch, 1);
-  return ch;
-}
 
 int _write(int file, char* ptr, int len) {
   HAL_UART_Transmit_DMA(&huart3, (uint8_t *)ptr, len);
   return len;
+}
+
+/**
+ * @brief Callback for UART
+ * @param phuart: UART_HandleTypeDef
+ * @return None
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) { 
+  HAL_UART_DMAStop(phuart);
 }
 /* USER CODE END 0 */
 
@@ -128,7 +126,7 @@ int _write(int file, char* ptr, int len) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  printf("BOOT\r\n");
+  printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -173,7 +171,7 @@ int main(void)
   init_can1(&hcan1);
   bms_init();
 
-  printf("\r\n\n\nInit Success...\r\n\n\n");
+  printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -613,6 +611,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
 
@@ -708,7 +712,7 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    printf(".\r\n..\r\n");
+    printf(".\n..\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
     
