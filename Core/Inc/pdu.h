@@ -31,15 +31,16 @@ int8_t write_fan_battbox(pdu_t *pdu, bool status);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
-	FUSE_BATTBOX,
-	FUSE_LVBOX,
-	FUSE_FAN_RADIATOR,
-	FUSE_MC,
-	FUSE_FAN_BATTBOX,
-	FUSE_PUMP,
-	FUSE_DASHBOARD,
-	FUSE_BRAKELIGHT,
-	FUSE_BRB,
+	BATTBOX_FUSE_STAT,
+	LV_BOARDS_FUSE_STAT,
+	RADFAN_FUSE_STAT,
+	BUCK_FUSE_STAT,
+	FANBATTBOX_FUSE_STAT,
+	PUMP_FUSE_STAT0,
+	DASHBOARD_FUSE_STAT,
+	BRKLIGHT_FUSE_STAT,
+	SD_TO_BRB_FUSE_STAT,
+	PUMP_FUSE_STAT1,
 	MAX_FUSES
 } fuse_t;
 
@@ -64,14 +65,14 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
 	CKPT_BRB_CLR, /* Cockpit BRB */
-	BMS_OK, /* Battery Management System (Shepherd) */
-	INERTIA_SW_OK, /* Inertia Switch */
-	SPARE_GPIO1_OK,
-	IMD_OK, /* Insulation Monitoring Device */
-	BSPD_OK, /* Brake System Plausbility Device */
-	BOTS_OK, /* Brake Over Travel Switch */
-	HVD_INTLK_OK, /* HVD Interlock */
-	HVC_INTLK_OK, /* HV C Interlock*/
+	BMS_GOOD, /* Battery Management System (Shepherd) */
+	INERTIA_SW_GOOD, /* Inertia Switch */
+	SPARE_GPIO1,
+	IMD_GOOD, /* Insulation Monitoring Device */
+	BSPD_GOOD, /* Brake System Plausbility Device */
+	BOTS_GOOD, /* Brake Over Travel Switch */
+	HVD_INTLK_GOOD, /* HVD Interlock */
+	HVC_INTLK_GOOD, /* HV C Interlock*/
 	//SIDE_BRB_CLR,	/* Side BRB */
 	//TSMS,			/* Tractive System Main Switch */
 	MAX_SHUTDOWN_STAGES
