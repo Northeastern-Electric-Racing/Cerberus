@@ -98,11 +98,11 @@ static void debounce_cb(void *arg)
 			paddle_right_cb();
 			break;
 		case NERO_BUTTON_UP:
-			printf("Up button pressed \r\n");
+			printf("Up button pressed \n");
 			decrement_nero_index();
 			break;
 		case NERO_BUTTON_DOWN:
-			printf("Down button pressed \r\n");
+			printf("Down button pressed \n");
 			increment_nero_index();
 			break;
 		case NERO_BUTTON_LEFT:
@@ -112,11 +112,11 @@ static void debounce_cb(void *arg)
 			// doesnt effect cerb for now
 			break;
 		case NERO_BUTTON_SELECT:
-			printf("Select button pressed \r\n");
+			printf("Select button pressed \n");
 			select_nero_index();
 			break;
 		case NERO_HOME:
-			printf("Home button pressed \r\n");
+			printf("Home button pressed \n");
 			set_home_mode();
 			break;
 		default:

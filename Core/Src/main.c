@@ -111,16 +111,12 @@ void StartDefaultTask(void *argument);
 
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)&ch, 1);
   return ch;
 }
 
 int _write(int file, char* ptr, int len) {
-  int DataIdx;
-
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
-  }
+  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)ptr, len);
   return len;
 }
 /* USER CODE END 0 */
