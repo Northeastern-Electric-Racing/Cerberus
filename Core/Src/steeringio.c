@@ -5,7 +5,6 @@
 #include "cmsis_os.h"
 #include "nero.h"
 #include "pedals.h"
-#include "serial_monitor.h"
 #include "state_machine.h"
 #include "stdio.h"
 #include <assert.h>
@@ -40,11 +39,11 @@ void steeringio_update(can_msg_t msg)
 		paddle_right_cb();
 		break;
 	case NERO_BUTTON_UP:
-		serial_print("Up button pressed \r\n");
+		printf("Up button pressed \r\n");
 		decrement_nero_index();
 		break;
 	case NERO_BUTTON_DOWN:
-		serial_print("Down button pressed \r\n");
+		printf("Down button pressed \r\n");
 		increment_nero_index();
 		break;
 	case NERO_BUTTON_LEFT:
@@ -58,7 +57,7 @@ void steeringio_update(can_msg_t msg)
 		select_nero_index();
 		break;
 	case NERO_HOME:
-		serial_print("Home button pressed \r\n");
+		printf("Home button pressed \r\n");
 		set_home_mode();
 		break;
 	default:

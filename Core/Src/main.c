@@ -31,7 +31,6 @@
 #include "queues.h"
 #include "fault.h"
 #include "can_handler.h"
-#include "serial_monitor.h"
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
@@ -227,8 +226,6 @@ int main(void)
   assert(can_dispatch_handle);
   can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
-  serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  assert(serial_monitor_handle);
 
   /* Control Logic */
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);

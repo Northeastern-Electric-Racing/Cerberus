@@ -72,3 +72,9 @@ ctrlp.root
 
 #html
 *.html
+
+# nixos files
+*.nix
+
+# macOS files
+.DS_Store

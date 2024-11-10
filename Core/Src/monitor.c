@@ -9,7 +9,6 @@
 #include "pdu.h"
 #include "pedals.h"
 #include "queues.h"
-#include "serial_monitor.h"
 #include "sht30.h"
 #include "state_machine.h"
 #include "steeringio.h"
@@ -229,7 +228,7 @@ void vTempMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		serial_print("MPU Board Temperature:\t%d\r\n", temp);
+		printf("MPU Board Temperature:\t%d\r\n", temp);
 
 		temp_msg.data[0] = temp & 0xFF;
 		temp_msg.data[1] = (temp >> 8) & 0xFF;
@@ -325,7 +324,7 @@ void vIMUMonitor(void *pv_params)
 	mpu_t *mpu = (mpu_t *)pv_params;
 
 	for (;;) {
-		// serial_print("IMU Task\r\n");
+		// printf("IMU Task\r\n");
 		/* Take measurement */
 		if (read_accel(mpu)) {
 			fault_data.diag = "Failed to get IMU acceleration";
