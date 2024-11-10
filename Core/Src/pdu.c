@@ -5,17 +5,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PUMP_CTRL      0
-#define RADFAN_CTRL    1
-#define BRKLIGHT_CTRL  2
-#define BATBOXFAN_CTRL 3
-#define RTDS_CTRL      7 // PORT 17 BANK 1 (so read with 1_REG)
+#define PUMP_CTRL 0 // Don't need to change!
+//#define RADFAN_CTRL    1
+#define MPU_FAULT	2
+#define BRKLIGHT_CTRL	3 // Changed from 2 to 3
+#define FANBATTBOX_CTRL 4 // Changed from 3 to 4
+#define RTDS_CTRL	7 // PORT 17 BANK 1 (so read with 1_REG)
 // #define TSMS_CTRL	   0x04
 // #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT osWaitForever /* ms */
 
-#define SHUTDOWN_ADDR PCA_I2C_ADDR_3
-#define CTRL_ADDR     PCA_I2C_ADDR_2
+#define SHUTDOWN_ADDR \
+	PCA_I2C_ADDR_3 // change to PCA_I2C_ADDR_1? (due to datasheet)
+#define CTRL_ADDR     PCA_I2C_ADDR_2 // change to PCA_I2C_ADDR 0? (due to datasheet)
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40 // add INA_I2C_ADDR to driver?
@@ -293,7 +295,7 @@ int8_t write_fault(pdu_t *pdu, bool status)
 
 	/* write fault GPIO over i2c, fault line is inverted */
 	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, RADFAN_CTRL, !status);
+		pdu->ctrl_expander, PCA_OUTPUT_0_REG, MPU_FAULT, !status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -335,7 +337,7 @@ int8_t write_fan_battbox(pdu_t *pdu, bool status)
 
 	/* write fan over i2c */
 	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, 2, status);
+		pdu->ctrl_expander, PCA_OUTPUT_0_REG, FANBATTBOX_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -406,10 +408,10 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 		return stat;
 
 	/* read pin over i2c */
-	uint8_t tsms_pin = 6;
+	uint8_t tsms_pin = 4;
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = pca9539_read_pin(
-		pdu->ctrl_expander, PCA_INPUT_1_REG, tsms_pin, &config);
+		pdu->shutdown_expander, PCA_INPUT_1_REG, tsms_pin, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
