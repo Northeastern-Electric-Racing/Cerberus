@@ -29,24 +29,24 @@ typedef int (*ReadPtr)(uint16_t dev_addr, uint16_t mem_address,
 
 */
 
-I2C_HandleTypeDef* i2c_handler;
+extern I2C_HandleTypeDef hi2c2;
 
-int stm_i2c_write(uint16_t dev_addr, uint16_t address,
+static inline int stm_i2c_write(uint16_t dev_addr, uint16_t address,
 			uint16_t mem_add_size, uint8_t *data, uint16_t size,
 			int delay){
 
-	return HAL_I2C_Mem_Write(i2c_handler, dev_addr, address, mem_add_size, data, size,
+	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, mem_add_size, data, size,
 							 delay);
 
 							 
 };
 
 
-int stm_i2c_read(uint16_t dev_addr, uint16_t address,
+static inline int stm_i2c_read(uint16_t dev_addr, uint16_t address,
 			uint16_t mem_add_size, uint8_t *data, uint16_t size,
 			int delay){
 
-	return HAL_I2C_Mem_Read(i2c_handler, dev_addr, address, mem_add_size, data, size,
+	return HAL_I2C_Mem_Read(&hi2c2, dev_addr, address, mem_add_size, data, size,
 							 delay);
 };
 
