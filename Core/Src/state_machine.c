@@ -70,7 +70,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
 		write_fault(pdu, false);
-		printf("READY\r\n");
+		printf("READY\n");
 		break;
 	case F_PIT:
 	case F_PERFORMANCE:
@@ -91,7 +91,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
 		write_fault(pdu, false);
-		printf("ACTIVE STATE\r\n");
+		printf("ACTIVE STATE\n");
 		break;
 	case REVERSE:
 		/* Can only enter reverse mode if already in pit mode */
@@ -107,7 +107,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 
 		osDelay(1000); /* Delay for 1 sec before faulting car */
 		write_fault(pdu, true);
-		printf("FAULTED\r\n");
+		printf("\nFAULTED\n");
 		break;
 	default:
 		// Do Nothing
