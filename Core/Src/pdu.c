@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PUMP_CTRL 		 0
-//#define RADFAN_CTRL    1
-#define MPU_FAULT	     2
-#define BRKLIGHT_CTRL	 3
-#define FANBATTBOX_CTRL  4
-#define RTDS_CTRL	     7 // PORT 17 BANK 1 (so read with 1_REG)
+#define PUMP_CTRL	0
+#define MPU_FAULT	2
+#define BRKLIGHT_CTRL	3
+#define FANBATTBOX_CTRL 4
+#define RTDS_CTRL	7 // PORT 17 BANK 1 (so read with 1_REG)
+// #define RADFAN_CTRL    1
 // #define TSMS_CTRL	   0x04
 // #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT osWaitForever /* ms */
@@ -19,14 +19,14 @@
 #define CTRL_ADDR     PCA_I2C_ADDR_0
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
-#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40 // add INA_I2C_ADDR to driver?
+#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
 #define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x42
 #define PUMPS_CURRENT_SENSOR_ADDR	     0x44
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
 
 static osMutexAttr_t pdu_mutex_attributes;
 static I2C_HandleTypeDef *hi2c =
-	NULL; // added this since i need it for wrapper functions (a similar change was made in mpu.c for lsm6dso PR im pretty sure). it's still a param in init_pdu tho
+	NULL;
 
 // Wrapper for reading ina226 (current sensor) registers
 static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
@@ -386,7 +386,8 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 	status[FUSE_BATTBOX] = bank0[5];
 	status[FUSE_LVBOX] = bank0[6];
 	status[FUSE_FAN_RADIATOR] = bank0[7];
-	status[FUSE_MC] = bank0[7]; // HAVEN'T CHANGED THIS YET! Probably bank1[0] but not sure
+	status[FUSE_MC] = bank0
+		[7]; // HAVEN'T CHANGED THIS YET! Probably bank1[0] but not sure
 	status[FUSE_FAN_BATTBOX] = bank1[1];
 	status[FUSE_PUMP] = bank1[2];
 	status[FUSE_DASHBOARD] = bank1[3];
