@@ -19,6 +19,43 @@
 
 static osMutexAttr_t pdu_mutex_attributes;
 
+/*Function specifications
+typedef int (*WritePtr)(uint16_t dev_addr, uint16_t mem_address,
+			uint16_t mem_add_size, uint8_t *data, uint16_t size,
+			int delay);
+typedef int (*ReadPtr)(uint16_t dev_addr, uint16_t mem_address,
+		       uint16_t mem_add_size, uint8_t *data, uint16_t size,
+		       int delay);
+
+*/
+
+I2C_HandleTypeDef* i2c_handler;
+
+int stm_i2c_write(uint16_t dev_addr, uint16_t address,
+			uint16_t mem_add_size, uint8_t *data, uint16_t size,
+			int delay){
+
+	return HAL_I2C_Mem_Write(i2c_handler, dev_addr, address, mem_add_size, data, size,
+							 delay);
+
+							 
+};
+
+
+int stm_i2c_read(uint16_t dev_addr, uint16_t address,
+			uint16_t mem_add_size, uint8_t *data, uint16_t size,
+			int delay){
+
+	return HAL_I2C_Mem_Read(i2c_handler, dev_addr, address, mem_add_size, data, size,
+							 delay);
+};
+
+
+
+
+
+
+
 static uint8_t sound_rtds(pdu_t *pdu)
 {
 	if (!pdu)
@@ -129,7 +166,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->ctrl_expander);
-	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
+
+	//NEED
+	pca9539_init(pdu->ctrl_expander, stm_i2c_write, stm_i2c_read, CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
