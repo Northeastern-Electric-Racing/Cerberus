@@ -25,8 +25,7 @@
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
 
 static osMutexAttr_t pdu_mutex_attributes;
-static I2C_HandleTypeDef *hi2c =
-	NULL;
+static I2C_HandleTypeDef *hi2c = NULL;
 
 // Wrapper for reading ina226 (current sensor) registers
 static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
