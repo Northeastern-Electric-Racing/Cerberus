@@ -87,11 +87,7 @@ typedef enum {
  */
 int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
 
-// Functions for reading current
-int8_t read_motor_controller_current(pdu_t *pdu, float *data);
-int8_t read_battbox_fans_current(pdu_t *pdu, float *data);
-int8_t read_pumps_current(pdu_t *pdu, float *data);
-int8_t read_lv_boards_current(pdu_t *pdu, float *data);
+// Function for reading current
 int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *battbox_fans_current, float *pumps_current,
 			float *lv_boards_current);

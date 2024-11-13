@@ -27,6 +27,9 @@
 static bool tsms = false;
 osMutexId_t tsms_mutex;
 
+/**
+ * @brief Read current of MC, battox fans, pumps, and LV boards and send a CAN message with the result.
+ */
 void read_current(pdu_t *pdu)
 {
 	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
