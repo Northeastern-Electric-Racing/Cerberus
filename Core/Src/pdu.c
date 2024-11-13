@@ -25,7 +25,8 @@
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
 
 static osMutexAttr_t pdu_mutex_attributes;
-static I2C_HandleTypeDef *hi2c = NULL;
+
+extern I2C_HandleTypeDef hi2c2;
 
 // Wrapper for reading ina226 (current sensor) registers
 static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
@@ -33,7 +34,7 @@ static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	uint8_t buff[2];
 	HAL_StatusTypeDef status;
 
-	status = HAL_I2C_Mem_Read(hi2c, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
+	status = HAL_I2C_Mem_Read(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
 				  buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
 		return -1;
@@ -49,7 +50,7 @@ static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	uint8_t buff[2];
 	HAL_StatusTypeDef status;
 
-	status = HAL_I2C_Mem_Write(hi2c, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
+	status = HAL_I2C_Mem_Write(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
 				   buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
 		return -1;
@@ -477,12 +478,8 @@ static int8_t read_current(pdu_t *pdu, ina226_t *ina, float *data)
 	if (stat)
 		return stat;
 
-	I2C_HandleTypeDef *previous_hi2c =
-		hi2c; // Saves current global hi2c to previous_hi2c
-	hi2c = pdu->hi2c; // Sets global hi2c to pdu's hi2c before ina226_read_current is called
-
 	int status = ina226_read_current(ina, &current);
-	hi2c = previous_hi2c; // After ina226_read_current is called, restores global hi2c to previous
+
 	if (status != 0) {
 		osMutexRelease(pdu->mutex);
 		return status;
