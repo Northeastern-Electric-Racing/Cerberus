@@ -75,3 +75,6 @@ ctrlp.root
 
 # nixos files
 *.nix
+
+# macOS files
+.DS_Store
