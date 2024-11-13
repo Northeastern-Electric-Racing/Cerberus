@@ -48,15 +48,16 @@ static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 {
 	uint8_t buff[2];
-	HAL_StatusTypeDef status;
+	buff[0] = (*data >> 8) & 0xFF;
+	buff[1] = *data & 0xFF;
 
+	HAL_StatusTypeDef status;
 	status = HAL_I2C_Mem_Write(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
 				   buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
 		return -1;
 	}
 
-	*data = (buff[0] << 8) | buff[1];
 	return 0;
 }
 
