@@ -96,5 +96,5 @@ fault_code_t *getFaults(int32_t faults)
 		}
 	}
 
-	return fault_codes; // Return the allocated array
+	return fault_codes;
 }
