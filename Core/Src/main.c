@@ -70,6 +70,7 @@ I2C_HandleTypeDef hi2c2;
 IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -109,20 +110,20 @@ void StartDefaultTask(void *argument);
 #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif
 
-PUTCHAR_PROTOTYPE
-{
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-  return ch;
-}
-
 int _write(int file, char* ptr, int len) {
-  int DataIdx;
-
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
-  }
+  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)ptr, len);
   return len;
 }
+
+/**
+ * @brief Callback for UART
+ * @param phuart: UART_HandleTypeDef
+ * @return None
+ */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) { 
+  HAL_UART_DMAStop(phuart);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -614,6 +615,7 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
 }
 
