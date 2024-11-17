@@ -65,7 +65,7 @@ void vFaultHandler(void *pv_params)
 			u_int32_t index = (u_int32_t)log2(*fault_id);
 
 			if (timers[index] == NULL) {
-				timers[index] = osTimerCreate(clearFault,
+				timers[index] = osTimerNew(clearFault,
 							      osTimerOnce,
 							      fault_id, NULL);
 			}
