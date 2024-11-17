@@ -12,8 +12,14 @@
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 #define NEW_FAULT_FLAG		1U
+#define NUM_OF_FAULTS		18UL
 
 osMessageQueueId_t fault_handle_queue;
+
+u_int32_t faults = 0;
+fault_sev_t total_severity_level = DEFCON0;
+
+osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -33,8 +39,6 @@ const osThreadAttr_t fault_handle_attributes = {
 
 void vFaultHandler(void *pv_params)
 {
-	static u_int32_t faults = 0;
-
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
@@ -45,10 +49,30 @@ void vFaultHandler(void *pv_params)
 
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
-			u_int32_t fault_id = (uint32_t)fault_data.id;
-			endian_swap(&fault_id, sizeof(fault_id));
-			faults |= fault_id;
+			// Set Fault
+			u_int32_t *fault_id = malloc((sizeof u_int32_t));
+			*fault_id = (u_int32_t)fault_data.id;
+			faults |= *fault_id;
+
+			// Set Defcon
 			uint8_t defcon = (uint8_t)fault_data.severity;
+			if ((u_int16_t)total_severity_level <
+			    (u_int16_t)defcon) {
+				total_severity_level = defcon;
+			}
+
+			// Create Timers
+			u_int32_t index = (u_int32_t)log2(*fault_id);
+
+			if (timers[index] == NULL) {
+				timers[index] = osTimerCreate(clearFault,
+							      osTimerOnce,
+							      fault_id, NULL);
+			}
+
+			if (osTimerStart(timers[index], 4000) != osOK) {
+				return;
+			}
 
 			can_msg_t msg;
 			msg.id = CANID_FAULT_MSG;
@@ -83,19 +107,9 @@ void vFaultHandler(void *pv_params)
 	}
 }
 
-fault_code_t *getFaultsArray(int32_t faults)
+void clearFault(void *args)
 {
-	const int NUM_OF_FAULTS = 18;
-
-	fault_code_t *fault_codes =
-		malloc(NUM_OF_FAULTS * sizeof(fault_code_t));
-
-	int size = 0;
-	for (int i = 0; i < NUM_OF_FAULTS; i++) {
-		if ((faults >> i) & 1) {
-			fault_codes[size++] = (fault_code_t)(1 << i);
-		}
-	}
-
-	return fault_codes;
+	u_int32_t *fault_num = (u_int32_t *)args;
+	faults &= ~(*fault_num);
+	free(fault_num);
 }
