@@ -2,6 +2,7 @@
 #include "task.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "state_machine.h"
 #include "can_handler.h"
@@ -82,15 +83,15 @@ void vFaultHandler(void *pv_params)
 	}
 }
 
-fault_code_t *getFaults(int32_t faults)
+fault_code_t *getFaultsArray(int32_t faults)
 {
-	const NUM_OF_ERRORS = 18;
+	const int NUM_OF_FAULTS = 18;
 
 	fault_code_t *fault_codes =
-		malloc(NUM_OF_ERRORS * sizeof(fault_code_t));
+		malloc(NUM_OF_FAULTS * sizeof(fault_code_t));
 
 	int size = 0;
-	for (int i = 0; i < NUM_OF_ERRORS; i++) {
+	for (int i = 0; i < NUM_OF_FAULTS; i++) {
 		if ((faults >> i) & 1) {
 			fault_codes[size++] = (fault_code_t)(1 << i);
 		}
