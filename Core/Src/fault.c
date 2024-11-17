@@ -2,6 +2,7 @@
 #include "task.h"
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 #include "state_machine.h"
 #include "can_handler.h"
 #include <string.h>
@@ -31,6 +32,8 @@ const osThreadAttr_t fault_handle_attributes = {
 
 void vFaultHandler(void *pv_params)
 {
+	static u_int32_t faults = 0;
+
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
@@ -41,16 +44,17 @@ void vFaultHandler(void *pv_params)
 
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
-			uint32_t fault_id = (uint32_t)fault_data.id;
+			u_int32_t fault_id = (uint32_t)fault_data.id;
 			endian_swap(&fault_id, sizeof(fault_id));
+			faults |= fault_id;
 			uint8_t defcon = (uint8_t)fault_data.severity;
 
 			can_msg_t msg;
 			msg.id = CANID_FAULT_MSG;
 			msg.len = 8;
 
-			memcpy(msg.data, &fault_id, sizeof(fault_id));
-			memcpy(msg.data + sizeof(fault_id), &defcon,
+			memcpy(msg.data, &faults, sizeof(faults));
+			memcpy(msg.data + sizeof(faults), &defcon,
 			       sizeof(defcon));
 
 			queue_can_msg(msg);
@@ -76,4 +80,21 @@ void vFaultHandler(void *pv_params)
 			}
 		}
 	}
+}
+
+fault_code_t *getFaults(int32_t faults)
+{
+	const NUM_OF_ERRORS = 18;
+
+	fault_code_t *fault_codes =
+		malloc(NUM_OF_ERRORS * sizeof(fault_code_t));
+
+	int size = 0;
+	for (int i = 0; i < NUM_OF_ERRORS; i++) {
+		if ((faults >> i) & 1) {
+			fault_codes[size++] = (fault_code_t)(1 << i);
+		}
+	}
+
+	return fault_codes; // Return the allocated array
 }

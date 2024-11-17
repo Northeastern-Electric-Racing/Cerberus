@@ -28,7 +28,7 @@ typedef enum {
 } fault_code_t;
 
 typedef struct {
-	int32_t id;
+	fault_code_t id;
 	fault_sev_t severity;
 	char *diag;
 } fault_data_t;
