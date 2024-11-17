@@ -133,7 +133,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  printf("BOOT\r\n");
+  printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -176,7 +176,7 @@ int main(void)
   init_can1(&hcan1);
   bms_init();
 
-  printf("\r\n\n\nInit Success...\r\n\n\n");
+  printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -716,7 +716,7 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    printf(".\r\n..\r\n");
+    printf(".\n..\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
     
