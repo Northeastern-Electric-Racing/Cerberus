@@ -19,7 +19,7 @@ osMessageQueueId_t fault_handle_queue;
 uint32_t faults = 0;
 fault_sev_t total_severity_level = DEFCON0;
 
-const osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
+osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
