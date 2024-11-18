@@ -19,7 +19,7 @@ osMessageQueueId_t fault_handle_queue;
 uint32_t faults = 0;
 fault_sev_t total_severity_level = DEFCON0;
 
-osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
+const osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -50,7 +50,7 @@ void vFaultHandler(void *pv_params)
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
 			// Set Fault
-			uint32_t *fault_id = malloc((sizeof uint32_t));
+			uint32_t *fault_id = malloc(sizeof(uint32_t));
 			*fault_id = (uint32_t)fault_data.id;
 			faults |= *fault_id;
 

@@ -56,5 +56,6 @@ osStatus_t queue_fault(fault_data_t *fault_data);
 void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
+void clearFault(void *args);
 
 #endif // FAULT_H
