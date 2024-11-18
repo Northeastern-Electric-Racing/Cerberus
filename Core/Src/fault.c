@@ -83,8 +83,8 @@ void vFaultHandler(void *pv_params)
 			msg.len = 8;
 
 			memcpy(msg.data, &faults, sizeof(faults));
-			memcpy(msg.data + sizeof(faults), &defcon,
-			       sizeof(defcon));
+			memcpy(msg.data + sizeof(faults), &total_severity_level,
+			       sizeof(total_severity_level));
 
 			queue_can_msg(msg);
 			printf("\r\nFault Handler! Diagnostic Info:\t%s\r\n\r\n",
