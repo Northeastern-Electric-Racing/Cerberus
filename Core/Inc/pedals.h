@@ -34,6 +34,11 @@ typedef struct {
 } pedals_args_t;
 
 /*
+* Sends the torque limit percentage over CAN 
+*/
+void send_torque_lim();
+
+/*
  * Increases the torque limit by 10%
 */
 void increase_torque_limit();

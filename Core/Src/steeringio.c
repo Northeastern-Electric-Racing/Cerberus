@@ -57,14 +57,14 @@ bool get_steeringio_button(steeringio_t *wheel, steeringio_button_t button)
 	return ret;
 }
 
-static void paddle_left_cb()
+static void left_button_cb()
 {
 	if (get_func_state() == F_EFFICIENCY) {
 		increase_torque_limit();
 	}
 }
 
-static void paddle_right_cb()
+static void right_button_cb()
 {
 	if (get_func_state() == F_EFFICIENCY) {
 		decrease_torque_limit();
@@ -92,12 +92,6 @@ static void debounce_cb(void *arg)
 	if (wheel->raw_buttons[button] && !wheel->debounced[button]) {
 		wheel->debounced[button] = true;
 		switch (button) {
-		case STEERING_PADDLE_LEFT:
-			paddle_left_cb();
-			break;
-		case STEERING_PADDLE_RIGHT:
-			paddle_right_cb();
-			break;
 		case NERO_BUTTON_UP:
 			serial_print("Up button pressed \r\n");
 			decrement_nero_index();
@@ -107,10 +101,10 @@ static void debounce_cb(void *arg)
 			increment_nero_index();
 			break;
 		case NERO_BUTTON_LEFT:
-			// doesnt effect cerb for now
+			left_button_cb();
 			break;
 		case NERO_BUTTON_RIGHT:
-			// doesnt effect cerb for now
+			right_button_cb();
 			break;
 		case NERO_BUTTON_SELECT:
 			printf("Select button pressed \r\n");

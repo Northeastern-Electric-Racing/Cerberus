@@ -50,6 +50,8 @@ void increase_torque_limit()
 	} else {
 		torque_limit_percentage += 0.1;
 	}
+
+	send_torque_lim();
 }
 
 void decrease_torque_limit()
@@ -59,6 +61,16 @@ void decrease_torque_limit()
 	} else {
 		torque_limit_percentage -= 0.1;
 	}
+
+	send_torque_lim();
+}
+
+void send_torque_lim()
+{
+	can_msg_t torque_lim_msg = { .id = 0x700, .len = sizeof(float) };
+	memcpy(&torque_lim_msg.data, &torque_limit_percentage, sizeof(float));
+
+	queue_can_msg(torque_lim_msg);
 }
 
 void set_brake_state(bool new_brake_state)
@@ -220,6 +232,7 @@ static void linear_accel_to_torque(float accel)
 	}
 	/* Linearly map acceleration to torque */
 	int16_t torque = (int16_t)(accel * MAX_TORQUE);
+
 	dti_set_torque(torque);
 }
 
@@ -324,8 +337,9 @@ void accel_pedal_regen_torque(float accel_val)
 	uint16_t torque =
 		coeff * accel_val - (accel_val * ACCELERATION_THRESHOLD);
 
-	if (torque > MAX_TORQUE) {
-		torque = MAX_TORQUE;
+	/* Limit torque percentage wise in endurance mode */
+	if (torque > MAX_TORQUE * torque_limit_percentage) {
+		torque = MAX_TORQUE * torque_limit_percentage;
 	}
 
 	dti_set_torque(torque);
