@@ -230,7 +230,8 @@ static void linear_accel_to_torque(float accel)
 		accel = 0;
 	}
 	/* Linearly map acceleration to torque */
-	int16_t torque = (int16_t)(accel * MAX_TORQUE);
+	int16_t torque =
+		(int16_t)(accel * MAX_TORQUE * torque_limit_percentage);
 
 	dti_set_torque(torque);
 }
@@ -461,7 +462,7 @@ void vProcessPedals(void *pv_params)
 
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
-
+		func_state = F_EFFICIENCY;
 		switch (func_state) {
 		case F_EFFICIENCY:
 			handle_endurance(mc, mph, accelerator_value, brake_val);
