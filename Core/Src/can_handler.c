@@ -10,16 +10,15 @@
  */
 
 #include "can_handler.h"
+#include "bms.h"
+#include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
+#include "stdio.h"
 #include "steeringio.h"
-#include "serial_monitor.h"
-#include "bms.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "stdio.h"
 #include <string.h>
-#include "cerb_utils.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
@@ -33,7 +32,8 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG };
+static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG,
+			      STEERING_CANID_IO };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -44,9 +44,10 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(can1);
 
 	can1->hcan = hcan;
-	can1->id_list = id_list;
-	can1->id_list_len = sizeof(id_list) / sizeof(uint32_t);
 
+	uint32_t id_list_size_four[4] = { id_list[0], id_list[1], id_list[2],
+					  id_list[3] };
+	assert(!can_add_filter(can1, id_list_size_four));
 	assert(!can_init(can1));
 
 	can_outbound_queue =
@@ -141,7 +142,6 @@ const osThreadAttr_t can_receive_attributes = {
 void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
-
 	can_msg_t msg;
 
 	for (;;) {
@@ -156,6 +156,9 @@ void vCanReceive(void *pv_params)
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
+				break;
+			case STEERING_CANID_IO:
+				steeringio_update(msg);
 				break;
 			default:
 				break;

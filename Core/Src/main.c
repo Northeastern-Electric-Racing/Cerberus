@@ -31,7 +31,6 @@
 #include "queues.h"
 #include "fault.h"
 #include "can_handler.h"
-#include "serial_monitor.h"
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
@@ -167,14 +166,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hi2c1, &hadc3, &hadc1, GPIOC, GPIOB);
+  mpu_t *mpu  = init_mpu(&hadc3, &hadc1, GPIOC, GPIOB);
   assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2);
   assert(pdu);
   dti_t *mc   = dti_init();
   assert(mc);
-  steeringio_t *wheel = steeringio_init();
-  assert(wheel);
   init_can1(&hcan1);
   bms_init();
 
@@ -215,7 +212,6 @@ int main(void)
 
   data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
   data_args->pdu = pdu;
-  data_args->wheel = wheel;
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
   assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
@@ -230,8 +226,6 @@ int main(void)
   assert(can_dispatch_handle);
   can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
-  serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  assert(serial_monitor_handle);
 
   /* Control Logic */
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
@@ -718,6 +712,7 @@ void StartDefaultTask(void *argument)
     printf(".\r\n..\r\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
+    
     /* Send NERO state data continuously */
     send_nero_msg();
     osDelay(500);

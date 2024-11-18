@@ -4,7 +4,6 @@
 #include "nero.h"
 #include "queues.h"
 #include "monitor.h"
-#include "serial_monitor.h"
 #include "nero.h"
 #include "queues.h"
 #include "pedals.h"
@@ -18,6 +17,9 @@
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
+
+/* Timer to unfault */
+static osTimerId_t unfault_timer;
 
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
@@ -68,7 +70,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
 		write_fault(pdu, false);
-		serial_print("READY\r\n");
+		printf("READY\r\n");
 		break;
 	case F_PIT:
 	case F_PERFORMANCE:
@@ -89,7 +91,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
 		write_fault(pdu, false);
-		serial_print("ACTIVE STATE\r\n");
+		printf("ACTIVE STATE\r\n");
 		break;
 	case REVERSE:
 		/* Can only enter reverse mode if already in pit mode */
@@ -100,10 +102,12 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
-		write_fault(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
-		serial_print("FAULTED\r\n");
+
+		osDelay(1000); /* Delay for 1 sec before faulting car */
+		write_fault(pdu, true);
+		printf("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing
@@ -222,8 +226,17 @@ int set_home_mode()
 
 int fault()
 {
+	// count 5 seconds before unfaulting
+	osTimerStart(unfault_timer, pdMS_TO_TICKS(5 * 1000));
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
+}
+
+void unfault_timer_callback(void *args)
+{
+	printf("UNFAULTING");
+	queue_state_transition(
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -241,6 +254,9 @@ void vStateMachineDirector(void *pv_params)
 	pdu_t *pdu = args->pdu;
 	dti_t *mc = args->mc;
 	free(args);
+
+	unfault_timer =
+		osTimerNew(unfault_timer_callback, osTimerOnce, NULL, NULL);
 
 	/* Write to GPIO expander to set initial state */
 	write_pump(pdu, false);

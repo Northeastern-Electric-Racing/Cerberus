@@ -17,7 +17,6 @@
 #include "cerberus_conf.h"
 #include "dti.h"
 #include "queues.h"
-#include "serial_monitor.h"
 #include "bms.h"
 #include "emrax.h"
 #include "monitor.h"

@@ -3,7 +3,6 @@
 #include "stdbool.h"
 #include "can_handler.h"
 #include "state_machine.h"
-#include "serial_monitor.h"
 #include "queues.h"
 #include "c_utils.h"
 #include "stdio.h"
