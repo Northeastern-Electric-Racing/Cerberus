@@ -230,8 +230,7 @@ static void linear_accel_to_torque(float accel)
 		accel = 0;
 	}
 	/* Linearly map acceleration to torque */
-	int16_t torque =
-		(int16_t)(accel * MAX_TORQUE * torque_limit_percentage);
+	int16_t torque = (int16_t)(accel * MAX_TORQUE);
 
 	dti_set_torque(torque);
 }
