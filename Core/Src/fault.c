@@ -16,10 +16,10 @@
 
 osMessageQueueId_t fault_handle_queue;
 
-uint32_t faults = 0;
+u_int32_t faults = 0;
 fault_sev_t total_severity_level = DEFCON0;
 
-osTimerId_t *timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
+osTimerId_t *timers = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -39,6 +39,10 @@ const osThreadAttr_t fault_handle_attributes = {
 
 void vFaultHandler(void *pv_params)
 {
+	if (timers == NULL) {
+		timers = malloc(sizeof(osTimerId_t) * NUM_OF_FAULTS);
+	}
+
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
@@ -50,8 +54,8 @@ void vFaultHandler(void *pv_params)
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
 			// Set Fault
-			uint32_t *fault_id = malloc(sizeof(uint32_t));
-			*fault_id = (uint32_t)fault_data.id;
+			u_int32_t *fault_id = malloc(sizeof(u_int32_t));
+			*fault_id = (u_int32_t)fault_data.id;
 			faults |= *fault_id;
 
 			// Set Defcon
@@ -62,7 +66,7 @@ void vFaultHandler(void *pv_params)
 			}
 
 			// Create Timers
-			uint32_t index = (uint32_t)log2(*fault_id);
+			u_int32_t index = (u_int32_t)log2(*fault_id);
 
 			if (timers[index] == NULL) {
 				timers[index] = osTimerNew(clearFault,
@@ -109,7 +113,7 @@ void vFaultHandler(void *pv_params)
 
 void clearFault(void *args)
 {
-	uint32_t *fault_num = (uint32_t *)args;
+	u_int32_t *fault_num = (u_int32_t *)args;
 	faults &= ~(*fault_num);
 	free(fault_num);
 }
