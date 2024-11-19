@@ -9,22 +9,35 @@
 #include "cerberus_conf.h"
 #include "monitor.h"
 #include "pedals.h"
+#include "string.h"
 
 static int8_t mph = 0;
 
 void send_nero_msg()
 {
-	uint8_t nero_index;
+	struct __attribute__((__packed__)) {
+		bool home_mode;
+		nero_menu_t nero_index;
+		uint8_t mph;
+		bool tsms;
+		float torque_lim_percentage;
+	} nero_data;
+
 	/* Since the screen on NERO relies on the NERO index, and reverse and pit have the same index, reverse gets a special index */
 	if (get_func_state() == REVERSE) {
-		nero_index = 255;
+		nero_data.nero_index = 255;
 	} else {
-		nero_index = get_nero_state().nero_index;
+		nero_data.nero_index = get_nero_state().nero_index;
 	}
-	can_msg_t msg = { .id = 0x501,
-			  .len = 4,
-			  .data = { get_nero_state().home_mode, nero_index, mph,
-				    get_tsms() } };
+
+	nero_data.home_mode = get_nero_state().home_mode;
+	nero_data.mph = mph;
+	nero_data.tsms = get_tsms();
+	nero_data.torque_lim_percentage = torque_limit_percentage;
+
+	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
+
+	memcpy(&msg.data, &nero_data, sizeof(nero_data));
 
 	/* Send CAN message */
 	queue_can_msg(msg);

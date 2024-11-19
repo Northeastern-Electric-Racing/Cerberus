@@ -30,7 +30,7 @@
 #define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
-static float torque_limit_percentage = 1.0;
+float torque_limit_percentage = 1.0;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	  4096
