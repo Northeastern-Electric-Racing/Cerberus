@@ -49,8 +49,6 @@ void increase_torque_limit()
 	} else {
 		torque_limit_percentage += 0.1;
 	}
-
-	send_torque_lim();
 }
 
 void decrease_torque_limit()
@@ -60,8 +58,6 @@ void decrease_torque_limit()
 	} else {
 		torque_limit_percentage -= 0.1;
 	}
-
-	send_torque_lim();
 }
 
 void send_torque_lim()
@@ -342,6 +338,7 @@ void accel_pedal_regen_torque(float accel_val)
 	}
 
 	dti_set_torque(torque);
+	send_torque_lim();
 }
 
 /**
