@@ -139,6 +139,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 
 	pdu->hi2c = hi2c;
 
+	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
 	assert(pdu->motor_controller_current_sensor);
@@ -409,7 +410,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 		return stat;
 
 	/* read pin over i2c */
-	uint8_t tsms_pin = 4;
+	const uint8_t tsms_pin = 4;
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = pca9539_read_pin(
 		pdu->shutdown_expander, PCA_INPUT_1_REG, tsms_pin, &config);
