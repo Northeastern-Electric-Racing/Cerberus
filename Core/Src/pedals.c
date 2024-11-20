@@ -60,14 +60,6 @@ void decrease_torque_limit()
 	}
 }
 
-void send_torque_lim()
-{
-	can_msg_t torque_lim_msg = { .id = 0x700, .len = sizeof(float) };
-	memcpy(&torque_lim_msg.data, &torque_limit_percentage, sizeof(float));
-
-	queue_can_msg(torque_lim_msg);
-}
-
 void set_brake_state(bool new_brake_state)
 {
 	osMutexAcquire(brake_mutex, osWaitForever);
@@ -82,6 +74,11 @@ bool get_brake_state()
 	temp = brake_state;
 	osMutexRelease(brake_mutex);
 	return temp;
+}
+
+float get_torque_limit_percentage()
+{
+	return torque_limit_percentage;
 }
 
 /**
@@ -338,7 +335,6 @@ void accel_pedal_regen_torque(float accel_val)
 	}
 
 	dti_set_torque(torque);
-	send_torque_lim();
 }
 
 /**

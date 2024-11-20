@@ -34,11 +34,6 @@ typedef struct {
 } pedals_args_t;
 
 /*
-* Sends the torque limit percentage over CAN 
-*/
-void send_torque_lim();
-
-/*
  * Increases the torque limit by 10%
 */
 void increase_torque_limit();
@@ -55,6 +50,13 @@ void decrease_torque_limit();
  * @return false Brakes not engaged
  */
 bool get_brake_state();
+
+/**
+ * @brief Get the current torque limit percentage
+ * 
+ * @return torque limit percentage
+ */
+float get_torque_limit_percentage();
 
 /**
  * @brief Task for reading pedal data, calculating pedal faults, and sending drive commands to the DTI.
