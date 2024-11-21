@@ -18,6 +18,4 @@ void set_mph(int8_t new_mph);
  */
 void send_nero_msg();
 
-extern float torque_limit_percentage;
-
 #endif // NERO_H
