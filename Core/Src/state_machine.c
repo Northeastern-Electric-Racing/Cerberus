@@ -245,7 +245,7 @@ void vStateMachineDirector(void *pv_params)
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
 
-	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,
+	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,						
 					      sizeof(state_req_t), NULL);
 
 	state_req_t new_state_req;
