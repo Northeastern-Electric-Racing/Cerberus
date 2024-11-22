@@ -13,14 +13,14 @@
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
-static void paddle_left_cb()
+static void left_button_cb()
 {
 	if (get_func_state() == F_EFFICIENCY) {
 		increase_torque_limit();
 	}
 }
 
-static void paddle_right_cb()
+static void right_button_cb()
 {
 	if (get_func_state() == F_EFFICIENCY) {
 		decrease_torque_limit();
@@ -32,12 +32,6 @@ void steeringio_update(can_msg_t msg)
 	uint8_t button_id = msg.data[0];
 
 	switch (button_id) {
-	case STEERING_PADDLE_LEFT:
-		paddle_left_cb();
-		break;
-	case STEERING_PADDLE_RIGHT:
-		paddle_right_cb();
-		break;
 	case NERO_BUTTON_UP:
 		printf("Up button pressed \n");
 		decrement_nero_index();
@@ -47,10 +41,10 @@ void steeringio_update(can_msg_t msg)
 		increment_nero_index();
 		break;
 	case NERO_BUTTON_LEFT:
-		// doesnt effect cerb for now
+		left_button_cb();
 		break;
 	case NERO_BUTTON_RIGHT:
-		// doesnt effect cerb for now
+		right_button_cb();
 		break;
 	case NERO_BUTTON_SELECT:
 		printf("Select button pressed \n");

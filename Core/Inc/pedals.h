@@ -52,6 +52,13 @@ void decrease_torque_limit();
 bool get_brake_state();
 
 /**
+ * @brief Get the current torque limit percentage
+ * 
+ * @return torque limit percentage
+ */
+float get_torque_limit_percentage();
+
+/**
  * @brief Task for reading pedal data, calculating pedal faults, and sending drive commands to the DTI.
  * 
  * @param pv_params Pointer to pedals_args_t
