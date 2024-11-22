@@ -188,3 +188,11 @@ int8_t read_gyro(mpu_t *mpu)
 	osMutexRelease(mpu->i2c_mutex);
 	return 0;
 }
+
+int8_t write_fault(mpu_t *mpu, bool status)
+{
+	
+	HAL_GPIO_WritePin(mpu->fault_gpio, CAN_FAULT_PIN, status);
+
+	return 0;
+}

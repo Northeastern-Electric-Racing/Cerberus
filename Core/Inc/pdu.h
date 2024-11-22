@@ -20,7 +20,6 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c);
 
 /* Functions to Control PDU */
 int8_t write_pump(pdu_t *pdu, bool status);
-int8_t write_fault(pdu_t *pdu, bool status);
 int8_t write_brakelight(pdu_t *pdu, bool status);
 int8_t write_fan_battbox(pdu_t *pdu, bool status);
 

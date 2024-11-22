@@ -187,27 +187,6 @@ int8_t write_pump(pdu_t *pdu, bool status)
 	return 0;
 }
 
-int8_t write_fault(pdu_t *pdu, bool status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write fault GPIO over i2c, fault line is inverted */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, RADFAN_CTRL, !status);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
 int8_t write_brakelight(pdu_t *pdu, bool status)
 {
 	if (!pdu)
