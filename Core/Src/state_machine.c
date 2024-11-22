@@ -118,7 +118,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	return 0;
 }
 
-static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc, mpu_t *mpu)
+static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
+				 mpu_t *mpu)
 {
 	nero_state_t current_nero_state = get_nero_state();
 
@@ -137,7 +138,8 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc, 
 		// Only Check if we are in pit mode to toggle direction
 		if (current_nero_state.nero_index == PIT) {
 			if (get_func_state() == REVERSE) {
-				if (transition_functional_state(F_PIT, pdu, mc, mpu))
+				if (transition_functional_state(F_PIT, pdu, mc,
+								mpu))
 					return 1;
 			} else if (get_func_state() == F_PIT) {
 				if (transition_functional_state(REVERSE, pdu,
@@ -245,7 +247,7 @@ void vStateMachineDirector(void *pv_params)
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
 
-	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,						
+	state_trans_queue = osMessageQueueNew(STATE_TRANS_QUEUE_SIZE,
 					      sizeof(state_req_t), NULL);
 
 	state_req_t new_state_req;
@@ -273,8 +275,8 @@ void vStateMachineDirector(void *pv_params)
 						      pdu, mc, mpu);
 			else if (new_state_req.id == FUNCTIONAL)
 				transition_functional_state(
-					new_state_req.state.functional, pdu,
-					mc, mpu);
+					new_state_req.state.functional, pdu, mc,
+					mpu);
 		}
 	}
 }
