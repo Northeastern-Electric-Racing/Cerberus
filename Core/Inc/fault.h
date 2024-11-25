@@ -5,12 +5,12 @@
 #include "cmsis_os.h"
 
 typedef enum {
-	DEFCON0 = 0,
-	DEFCON1,
+	DEFCON1 = 1,
 	DEFCON2,
 	DEFCON3,
 	DEFCON4,
-	DEFCON5
+	DEFCON5,
+	DEFCON_NONE
 } fault_sev_t;
 
 typedef enum {
