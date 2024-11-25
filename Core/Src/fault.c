@@ -24,6 +24,7 @@ fault_sev_t max_severity_level = DEFCON_NONE;
 fault_sev_t *severity_levels = NULL;
 
 void clearFault(void *args);
+fault_sev_t getMaxSeverity();
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -84,16 +85,9 @@ void vFaultHandler(void *pv_params)
 				return;
 			}
 
-			// Get Maximum Severity Level
-			max_severity_level = DEFCON_NONE;
+			// Get New Maximum Severity Level
 			severity_levels[index] = fault_data.severity;
-			for (int i = 0; i < NUM_OF_FAULTS; i++) {
-				if ((int)severity_levels[i] <
-				    (int)max_severity_level) {
-					max_severity_level =
-						severity_levels[i];
-				}
-			}
+			max_severity_level = getMaxSeverity();
 
 			// Send Can Message
 			can_msg_t msg;
@@ -139,7 +133,27 @@ void vFaultHandler(void *pv_params)
 
 void clearFault(void *args)
 {
-	uint32_t *fault_num = (uint32_t *)args;
-	faults &= ~(*fault_num);
-	free(fault_num);
+	uint32_t *fault_id = (uint32_t *)args;
+
+	// Remove this timer's fault from total faults
+	faults &= ~(*fault_id);
+
+	// Remove this timer's severity from total severity
+	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
+
+	// Get New Maximum Severity Level
+	max_severity_level = getMaxSeverity();
+
+	free(fault_id);
+}
+
+fault_sev_t getMaxSeverity()
+{
+	int max = DEFCON_NONE;
+	for (int i = 0; i < NUM_OF_FAULTS; i++) {
+		if (severity_levels[i] < max) {
+			max = severity_levels[i];
+		}
+	}
+	return (fault_sev_t)max;
 }

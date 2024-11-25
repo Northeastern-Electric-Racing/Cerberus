@@ -57,5 +57,6 @@ void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
 void clearFault(void *args);
+fault_sev_t getMaxSeverity();
 
 #endif // FAULT_H
