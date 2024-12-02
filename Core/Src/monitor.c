@@ -38,12 +38,12 @@ void read_lv_sense(void *arg)
 	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 8, .data = { 0 } };
 
 	uint32_t v_int;
-  uint32_t soc_int;
+	uint32_t soc_int;
 
-  struct __attribute__((__packed__)) {
-    uint32_t v;
-    uint32_t soc;
-  } lv_data;
+	struct __attribute__((__packed__)) {
+		uint32_t v;
+		uint32_t soc;
+	} lv_data;
 
 	read_lv_voltage(mpu, &v_int);
 
@@ -68,12 +68,14 @@ void read_lv_sense(void *arg)
 	float v_max = 4.2; // max avg voltage over all rows (7)
 	float v_min = 2.8; // min avg voltage over all rows (7)
 	float k = -8.5; // logistic fn parameter to affect steepness of curve
-	float i = (v_max + v_min) / 2; // logistic fn parameter to affect midpoint of curve
-	float soc_dec = 1 / (1 + exp(k * (v_dec - i))); // SoC calculation in [0,1]
+	float i = (v_max + v_min) /
+		  2; // logistic fn parameter to affect midpoint of curve
+	float soc_dec =
+		1 / (1 + exp(k * (v_dec - i))); // SoC calculation in [0,1]
 	soc_int = soc_dec * 100;
 
-  lv_data.v = v_int;
-  lv_data.soc = soc_int;
+	lv_data.v = v_int;
+	lv_data.soc = soc_int;
 
 	memcpy(msg.data, &v_int, msg.len);
 	if (queue_can_msg(msg)) {
