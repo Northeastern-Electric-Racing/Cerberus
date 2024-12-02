@@ -77,7 +77,7 @@ void read_lv_sense(void *arg)
 	lv_data.v = v_int;
 	lv_data.soc = soc_int;
 
-	memcpy(msg.data, &v_int, msg.len);
+	memcpy(msg.data, &lv_data, msg.len);
 	if (queue_can_msg(msg)) {
 		fault_data.diag =
 			"Failed to send steering LV monitor CAN message";
