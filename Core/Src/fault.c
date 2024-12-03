@@ -23,9 +23,6 @@ osTimerId_t *timers = NULL;
 fault_sev_t max_severity_level = DEFCON_NONE;
 fault_sev_t *severity_levels = NULL;
 
-void clearFault(void *args);
-fault_sev_t getMaxSeverity();
-
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
 	if (!fault_handle_queue)
@@ -140,8 +137,6 @@ void clearFault(void *args)
 
 	// Remove this timer's severity from total severity
 	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
-
-	// Get New Maximum Severity Level
 	max_severity_level = getMaxSeverity();
 
 	free(fault_id);
