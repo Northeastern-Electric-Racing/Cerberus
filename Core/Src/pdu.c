@@ -21,18 +21,44 @@ static osMutexAttr_t pdu_mutex_attributes;
 
 extern I2C_HandleTypeDef hi2c2;
 
-static inline int stm_i2c_write(uint16_t dev_addr, uint16_t address, uint16_t mem_add_size, uint8_t *data, uint16_t size, int delay){
+static inline int stm_i2c_write(
+    uint16_t dev_addr,
+    uint16_t address,
+    uint16_t mem_add_size,
+    uint8_t *data,
+    uint16_t size,
+    int delay
+){
+    return HAL_I2C_Mem_Write(
+        &hi2c2,
+        dev_addr,
+        address,
+        mem_add_size,
+        data,
+        size,
+        delay
+    );
+}
 
-	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, mem_add_size, data, size, delay);
+static inline int stm_i2c_read(
+    uint16_t dev_addr,
+    uint16_t address,
+    uint16_t mem_add_size,
+    uint8_t *data,
+    uint16_t size,
+    int delay
+){
+    return HAL_I2C_Mem_Read(
+        &hi2c2,
+        dev_addr,
+        address,
+        mem_add_size,
+        data,
+        size,
+        delay
+    );
+}
 
-							 
-};
-
-
-static inline int stm_i2c_read(uint16_t dev_addr, uint16_t address, uint16_t mem_add_size, uint8_t *data, uint16_t size, int delay){
-
-	return HAL_I2C_Mem_Read(&hi2c2, dev_addr, address, mem_add_size, data, size, delay);
-};
 
 static uint8_t sound_rtds(pdu_t *pdu)
 {
