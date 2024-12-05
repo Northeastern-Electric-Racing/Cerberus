@@ -4,7 +4,7 @@
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-#include "lsm6dso.h"
+// #include "lsm6dso.h"
 #include "mpu.h"
 #include "pdu.h"
 #include "pedals.h"
@@ -15,7 +15,6 @@
 #include "stm32f405xx.h"
 #include "task.h"
 #include "timer.h"
-#include <lsm6dso.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -202,49 +201,49 @@ void vDataCollection(void *pv_params)
 
 /* Unused -----------------------------------------------*/
 
-osThreadId_t temp_monitor_handle;
-const osThreadAttr_t temp_monitor_attributes = {
-	.name = "TempMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh1,
-};
+// osThreadId_t temp_monitor_handle;
+// const osThreadAttr_t temp_monitor_attributes = {
+// 	.name = "TempMonitor",
+// 	.stack_size = 32 * 8,
+// 	.priority = (osPriority_t)osPriorityHigh1,
+// };
 
-void vTempMonitor(void *pv_params)
-{
-	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-				    .severity = DEFCON5 };
-	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
-			       .len = 4,
-			       .data = { 0 } };
+// void vTempMonitor(void *pv_params)
+// {
+// 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
+// 				    .severity = DEFCON5 };
+// 	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
+// 			       .len = 4,
+// 			       .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+// 	mpu_t *mpu = (mpu_t *)pv_params;
 
-	for (;;) {
-		/* Take measurement */
-		uint16_t temp = 0;
-		uint16_t humidity = 0;
-		if (read_temp_sensor(mpu, &temp, &humidity)) {
-			fault_data.diag = "Failed to get temp";
-			queue_fault(&fault_data);
-		}
+// 	for (;;) {
+// 		/* Take measurement */
+// 		uint16_t temp = 0;
+// 		uint16_t humidity = 0;
+// 		if (read_temp_sensor(mpu, &temp, &humidity)) {
+// 			fault_data.diag = "Failed to get temp";
+// 			queue_fault(&fault_data);
+// 		}
 
-		printf("MPU Board Temperature:\t%d\n", temp);
+// 		printf("MPU Board Temperature:\t%d\n", temp);
 
-		temp_msg.data[0] = temp & 0xFF;
-		temp_msg.data[1] = (temp >> 8) & 0xFF;
-		temp_msg.data[2] = humidity & 0xFF;
-		temp_msg.data[3] = (humidity >> 8) & 0xFF;
+// 		temp_msg.data[0] = temp & 0xFF;
+// 		temp_msg.data[1] = (temp >> 8) & 0xFF;
+// 		temp_msg.data[2] = humidity & 0xFF;
+// 		temp_msg.data[3] = (humidity >> 8) & 0xFF;
 
-		/* Send CAN message */
-		if (queue_can_msg(temp_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
+// 		/* Send CAN message */
+// 		if (queue_can_msg(temp_msg)) {
+// 			fault_data.diag = "Failed to send CAN message";
+// 			queue_fault(&fault_data);
+// 		}
 
-		/* Yield to other tasks */
-		osDelay(TEMP_SENS_SAMPLE_DELAY);
-	}
-}
+// 		/* Yield to other tasks */
+// 		osDelay(TEMP_SENS_SAMPLE_DELAY);
+// 	}
+// }
 
 osThreadId_t shutdown_monitor_handle;
 const osThreadAttr_t shutdown_monitor_attributes = {
@@ -302,85 +301,85 @@ void vShutdownMonitor(void *pv_params)
 	}
 }
 
-osThreadId_t imu_monitor_handle;
-const osThreadAttr_t imu_monitor_attributes = {
-	.name = "IMUMonitor",
-	.stack_size = 32 * 8,
-	.priority = (osPriority_t)osPriorityHigh,
-};
+// osThreadId_t imu_monitor_handle;
+// const osThreadAttr_t imu_monitor_attributes = {
+// 	.name = "IMUMonitor",
+// 	.stack_size = 32 * 8,
+// 	.priority = (osPriority_t)osPriorityHigh,
+// };
 
-void vIMUMonitor(void *pv_params)
-{
-	const uint8_t num_samples = 10;
-	static imu_data_t sensor_data;
-	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
-	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
-				    .len = 6,
-				    .data = { 0 } };
-	can_msg_t imu_gyro_msg = { .id = CANID_IMU_GYRO,
-				   .len = 6,
-				   .data = { 0 } };
+// void vIMUMonitor(void *pv_params)
+// {
+// 	const uint8_t num_samples = 10;
+// 	static imu_data_t sensor_data;
+// 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
+// 	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
+// 				    .len = 6,
+// 				    .data = { 0 } };
+// 	can_msg_t imu_gyro_msg = { .id = CANID_IMU_GYRO,
+// 				   .len = 6,
+// 				   .data = { 0 } };
 
-	mpu_t *mpu = (mpu_t *)pv_params;
+// 	mpu_t *mpu = (mpu_t *)pv_params;
 
-	for (;;) {
-		// printf("IMU Task\r\n");
-		/* Take measurement */
-		if (read_accel(mpu)) {
-			fault_data.diag = "Failed to get IMU acceleration";
-			queue_fault(&fault_data);
-		}
+// 	for (;;) {
+// 		// printf("IMU Task\r\n");
+// 		/* Take measurement */
+// 		if (read_accel(mpu)) {
+// 			fault_data.diag = "Failed to get IMU acceleration";
+// 			queue_fault(&fault_data);
+// 		}
 
-		if (read_gyro(mpu)) {
-			fault_data.diag = "Failed to get IMU gyroscope";
-			queue_fault(&fault_data);
-		}
+// 		if (read_gyro(mpu)) {
+// 			fault_data.diag = "Failed to get IMU gyroscope";
+// 			queue_fault(&fault_data);
+// 		}
 
-		/* Run values through LPF of sample size  */
-		sensor_data.accel_x =
-			(sensor_data.accel_x + mpu->imu->accel_data[0]) /
-			num_samples;
-		sensor_data.accel_y =
-			(sensor_data.accel_y + mpu->imu->accel_data[1]) /
-			num_samples;
-		sensor_data.accel_z =
-			(sensor_data.accel_z + mpu->imu->accel_data[2]) /
-			num_samples;
-		sensor_data.gyro_x =
-			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) /
-			num_samples;
-		sensor_data.gyro_y =
-			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) /
-			num_samples;
-		sensor_data.gyro_z =
-			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) /
-			num_samples;
+// 		/* Run values through LPF of sample size  */
+// 		sensor_data.accel_x =
+// 			(sensor_data.accel_x + mpu->imu->accel_data[0]) /
+// 			num_samples;
+// 		sensor_data.accel_y =
+// 			(sensor_data.accel_y + mpu->imu->accel_data[1]) /
+// 			num_samples;
+// 		sensor_data.accel_z =
+// 			(sensor_data.accel_z + mpu->imu->accel_data[2]) /
+// 			num_samples;
+// 		sensor_data.gyro_x =
+// 			(sensor_data.gyro_x + mpu->imu->gyro_data[0]) /
+// 			num_samples;
+// 		sensor_data.gyro_y =
+// 			(sensor_data.gyro_y + mpu->imu->gyro_data[1]) /
+// 			num_samples;
+// 		sensor_data.gyro_z =
+// 			(sensor_data.gyro_z + mpu->imu->gyro_data[2]) /
+// 			num_samples;
 
-		/* Publish to IMU Queue */
-		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
+// 		/* Publish to IMU Queue */
+// 		osMessageQueuePut(imu_queue, &sensor_data, 0U, 0U);
 
-		/* convert to big endian */
-		endian_swap(&sensor_data.accel_x, sizeof(sensor_data.accel_x));
-		endian_swap(&sensor_data.accel_y, sizeof(sensor_data.accel_y));
-		endian_swap(&sensor_data.accel_z, sizeof(sensor_data.accel_z));
-		endian_swap(&sensor_data.gyro_x, sizeof(sensor_data.gyro_x));
-		endian_swap(&sensor_data.gyro_y, sizeof(sensor_data.gyro_y));
-		endian_swap(&sensor_data.gyro_z, sizeof(sensor_data.gyro_z));
+// 		/* convert to big endian */
+// 		endian_swap(&sensor_data.accel_x, sizeof(sensor_data.accel_x));
+// 		endian_swap(&sensor_data.accel_y, sizeof(sensor_data.accel_y));
+// 		endian_swap(&sensor_data.accel_z, sizeof(sensor_data.accel_z));
+// 		endian_swap(&sensor_data.gyro_x, sizeof(sensor_data.gyro_x));
+// 		endian_swap(&sensor_data.gyro_y, sizeof(sensor_data.gyro_y));
+// 		endian_swap(&sensor_data.gyro_z, sizeof(sensor_data.gyro_z));
 
-		/* Send CAN message */
-		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
-		// if (queue_can_msg(imu_accel_msg)) {
-		//	fault_data.diag = "Failed to send CAN message";
-		//	queue_fault(&fault_data);
-		// }
+// 		/* Send CAN message */
+// 		memcpy(imu_accel_msg.data, &sensor_data, imu_accel_msg.len);
+// 		// if (queue_can_msg(imu_accel_msg)) {
+// 		//	fault_data.diag = "Failed to send CAN message";
+// 		//	queue_fault(&fault_data);
+// 		// }
 
-		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
-		if (queue_can_msg(imu_gyro_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
+// 		memcpy(imu_gyro_msg.data, &sensor_data, imu_gyro_msg.len);
+// 		if (queue_can_msg(imu_gyro_msg)) {
+// 			fault_data.diag = "Failed to send CAN message";
+// 			queue_fault(&fault_data);
+// 		}
 
-		/* Yield to other tasks */
-		osDelay(IMU_SAMPLE_DELAY);
-	}
-}
+// 		/* Yield to other tasks */
+// 		osDelay(IMU_SAMPLE_DELAY);
+// 	}
+// }
