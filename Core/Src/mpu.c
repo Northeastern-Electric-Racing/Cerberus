@@ -192,6 +192,6 @@ int8_t read_gyro(mpu_t *mpu)
 int8_t write_fault(mpu_t *mpu, bool status)
 {
 	if (!mpu)
-		HAL_GPIO_WritePin(mpu->fault_gpio, CAN_FAULT_PIN, status);
+		HAL_GPIO_WritePin(mpu->watchdog_gpio, CAN_FAULT_PIN, status);
 	return 0;
 }
