@@ -35,14 +35,14 @@ void read_lv_sense(void *arg)
 	mpu_t *mpu = (mpu_t *)arg;
 	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
 				    .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 8, .data = { 0 } };
+	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
 	uint32_t v_int;
 	uint32_t soc_int;
 
 	struct __attribute__((__packed__)) {
 		uint32_t v;
-		uint32_t soc;
+		uint8_t soc;
 	} lv_data;
 
 	read_lv_voltage(mpu, &v_int);
@@ -65,9 +65,9 @@ void read_lv_sense(void *arg)
 	// - Divide v_dec by 7 to get avg voltage over all rows
 	// - Use logistic function to model SoC
 	// https://www.aegisbattery.com/products/24v-20ah-li-ion-battery-pvc
-	float v_max = 4.2; // max avg voltage over all rows (7)
-	float v_min = 2.8; // min avg voltage over all rows (7)
-	float k = -8.5; // logistic fn parameter to affect steepness of curve
+	static const float v_max = 4.2; // max avg voltage over all rows (7)
+	static const float v_min = 2.8; // min avg voltage over all rows (7)
+	static const float k = -8.5; // logistic fn parameter to affect steepness of curve
 	float i = (v_max + v_min) /
 		  2; // logistic fn parameter to affect midpoint of curve
 	float soc_dec =
