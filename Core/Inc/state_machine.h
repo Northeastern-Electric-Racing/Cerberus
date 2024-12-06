@@ -6,6 +6,7 @@
 #include "nero.h"
 #include "pdu.h"
 #include "dti.h"
+#include "mpu.h"
 
 /**
  * @brief Enum defining the functional states of the car.
@@ -55,6 +56,7 @@ typedef struct {
 typedef struct {
 	pdu_t *pdu;
 	dti_t *mc;
+	mpu_t *mpu;
 } sm_director_args_t;
 
 /**

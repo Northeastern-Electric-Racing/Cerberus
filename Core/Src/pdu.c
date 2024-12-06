@@ -141,7 +141,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	HAL_StatusTypeDef status =
 		pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_0_REG, buf);
 	if (status != HAL_OK) {
-		printf("\n\rcntrl init fail\n\r");
+		printf("cntrl init fail\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
@@ -151,7 +151,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	status =
 		pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_1_REG, buf);
 	if (status != HAL_OK) {
-		printf("\n\rcntrl init fail\n\r");
+		printf("cntrl init fail\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
@@ -178,27 +178,6 @@ int8_t write_pump(pdu_t *pdu, bool status)
 	/* write pump over i2c */
 	HAL_StatusTypeDef error = pca9539_write_pin(
 		pdu->ctrl_expander, PCA_OUTPUT_0_REG, PUMP_CTRL, status);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
-int8_t write_fault(pdu_t *pdu, bool status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write fault GPIO over i2c, fault line is inverted */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, RADFAN_CTRL, !status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
