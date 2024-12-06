@@ -185,11 +185,9 @@ void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4])
 // 	if (hal_stat)
 // 		return hal_stat;
 
-
 // 	osMutexRelease(mpu->i2c_mutex);
 // 	return 0;
 // }
-	
 
 int8_t write_fault(mpu_t *mpu, bool status)
 {
