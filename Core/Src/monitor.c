@@ -67,7 +67,8 @@ void read_lv_sense(void *arg)
 	// https://www.aegisbattery.com/products/24v-20ah-li-ion-battery-pvc
 	static const float v_max = 4.2; // max avg voltage over all rows (7)
 	static const float v_min = 2.8; // min avg voltage over all rows (7)
-	static const float k = -8.5; // logistic fn parameter to affect steepness of curve
+	static const float k =
+		-8.5; // logistic fn parameter to affect steepness of curve
 	float i = (v_max + v_min) /
 		  2; // logistic fn parameter to affect midpoint of curve
 	float soc_dec =
