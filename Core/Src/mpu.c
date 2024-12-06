@@ -16,19 +16,19 @@ static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
 I2C_HandleTypeDef *hi2c;
 
-static inline int read_reg(uint8_t *data, uint8_t reg, uint8_t length)
-{
-	return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
-				I2C_MEMADD_SIZE_8BIT, data, length,
-				HAL_MAX_DELAY);
-}
+// static inline int read_reg(uint8_t *data, uint8_t reg, uint8_t length)
+// {
+// 	return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+// 				I2C_MEMADD_SIZE_8BIT, data, length,
+// 				HAL_MAX_DELAY);
+// }
 
-static inline int write_reg(uint8_t *data, uint8_t reg, uint8_t length)
-{
-	return HAL_I2C_Mem_Write(hi2c, LSM6DSO_I2C_ADDRESS, reg,
-				 I2C_MEMADD_SIZE_8BIT, data, length,
-				 HAL_MAX_DELAY);
-}
+// static inline int write_reg(uint8_t *data, uint8_t reg, uint8_t length)
+// {
+// 	return HAL_I2C_Mem_Write(hi2c, LSM6DSO_I2C_ADDRESS, reg,
+// 				 I2C_MEMADD_SIZE_8BIT, data, length,
+// 				 HAL_MAX_DELAY);
+// }
 
 mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 		GPIO_TypeDef *led_gpio, GPIO_TypeDef *watchdog_gpio)
@@ -49,10 +49,10 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 	mpu->watchdog_gpio = watchdog_gpio;
 
 	/* Initialize the Onboard Temperature Sensor */
-	mpu->temp_sensor = malloc(sizeof(sht30_t));
-	assert(mpu->temp_sensor);
-	mpu->temp_sensor->i2c_handle = hi2c;
-	assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
+	// mpu->temp_sensor = malloc(sizeof(sht30_t));
+	// assert(mpu->temp_sensor);
+	// mpu->temp_sensor->i2c_handle = hi2c;
+	// assert(!sht30_init(mpu->temp_sensor)); /* This is always connected */
 
 	assert(!HAL_ADC_Start_DMA(mpu->pedals_adc, mpu->pedal_dma_buf,
 				  sizeof(mpu->pedal_dma_buf) /
@@ -135,59 +135,59 @@ void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4])
 	memcpy(pedal_buf, mpu->pedal_dma_buf, sizeof(mpu->pedal_dma_buf));
 }
 
-int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
-{
-	if (!mpu)
-		return -1;
+// int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity)
+// {
+// 	if (!mpu)
+// 		return -1;
 
-	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
-	if (mut_stat)
-		return mut_stat;
+// 	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+// 	if (mut_stat)
+// 		return mut_stat;
 
-	HAL_StatusTypeDef hal_stat = sht30_get_temp_humid(mpu->temp_sensor);
-	if (hal_stat)
-		return hal_stat;
+// 	HAL_StatusTypeDef hal_stat = sht30_get_temp_humid(mpu->temp_sensor);
+// 	if (hal_stat)
+// 		return hal_stat;
 
-	*temp = mpu->temp_sensor->temp;
-	*humidity = mpu->temp_sensor->humidity;
+// 	*temp = mpu->temp_sensor->temp;
+// 	*humidity = mpu->temp_sensor->humidity;
 
-	osMutexRelease(mpu->i2c_mutex);
-	return 0;
-}
+// 	osMutexRelease(mpu->i2c_mutex);
+// 	return 0;
+// }
 
-int8_t read_accel(mpu_t *mpu)
-{
-	if (!mpu)
-		return -1;
+// int8_t read_accel(mpu_t *mpu)
+// {
+// 	if (!mpu)
+// 		return -1;
 
-	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
-	if (mut_stat)
-		return mut_stat;
+// 	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+// 	if (mut_stat)
+// 		return mut_stat;
 
-	HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
-	if (hal_stat)
-		return hal_stat;
+// 	HAL_StatusTypeDef hal_stat = lsm6dso_read_accel(mpu->imu);
+// 	if (hal_stat)
+// 		return hal_stat;
 
-	osMutexRelease(mpu->i2c_mutex);
-	return 0;
-}
+// 	osMutexRelease(mpu->i2c_mutex);
+// 	return 0;
+// }
 
-int8_t read_gyro(mpu_t *mpu)
-{
-	if (!mpu)
-		return -1;
+// int8_t read_gyro(mpu_t *mpu)
+// {
+// 	if (!mpu)
+// 		return -1;
 
-	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
-	if (mut_stat)
-		return mut_stat;
+// 	osStatus_t mut_stat = osMutexAcquire(mpu->i2c_mutex, osWaitForever);
+// 	if (mut_stat)
+// 		return mut_stat;
 
-	HAL_StatusTypeDef hal_stat = lsm6dso_read_gyro(mpu->imu);
-	if (hal_stat)
-		return hal_stat;
+// 	HAL_StatusTypeDef hal_stat = lsm6dso_read_gyro(mpu->imu);
+// 	if (hal_stat)
+// 		return hal_stat;
 
-	osMutexRelease(mpu->i2c_mutex);
-	return 0;
-}
+// 	osMutexRelease(mpu->i2c_mutex);
+// 	return 0;
+// }
 
 int8_t write_fault(mpu_t *mpu, bool status)
 {

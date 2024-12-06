@@ -1,10 +1,8 @@
 #ifndef MPU_H
 #define MPU_H
 
-#include "cmsis_os.h"
-#include "lsm6dso.h"
-#include "sht30.h"
-#include "stm32f405xx.h"
+#include "cmsis_os2.h"
+#include "stm32f4xx_hal.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -18,9 +16,9 @@ typedef struct {
 
 	GPIO_TypeDef *led_gpio;
 	GPIO_TypeDef *watchdog_gpio;
+	// sht30_t *temp_sensor;
+	// lsm6dso_t *imu;
 	GPIO_TypeDef *fault_gpio;
-	sht30_t *temp_sensor;
-	lsm6dso_t *imu;
 	osMutexId_t *adc_mutex;
 	osMutexId_t *i2c_mutex;
 	/* Not including LED Mutexes because not necessary */
@@ -72,11 +70,11 @@ int8_t toggle_yled(mpu_t *mpu);
 
 int8_t pet_watchdog(mpu_t *mpu);
 
-int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity);
+// int8_t read_temp_sensor(mpu_t *mpu, uint16_t *temp, uint16_t *humidity);
 
-int8_t read_accel(mpu_t *mpu);
+// int8_t read_accel(mpu_t *mpu);
 
-int8_t read_gyro(mpu_t *mpu);
+// int8_t read_gyro(mpu_t *mpu);
 
 int8_t write_fault(mpu_t *mpu, bool status);
 
