@@ -18,6 +18,7 @@ typedef struct {
 	GPIO_TypeDef *watchdog_gpio;
 	// sht30_t *temp_sensor;
 	// lsm6dso_t *imu;
+	GPIO_TypeDef *fault_gpio;
 	osMutexId_t *adc_mutex;
 	osMutexId_t *i2c_mutex;
 	/* Not including LED Mutexes because not necessary */
@@ -74,5 +75,7 @@ int8_t pet_watchdog(mpu_t *mpu);
 // int8_t read_accel(mpu_t *mpu);
 
 // int8_t read_gyro(mpu_t *mpu);
+
+int8_t write_fault(mpu_t *mpu, bool status);
 
 #endif /* MPU */
