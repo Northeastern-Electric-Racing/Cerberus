@@ -53,7 +53,7 @@ void increase_torque_limit()
 
 void decrease_torque_limit()
 {
-	if (torque_limit_percentage - 1 < 0) {
+	if (torque_limit_percentage - 0.1 < 0) {
 		torque_limit_percentage = 0;
 	} else {
 		torque_limit_percentage -= 0.1;
