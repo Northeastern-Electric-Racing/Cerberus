@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -33,9 +34,15 @@ void read_lv_sense(void *arg)
 	mpu_t *mpu = (mpu_t *)arg;
 	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
 				    .severity = DEFCON5 };
-	can_msg_t msg = { .id = CANID_LV_MONITOR, .len = 4, .data = { 0 } };
+	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
 	uint32_t v_int;
+	uint32_t soc_int;
+
+	struct __attribute__((__packed__)) {
+		uint32_t v;
+		uint8_t soc;
+	} lv_data;
 
 	read_lv_voltage(mpu, &v_int);
 
@@ -50,8 +57,28 @@ void read_lv_sense(void *arg)
 	// get final voltage
 	v_int = (uint32_t)(v_dec * 10.0);
 
-	memcpy(msg.data, &v_int, msg.len);
-	if (queue_can_msg(msg)) {
+	// Calculate SoC using logistic function
+	// - Normal charged voltage is 29.4V
+	// - 18650 max charged voltage is 4.2V
+	// - 29.4V/4.2V = 7 batteries
+	// - Divide v_dec by 7 to get avg voltage over all rows
+	// - Use logistic function to model SoC
+	// https://www.aegisbattery.com/products/24v-20ah-li-ion-battery-pvc
+	static const float v_max = 4.2; // max avg voltage over all rows (7)
+	static const float v_min = 2.8; // min avg voltage over all rows (7)
+	static const float k =
+		-8.5; // logistic fn parameter to affect steepness of curve
+	float i = (v_max + v_min) /
+		  2; // logistic fn parameter to affect midpoint of curve
+	float soc_dec =
+		1 / (1 + exp(k * (v_dec - i))); // SoC calculation in [0,1]
+	soc_int = soc_dec * 100;
+
+	lv_data.v = v_int;
+	lv_data.soc = soc_int;
+
+	memcpy(lv_msg.data, &lv_data, lv_msg.len);
+	if (queue_can_msg(lv_msg)) {
 		fault_data.diag =
 			"Failed to send steering LV monitor CAN message";
 		queue_fault(&fault_data);
