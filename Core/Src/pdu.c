@@ -19,9 +19,12 @@
 
 static osMutexAttr_t pdu_mutex_attributes;
 
+//hi2c2 variable to pass to the function wrappers
 extern I2C_HandleTypeDef hi2c2;
 
-static inline int stm_i2c_write(uint16_t dev_addr, uint16_t address,
+//Function wrapper for the STM specific HAL write function
+//Serves as function pointer for PCA PAL
+static inline int pca_i2c_write(uint16_t dev_addr, uint16_t address,
 			uint16_t mem_add_size, uint8_t *data, 
 			uint16_t size, int delay)
 
@@ -31,7 +34,9 @@ static inline int stm_i2c_write(uint16_t dev_addr, uint16_t address,
 							size, delay);
 }
 
-static inline int stm_i2c_read(uint16_t dev_addr, uint16_t address,
+//Function wrapper for the STM specific HAL read function
+//Serves as function pointer for PCA PAL
+static inline int pca_i2c_read(uint16_t dev_addr, uint16_t address,
 			uint16_t mem_add_size, uint8_t *data, 
 			uint16_t size, int delay)
 {
@@ -152,7 +157,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu->ctrl_expander);
 
 	//NEED
-	pca9539_init(pdu->ctrl_expander, stm_i2c_write, stm_i2c_read, 
+	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read, 
 				CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
