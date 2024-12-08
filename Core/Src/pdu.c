@@ -34,6 +34,7 @@ static inline int pca_i2c_write(uint16_t dev_addr, uint16_t address,
 							size, delay);
 }
 
+
 //Function wrapper for the STM specific HAL read function
 //Serves as function pointer for PCA PAL
 static inline int pca_i2c_read(uint16_t dev_addr, uint16_t address,
