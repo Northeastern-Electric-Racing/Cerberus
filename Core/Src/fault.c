@@ -66,7 +66,6 @@ void vFaultHandler(void *pv_params)
 					 osWaitForever) == osOK) {
 			// Set Fault
 			uint32_t *fault_id = malloc(sizeof(uint32_t));
-			*fault_id = 0;
 			*fault_id = (uint32_t)fault_data.id;
 			faults |= *fault_id;
 
