@@ -24,6 +24,7 @@ extern I2C_HandleTypeDef hi2c2;
 static inline int stm_i2c_write(uint16_t dev_addr, uint16_t address,
 			uint16_t mem_add_size, uint8_t *data, 
 			uint16_t size, int delay)
+
 {
 	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, 
 							mem_add_size, data, 
@@ -151,7 +152,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu->ctrl_expander);
 
 	//NEED
-	pca9539_init(pdu->ctrl_expander, stm_i2c_write, stm_i2c_read, CTRL_ADDR);
+	pca9539_init(pdu->ctrl_expander, stm_i2c_write, stm_i2c_read, 
+				CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
