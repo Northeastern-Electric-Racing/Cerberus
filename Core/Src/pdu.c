@@ -25,25 +25,22 @@ extern I2C_HandleTypeDef hi2c2;
 //Function wrapper for the STM specific HAL write function
 //Serves as function pointer for PCA PAL
 static inline int pca_i2c_write(uint16_t dev_addr, uint16_t address,
-			uint16_t mem_add_size, uint8_t *data, 
-			uint16_t size, int delay)
+				uint16_t mem_add_size, uint8_t *data,
+				uint16_t size, int delay)
 
 {
-	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, 
-							mem_add_size, data, 
-							size, delay);
+	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, mem_add_size, data,
+				 size, delay);
 }
-
 
 //Function wrapper for the STM specific HAL read function
 //Serves as function pointer for PCA PAL
 static inline int pca_i2c_read(uint16_t dev_addr, uint16_t address,
-			uint16_t mem_add_size, uint8_t *data, 
-			uint16_t size, int delay)
+			       uint16_t mem_add_size, uint8_t *data,
+			       uint16_t size, int delay)
 {
-	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, 
-							mem_add_size, data, 
-							size, delay);
+	return HAL_I2C_Mem_Write(&hi2c2, dev_addr, address, mem_add_size, data,
+				 size, delay);
 }
 
 static uint8_t sound_rtds(pdu_t *pdu)
@@ -158,8 +155,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu->ctrl_expander);
 
 	//NEED
-	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read, 
-				CTRL_ADDR);
+	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read,
+		     CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
