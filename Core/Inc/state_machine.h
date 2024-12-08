@@ -122,6 +122,13 @@ int select_nero_index();
 int set_home_mode();
 
 /**
+ * @brief Queue a state transition to enter ready mode.
+ * 
+ * @return int Error code resulting from queueing a state transition
+ */
+int set_ready_mode();
+
+/**
  * @brief Queue a state transition to set the functinoal mode of the car to the faulted state.
  * 
  * @return int Error code resulting from queueing a state transition

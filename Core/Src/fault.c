@@ -9,6 +9,7 @@
 #include <string.h>
 #include "c_utils.h"
 #include "cerb_utils.h"
+#include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 #define NEW_FAULT_FLAG		1U
@@ -77,6 +78,7 @@ void vFaultHandler(void *pv_params)
 							   osTimerOnce,
 							   fault_id, NULL);
 			}
+
 			if (osTimerStart(timers[index], 4000) != osOK) {
 				return;
 			}
@@ -131,6 +133,11 @@ void clearFault(void *args)
 	// Remove this timer's severity from total severity
 	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
 	max_severity_level = getMaxSeverity();
+
+	// unfault car if all critical faults are cleared
+	if (max_severity_level > DEFCON3) {
+		set_ready_mode();
+	}
 
 	free(fault_id);
 }

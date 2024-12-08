@@ -18,9 +18,6 @@
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-/* Timer to unfault */
-static osTimerId_t unfault_timer;
-
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
 	union {
@@ -226,19 +223,17 @@ int set_home_mode()
 				.home_mode = true } });
 }
 
+int set_ready_mode()
+{
+	return queue_state_transition(
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
+}
+
 int fault()
 {
 	// count 5 seconds before unfaulting
-	osTimerStart(unfault_timer, pdMS_TO_TICKS(5 * 1000));
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
-}
-
-void unfault_timer_callback(void *args)
-{
-	printf("UNFAULTING");
-	queue_state_transition(
-		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -257,9 +252,6 @@ void vStateMachineDirector(void *pv_params)
 	dti_t *mc = args->mc;
 	mpu_t *mpu = args->mpu;
 	free(args);
-
-	unfault_timer =
-		osTimerNew(unfault_timer_callback, osTimerOnce, NULL, NULL);
 
 	/* Write to GPIO expander to set initial state */
 	write_pump(pdu, false);
