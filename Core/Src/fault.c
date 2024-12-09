@@ -2,6 +2,8 @@
 #include "task.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include "state_machine.h"
 #include "can_handler.h"
 #include <string.h>
@@ -10,8 +12,16 @@
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 #define NEW_FAULT_FLAG		1U
+#define NUM_OF_FAULTS		18UL
 
 osMessageQueueId_t fault_handle_queue;
+
+uint32_t faults = 0;
+
+osTimerId_t *timers = NULL;
+
+fault_sev_t max_severity_level = DEFCON_NONE;
+fault_sev_t *severity_levels = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -25,12 +35,25 @@ osStatus_t queue_fault(fault_data_t *fault_data)
 osThreadId_t fault_handle;
 const osThreadAttr_t fault_handle_attributes = {
 	.name = "FaultHandler",
-	.stack_size = 32 * 16,
+	.stack_size = 64 * 16,
 	.priority = (osPriority_t)osPriorityRealtime7,
 };
 
 void vFaultHandler(void *pv_params)
 {
+	// Create Timers Array
+	if (timers == NULL) {
+		timers = calloc(NUM_OF_FAULTS, sizeof(osTimerId_t));
+	}
+
+	// Create Severity Levels Array (all DEFCON_NONE initially)
+	if (severity_levels == NULL) {
+		severity_levels = calloc(NUM_OF_FAULTS, sizeof(fault_sev_t));
+		for (int i = 0; i < NUM_OF_FAULTS; i++) {
+			severity_levels[i] = DEFCON_NONE;
+		}
+	}
+
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
@@ -41,17 +64,35 @@ void vFaultHandler(void *pv_params)
 
 		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 					 osWaitForever) == osOK) {
-			uint32_t fault_id = (uint32_t)fault_data.id;
-			endian_swap(&fault_id, sizeof(fault_id));
-			uint8_t defcon = (uint8_t)fault_data.severity;
+			// Set Fault
+			uint32_t *fault_id = malloc(sizeof(uint32_t));
+			*fault_id = (uint32_t)fault_data.id;
+			faults |= *fault_id;
 
+			uint32_t index = (uint32_t)log2(*fault_id);
+
+			// Create Timers
+			if (!timers[index]) {
+				timers[index] = osTimerNew(clearFault,
+							   osTimerOnce,
+							   fault_id, NULL);
+			}
+			if (osTimerStart(timers[index], 4000) != osOK) {
+				return;
+			}
+
+			// Get New Maximum Severity Level
+			severity_levels[index] = fault_data.severity;
+			max_severity_level = getMaxSeverity();
+
+			// Send Can Message
 			can_msg_t msg;
 			msg.id = CANID_FAULT_MSG;
 			msg.len = 8;
 
-			memcpy(msg.data, &fault_id, sizeof(fault_id));
-			memcpy(msg.data + sizeof(fault_id), &defcon,
-			       sizeof(defcon));
+			memcpy(msg.data, &faults, sizeof(faults));
+			memcpy(msg.data + sizeof(faults), &max_severity_level,
+			       sizeof(max_severity_level));
 
 			queue_can_msg(msg);
 			printf("Fault Handler! Diagnostic Info:\t%s\n",
@@ -71,9 +112,36 @@ void vFaultHandler(void *pv_params)
 				break;
 			case DEFCON5: /* Lowest Priority */
 				break;
+			case DEFCON_NONE:
+				break;
 			default:
 				break;
 			}
 		}
 	}
+}
+
+void clearFault(void *args)
+{
+	uint32_t *fault_id = (uint32_t *)args;
+
+	// Remove this timer's fault from total faults
+	faults &= ~(*fault_id);
+
+	// Remove this timer's severity from total severity
+	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
+	max_severity_level = getMaxSeverity();
+
+	free(fault_id);
+}
+
+fault_sev_t getMaxSeverity()
+{
+	int max = DEFCON_NONE;
+	for (int i = 0; i < NUM_OF_FAULTS; i++) {
+		if (severity_levels[i] < max) {
+			max = severity_levels[i];
+		}
+	}
+	return (fault_sev_t)max;
 }
