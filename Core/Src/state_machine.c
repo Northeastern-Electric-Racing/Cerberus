@@ -231,7 +231,6 @@ int set_ready_mode()
 
 int fault()
 {
-	// count 5 seconds before unfaulting
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
