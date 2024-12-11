@@ -21,8 +21,6 @@ uint32_t faults = 0;
 
 osTimerId_t *timers = NULL;
 
-bool debug = false;
-
 fault_sev_t max_severity_level = DEFCON_NONE;
 fault_sev_t *severity_levels = NULL;
 
@@ -81,12 +79,9 @@ void vFaultHandler(void *pv_params)
 							   fault_id, NULL);
 			}
 
-			if (!debug &&
-			    osTimerStart(timers[index], 4000) != osOK) {
+			if (osTimerStart(timers[index], 4000) != osOK) {
 				return;
 			}
-
-			debug = true;
 
 			// Get New Maximum Severity Level
 			severity_levels[index] = fault_data.severity;
@@ -102,8 +97,8 @@ void vFaultHandler(void *pv_params)
 			       sizeof(max_severity_level));
 
 			queue_can_msg(msg);
-			//printf("Fault Handler! Diagnostic Info:\t%s\n",
-			//       fault_data.diag);
+			printf("Fault Handler! Diagnostic Info:\t%s\n",
+			       fault_data.diag);
 
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
