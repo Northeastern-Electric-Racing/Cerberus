@@ -56,11 +56,6 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
-	// do not queue transition if new state is the same as the current state
-	if (get_func_state() == new_state) {
-		return 0;
-	}
-
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
@@ -125,12 +120,6 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 {
 	nero_state_t current_nero_state = get_nero_state();
 
-	// do not queue transition if new state is the same as the current state
-	if (current_nero_state.home_mode == new_state.home_mode &&
-	    current_nero_state.nero_index == new_state.nero_index) {
-		return 0;
-	}
-
 	// If we are not in home mode, we should not change the nero index
 	if (!new_state.home_mode)
 		new_state.nero_index = current_nero_state.nero_index;
@@ -180,10 +169,40 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	return 0;
 }
 
+static int check_state_change(state_req_t new_state)
+{
+	// check if nero state has changed
+	if (new_state.id == NERO) {
+		nero_state_t new_nero_state = new_state.state.nero;
+		nero_state_t current_nero_state = get_nero_state();
+		if (new_nero_state.home_mode == current_nero_state.home_mode &&
+		    new_nero_state.nero_index ==
+			    current_nero_state.nero_index) {
+			return 0;
+		}
+	}
+
+	// check if functional state has changed
+	if (new_state.id == FUNCTIONAL) {
+		func_state_t new_func_state = new_state.state.functional;
+		func_state_t current_func_state = get_func_state();
+		if (new_func_state == current_func_state) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 static int queue_state_transition(state_req_t new_state)
 {
 	if (!state_trans_queue) {
 		return 1;
+	}
+
+	// queue state transition only if state has changed
+	if (!check_state_change(new_state)) {
+		return 0;
 	}
 
 	return queue_and_set_flag(state_trans_queue, &new_state,

@@ -97,8 +97,8 @@ void vFaultHandler(void *pv_params)
 			       sizeof(max_severity_level));
 
 			queue_can_msg(msg);
-			printf("Fault Handler! Diagnostic Info:\t%s\n",
-			       fault_data.diag);
+			//printf("Fault Handler! Diagnostic Info:\t%s\n",
+			//       fault_data.diag);
 
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
