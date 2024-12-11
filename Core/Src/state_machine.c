@@ -56,6 +56,11 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
+	// do not queue transition if new state is the same as the current state
+	if (get_func_state() == new_state) {
+		return 0;
+	}
+
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
@@ -119,6 +124,12 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 				 mpu_t *mpu)
 {
 	nero_state_t current_nero_state = get_nero_state();
+
+	// do not queue transition if new state is the same as the current state
+	if (current_nero_state.home_mode == new_state.home_mode &&
+	    current_nero_state.nero_index == new_state.nero_index) {
+		return 0;
+	}
 
 	// If we are not in home mode, we should not change the nero index
 	if (!new_state.home_mode)
