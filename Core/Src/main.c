@@ -132,6 +132,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *phuart) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
   printf("BOOT\n");
   /* USER CODE END 1 */
@@ -257,6 +258,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
