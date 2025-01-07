@@ -200,11 +200,6 @@ static int queue_state_transition(state_req_t new_state)
 		return 1;
 	}
 
-	// queue state transition only if state has changed
-	if (!check_state_change(new_state)) {
-		return 0;
-	}
-
 	return queue_and_set_flag(state_trans_queue, &new_state,
 				  sm_director_handle, STATE_TRANSITION_FLAG);
 }
@@ -291,6 +286,11 @@ void vStateMachineDirector(void *pv_params)
 				  osWaitForever);
 		while (osMessageQueueGet(state_trans_queue, &new_state_req,
 					 NULL, osWaitForever) == osOK) {
+			// transition state only if state was changed
+			if (!check_state_change(new_state_req)) {
+				continue;
+			}
+
 			if (new_state_req.id == NERO)
 				transition_nero_state(new_state_req.state.nero,
 						      pdu, mc, mpu);
