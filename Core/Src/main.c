@@ -696,7 +696,39 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static struct __attribute__((__packed__)) {
+		uint8_t git_major_version = GIT_MAJOR_VERSION;
+		uint8_t git_minor_version;
+		uint8_t git_patch_version;
+		bool git_is_upstream_clean;
+		bool git_is_local_clean;
+	} git_version_data;
 
+  static struct __attribute__((__packed__)) {
+    uint32_t git_shorthash;
+    uint32_t git_authorhash;
+  } git_hash_data;
+
+//put funtion that makes can message and queues message, send_nero_message is similar, use variables from versioning over can ticket in embedded-base
+void send_git_version_message() {
+  git_version_data.git_major_version = GIT_MAJOR_VERSION;
+	git_version_data.git_minor_version = GIT_MINOR_VERSION;
+	git_version_data.git_patch_version = GIT_PATCH_VERSION;
+  git_version_data.git_is_upstream_clean = GIT_IS_UPSTREAM_CLEAN;
+	git_version_data.git_is_local_clean = GIT_IS_LOCAL_CLEAN;
+
+  git_hash_data.git_shorthash = GIT_SHORTHASH;
+  git_hash_data.git_authorhash = GIT_AUTHORHASH;
+  can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data)};
+  can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data)};
+
+  memcpy(&msg1.data, &git_version_data, sizeof(git_version_data));
+  memcpy(&msg2.data, &git_hash_data, sizeof(git_hash_data));
+
+  queue_can_msg(msg1);
+  queue_can_msg(msg2);
+  
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
