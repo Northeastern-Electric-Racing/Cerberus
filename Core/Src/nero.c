@@ -11,6 +11,8 @@
 #include "pedals.h"
 #include "string.h"
 
+//#define TORQUE_DEBUG
+
 static int8_t mph = 0;
 
 void send_nero_msg()
@@ -40,6 +42,12 @@ void send_nero_msg()
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
 	memcpy(&msg.data, &nero_data, sizeof(nero_data));
+
+	#ifdef TORQUE_DEBUG
+		nero_data.tsms = 1;
+		nero_data.nero_index = 1; /* Used for selecting drive mode */
+		dti_set_current(0);		
+	#endif
 
 	/* Send CAN message */
 	queue_can_msg(msg);
