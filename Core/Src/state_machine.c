@@ -18,9 +18,6 @@
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
-/* Timer to unfault */
-static osTimerId_t unfault_timer;
-
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
 	union {
@@ -172,6 +169,31 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	return 0;
 }
 
+static int check_state_change(state_req_t new_state)
+{
+	// check if nero state has changed
+	if (new_state.id == NERO) {
+		nero_state_t new_nero_state = new_state.state.nero;
+		nero_state_t current_nero_state = get_nero_state();
+		if (new_nero_state.home_mode == current_nero_state.home_mode &&
+		    new_nero_state.nero_index ==
+			    current_nero_state.nero_index) {
+			return 0;
+		}
+	}
+
+	// check if functional state has changed
+	if (new_state.id == FUNCTIONAL) {
+		func_state_t new_func_state = new_state.state.functional;
+		func_state_t current_func_state = get_func_state();
+		if (new_func_state == current_func_state) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 static int queue_state_transition(state_req_t new_state)
 {
 	if (!state_trans_queue) {
@@ -226,19 +248,16 @@ int set_home_mode()
 				.home_mode = true } });
 }
 
-int fault()
+int set_ready_mode()
 {
-	// count 5 seconds before unfaulting
-	osTimerStart(unfault_timer, pdMS_TO_TICKS(5 * 1000));
 	return queue_state_transition(
-		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
-void unfault_timer_callback(void *args)
+int fault()
 {
-	printf("UNFAULTING");
-	queue_state_transition(
-		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
+	return queue_state_transition(
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -258,9 +277,6 @@ void vStateMachineDirector(void *pv_params)
 	mpu_t *mpu = args->mpu;
 	free(args);
 
-	unfault_timer =
-		osTimerNew(unfault_timer_callback, osTimerOnce, NULL, NULL);
-
 	/* Write to GPIO expander to set initial state */
 	write_pump(pdu, false);
 	write_fault(mpu, false);
@@ -270,6 +286,11 @@ void vStateMachineDirector(void *pv_params)
 				  osWaitForever);
 		while (osMessageQueueGet(state_trans_queue, &new_state_req,
 					 NULL, osWaitForever) == osOK) {
+			// transition state only if state was changed
+			if (!check_state_change(new_state_req)) {
+				continue;
+			}
+
 			if (new_state_req.id == NERO)
 				transition_nero_state(new_state_req.state.nero,
 						      pdu, mc, mpu);
