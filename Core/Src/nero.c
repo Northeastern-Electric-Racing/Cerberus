@@ -34,20 +34,21 @@ void send_nero_msg()
 	}
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
-	nero_data.mph		= mph;
-	nero_data.tsms		= (uint8_t)get_tsms();
+	nero_data.mph = mph;
+	nero_data.tsms = (uint8_t)get_tsms();
 	/* Percentage from 0 - 1, multiplied by 100 */
-	nero_data.torque_lim_percentage = (uint8_t)(get_torque_limit_percentage() * 100);
+	nero_data.torque_lim_percentage =
+		(uint8_t)(get_torque_limit_percentage() * 100);
+
+#ifdef TORQUE_DEBUG
+	nero_data.tsms = 1;
+	nero_data.nero_index = 1; /* Used for selecting drive mode */
+	dti_set_current(0);
+#endif
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
 	memcpy(&msg.data, &nero_data, sizeof(nero_data));
-
-#ifdef TORQUE_DEBUG
-	nero_data.tsms		 = 1;
-	nero_data.nero_index = 1; /* Used for selecting drive mode */
-	dti_set_current(0);
-#endif
 
 	/* Send CAN message */
 	queue_can_msg(msg);
