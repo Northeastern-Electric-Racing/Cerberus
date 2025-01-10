@@ -697,7 +697,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 static struct __attribute__((__packed__)) {
-		uint8_t git_major_version = GIT_MAJOR_VERSION;
+		uint8_t git_major_version;
 		uint8_t git_minor_version;
 		uint8_t git_patch_version;
 		bool git_is_upstream_clean;
