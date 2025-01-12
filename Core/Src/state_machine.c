@@ -110,8 +110,11 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// Do Nothing
 		break;
 	}
-
+#ifdef TSMS_OVERRIDE
+	cerberus_state.functional = READY;
+#else
 	cerberus_state.functional = new_state;
+#endif
 	return 0;
 }
 

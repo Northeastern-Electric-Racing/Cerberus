@@ -97,7 +97,14 @@ void dti_set_regen(uint16_t current_target)
 void dti_set_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x036, .len = 2, .data = { 0 } };
+
+#ifdef TSMS_OVERRIDE
+	dti_set_drive_enable(false);
+	printf("%d/n", current);
+#else
 	dti_set_drive_enable(true);
+#endif
+
 	/* Send CAN message in big endian format */
 
 	//endian_swap(&current, sizeof(current));
