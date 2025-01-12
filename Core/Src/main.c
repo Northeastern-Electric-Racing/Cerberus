@@ -704,21 +704,11 @@ struct __attribute__((__packed__)) git_version_data {
 		bool git_is_upstream_clean;
 		bool git_is_local_clean;
 	} git_version_data;
-  /* = {
-    .git_major_version = GIT_MAJOR_VERSION,
-    .git_minor_version = GIT_MINOR_VERSION,
-    .git_patch_version = GIT_PATCH_VERSION,
-    .git_is_upstream_clean = GIT_IS_UPSTREAM_CLEAN,
-    .git_is_local_clean = GIT_IS_LOCAL_CLEAN,
-  };*/
+
   struct __attribute__((__packed__)) git_hash_data {
     uint32_t git_shorthash;
     uint32_t git_authorhash;
   } git_hash_data;
-  /* = {
-    .git_shorthash = GIT_SHORTHASH,
-    .git_authorhash = GIT_AUTHORHASH,
-  };*/
 
 //put funtion that makes can message and queues message, send_nero_message is similar, use variables from versioning over can ticket in embedded-base
 void send_git_version_message() {
@@ -731,7 +721,7 @@ void send_git_version_message() {
   memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
 
   queue_can_msg(msg1);
-  queue_can_msg(msg2);
+  //queue_can_msg(msg2);
   
 }
 /* USER CODE END 4 */
@@ -759,6 +749,7 @@ void StartDefaultTask(void *argument)
     
     /* Send NERO state data continuously */
     send_nero_msg();
+    send_git_version_message();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }
