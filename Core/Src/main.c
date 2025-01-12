@@ -39,6 +39,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
