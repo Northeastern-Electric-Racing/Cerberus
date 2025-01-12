@@ -78,9 +78,15 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 			if (dti_get_mph(mc) > 1)
 				return 2;
 			/* Only turn on motor if brakes engaged and tsms is on */
+#ifdef TSMS_OVERRIDE
+			if (!get_brake_state()) {
+				return 3;
+			}
+#else
 			if (!get_brake_state() || !get_tsms()) {
 				return 3;
 			}
+#endif
 			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 		}
 
@@ -110,11 +116,9 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		// Do Nothing
 		break;
 	}
-#ifdef TSMS_OVERRIDE
-	cerberus_state.functional = READY;
-#else
+
 	cerberus_state.functional = new_state;
-#endif
+
 	return 0;
 }
 
