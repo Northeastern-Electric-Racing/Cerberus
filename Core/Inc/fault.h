@@ -4,28 +4,35 @@
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
 
-typedef enum { DEFCON1 = 1, DEFCON2, DEFCON3, DEFCON4, DEFCON5 } fault_sev_t;
+typedef enum {
+	DEFCON1 = 1,
+	DEFCON2,
+	DEFCON3,
+	DEFCON4,
+	DEFCON5,
+	DEFCON_NONE
+} fault_sev_t;
 
 typedef enum {
-	FAULTS_CLEAR = 0x0,
-	ONBOARD_TEMP_FAULT = 0x1,
-	ONBOARD_PEDAL_FAULT = 0x2,
-	IMU_FAULT = 0x4,
-	CAN_DISPATCH_FAULT = 0x8,
-	CAN_ROUTING_FAULT = 0x10,
-	FUSE_MONITOR_FAULT = 0x20,
-	SHUTDOWN_MONITOR_FAULT = 0x40,
-	DTI_ROUTING_FAULT = 0x80,
-	STEERINGIO_ROUTING_FAULT = 0x100,
-	STATE_RECEIVED_FAULT = 0x200,
-	INVALID_TRANSITION_FAULT = 0x400,
-	BMS_CAN_MONITOR_FAULT = 0x800,
-	BUTTONS_MONITOR_FAULT = 0xF00,
-	BSPD_PREFAULT = 0x1000,
-	LV_MONITOR_FAULT = 0x2000,
-	RTDS_FAULT = 0x4000,
-	PDU_CURRENT_FAULT = 0x8000,
-	MAX_FAULTS
+	FAULTS_CLEAR = (1 << 0),
+	ONBOARD_TEMP_FAULT = (1 << 1),
+	ONBOARD_PEDAL_FAULT = (1 << 2),
+	IMU_FAULT = (1 << 3),
+	CAN_DISPATCH_FAULT = (1 << 4),
+	CAN_ROUTING_FAULT = (1 << 5),
+	FUSE_MONITOR_FAULT = (1 << 6),
+	SHUTDOWN_MONITOR_FAULT = (1 << 7),
+	DTI_ROUTING_FAULT = (1 << 8),
+	STEERINGIO_ROUTING_FAULT = (1 << 9),
+	STATE_RECEIVED_FAULT = (1 << 10),
+	INVALID_TRANSITION_FAULT = (1 << 11),
+	BMS_CAN_MONITOR_FAULT = (1 << 12),
+	BUTTONS_MONITOR_FAULT = (1 << 13),
+	BSPD_PREFAULT = (1 << 14),
+	LV_MONITOR_FAULT = (1 << 15),
+	RTDS_FAULT = (1 << 16),
+	PDU_CURRENT_FAULT = ( 1 << 17),
+	MAX_FAULTS = (1 << 18)
 } fault_code_t;
 
 typedef struct {
@@ -50,5 +57,7 @@ osStatus_t queue_fault(fault_data_t *fault_data);
 void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
+void clearFault(void *args);
+fault_sev_t getMaxSeverity();
 
 #endif // FAULT_H

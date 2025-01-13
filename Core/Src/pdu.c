@@ -1,5 +1,4 @@
 #include "pdu.h"
-#include "serial_monitor.h"
 #include "fault.h"
 #include <assert.h>
 #include <stdio.h>
@@ -239,7 +238,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	HAL_StatusTypeDef status =
 		pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_0_REG, buf);
 	if (status != HAL_OK) {
-		printf("\n\rcntrl init fail\n\r");
+		printf("cntrl init fail\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
@@ -249,7 +248,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	status =
 		pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_1_REG, buf);
 	if (status != HAL_OK) {
-		printf("\n\rcntrl init fail\n\r");
+		printf("cntrl init fail\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
@@ -285,6 +284,7 @@ int8_t write_pump(pdu_t *pdu, bool status)
 	return 0;
 }
 
+<<<<<<< HEAD
 int8_t write_fault(pdu_t *pdu, bool status)
 {
 	if (!pdu)
@@ -306,6 +306,8 @@ int8_t write_fault(pdu_t *pdu, bool status)
 	return 0;
 }
 
+=======
+>>>>>>> develop
 int8_t write_brakelight(pdu_t *pdu, bool status)
 {
 	if (!pdu)

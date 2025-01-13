@@ -31,7 +31,6 @@
 #include "queues.h"
 #include "fault.h"
 #include "can_handler.h"
-#include "serial_monitor.h"
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
@@ -71,6 +70,7 @@ I2C_HandleTypeDef hi2c2;
 IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -103,7 +103,6 @@ void StartDefaultTask(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/* Snippet of code from Digikey Example of printf redirection */
 #ifdef __GNUC__
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 #else
@@ -132,8 +131,9 @@ int _write(int file, char* ptr, int len) {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
-  printf("BOOT\r\n");
+  printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -173,12 +173,10 @@ int main(void)
   assert(pdu);
   dti_t *mc   = dti_init();
   assert(mc);
-  steeringio_t *wheel = steeringio_init();
-  assert(wheel);
   init_can1(&hcan1);
   bms_init();
 
-  printf("\r\n\n\nInit Success...\r\n\n\n");
+  printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -215,7 +213,6 @@ int main(void)
 
   data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
   data_args->pdu = pdu;
-  data_args->wheel = wheel;
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
   assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
@@ -230,8 +227,6 @@ int main(void)
   assert(can_dispatch_handle);
   can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
-  serial_monitor_handle = osThreadNew(vSerialMonitor, NULL, &serial_monitor_attributes);
-  assert(serial_monitor_handle);
 
   /* Control Logic */
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
@@ -262,6 +257,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -620,6 +616,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
 
@@ -715,7 +717,7 @@ void StartDefaultTask(void *argument)
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
-    printf(".\r\n..\r\n");
+    printf(".\n..\n");
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
 
     

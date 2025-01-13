@@ -13,7 +13,6 @@
 #define SHUTDOWN_MONITOR_DELAY 500 /* ms */
 #define NERO_DELAY_TIME	       100 /* ms*/
 #define LV_READ_DELAY	       1000
-#define SERIAL_MONITOR_DELAY
 #define CAN_ROUTER_DELAY
 #define CAN_DISPATCH_DELAY    5
 #define BMS_CAN_MONITOR_DELAY 4000

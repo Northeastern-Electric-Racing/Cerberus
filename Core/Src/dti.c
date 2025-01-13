@@ -20,7 +20,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "bms.h"
-#include "serial_monitor.h"
 #include "nero.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
@@ -66,7 +65,7 @@ void dti_set_torque(int16_t torque)
 	/* Motor controller expects AC current target to be received as multiplied by 10 */
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10);
 
-	// serial_print("Commanded Current: %d \r\n", ac_current);
+	// printf("Commanded Current: %d \r\n", ac_current);
 
 	dti_set_current(ac_current);
 }
@@ -98,7 +97,13 @@ void dti_set_regen(uint16_t current_target)
 void dti_set_current(int16_t current)
 {
 	can_msg_t msg = { .id = 0x036, .len = 2, .data = { 0 } };
+
+#ifdef TSMS_OVERRIDE
+	dti_set_drive_enable(false);
+#else
 	dti_set_drive_enable(true);
+#endif
+
 	/* Send CAN message in big endian format */
 
 	//endian_swap(&current, sizeof(current));

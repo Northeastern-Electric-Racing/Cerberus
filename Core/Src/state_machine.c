@@ -4,7 +4,6 @@
 #include "nero.h"
 #include "queues.h"
 #include "monitor.h"
-#include "serial_monitor.h"
 #include "nero.h"
 #include "queues.h"
 #include "pedals.h"
@@ -18,9 +17,6 @@
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
-
-/* Timer to unfault */
-static osTimerId_t unfault_timer;
 
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
@@ -58,7 +54,7 @@ nero_state_t get_nero_state()
 }
 
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
-				       dti_t *mc)
+				       dti_t *mc, mpu_t *mpu)
 {
 	/* Catching state transitions */
 	switch (new_state) {
@@ -70,8 +66,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, false);
 		write_pump(pdu, false);
-		write_fault(pdu, false);
-		serial_print("READY\r\n");
+		write_fault(mpu, false);
+		printf("READY\r\n");
 		break;
 	case F_PIT:
 	case F_PERFORMANCE:
@@ -79,20 +75,27 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Entering active state from home mode */
 		if (cerberus_state.functional != REVERSE) {
 			/* Check that motor is not spinning before changing modes */
-			if (dti_get_mph(mc) > 1)
+			if (dti_get_mph(mc) > 1) {
 				return 2;
+			}
 			/* Only turn on motor if brakes engaged and tsms is on */
+#ifdef TSMS_OVERRIDE
+			if (!get_brake_state()) {
+				return 3;
+			}
+#else
 			if (!get_brake_state() || !get_tsms()) {
 				return 3;
 			}
+#endif
 			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 		}
 
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, true);
-		write_fault(pdu, false);
-		serial_print("ACTIVE STATE\r\n");
+		write_fault(mpu, false);
+		printf("ACTIVE STATE\r\n");
 		break;
 	case REVERSE:
 		/* Can only enter reverse mode if already in pit mode */
@@ -105,9 +108,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		write_pump(pdu, false);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+
 		osDelay(1000); /* Delay for 1 sec before faulting car */
-		write_fault(pdu, true);
-		serial_print("FAULTED\r\n");
+		write_fault(mpu, true);
+		printf("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing
@@ -115,10 +119,12 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	}
 
 	cerberus_state.functional = new_state;
+
 	return 0;
 }
 
-static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
+static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
+				 mpu_t *mpu)
 {
 	nero_state_t current_nero_state = get_nero_state();
 
@@ -137,11 +143,12 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
 		// Only Check if we are in pit mode to toggle direction
 		if (current_nero_state.nero_index == PIT) {
 			if (get_func_state() == REVERSE) {
-				if (transition_functional_state(F_PIT, pdu, mc))
+				if (transition_functional_state(F_PIT, pdu, mc,
+								mpu))
 					return 1;
 			} else if (get_func_state() == F_PIT) {
 				if (transition_functional_state(REVERSE, pdu,
-								mc))
+								mc, mpu))
 					return 1;
 			}
 		}
@@ -152,14 +159,14 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
 		if (new_state.nero_index < DEBUG &&
 		    new_state.nero_index > OFF) {
 			if (transition_functional_state(new_state.nero_index,
-							pdu, mc))
+							pdu, mc, mpu))
 				return 1;
 		}
 	}
 
 	// Entering home mode
 	if (!current_nero_state.home_mode && new_state.home_mode) {
-		if (transition_functional_state(READY, pdu, mc))
+		if (transition_functional_state(READY, pdu, mc, mpu))
 			return 1;
 	}
 
@@ -168,6 +175,31 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc)
 	send_nero_msg();
 
 	return 0;
+}
+
+static int check_state_change(state_req_t new_state)
+{
+	// check if nero state has changed
+	if (new_state.id == NERO) {
+		nero_state_t new_nero_state = new_state.state.nero;
+		nero_state_t current_nero_state = get_nero_state();
+		if (new_nero_state.home_mode == current_nero_state.home_mode &&
+		    new_nero_state.nero_index ==
+			    current_nero_state.nero_index) {
+			return 0;
+		}
+	}
+
+	// check if functional state has changed
+	if (new_state.id == FUNCTIONAL) {
+		func_state_t new_func_state = new_state.state.functional;
+		func_state_t current_func_state = get_func_state();
+		if (new_func_state == current_func_state) {
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 static int queue_state_transition(state_req_t new_state)
@@ -224,19 +256,16 @@ int set_home_mode()
 				.home_mode = true } });
 }
 
-int fault()
+int set_ready_mode()
 {
-	// count 5 seconds before unfaulting
-	osTimerStart(unfault_timer, pdMS_TO_TICKS(5 * 1000));
 	return queue_state_transition(
-		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
-void unfault_timer_callback(void *args)
+int fault()
 {
-	printf("UNFAULTING");
-	queue_state_transition(
-		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
+	return queue_state_transition(
+		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
 void vStateMachineDirector(void *pv_params)
@@ -253,27 +282,30 @@ void vStateMachineDirector(void *pv_params)
 	sm_director_args_t *args = (sm_director_args_t *)pv_params;
 	pdu_t *pdu = args->pdu;
 	dti_t *mc = args->mc;
+	mpu_t *mpu = args->mpu;
 	free(args);
-
-	unfault_timer =
-		osTimerNew(unfault_timer_callback, osTimerOnce, NULL, NULL);
 
 	/* Write to GPIO expander to set initial state */
 	write_pump(pdu, false);
-	write_fault(pdu, false);
+	write_fault(mpu, false);
 
 	for (;;) {
 		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,
 				  osWaitForever);
 		while (osMessageQueueGet(state_trans_queue, &new_state_req,
 					 NULL, osWaitForever) == osOK) {
+			// transition state only if state was changed
+			if (!check_state_change(new_state_req)) {
+				continue;
+			}
+
 			if (new_state_req.id == NERO)
 				transition_nero_state(new_state_req.state.nero,
-						      pdu, mc);
+						      pdu, mc, mpu);
 			else if (new_state_req.id == FUNCTIONAL)
 				transition_functional_state(
-					new_state_req.state.functional, pdu,
-					mc);
+					new_state_req.state.functional, pdu, mc,
+					mpu);
 		}
 	}
 }

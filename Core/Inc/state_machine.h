@@ -6,6 +6,7 @@
 #include "nero.h"
 #include "pdu.h"
 #include "dti.h"
+#include "mpu.h"
 
 /**
  * @brief Enum defining the functional states of the car.
@@ -55,6 +56,7 @@ typedef struct {
 typedef struct {
 	pdu_t *pdu;
 	dti_t *mc;
+	mpu_t *mpu;
 } sm_director_args_t;
 
 /**
@@ -118,6 +120,13 @@ int select_nero_index();
  * @return int Error code resulting from queueing a state transition
  */
 int set_home_mode();
+
+/**
+ * @brief Queue a state transition to enter ready mode.
+ * 
+ * @return int Error code resulting from queueing a state transition
+ */
+int set_ready_mode();
 
 /**
  * @brief Queue a state transition to set the functinoal mode of the car to the faulted state.
