@@ -75,12 +75,19 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Entering active state from home mode */
 		if (cerberus_state.functional != REVERSE) {
 			/* Check that motor is not spinning before changing modes */
-			if (dti_get_mph(mc) > 1)
+			if (dti_get_mph(mc) > 1) {
 				return 2;
+			}
 			/* Only turn on motor if brakes engaged and tsms is on */
+#ifdef TSMS_OVERRIDE
+			if (!get_brake_state()) {
+				return 3;
+			}
+#else
 			if (!get_brake_state() || !get_tsms()) {
 				return 3;
 			}
+#endif
 			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 		}
 
@@ -112,6 +119,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	}
 
 	cerberus_state.functional = new_state;
+
 	return 0;
 }
 
