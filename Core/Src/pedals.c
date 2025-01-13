@@ -242,6 +242,7 @@ static void power_regression_accel_to_torque(float accel)
 	/*  map acceleration to torque */
 	int16_t torque =
 		(int16_t)(0.137609 * powf(accel, 1.43068) * MAX_TORQUE);
+	/* These values came from creating a power regression function intersecting three points: (0,0) (20,10) & (100,100)*/
 
 	dti_set_torque(torque);
 }
@@ -390,12 +391,8 @@ void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
 	if (brake_val > 650 && (mph * 1.609) > 5) {
 		brake_pedal_regen(brake_val);
 	} else {
-// accelerating, limit torque
-#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
+		// accelerating, limit torque
 		linear_accel_to_torque(accel_val, torque);
-#else
-		power_regression_accel_to_torque(accel_val, torque);
-#endif
 	}
 #else
 	/* Factor for converting MPH to KMH */
