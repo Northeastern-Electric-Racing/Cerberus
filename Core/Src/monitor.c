@@ -27,6 +27,34 @@ static bool tsms = false;
 osMutexId_t tsms_mutex;
 
 /**
+ * @brief Read voltage of Pump Sensors and send a CAN message with the result.
+ */
+void read_pump_sens(pdu_t *pdu)
+{
+	// put fault stuff tomorrow
+	fault_data_t fault_data = { .id = PUMP_SENSORS_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
+
+	uint32_t pump_volts_int[2];
+
+	read_pump_sensors(pdu, pump_volts_int);
+
+	// convert to real voltage
+	float pump_sensor0_volts_real = (pump_volts_int[0] / 4095.0) * 3.3;
+	float pump_sensor1_volts_real = (pump_volts_int[1] / 4095.0) * 3.3;
+
+	pump_volts_int[0] = (uint32_t)(pump_sensor0_volts_real * 10000);
+	pump_volts_int[1] = (uint32_t)(pump_sensor1_volts_real * 10000);
+
+	memcpy(msg.data, pump_volts_int, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send pump sensor CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+/**
  * @brief Read current of MC, battox fans, pumps, and LV boards and send a CAN message with the result.
  */
 void read_current(pdu_t *pdu)

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define PUMP_CTRL	0
 #define MPU_FAULT	2
@@ -128,7 +129,7 @@ void vRTDS(void *arg)
 	}
 }
 
-pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
+pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
 	assert(hi2c);
 
@@ -137,6 +138,11 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu);
 
 	pdu->hi2c = hi2c;
+	pdu->pump_sensors_adc = pump_sensors_adc;
+
+	assert(!HAL_ADC_Start_DMA(
+		pdu->pump_sensors_adc, pdu->pump_sensors_dma_buf,
+		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint32_t)));
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
@@ -259,6 +265,12 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	assert(pdu->mutex);
 
 	return pdu;
+}
+
+void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
+{
+	memcpy(pump_sensors_buf, &pdu->pump_sensors_dma_buf,
+	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
 int8_t write_pump(pdu_t *pdu, bool status)

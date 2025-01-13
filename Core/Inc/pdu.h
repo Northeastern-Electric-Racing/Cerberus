@@ -14,14 +14,18 @@ typedef struct {
 	osMutexId_t *mutex;
 	pca9539_t *shutdown_expander;
 	pca9539_t *ctrl_expander;
+
 	ina226_t *motor_controller_current_sensor;
 	ina226_t *battbox_fans_current_sensor;
 	ina226_t *pumps_current_sensor;
 	ina226_t *lv_boards_current_sensor;
+
+	ADC_HandleTypeDef *pump_sensors_adc;
+	uint32_t pump_sensors_dma_buf[2];
 } pdu_t;
 
 /* Creates a new PDU interface */
-pdu_t *init_pdu(I2C_HandleTypeDef *hi2c);
+pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc);
 
 /* Functions to Control PDU */
 int8_t write_pump(pdu_t *pdu, bool status);
@@ -85,6 +89,14 @@ typedef enum {
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
 int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+
+/**
+ * @brief Read the status of the shutdown loop.
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that the data from both sensors will be written to
+ */
+void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2]);
 
 // Function for reading current
 int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
