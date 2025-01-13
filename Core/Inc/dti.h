@@ -27,7 +27,7 @@
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 
 #define TIRE_DIAMETER 16 /* inches */
-#define GEAR_RATIO    47 / 13.0 /* unitless */
+#define GEAR_RATIO    35 / 13.0 /* unitless */
 #define POLE_PAIRS    10 /* unitless */
 
 typedef struct {
