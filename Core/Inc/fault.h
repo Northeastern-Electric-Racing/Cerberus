@@ -31,7 +31,7 @@ typedef enum {
 	BSPD_PREFAULT = (1 << 14),
 	LV_MONITOR_FAULT = (1 << 15),
 	RTDS_FAULT = (1 << 16),
-	PDU_CURRENT_FAULT = ( 1 << 17),
+	PDU_CURRENT_FAULT = (1 << 17),
 	MAX_FAULTS = (1 << 18)
 } fault_code_t;
 
