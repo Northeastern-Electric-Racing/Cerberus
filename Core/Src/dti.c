@@ -100,7 +100,6 @@ void dti_set_current(int16_t current)
 
 #ifdef TSMS_OVERRIDE
 	dti_set_drive_enable(false);
-	printf("%d/n", current);
 #else
 	dti_set_drive_enable(true);
 #endif
