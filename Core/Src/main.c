@@ -200,7 +200,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, mpu, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -722,6 +722,8 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   mpu_t *mpu = (mpu_t *) argument;
+  assert(mpu);
+
   /* Infinite loop */
   for(;;) {
 
