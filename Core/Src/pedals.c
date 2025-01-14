@@ -407,7 +407,7 @@ void vProcessPedals(void *pv_params)
 	assert(mc);
 	pdu_t *pdu = args->pdu;
 	assert(pdu);
-	
+
 	free(args);
 
 	uint32_t adc_data[4];

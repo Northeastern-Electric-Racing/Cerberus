@@ -144,7 +144,7 @@ void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
 	assert(mc);
-	
+
 	can_msg_t msg;
 
 	for (;;) {
