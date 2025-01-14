@@ -19,6 +19,28 @@
 
 static osMutexAttr_t pdu_mutex_attributes;
 
+//hi2c2 variable to pass to the function wrappers (defined in main.c)
+extern I2C_HandleTypeDef hi2c2;
+
+//Function wrapper for the STM specific HAL write function
+//Serves as function pointer for PCA PAL
+static inline uint8_t pca_i2c_write(uint16_t dev_address, uint8_t reg,
+				    uint8_t *data, uint8_t length)
+
+{
+	return HAL_I2C_Mem_Write(&hi2c2, dev_address, reg, I2C_MEMADD_SIZE_8BIT,
+				 data, length, HAL_MAX_DELAY);
+}
+
+//Function wrapper for the STM specific HAL read function
+//Serves as function pointer for PCA PAL
+static inline uint8_t pca_i2c_read(uint16_t dev_address, uint8_t reg,
+				   uint8_t *data, uint8_t length)
+{
+	return HAL_I2C_Mem_Read(&hi2c2, dev_address, reg, I2C_MEMADD_SIZE_8BIT,
+				data, length, HAL_MAX_DELAY);
+}
+
 static uint8_t sound_rtds(pdu_t *pdu)
 {
 	if (!pdu)
@@ -87,15 +109,11 @@ void vRTDS(void *arg)
 	}
 }
 
-pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
+pdu_t *init_pdu()
 {
-	assert(hi2c);
-
 	/* Create PDU struct */
 	pdu_t *pdu = malloc(sizeof(pdu_t));
 	assert(pdu);
-
-	pdu->hi2c = hi2c;
 
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
@@ -129,7 +147,10 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c)
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->ctrl_expander);
-	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
+
+	//NEED
+	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read,
+		     CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
@@ -320,7 +341,6 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
-
 	uint8_t bank1_d = 0;
 	error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_1_REG,
 				 &bank1_d);
