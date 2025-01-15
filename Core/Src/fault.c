@@ -62,12 +62,9 @@ void vFaultHandler(void *pv_params)
 					       sizeof(fault_data_t), NULL);
 
 	for (;;) {
-		osStatus res =
-			osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
-					  pdMS_TO_TICKS(SEND_FAULT_TIME));
-
 		// process fault if one was received
-		if (res == osOK) {
+		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
+				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
 			// Set Fault
 			uint32_t *fault_id = malloc(sizeof(uint32_t));
 			*fault_id = (uint32_t)fault_data.id;
