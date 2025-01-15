@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -140,7 +141,10 @@ void vNonFunctionalDataCollection(void *pv_params)
 {
 	non_func_data_args_t *args = (non_func_data_args_t *)pv_params;
 	mpu_t *mpu = args->mpu;
+	assert(mpu);
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
 	free(args);
 
 	for (;;) {
@@ -214,6 +218,8 @@ void vDataCollection(void *pv_params)
 {
 	data_collection_args_t *args = (data_collection_args_t *)pv_params;
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
 	free(args);
 
 	static const uint8_t delay = 20;

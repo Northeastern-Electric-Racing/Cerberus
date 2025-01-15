@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "c_utils.h"
+#include <stdio.h>
 
 #define YLED_PIN      GPIO_PIN_8
 #define RLED_PIN      GPIO_PIN_9
@@ -73,8 +74,6 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 
 	mpu->adc_mutex = osMutexNew(&mpu_adc_mutex_attr);
 	assert(mpu->adc_mutex);
-
-	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, GPIO_PIN_SET);
 
 	return mpu;
 }
@@ -189,9 +188,19 @@ void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4])
 // 	return 0;
 // }
 
+/**
+ * @brief Write the MPU FAULT line to the car
+ * 
+ * @param mpu 
+ * @param status true (faulted) or false (unfaulted)
+ * @return int8_t, -1 if failure, 0 if success
+ */
 int8_t write_fault(mpu_t *mpu, bool status)
 {
 	if (!mpu)
-		HAL_GPIO_WritePin(mpu->watchdog_gpio, CAN_FAULT_PIN, status);
+		return -1;
+
+	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, !status);
+
 	return 0;
 }
