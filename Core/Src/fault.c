@@ -12,7 +12,6 @@
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
-#define NEW_FAULT_FLAG		1U
 #define NUM_OF_FAULTS		18UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
