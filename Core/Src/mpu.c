@@ -14,8 +14,7 @@
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
-I2C_HandleTypeDef *hi2c;
-
+extern I2C_HandleTypeDef hi2c1; /* defined in main.c */
 // static inline int read_reg(uint8_t *data, uint8_t reg, uint8_t length)
 // {
 // 	return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
@@ -42,7 +41,7 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 	mpu_t *mpu = malloc(sizeof(mpu_t));
 	assert(mpu);
 
-	mpu->hi2c = hi2c;
+	mpu->hi2c = &hi2c1;
 	mpu->pedals_adc = pedals_adc;
 	mpu->lv_adc = lv_adc;
 	mpu->led_gpio = led_gpio;
