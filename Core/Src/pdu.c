@@ -6,19 +6,19 @@
 #include <string.h>
 
 // Pins 00 through 07 (PCA_..._0_REG):
-#define PIN_PUMP_CTRL_0	0
-#define PIN_PUMP_CTRL_1 1
+#define PIN_PUMP_CTRL_0	      0
+#define PIN_PUMP_CTRL_1	      1
 #define PIN_24V_12V_BUCK_CTRL 2
-#define PIN_BRKLIGHT_CTRL	3
-#define PIN_FANBATTBOX_CTRL	4
+#define PIN_BRKLIGHT_CTRL     3
+#define PIN_FANBATTBOX_CTRL   4
 
 // Pins 10 through 17 (PCA_..._1_REG):
-#define PIN_RTDS_CTRL		7
+#define PIN_RTDS_CTRL 7
 
 // OLD
-#define PUMP_CTRL 0
+#define PUMP_CTRL	0
 #define MPU_FAULT	2
-#define BRKLIGHT_CTRL 3
+#define BRKLIGHT_CTRL	3
 #define FANBATTBOX_CTRL 4
 
 // #define RADFAN_CTRL    1
@@ -278,9 +278,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	return pdu;
 }
 
-
 /* PDU 24A CTRL functions */
-int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg) {
+int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
+{
 	if (!pdu)
 		return -1;
 
@@ -289,8 +289,8 @@ int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg) {
 		return stat;
 
 	/* set pump 0's state */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, reg, pin, state);
+	HAL_StatusTypeDef error =
+		pca9539_write_pin(pdu->ctrl_expander, reg, pin, state);
 
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
@@ -301,27 +301,33 @@ int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg) {
 	return 0;
 }
 
-int8_t set_pump_0(pdu_t *pdu, bool state) {
+int8_t set_pump_0(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_PUMP_CTRL_0, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_pump_1(pdu_t *pdu, bool state) {
+int8_t set_pump_1(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_PUMP_CTRL_1, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_24V_12V_buck(pdu_t *pdu, bool state) {
+int8_t set_24V_12V_buck(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_24V_12V_BUCK_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_breaklight(pdu_t *pdu, bool state) {
+int8_t set_breaklight(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_battbox_fan(pdu_t *pdu, bool state) {
+int8_t set_battbox_fan(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_rtds(pdu_t *pdu, bool state) {
+int8_t set_rtds(pdu_t *pdu, bool state)
+{
 	return set_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
 }
 
@@ -364,7 +370,8 @@ int8_t write_brakelight(pdu_t *pdu, bool status)
 		return stat;
 
 	/* write brakelight over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(pdu->ctrl_expander, PCA_OUTPUT_0_REG, BRKLIGHT_CTRL, status);
+	HAL_StatusTypeDef error = pca9539_write_pin(
+		pdu->ctrl_expander, PCA_OUTPUT_0_REG, BRKLIGHT_CTRL, status);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
