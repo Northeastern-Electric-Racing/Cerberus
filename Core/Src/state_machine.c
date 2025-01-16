@@ -65,7 +65,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, false);
-		write_pump(pdu, false);
+		write_pump_0(pdu, false);
+		write_pump_1(pdu, false);
 		write_fault(mpu, false);
 		printf("READY\r\n");
 		break;
@@ -93,7 +94,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
-		write_pump(pdu, true);
+		write_pump_0(pdu, true);
+		write_pump_1(pdu, true);
 		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
 		break;
@@ -105,7 +107,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case FAULTED:
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
-		write_pump(pdu, false);
+		write_pump_0(pdu, false);
+		write_pump_1(pdu, false);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 
@@ -286,7 +289,8 @@ void vStateMachineDirector(void *pv_params)
 	free(args);
 
 	/* Write to GPIO expander to set initial state */
-	write_pump(pdu, false);
+	write_pump_0(pdu, false);
+	write_pump_1(pdu, false);
 	write_fault(mpu, false);
 
 	for (;;) {

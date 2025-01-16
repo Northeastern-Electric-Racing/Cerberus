@@ -5,29 +5,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* PDU 24A Control GPIO */
+#define CTRL_ADDR PCA_I2C_ADDR_0
 // Pins 00 through 07 (PCA_..._0_REG):
 #define PIN_PUMP_CTRL_0	      0
 #define PIN_PUMP_CTRL_1	      1
 #define PIN_24V_12V_BUCK_CTRL 2
 #define PIN_BRKLIGHT_CTRL     3
 #define PIN_FANBATTBOX_CTRL   4
-
 // Pins 10 through 17 (PCA_..._1_REG):
 #define PIN_RTDS_CTRL 7
 
-// OLD
-#define PUMP_CTRL	0
-#define MPU_FAULT	2
-#define BRKLIGHT_CTRL	3
-#define FANBATTBOX_CTRL 4
-
-// #define RADFAN_CTRL    1
-// #define TSMS_CTRL	   0x04
-// #define SMBALERT	   0x05
 #define MUTEX_TIMEOUT osWaitForever /* ms */
 
 #define SHUTDOWN_ADDR PCA_I2C_ADDR_1
-#define CTRL_ADDR     PCA_I2C_ADDR_0
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
@@ -278,8 +269,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	return pdu;
 }
 
-/* PDU 24A CTRL functions */
-int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
+// PDU 24A control functions:
+int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 {
 	if (!pdu)
 		return -1;
@@ -288,7 +279,6 @@ int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 	if (stat)
 		return stat;
 
-	/* set pump 0's state */
 	HAL_StatusTypeDef error =
 		pca9539_write_pin(pdu->ctrl_expander, reg, pin, state);
 
@@ -301,105 +291,41 @@ int8_t set_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 	return 0;
 }
 
-int8_t set_pump_0(pdu_t *pdu, bool state)
+int8_t write_pump_0(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_PUMP_CTRL_0, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL_0, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_pump_1(pdu_t *pdu, bool state)
+int8_t write_pump_1(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_PUMP_CTRL_1, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL_1, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_24V_12V_buck(pdu_t *pdu, bool state)
+int8_t write_24V_12V_buck(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_24V_12V_BUCK_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_24V_12V_BUCK_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_breaklight(pdu_t *pdu, bool state)
+int8_t write_brakelight(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_battbox_fan(pdu_t *pdu, bool state)
+int8_t write_fan_battbox(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
 }
 
-int8_t set_rtds(pdu_t *pdu, bool state)
+int8_t write_rtds(pdu_t *pdu, bool state)
 {
-	return set_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
+	return write_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
 }
+// PDU 24A control functions ^^
 
 void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 {
 	memcpy(pump_sensors_buf, &pdu->pump_sensors_dma_buf,
 	       sizeof(pdu->pump_sensors_dma_buf));
-}
-
-int8_t write_pump(pdu_t *pdu, bool status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, osWaitForever);
-	if (stat) {
-		osMutexRelease(pdu->mutex);
-		return stat;
-	}
-
-	/* write pump over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, PUMP_CTRL, status);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
-int8_t write_brakelight(pdu_t *pdu, bool status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write brakelight over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, BRKLIGHT_CTRL, status);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
-int8_t write_fan_battbox(pdu_t *pdu, bool status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write fan over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_0_REG, FANBATTBOX_CTRL, status);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
 }
 
 static void deconstruct_buf(uint8_t data, bool config[8])
