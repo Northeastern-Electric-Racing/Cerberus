@@ -2,6 +2,7 @@
 #define CONTROL_H
 
 #include "pdu.h"
+#include "can.h"
 
 // TODO: replace this temp value with real value
 #define CONTROL_CANID_FANBATTBOX 0xA
