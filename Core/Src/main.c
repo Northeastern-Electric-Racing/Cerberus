@@ -39,6 +39,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
+#include "control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -248,6 +249,14 @@ int main(void)
   sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
+
+	/* Control File Thread */
+	control_args_t *control_args = malloc(sizeof(control_args_t));
+	control_args->pdu = pdu;
+	control_handle =
+		osThreadNew(vEval_fanbattbox_state, control_args, &control_attributes);
+	assert(control_handle);
+  
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

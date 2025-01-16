@@ -16,6 +16,7 @@
 #include "fault.h"
 #include "stdio.h"
 #include "steeringio.h"
+#include "control.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -162,6 +163,9 @@ void vCanReceive(void *pv_params)
 				break;
 			case STEERING_CANID_IO:
 				steeringio_update(msg);
+				break;
+			case CONTROL_CANID_FANBATTBOX:
+				control_fanbattbox_record(msg);
 				break;
 			default:
 				break;
