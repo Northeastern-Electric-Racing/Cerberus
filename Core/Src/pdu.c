@@ -63,47 +63,6 @@ static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	return 0;
 }
 
-static uint8_t sound_rtds(pdu_t *pdu)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write RTDS over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_1_REG, PIN_RTDS_CTRL, true);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-
-	return 0;
-}
-
-static uint8_t rtds_shutoff(void *pv_params)
-{
-	pdu_t *pdu = (pdu_t *)pv_params;
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* write RTDS over i2c */
-	HAL_StatusTypeDef error = pca9539_write_pin(
-		pdu->ctrl_expander, PCA_OUTPUT_1_REG, PIN_RTDS_CTRL, false);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}
-
 osThreadId_t rtds_thread;
 const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 					 .stack_size = 512,
@@ -119,12 +78,12 @@ void vRTDS(void *arg)
 	for (;;) {
 		osThreadFlagsWait(SOUND_RTDS_FLAG, osFlagsWaitAny,
 				  osWaitForever);
-		if (sound_rtds(pdu)) {
+		if (write_rtds(pdu, true)) {
 			rtds_fault.diag = "Unable to sound RTDS";
 			queue_fault(&rtds_fault);
 		}
 		osDelay(RTDS_DURATION);
-		if (rtds_shutoff(pdu)) {
+		if (write_rtds(pdu, false)) {
 			rtds_fault.diag = "Unable to stop RTDS";
 			queue_fault(&rtds_fault);
 		}
@@ -270,7 +229,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 }
 
 // PDU 24A control functions:
-int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
+static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 {
 	if (!pdu)
 		return -1;
