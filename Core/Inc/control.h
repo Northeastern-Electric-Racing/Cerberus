@@ -1,3 +1,6 @@
+#ifndef CONTROL_H
+#define CONTROL_H
+
 #include "pdu.h"
 
 // TODO: replace this temp value with real value
