@@ -1,5 +1,6 @@
 #include "control.h"
 #include "pdu.h"
+#include "can.h"
 
 osThreadId_t control_handle;
 const osThreadAttr_t control_attributes = {
@@ -13,9 +14,8 @@ static int fanBattBoxState = 0;
 void vEval_fanbattbox_state(void *param)
 {
 	control_args_t args = (control_args_t *)param;
-	pdu_t *pdu = args->pdu;
 
-	write_fan_battbox(pdu, eval_fanbattbox_state());
+	write_fan_battbox(args->pdu, eval_fanbattbox_state());
 
 	osDelay(1000);
 }
