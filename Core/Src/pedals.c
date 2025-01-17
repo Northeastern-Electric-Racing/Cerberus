@@ -37,9 +37,6 @@ float torque_limit_percentage = 1.0;
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
 
-static bool brake_state = false;
-osMutexId_t brake_mutex;
-
 enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
 
 void increase_torque_limit()
@@ -58,22 +55,6 @@ void decrease_torque_limit()
 	} else {
 		torque_limit_percentage -= 0.1;
 	}
-}
-
-void set_brake_state(bool new_brake_state)
-{
-	osMutexAcquire(brake_mutex, osWaitForever);
-	brake_state = new_brake_state;
-	osMutexRelease(brake_mutex);
-}
-
-bool get_brake_state()
-{
-	bool temp;
-	osMutexAcquire(brake_mutex, osWaitForever);
-	temp = brake_state;
-	osMutexRelease(brake_mutex);
-	return temp;
 }
 
 float get_torque_limit_percentage()
@@ -413,9 +394,6 @@ void vProcessPedals(void *pv_params)
 	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
 	osTimerStart(send_pedal_data_timer, 100);
 
-	/* Mutexes for setting and getting pedal values and brake state */
-	brake_mutex = osMutexNew(NULL);
-
 	const uint16_t delay_time = 10; /* ms */
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
@@ -441,7 +419,6 @@ void vProcessPedals(void *pv_params)
 
 		/* Turn brakelight on or off */
 		write_brakelight(pdu, brake_val > PEDAL_BRAKE_THRESH);
-		set_brake_state(brake_val > PEDAL_BRAKE_THRESH);
 
 		/* 0.0 - 1.0 */
 		float accelerator_value = (float)accel_val / 100.0;

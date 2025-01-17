@@ -79,12 +79,16 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				return 2;
 			}
 			/* Only turn on motor if brakes engaged and tsms is on */
+			bool brake_state;
+			if (!read_brake_state(pdu, &brake_state)) {
+				return 2;
+			}
 #ifdef TSMS_OVERRIDE
-			if (!get_brake_state()) {
+			if (!brake_state) {
 				return 3;
 			}
 #else
-			if (!get_brake_state() || !get_tsms()) {
+			if (!brake_state || !get_tsms()) {
 				return 3;
 			}
 #endif
