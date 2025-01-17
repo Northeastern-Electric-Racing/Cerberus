@@ -14,7 +14,7 @@ typedef struct {
 	pdu_t *pdu;
 } control_args_t;
 
-void vEval_fanbattbox_state(void *param);
+void vControl(void *param);
 
 void control_fanbattbox_record(can_msg_t args);
 

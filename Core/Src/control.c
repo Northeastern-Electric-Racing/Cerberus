@@ -10,13 +10,15 @@ const osThreadAttr_t control_attributes = {
 
 static int fanBattBoxState = 0;
 
-void vEval_fanbattbox_state(void *param)
+void vControl(void *param)
 {
 	control_args_t *args = (control_args_t *)param;
 
-	write_fan_battbox(args->pdu, eval_fanbattbox_state());
+	for (;;) {
+		write_fan_battbox(args->pdu, fanBattBoxState);
 
-	osDelay(1000);
+		osDelay(1000);
+	}
 }
 
 void control_fanbattbox_record(can_msg_t msg)
@@ -26,9 +28,4 @@ void control_fanbattbox_record(can_msg_t msg)
 	} else {
 		fanBattBoxState = 0;
 	}
-}
-
-int eval_fanbattbox_state()
-{
-	return fanBattBoxState;
 }
