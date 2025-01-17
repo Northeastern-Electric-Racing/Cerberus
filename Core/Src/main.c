@@ -143,7 +143,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  HAL_Delay(500);
+  HAL_Delay(2000);
 
   /* USER CODE END Init */
 
@@ -200,7 +200,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, mpu, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -245,6 +245,7 @@ int main(void)
   sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
   sm_args->pdu = pdu;
   sm_args->mc = mc;
+  sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
   /* USER CODE END RTOS_THREADS */
@@ -645,6 +646,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : PC3 PC8 PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -676,6 +680,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA9 */
@@ -710,6 +721,8 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  mpu_t *mpu = (mpu_t *) argument;
+  assert(mpu);
 
   /* Infinite loop */
   for(;;) {
@@ -718,7 +731,10 @@ void StartDefaultTask(void *argument)
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
     printf(".\n..\n");
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
+    toggle_yled(mpu);
+
+    // refresh the external watchdog so the car doesnt fault
+    pet_watchdog(mpu);
 
     
     /* Send NERO state data continuously */

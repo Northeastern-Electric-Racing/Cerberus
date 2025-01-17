@@ -383,8 +383,12 @@ void vProcessPedals(void *pv_params)
 {
 	pedals_args_t *args = (pedals_args_t *)pv_params;
 	mpu_t *mpu = args->mpu;
+	assert(mpu);
 	dti_t *mc = args->mc;
+	assert(mc);
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
 	free(args);
 
 	uint32_t adc_data[4];

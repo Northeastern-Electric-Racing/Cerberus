@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cerb_utils.h"
+#include <assert.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
 #define STATE_TRANSITION_FLAG  1U
@@ -285,8 +286,12 @@ void vStateMachineDirector(void *pv_params)
 
 	sm_director_args_t *args = (sm_director_args_t *)pv_params;
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
 	dti_t *mc = args->mc;
+	assert(mc);
 	mpu_t *mpu = args->mpu;
+	assert(mpu);
+
 	free(args);
 
 	/* Write to GPIO expander to set initial state */
