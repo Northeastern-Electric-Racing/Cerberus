@@ -4,8 +4,7 @@
 #include "pdu.h"
 #include "can.h"
 
-// TODO: replace this temp value with real value
-#define CONTROL_CANID_FANBATTBOX 0xA
+#define CONTROL_CANID_FANBATTBOX 0xAAA
 
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
