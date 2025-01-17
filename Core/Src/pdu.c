@@ -17,8 +17,6 @@
 #define CTRL_ADDR     PCA_I2C_ADDR_2
 #define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
-#define BRAKE_STATE false
-
 static osMutexAttr_t pdu_mutex_attributes;
 
 //hi2c2 variable to pass to the function wrappers (defined in main.c)
