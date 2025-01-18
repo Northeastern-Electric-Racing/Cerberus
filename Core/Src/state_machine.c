@@ -39,6 +39,7 @@ static osMessageQueueId_t state_trans_queue;
 
 static void send_nero_msg()
 {
+	printf("SENDING NERO MESSAGE\n");
 	struct __attribute__((__packed__)) {
 		uint8_t home_mode;
 		uint8_t nero_index;
@@ -241,8 +242,7 @@ static int queue_state_transition(state_req_t new_state)
 		return 1;
 	}
 
-	return queue_and_set_flag(state_trans_queue, &new_state,
-				  sm_director_handle, STATE_TRANSITION_FLAG);
+	return osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
 }
 
 /* HANDLE USER INPUT */
@@ -327,10 +327,9 @@ void vStateMachineDirector(void *pv_params)
 	write_fault(mpu, false);
 
 	for (;;) {
-		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,
-				  pdMS_TO_TICKS(500));
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
-				      0) == osOK) {
+				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
+		    osOK) {
 			// transition state only if state was changed
 			if (!check_state_change(new_state_req)) {
 				continue;
