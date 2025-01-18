@@ -34,7 +34,6 @@
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
-#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
