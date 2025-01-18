@@ -13,7 +13,6 @@
 #include <string.h>
 
 #define STATE_TRANS_QUEUE_SIZE 4
-#define STATE_TRANSITION_FLAG  1U
 
 #define SEND_NERO_TIMEOUT 500 /*in millis*/
 
