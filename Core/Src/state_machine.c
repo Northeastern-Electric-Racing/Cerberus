@@ -39,7 +39,6 @@ static osMessageQueueId_t state_trans_queue;
 
 static void send_nero_msg()
 {
-	printf("SENDING NERO MESSAGE\n");
 	struct __attribute__((__packed__)) {
 		uint8_t home_mode;
 		uint8_t nero_index;
