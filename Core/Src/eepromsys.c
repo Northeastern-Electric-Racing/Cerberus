@@ -139,17 +139,15 @@ void write_fault(uint32_t fault_code){
 
 void read_faults(){
 
-
-   //Iterating with the current register
-   uint8_t curr_reg;
-
-
    //This will get the initial address the EEPROM "FAULTS" began with
    uint8_t startAdd = eeprom_data[eeprom_get_index((char *)("FAULTS"))].address;
 
 
    //This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
    uint8_t size = eeprom_data[eeprom_get_index((char*)("FAULTS"))].size;
+
+   //Iterating with the current register
+   uint8_t curr_reg = startAdd + 1;
 
 
    int numFaults = 0;
@@ -170,28 +168,19 @@ void read_faults(){
 
 
 void write_data(uint32_t data_point){
-  
-  
 
-
-   //Copy fault into new value
    uint32_t data = data_point;
 
-
    uint8_t reg_to_write;
-
 
    //Get's the data address to be written to next (8 bit number, up to 128)
    eeprom_read_data_address(eeprom_get_index((char *)("DATA")), &reg_to_write, 1);
 
-
    //This will get the initial address the EEPROM "FAULTS" began with
    uint8_t startInd = eeprom_data[eeprom_get_index((char *)("DATA"))].address;
 
-
    //This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
    uint8_t size = eeprom_data[eeprom_get_index((char*)("DATA"))].size;
-
 
    uint8_t available_space = (startInd + size) - reg_to_write;
    if(available_space < 32){
@@ -200,7 +189,7 @@ void write_data(uint32_t data_point){
    }
    else{
        //Else increment it to the next open place in memory
-       reg_to_write += 32;
+       reg_to_write = reg_to_write + 32;
    }
 
 
@@ -209,10 +198,6 @@ void write_data(uint32_t data_point){
 
 
 void read_data(){
-  
-   //Iterating with the current register
-   uint8_t curr_reg;
-
 
    //This will get the initial address the EEPROM "FAULTS" began with
    uint8_t startAdd = eeprom_data[eeprom_get_index((char *)("DATA"))].address;
@@ -220,7 +205,9 @@ void read_data(){
 
    //This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
    uint8_t size = eeprom_data[eeprom_get_index((char*)("DATA"))].size;
-
+   
+   //Iterating with the current register
+   uint8_t curr_reg = 1 + startAdd;
 
    int numPts = 0;
    while(numPts < NUM_EEPROM_TELEM){
