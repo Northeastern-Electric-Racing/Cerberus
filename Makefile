@@ -54,7 +54,7 @@ Core/Src/dti.c \
 Core/Src/state_machine.c \
 Core/Src/bms.c \
 Core/Src/nero.c \
-Core/Src/eepromsys.c \
+Core/Src/ \
 Core/Src/torque.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
@@ -83,6 +83,7 @@ Drivers/Embedded-Base/general/src/max7314.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/pi4ioe.c \
 Drivers/Embedded-Base/general/src/pca9539.c \
+Drivers/Embedded-Base/general/src/m24c32.c \
 Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/Embedded-Base/middleware/src/ringbuffer.c \
 Drivers/Embedded-Base/middleware/src/c_utils.c \

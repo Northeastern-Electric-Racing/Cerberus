@@ -106,7 +106,7 @@ bool eeprom_write_data_address(uint16_t address, void *data, uint16_t size);
  *
  * @param fault_code The code to be written to the EEPROM fault partition
  */
-void write_fault(uint32_t fault_code);
+void write_faults(uint32_t fault_code);
 
 /**
  * @brief Iterates through the memory in the EEPROM based on its initial index and 
