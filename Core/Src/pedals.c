@@ -197,6 +197,7 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 	return motor_disabled;
 }
 
+#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
 static void linear_accel_to_torque(float accel)
 {
 	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
@@ -208,6 +209,22 @@ static void linear_accel_to_torque(float accel)
 
 	dti_set_torque(torque);
 }
+
+#else
+static void power_regression_accel_to_torque(float accel)
+{
+	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
+	if (fabs(accel - 0.01) < 0.001) {
+		accel = 0;
+	}
+	/*  map acceleration to torque */
+	int16_t torque =
+		(int16_t)(0.137609 * powf(accel, 1.43068) * MAX_TORQUE);
+	/* These values came from creating a power regression function intersecting three points: (0,0) (20,10) & (100,100)*/
+
+	dti_set_torque(torque);
+}
+#endif
 
 /**
  * @brief Derate torque target to keep car below the maximum pit/reverse mode speed.
@@ -440,7 +457,11 @@ void vProcessPedals(void *pv_params)
 			handle_endurance(mc, mph, accelerator_value, brake_val);
 			break;
 		case F_PERFORMANCE:
+#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
 			linear_accel_to_torque(accelerator_value);
+#else
+			power_regression_accel_to_torque(accelerator_value);
+#endif
 			break;
 		case F_PIT:
 			handle_pit(mph, accelerator_value);
