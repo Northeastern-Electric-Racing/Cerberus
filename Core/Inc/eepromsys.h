@@ -23,6 +23,7 @@ struct eeprom {
   uint16_t address;
 };
 
+
 /**
  * @brief This struct is used to organize the two types of data for the EEPROM to store
  *

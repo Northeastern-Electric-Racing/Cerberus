@@ -109,7 +109,6 @@ void write_fault(uint32_t fault_code){
    //Copy fault into new value
    uint32_t fault = fault_code;
 
-
    uint8_t reg_to_write;
 
 
