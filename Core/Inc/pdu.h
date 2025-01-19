@@ -9,14 +9,13 @@
 #define SOUND_RTDS_FLAG 1U
 
 typedef struct {
-	I2C_HandleTypeDef *hi2c;
 	osMutexId_t *mutex;
 	pca9539_t *shutdown_expander;
 	pca9539_t *ctrl_expander;
 } pdu_t;
 
 /* Creates a new PDU interface */
-pdu_t *init_pdu(I2C_HandleTypeDef *hi2c);
+pdu_t *init_pdu();
 
 /* Functions to Control PDU */
 int8_t write_pump(pdu_t *pdu, bool status);

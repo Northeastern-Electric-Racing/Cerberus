@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "c_utils.h"
+#include <stdio.h>
 
 #define YLED_PIN      GPIO_PIN_8
 #define RLED_PIN      GPIO_PIN_9
@@ -14,8 +15,7 @@
 
 static osMutexAttr_t mpu_i2c_mutex_attr;
 static osMutexAttr_t mpu_adc_mutex_attr;
-I2C_HandleTypeDef *hi2c;
-
+extern I2C_HandleTypeDef hi2c1; /* defined in main.c */
 // static inline int read_reg(uint8_t *data, uint8_t reg, uint8_t length)
 // {
 // 	return HAL_I2C_Mem_Read(hi2c, LSM6DSO_I2C_ADDRESS, reg,
@@ -42,7 +42,7 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 	mpu_t *mpu = malloc(sizeof(mpu_t));
 	assert(mpu);
 
-	mpu->hi2c = hi2c;
+	mpu->hi2c = &hi2c1;
 	mpu->pedals_adc = pedals_adc;
 	mpu->lv_adc = lv_adc;
 	mpu->led_gpio = led_gpio;
@@ -73,8 +73,6 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 
 	mpu->adc_mutex = osMutexNew(&mpu_adc_mutex_attr);
 	assert(mpu->adc_mutex);
-
-	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, GPIO_PIN_SET);
 
 	return mpu;
 }
@@ -189,9 +187,19 @@ void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4])
 // 	return 0;
 // }
 
+/**
+ * @brief Write the MPU FAULT line to the car
+ * 
+ * @param mpu 
+ * @param status true (faulted) or false (unfaulted)
+ * @return int8_t, -1 if failure, 0 if success
+ */
 int8_t write_fault(mpu_t *mpu, bool status)
 {
 	if (!mpu)
-		HAL_GPIO_WritePin(mpu->watchdog_gpio, CAN_FAULT_PIN, status);
+		return -1;
+
+	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, !status);
+
 	return 0;
 }

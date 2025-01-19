@@ -39,6 +39,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -143,7 +144,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  HAL_Delay(500);
+  HAL_Delay(2000);
 
   /* USER CODE END Init */
 
@@ -200,7 +201,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, mpu, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -245,6 +246,7 @@ int main(void)
   sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
   sm_args->pdu = pdu;
   sm_args->mc = mc;
+  sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
   /* USER CODE END RTOS_THREADS */
@@ -645,6 +647,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : PC3 PC8 PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -678,6 +683,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -697,7 +709,35 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+struct __attribute__((__packed__)) git_version_data {
+		uint8_t git_major_version;
+		uint8_t git_minor_version;
+		uint8_t git_patch_version;
+		bool git_is_upstream_clean;
+		bool git_is_local_clean;
+	} git_version_data;
 
+  struct __attribute__((__packed__)) git_hash_data {
+    uint32_t git_shorthash;
+    uint32_t git_authorhash;
+  } git_hash_data;
+  
+/**
+ * @brief Sends git version infomation as a can message
+ */
+void send_git_version_message() {
+  const struct git_hash_data git_hash_data2 = {GIT_SHORTHASH , GIT_AUTHORHASH};
+  const struct git_version_data git_version_data2 = {GIT_MAJOR_VERSION , GIT_MINOR_VERSION, GIT_PATCH_VERSION, GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN};
+  can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2)};
+  can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2)};
+
+  memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
+  memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
+
+  queue_can_msg(msg1);
+  //queue_can_msg(msg2);
+  
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -710,6 +750,8 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  mpu_t *mpu = (mpu_t *) argument;
+  assert(mpu);
 
   /* Infinite loop */
   for(;;) {
@@ -718,11 +760,15 @@ void StartDefaultTask(void *argument)
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
     printf(".\n..\n");
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
+    toggle_yled(mpu);
+
+    // refresh the external watchdog so the car doesnt fault
+    pet_watchdog(mpu);
 
     
     /* Send NERO state data continuously */
     send_nero_msg();
+    send_git_version_message();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }

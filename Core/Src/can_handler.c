@@ -107,6 +107,7 @@ void vCanDispatch(void *pv_params)
 	HAL_StatusTypeDef msg_status;
 
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
+	assert(hcan);
 
 	for (;;) {
 		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
@@ -142,6 +143,8 @@ const osThreadAttr_t can_receive_attributes = {
 void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
+	assert(mc);
+
 	can_msg_t msg;
 
 	for (;;) {
