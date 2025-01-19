@@ -101,10 +101,8 @@ bool eeprom_write_data_address(uint16_t address, void *data, uint16_t size)
    return true;
 }
 
-
 void write_fault(uint32_t fault_code){
    //THIS CODE ASSUMES THE FAULT IS 4 BYTES -> AN INTEGER
-
 
    //Copy fault into new value
    uint32_t fault = fault_code;

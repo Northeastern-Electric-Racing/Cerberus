@@ -23,7 +23,6 @@ struct eeprom {
   uint16_t address;
 };
 
-
 /**
  * @brief This struct is used to organize the two types of data for the EEPROM to store
  *
@@ -130,5 +129,4 @@ void write_data(uint32_t data_point);
  *
  */
 void read_data();
-
 #endif // EEPROMSYS_H
