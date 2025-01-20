@@ -11,8 +11,6 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include "cmsis_os.h"
-#include "stdbool.h"
 #include "dti.h"
 #include "pdu.h"
 #include "mpu.h"

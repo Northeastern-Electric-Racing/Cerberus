@@ -1,15 +1,11 @@
 #include "nero.h"
-#include "c_utils.h"
-#include "can_handler.h"
-#include "cerberus_conf.h"
-#include "monitor.h"
+
+#include <string.h>
+
 #include "pedals.h"
-#include "queues.h"
+#include "monitor.h"
 #include "state_machine.h"
-#include "stdbool.h"
-#include "stdint.h"
-#include "stdio.h"
-#include "string.h"
+
 
 // #define TORQUE_DEBUG
 

@@ -1,10 +1,11 @@
 #ifndef MPU_H
 #define MPU_H
 
+#include <stdbool.h>
+
 #include "cmsis_os2.h"
 #include "stm32f4xx_hal.h"
-#include <stdbool.h>
-#include <stdint.h>
+
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;

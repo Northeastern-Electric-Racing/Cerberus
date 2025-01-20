@@ -8,17 +8,14 @@
  * @copyright Copyright (c) 2023
  *
  */
-
 #include "dti.h"
-#include "can.h"
-#include "emrax.h"
-#include "fault.h"
-#include "c_utils.h"
-#include <math.h>
+
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
+#include "emrax.h"
 #include "bms.h"
 #include "nero.h"
 

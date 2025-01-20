@@ -1,8 +1,6 @@
 #ifndef NERO_H
 #define NERO_H
 
-#include <stdbool.h>
-#include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 
 /**

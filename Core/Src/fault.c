@@ -1,14 +1,11 @@
 #include "fault.h"
-#include "task.h"
-#include <assert.h>
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include "state_machine.h"
-#include "can_handler.h"
 #include <string.h>
-#include "c_utils.h"
-#include "cerb_utils.h"
+
+#include "cerberus_conf.h"
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16

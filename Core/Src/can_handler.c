@@ -1,24 +1,15 @@
-/**
- * @file can_handler.c
- * @author Hamza Iqbal and Nick DePatie
- * @brief Source file for CAN handler
- * @version 0.1
- * @date 2023-09-22
- *
- * @copyright Copyright (c) 2023
- *
- */
-
 #include "can_handler.h"
-#include "bms.h"
-#include "cerb_utils.h"
-#include "cerberus_conf.h"
-#include "fault.h"
-#include "stdio.h"
-#include "steeringio.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "bms.h"
+#include "cerb_utils.h"
+#include "dti.h"
+#include "fault.h"
+#include "steeringio.h"
+
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 

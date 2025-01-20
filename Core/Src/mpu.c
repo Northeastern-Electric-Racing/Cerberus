@@ -1,10 +1,11 @@
 #include "mpu.h"
-#include "stm32f405xx.h"
+
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "c_utils.h"
-#include <stdio.h>
 
 #define YLED_PIN      GPIO_PIN_8
 #define RLED_PIN      GPIO_PIN_9

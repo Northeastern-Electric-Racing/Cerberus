@@ -2,11 +2,6 @@
 #define STEERING_H
 
 #include "can.h"
-#include "cmsis_os.h"
-#include "ringbuffer.h"
-#include "timer.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 #define STEERING_CANID_IO 0x680
 
