@@ -3,7 +3,6 @@
 
 #include "cmsis_os.h"
 #include "fault.h"
-#include "nero.h"
 #include "pdu.h"
 #include "dti.h"
 #include "mpu.h"

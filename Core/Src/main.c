@@ -34,7 +34,6 @@
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
-#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
@@ -767,7 +766,6 @@ void StartDefaultTask(void *argument)
 
     
     /* Send NERO state data continuously */
-    send_nero_msg();
     send_git_version_message();
     osDelay(500);
     //osDelay(YELLOW_LED_BLINK_DELAY);

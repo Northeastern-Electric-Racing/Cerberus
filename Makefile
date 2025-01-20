@@ -80,7 +80,6 @@ Core/Src/can_handler.c \
 Core/Src/dti.c \
 Core/Src/state_machine.c \
 Core/Src/bms.c \
-Core/Src/nero.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
 Core/Src/steeringio.c \

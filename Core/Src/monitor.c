@@ -171,8 +171,6 @@ void tsms_debounce_cb(void *arg)
 	osMutexAcquire(tsms_mutex, osWaitForever);
 	tsms = *((bool *)arg);
 	osMutexRelease(tsms_mutex);
-	/* Tell NERO allaboutit */
-	send_nero_msg();
 }
 
 /**

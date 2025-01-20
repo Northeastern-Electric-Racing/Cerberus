@@ -3,7 +3,6 @@
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "cmsis_os.h"
-#include "nero.h"
 #include "pedals.h"
 #include "state_machine.h"
 #include "stdio.h"

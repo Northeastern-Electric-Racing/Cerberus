@@ -12,7 +12,6 @@
 #include "state_machine.h"
 #include "queues.h"
 #include "cerb_utils.h"
-#include "nero.h"
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "dti.h"
