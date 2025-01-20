@@ -6,7 +6,6 @@
 #include "cerberus_conf.h"
 #include "fault.h"
 
-
 bms_t *bms;
 
 void bms_fault_callback()

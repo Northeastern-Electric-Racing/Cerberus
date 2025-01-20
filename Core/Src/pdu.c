@@ -6,7 +6,6 @@
 
 #include "fault.h"
 
-
 #define PUMP_CTRL      0
 #define RADFAN_CTRL    1
 #define BRKLIGHT_CTRL  2

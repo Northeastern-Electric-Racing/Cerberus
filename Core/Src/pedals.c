@@ -19,7 +19,6 @@
 #include "fault.h"
 #include "state_machine.h"
 
-
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */

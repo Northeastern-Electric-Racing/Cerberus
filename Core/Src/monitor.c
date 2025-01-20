@@ -11,7 +11,6 @@
 #include "nero.h"
 #include "state_machine.h"
 
-
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
 static bool tsms = false;

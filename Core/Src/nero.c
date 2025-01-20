@@ -6,7 +6,6 @@
 #include "monitor.h"
 #include "state_machine.h"
 
-
 // #define TORQUE_DEBUG
 
 static int8_t mph = 0;

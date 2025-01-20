@@ -9,7 +9,6 @@
 #include "nero.h"
 #include "pedals.h"
 
-
 #define STATE_TRANS_QUEUE_SIZE 4
 #define STATE_TRANSITION_FLAG  1U
 

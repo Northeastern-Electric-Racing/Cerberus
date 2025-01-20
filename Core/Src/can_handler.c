@@ -10,7 +10,6 @@
 #include "fault.h"
 #include "steeringio.h"
 
-
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
 #define CAN_DISPATCH_FLAG 1U

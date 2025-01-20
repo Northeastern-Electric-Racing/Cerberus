@@ -6,7 +6,6 @@
 #include "cmsis_os.h"
 #include "stm32f4xx_hal.h"
 
-
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
 	ADC_HandleTypeDef *pedals_adc;
