@@ -11,8 +11,9 @@
 #ifndef CERB_UTILS_H
 #define CERB_UTILS_H
 
+#include <stdbool.h>
+
 #include "cmsis_os.h"
-#include "stdbool.h"
 #include "timer.h"
 
 /**

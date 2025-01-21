@@ -1,8 +1,10 @@
 #include "pdu.h"
-#include "fault.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "fault.h"
 
 #define PUMP_CTRL      0
 #define RADFAN_CTRL    1

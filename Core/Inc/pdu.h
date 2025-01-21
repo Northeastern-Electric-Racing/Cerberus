@@ -1,10 +1,10 @@
 #ifndef PDU_H
 #define PDU_H
 
+#include <stdbool.h>
+
 #include "cmsis_os.h"
 #include "pca9539.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 #define SOUND_RTDS_FLAG 1U
 

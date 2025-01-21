@@ -22,13 +22,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include "sht30.h"
-#include "lsm6dso.h"
-#include "monitor.h"
-#include "queues.h"
+#include <string.h>
+
+#include "bms.h"
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
@@ -38,7 +37,8 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
-#include "string.h"
+#include "monitor.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

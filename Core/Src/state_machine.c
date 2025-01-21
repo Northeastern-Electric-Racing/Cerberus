@@ -1,16 +1,13 @@
 #include "state_machine.h"
-#include "can_handler.h"
-#include "fault.h"
-#include "queues.h"
-#include "monitor.h"
-#include "queues.h"
-#include "pedals.h"
-#include <stdbool.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cerb_utils.h"
-#include <assert.h>
 #include <string.h>
+
+#include "cerb_utils.h"
+#include "monitor.h"
+#include "pedals.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
 

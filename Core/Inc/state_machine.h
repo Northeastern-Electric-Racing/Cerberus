@@ -1,8 +1,6 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
-#include "cmsis_os.h"
-#include "fault.h"
 #include "pdu.h"
 #include "dti.h"
 #include "mpu.h"

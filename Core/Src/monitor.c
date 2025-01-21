@@ -1,26 +1,14 @@
 #include "monitor.h"
-#include "c_utils.h"
-#include "can_handler.h"
+
+#include <assert.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-// #include "lsm6dso.h"
-#include "mpu.h"
-#include "pdu.h"
-#include "pedals.h"
-#include "queues.h"
-#include "sht30.h"
 #include "state_machine.h"
-#include "steeringio.h"
-#include "stm32f405xx.h"
-#include "task.h"
-#include "timer.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 

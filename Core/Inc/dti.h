@@ -13,8 +13,6 @@
 #define DTI_H
 
 #include "can_handler.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Message IDs from DTI CAN Datasheet */
 #define DTI_CANID_ERPM	      0x416 /* ERPM, Duty, Input Voltage */

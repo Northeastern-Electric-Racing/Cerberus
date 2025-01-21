@@ -7,23 +7,24 @@
  * @copyright Copyright (c) 2024
  * 
  */
-
 #include "pedals.h"
 #include "state_machine.h"
-#include "queues.h"
 #include "cerb_utils.h"
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "dti.h"
-#include "queues.h"
 #include "bms.h"
 #include "emrax.h"
 #include "monitor.h"
 #include <assert.h>
-#include <string.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "cerb_utils.h"
+#include "cerberus_conf.h"
+#include "fault.h"
+#include "state_machine.h"
 
 /* DO NOT ATTEMPT TO SEND TORQUE COMMANDS LOWER THAN THIS VALUE */
 #define MIN_COMMAND_FREQ  60 /* Hz */
