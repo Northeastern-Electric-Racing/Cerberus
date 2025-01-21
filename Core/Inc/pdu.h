@@ -88,4 +88,13 @@ void vRTDS(void *arg);
 extern osThreadId_t rtds_thread;
 extern const osThreadAttr_t rtds_attributes;
 
+/**
+ * @brief Read the status of brakes
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_brake_state(pdu_t *pdu, bool *status);
+
 #endif /* PDU_H */

@@ -8,7 +8,6 @@
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-#include "nero.h"
 #include "state_machine.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
@@ -160,8 +159,6 @@ void tsms_debounce_cb(void *arg)
 	osMutexAcquire(tsms_mutex, osWaitForever);
 	tsms = *((bool *)arg);
 	osMutexRelease(tsms_mutex);
-	/* Tell NERO allaboutit */
-	send_nero_msg();
 }
 
 /**

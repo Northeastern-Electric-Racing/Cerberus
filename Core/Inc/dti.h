@@ -131,4 +131,9 @@ void dti_set_relative_current(int16_t relative_current);
  */
 void dti_set_drive_enable(bool drive_enable);
 
+/**
+ * @brief gets the current mph from the DTI
+ */
+uint8_t get_mph();
+
 #endif
