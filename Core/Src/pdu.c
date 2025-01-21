@@ -369,3 +369,26 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	osMutexRelease(pdu->mutex);
 	return 0;
 }
+
+int8_t read_brake_state(pdu_t *pdu, bool *status)
+{
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* read pin over i2c */
+	uint8_t config = 0;
+	HAL_StatusTypeDef error = pca9539_read_pin(
+		pdu->ctrl_expander, PCA_INPUT_1_REG, BRKLIGHT_CTRL, &config);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+	*status = config;
+
+	osMutexRelease(pdu->mutex);
+	return 0;
+}

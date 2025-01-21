@@ -44,14 +44,6 @@ void increase_torque_limit();
 void decrease_torque_limit();
 
 /**
- * @brief Get state of brakes
- * 
- * @return true Brakes engaged
- * @return false Brakes not engaged
- */
-bool get_brake_state();
-
-/**
  * @brief Get the current torque limit percentage
  * 
  * @return torque limit percentage
