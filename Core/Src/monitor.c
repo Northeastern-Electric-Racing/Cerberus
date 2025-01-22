@@ -307,7 +307,7 @@ void vShutdownMonitor(void *pv_params)
 		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
 
 		// reverse the bit order
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
+		shutdown_data.shut_1 = reverse_bits(shutdown_data.shut_1);
 		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
 
 		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
