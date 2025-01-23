@@ -23,7 +23,7 @@ void vControl(void *param)
 
 void control_fanbattbox_record(can_msg_t msg)
 {
-	if (msg.data > 0) {
+	if (msg.data[0] > 0) {
 		fanBattBoxState = 1;
 	} else {
 		fanBattBoxState = 0;
