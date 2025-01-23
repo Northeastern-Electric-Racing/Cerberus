@@ -22,24 +22,24 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include "sht30.h"
-#include "lsm6dso.h"
-#include "monitor.h"
-#include "queues.h"
+#include <string.h>
+
+#include "bms.h"
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
 #include "bms.h"
 #include "pdu.h"
-#include "nero.h"
 #include "mpu.h"
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
 #include "control.h"
+#include "monitor.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -716,7 +716,35 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+struct __attribute__((__packed__)) git_version_data {
+		uint8_t git_major_version;
+		uint8_t git_minor_version;
+		uint8_t git_patch_version;
+		bool git_is_upstream_clean;
+		bool git_is_local_clean;
+	} git_version_data;
 
+  struct __attribute__((__packed__)) git_hash_data {
+    uint32_t git_shorthash;
+    uint32_t git_authorhash;
+  } git_hash_data;
+  
+/**
+ * @brief Sends git version infomation as a can message
+ */
+void send_git_version_message() {
+  const struct git_hash_data git_hash_data2 = {GIT_SHORTHASH , GIT_AUTHORHASH};
+  const struct git_version_data git_version_data2 = {GIT_MAJOR_VERSION , GIT_MINOR_VERSION, GIT_PATCH_VERSION, GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN};
+  can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2)};
+  can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2)};
+
+  memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
+  memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
+
+  queue_can_msg(msg1);
+  //queue_can_msg(msg2);
+  
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -741,16 +769,15 @@ void StartDefaultTask(void *argument)
     printf(".\n..\n");
     toggle_yled(mpu);
 
-    // refresh the external watchdog so the car doesnt fault
-    pet_watchdog(mpu);
+		// refresh the external watchdog so the car doesnt fault
+		pet_watchdog(mpu);
 
-    
-    /* Send NERO state data continuously */
-    send_nero_msg();
-    osDelay(500);
-    //osDelay(YELLOW_LED_BLINK_DELAY);
-  }
-  /* USER CODE END 5 */
+		/* Send NERO state data continuously */
+		send_nero_msg();
+		osDelay(500);
+		//osDelay(YELLOW_LED_BLINK_DELAY);
+	}
+	/* USER CODE END 5 */
 }
 
 /**

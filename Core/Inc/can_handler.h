@@ -1,22 +1,8 @@
-/**
- * @file can_handler.h
- * @author Hamza Iqbal
- * @brief This CAN handler is meant to receive and properly route CAN messages
- * and keep this task seperate the CAN driver.  The purpose of this is
- * specifically to have a better way of routing the different messages.
- * @version 0.1
- * @date 2023-09-22
- *
- * @copyright Copyright (c) 2023
- *
- */
-
 #ifndef CAN_HANDLER_H
 #define CAN_HANDLER_H
 
 #include "can.h"
 #include "cmsis_os.h"
-#include "dti.h"
 
 /**
  * @brief Callback to be called when a message is received on CAN line 1.

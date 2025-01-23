@@ -1,20 +1,17 @@
 #include "state_machine.h"
-#include "can_handler.h"
-#include "fault.h"
-#include "nero.h"
-#include "queues.h"
-#include "monitor.h"
-#include "nero.h"
-#include "queues.h"
-#include "pedals.h"
-#include <stdbool.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "cerb_utils.h"
-#include <assert.h>
+#include "monitor.h"
+#include "pedals.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
-#define STATE_TRANSITION_FLAG  1U
+
+#define SEND_NERO_TIMEOUT 500 /*in millis*/
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
@@ -35,6 +32,39 @@ const osThreadAttr_t sm_director_attributes = {
 };
 
 static osMessageQueueId_t state_trans_queue;
+
+static void send_nero_msg()
+{
+	struct __attribute__((__packed__)) {
+		uint8_t home_mode;
+		uint8_t nero_index;
+		uint8_t mph;
+		uint8_t tsms;
+		uint8_t torque_lim_percentage;
+	} nero_data;
+
+	/* Since the screen on NERO relies on the NERO index, and reverse and pit have the same index,
+	 * reverse gets a special index */
+	if (get_func_state() == REVERSE) {
+		nero_data.nero_index = 255;
+	} else {
+		nero_data.nero_index = (uint8_t)get_nero_state().nero_index;
+	}
+
+	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
+	nero_data.mph = get_mph();
+	nero_data.tsms = (uint8_t)get_tsms();
+	/* Percentage from 0 - 1, multiplied by 100 */
+	nero_data.torque_lim_percentage =
+		(uint8_t)(get_torque_limit_percentage() * 100);
+
+	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
+
+	memcpy(&msg.data, &nero_data, sizeof(nero_data));
+
+	/* Send CAN message */
+	queue_can_msg(msg);
+}
 
 func_state_t get_func_state()
 {
@@ -80,12 +110,16 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				return 2;
 			}
 			/* Only turn on motor if brakes engaged and tsms is on */
+			bool brake_state;
+			if (read_brake_state(pdu, &brake_state)) {
+				return 3;
+			}
 #ifdef TSMS_OVERRIDE
-			if (!get_brake_state()) {
+			if (!brake_state) {
 				return 3;
 			}
 #else
-			if (!get_brake_state() || !get_tsms()) {
+			if (!brake_state || !get_tsms()) {
 				return 3;
 			}
 #endif
@@ -172,8 +206,6 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	}
 
 	cerberus_state.nero = new_state;
-	/* Notify NERO */
-	send_nero_msg();
 
 	return 0;
 }
@@ -209,8 +241,7 @@ static int queue_state_transition(state_req_t new_state)
 		return 1;
 	}
 
-	return queue_and_set_flag(state_trans_queue, &new_state,
-				  sm_director_handle, STATE_TRANSITION_FLAG);
+	return osMessageQueuePut(state_trans_queue, &new_state, 0U, 0U);
 }
 
 /* HANDLE USER INPUT */
@@ -295,10 +326,9 @@ void vStateMachineDirector(void *pv_params)
 	write_fault(mpu, false);
 
 	for (;;) {
-		osThreadFlagsWait(STATE_TRANSITION_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		while (osMessageQueueGet(state_trans_queue, &new_state_req,
-					 NULL, osWaitForever) == osOK) {
+		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
+				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
+		    osOK) {
 			// transition state only if state was changed
 			if (!check_state_change(new_state_req)) {
 				continue;
@@ -312,5 +342,8 @@ void vStateMachineDirector(void *pv_params)
 					new_state_req.state.functional, pdu, mc,
 					mpu);
 		}
+
+		// send nero data periodically
+		send_nero_msg();
 	}
 }

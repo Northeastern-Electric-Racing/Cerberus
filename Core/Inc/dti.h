@@ -13,8 +13,6 @@
 #define DTI_H
 
 #include "can_handler.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 /* Message IDs from DTI CAN Datasheet */
 #define DTI_CANID_ERPM	      0x416 /* ERPM, Duty, Input Voltage */
@@ -27,7 +25,7 @@
 	0x496 /* Throttle signal, Brake signal, IO, Drive enable */
 
 #define TIRE_DIAMETER 16 /* inches */
-#define GEAR_RATIO    47 / 13.0 /* unitless */
+#define GEAR_RATIO    43 / 13.0 /* unitless */
 #define POLE_PAIRS    10 /* unitless */
 
 typedef struct {
@@ -132,5 +130,10 @@ void dti_set_relative_current(int16_t relative_current);
  * @param drive_enable True to enable driving, false to disable
  */
 void dti_set_drive_enable(bool drive_enable);
+
+/**
+ * @brief gets the current mph from the DTI
+ */
+uint8_t get_mph();
 
 #endif

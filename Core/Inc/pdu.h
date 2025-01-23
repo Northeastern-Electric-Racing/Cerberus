@@ -1,10 +1,10 @@
 #ifndef PDU_H
 #define PDU_H
 
+#include <stdbool.h>
+
 #include "cmsis_os.h"
 #include "pca9539.h"
-#include <stdbool.h>
-#include <stdint.h>
 
 #define SOUND_RTDS_FLAG 1U
 
@@ -87,5 +87,14 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
 void vRTDS(void *arg);
 extern osThreadId_t rtds_thread;
 extern const osThreadAttr_t rtds_attributes;
+
+/**
+ * @brief Read the status of brakes
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 #endif /* PDU_H */

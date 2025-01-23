@@ -11,8 +11,6 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include "cmsis_os.h"
-#include "stdbool.h"
 #include "dti.h"
 #include "pdu.h"
 #include "mpu.h"
@@ -42,14 +40,6 @@ void increase_torque_limit();
  * Decreases the torque limit by 10%
 */
 void decrease_torque_limit();
-
-/**
- * @brief Get state of brakes
- * 
- * @return true Brakes engaged
- * @return false Brakes not engaged
- */
-bool get_brake_state();
 
 /**
  * @brief Get the current torque limit percentage
