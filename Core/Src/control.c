@@ -12,10 +12,10 @@ static int fanBattBoxState = 0;
 
 void vControl(void *param)
 {
-	control_args_t *args = (control_args_t *)param;
+	pdu_t *pdu = (pdu_t *)param;
 
 	for (;;) {
-		write_fan_battbox(args->pdu, fanBattBoxState);
+		write_fan_battbox(pdu, fanBattBoxState);
 
 		osDelay(1000);
 	}

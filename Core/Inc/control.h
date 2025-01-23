@@ -9,10 +9,6 @@
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
 
-typedef struct {
-	pdu_t *pdu;
-} control_args_t;
-
 void vControl(void *param);
 
 void control_fanbattbox_record(can_msg_t args);

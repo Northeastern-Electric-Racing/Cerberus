@@ -251,9 +251,7 @@ int main(void)
   assert(sm_director_handle);
 
   /* Control File Thread */
-  control_args_t *control_args = malloc(sizeof(control_args_t));
-  control_args->pdu = pdu;
-  control_handle = osThreadNew(vControl, control_args, &control_attributes);
+  control_handle = osThreadNew(vControl, pdu, &control_attributes);
   assert(control_handle);
 
   /* USER CODE END RTOS_THREADS */
