@@ -769,15 +769,16 @@ void StartDefaultTask(void *argument)
     printf(".\n..\n");
     toggle_yled(mpu);
 
-	// refresh the external watchdog so the car doesnt fault
-	pet_watchdog(mpu);
+    // refresh the external watchdog so the car doesnt fault
+    pet_watchdog(mpu);
 
-		/* Send NERO state data continuously */
-		send_nero_msg();
-		osDelay(500);
-		//osDelay(YELLOW_LED_BLINK_DELAY);
-	}
-	/* USER CODE END 5 */
+
+    /* Send NERO state data continuously */
+    send_git_version_message();
+    osDelay(500);
+    //osDelay(YELLOW_LED_BLINK_DELAY);
+  }
+  /* USER CODE END 5 */
 }
 
 /**
