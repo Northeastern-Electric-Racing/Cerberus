@@ -770,7 +770,7 @@ void StartDefaultTask(void *argument)
     // refresh the external watchdog so the car doesnt fault
     pet_watchdog(mpu);
 
-
+	
     /* Send NERO state data continuously */
     send_git_version_message();
     osDelay(500);
