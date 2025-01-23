@@ -769,8 +769,8 @@ void StartDefaultTask(void *argument)
     printf(".\n..\n");
     toggle_yled(mpu);
 
-		// refresh the external watchdog so the car doesnt fault
-		pet_watchdog(mpu);
+	// refresh the external watchdog so the car doesnt fault
+	pet_watchdog(mpu);
 
 		/* Send NERO state data continuously */
 		send_nero_msg();

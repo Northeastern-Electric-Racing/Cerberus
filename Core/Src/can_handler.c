@@ -10,9 +10,6 @@
 #include "fault.h"
 #include "steeringio.h"
 #include "control.h"
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
