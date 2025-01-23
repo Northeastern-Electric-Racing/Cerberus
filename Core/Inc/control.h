@@ -4,7 +4,7 @@
 #include "pdu.h"
 #include "can.h"
 
-#define CONTROL_CANID_FANBATTBOX 0xAAA
+#define CONTROL_CANID_FANBATTBOX 0xFAC
 
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
