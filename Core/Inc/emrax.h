@@ -18,7 +18,7 @@
 #define EMRAX_NOMINAL_VOLTAGE  520 /* V */
 #define EMRAX_PEAK_EFFICIENCY  90 /* % */
 #define EMRAX_PEAK_POWER       124 /* kW, at 5500 RPM */
-#define EMRAX_PEAK_TORQUE      230 /* Nm */
+#define EMRAX_PEAK_TORQUE      220 /* Nm */
 #define EMRAX_CONT_TORQUE      112 /* Nm */
 #define EMRAX_LIMITING_SPEED   6500 /* RPM */
 #define EMRAX_KV	       15.53
