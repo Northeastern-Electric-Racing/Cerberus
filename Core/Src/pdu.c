@@ -484,8 +484,9 @@ int8_t read_brake_state(pdu_t *pdu, bool *status)
 
 	/* read pin over i2c */
 	uint8_t config = 0;
-	HAL_StatusTypeDef error = pca9539_read_pin(
-		pdu->ctrl_expander, PCA_INPUT_1_REG, PIN_BRKLIGHT_CTRL, &config);
+	HAL_StatusTypeDef error = pca9539_read_pin(pdu->ctrl_expander,
+						   PCA_INPUT_1_REG,
+						   PIN_BRKLIGHT_CTRL, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
