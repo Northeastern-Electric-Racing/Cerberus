@@ -1,11 +1,10 @@
 #include "bms.h"
-#include "timer.h"
-#include "fault.h"
-#include "can.h"
-#include "cerberus_conf.h"
+
 #include <assert.h>
 #include <stdlib.h>
-#include "stdio.h"
+
+#include "cerberus_conf.h"
+#include "fault.h"
 
 bms_t *bms;
 

@@ -1,7 +1,6 @@
 #ifndef CERBERUS_FAULT_H
 #define CERBERUS_FAULT_H
 
-#include "cerberus_conf.h"
 #include "cmsis_os.h"
 
 typedef enum {

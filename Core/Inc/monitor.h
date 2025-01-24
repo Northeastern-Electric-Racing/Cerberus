@@ -1,12 +1,11 @@
 #ifndef CERBERUS_MONITOR_H
 #define CERBERUS_MONITOR_H
 
+#include <stdbool.h>
+
 #include "cmsis_os.h"
 #include "mpu.h"
 #include "pdu.h"
-#include "stdbool.h"
-#include "steeringio.h"
-#include "stm32f4xx_hal.h"
 
 /**
  * @brief Get the debounced TSMS reading.

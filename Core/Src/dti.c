@@ -8,23 +8,21 @@
  * @copyright Copyright (c) 2023
  *
  */
-
 #include "dti.h"
-#include "can.h"
-#include "emrax.h"
-#include "fault.h"
-#include "c_utils.h"
-#include <math.h>
+
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
+#include "emrax.h"
 #include "bms.h"
-#include "nero.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
+
+static uint8_t mph = 0;
 
 dti_t *dti_init()
 {
@@ -283,5 +281,10 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
-	set_mph(dti_get_mph(mc));
+	mph = dti_get_mph(mc);
+}
+
+uint8_t get_mph()
+{
+	return mph;
 }

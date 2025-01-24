@@ -1,19 +1,16 @@
 #include "fault.h"
-#include "task.h"
-#include <assert.h>
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include "state_machine.h"
-#include "can_handler.h"
 #include <string.h>
-#include "c_utils.h"
-#include "cerb_utils.h"
+
+#include "cerberus_conf.h"
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
-#define NEW_FAULT_FLAG		1U
 #define NUM_OF_FAULTS		18UL
+#define SEND_FAULT_TIME		500 /* in millis */
 
 osMessageQueueId_t fault_handle_queue;
 
@@ -29,8 +26,9 @@ osStatus_t queue_fault(fault_data_t *fault_data)
 	if (!fault_handle_queue)
 		return -1;
 
-	return queue_and_set_flag(fault_handle_queue, fault_data, fault_handle,
-				  NEW_FAULT_FLAG);
+	osStatus_t status =
+		osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
+	return status;
 }
 
 osThreadId_t fault_handle;
@@ -60,11 +58,9 @@ void vFaultHandler(void *pv_params)
 					       sizeof(fault_data_t), NULL);
 
 	for (;;) {
-		osThreadFlagsWait(NEW_FAULT_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-
-		while (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
-					 osWaitForever) == osOK) {
+		// process fault if one was received
+		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
+				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
 			// Set Fault
 			uint32_t *fault_id = malloc(sizeof(uint32_t));
 			*fault_id = (uint32_t)fault_data.id;
@@ -87,16 +83,6 @@ void vFaultHandler(void *pv_params)
 			severity_levels[index] = fault_data.severity;
 			max_severity_level = getMaxSeverity();
 
-			// Send Can Message
-			can_msg_t msg;
-			msg.id = CANID_FAULT_MSG;
-			msg.len = 8;
-
-			memcpy(msg.data, &faults, sizeof(faults));
-			memcpy(msg.data + sizeof(faults), &max_severity_level,
-			       sizeof(max_severity_level));
-
-			queue_can_msg(msg);
 			printf("Fault Handler! Diagnostic Info:\t%s\n",
 			       fault_data.diag);
 
@@ -120,6 +106,17 @@ void vFaultHandler(void *pv_params)
 				break;
 			}
 		}
+
+		// Send Can Message (even if a new fault was not received)
+		can_msg_t msg;
+		msg.id = CANID_FAULT_MSG;
+		msg.len = 8;
+
+		memcpy(msg.data, &faults, sizeof(faults));
+		memcpy(msg.data + sizeof(faults), &max_severity_level,
+		       sizeof(max_severity_level));
+
+		queue_can_msg(msg);
 	}
 }
 

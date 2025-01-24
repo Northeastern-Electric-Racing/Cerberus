@@ -1,24 +1,14 @@
-/**
- * @file can_handler.c
- * @author Hamza Iqbal and Nick DePatie
- * @brief Source file for CAN handler
- * @version 0.1
- * @date 2023-09-22
- *
- * @copyright Copyright (c) 2023
- *
- */
-
 #include "can_handler.h"
-#include "bms.h"
-#include "cerb_utils.h"
-#include "cerberus_conf.h"
-#include "fault.h"
-#include "stdio.h"
-#include "steeringio.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "bms.h"
+#include "cerb_utils.h"
+#include "dti.h"
+#include "fault.h"
+#include "steeringio.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
@@ -107,6 +97,7 @@ void vCanDispatch(void *pv_params)
 	HAL_StatusTypeDef msg_status;
 
 	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
+	assert(hcan);
 
 	for (;;) {
 		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
@@ -142,6 +133,8 @@ const osThreadAttr_t can_receive_attributes = {
 void vCanReceive(void *pv_params)
 {
 	dti_t *mc = (dti_t *)pv_params;
+	assert(mc);
+
 	can_msg_t msg;
 
 	for (;;) {

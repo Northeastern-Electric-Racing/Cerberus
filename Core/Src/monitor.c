@@ -1,25 +1,14 @@
 #include "monitor.h"
-#include "c_utils.h"
-#include "can_handler.h"
+
+#include <assert.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
-// #include "lsm6dso.h"
-#include "mpu.h"
-#include "pdu.h"
-#include "pedals.h"
-#include "queues.h"
-#include "sht30.h"
 #include "state_machine.h"
-#include "steeringio.h"
-#include "stm32f405xx.h"
-#include "task.h"
-#include "timer.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -215,7 +204,10 @@ void vNonFunctionalDataCollection(void *pv_params)
 {
 	non_func_data_args_t *args = (non_func_data_args_t *)pv_params;
 	mpu_t *mpu = args->mpu;
+	assert(mpu);
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
 	free(args);
 
 	for (;;) {
@@ -243,8 +235,6 @@ void tsms_debounce_cb(void *arg)
 	osMutexAcquire(tsms_mutex, osWaitForever);
 	tsms = *((bool *)arg);
 	osMutexRelease(tsms_mutex);
-	/* Tell NERO allaboutit */
-	send_nero_msg();
 }
 
 /**
@@ -290,6 +280,8 @@ void vDataCollection(void *pv_params)
 {
 	data_collection_args_t *args = (data_collection_args_t *)pv_params;
 	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
 	free(args);
 
 	static const uint8_t delay = 20;
@@ -391,7 +383,7 @@ void vShutdownMonitor(void *pv_params)
 		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
 
 		// reverse the bit order
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_1);
+		shutdown_data.shut_1 = reverse_bits(shutdown_data.shut_1);
 		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
 
 		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);

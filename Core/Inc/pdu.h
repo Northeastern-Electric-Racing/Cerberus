@@ -1,6 +1,8 @@
 #ifndef PDU_H
 #define PDU_H
 
+#include <stdbool.h>
+#include "fault.h"
 #include "cmsis_os.h"
 #include "pca9539.h"
 #include "INA226.h"
@@ -114,5 +116,14 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 void vRTDS(void *arg);
 extern osThreadId_t rtds_thread;
 extern const osThreadAttr_t rtds_attributes;
+
+/**
+ * @brief Read the status of brakes
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 #endif /* PDU_H */

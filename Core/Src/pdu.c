@@ -1,5 +1,5 @@
 #include "pdu.h"
-#include "fault.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +27,28 @@
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
 
 static osMutexAttr_t pdu_mutex_attributes;
+
+//hi2c2 variable to pass to the function wrappers (defined in main.c)
+extern I2C_HandleTypeDef hi2c2;
+
+//Function wrapper for the STM specific HAL write function
+//Serves as function pointer for PCA PAL
+static inline uint8_t pca_i2c_write(uint16_t dev_address, uint8_t reg,
+				    uint8_t *data, uint8_t length)
+
+{
+	return HAL_I2C_Mem_Write(&hi2c2, dev_address, reg, I2C_MEMADD_SIZE_8BIT,
+				 data, length, HAL_MAX_DELAY);
+}
+
+//Function wrapper for the STM specific HAL read function
+//Serves as function pointer for PCA PAL
+static inline uint8_t pca_i2c_read(uint16_t dev_address, uint8_t reg,
+				   uint8_t *data, uint8_t length)
+{
+	return HAL_I2C_Mem_Read(&hi2c2, dev_address, reg, I2C_MEMADD_SIZE_8BIT,
+				data, length, HAL_MAX_DELAY);
+}
 
 extern I2C_HandleTypeDef hi2c2;
 
@@ -72,6 +94,7 @@ const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 void vRTDS(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
+	assert(pdu);
 
 	fault_data_t rtds_fault = { .id = RTDS_FAULT, .severity = DEFCON4 };
 
@@ -92,8 +115,6 @@ void vRTDS(void *arg)
 
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
-	assert(hi2c);
-
 	/* Create PDU struct */
 	pdu_t *pdu = malloc(sizeof(pdu_t));
 	assert(pdu);
@@ -193,7 +214,10 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->ctrl_expander);
-	pca9539_init(pdu->ctrl_expander, pdu->hi2c, CTRL_ADDR);
+
+	//NEED
+	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read,
+		     CTRL_ADDR);
 
 	// write everything OFF, FAULT 1 is off
 	uint8_t buf = 0b00000010;
@@ -379,7 +403,6 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
-
 	uint8_t bank1_d = 0;
 	error = pca9539_read_reg(pdu->shutdown_expander, PCA_INPUT_1_REG,
 				 &bank1_d);
@@ -447,5 +470,28 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 	if (!read_current(pdu, pdu->lv_boards_current_sensor,
 			  battbox_fans_current))
 		return -1;
+	return 0;
+}
+
+int8_t read_brake_state(pdu_t *pdu, bool *status)
+{
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* read pin over i2c */
+	uint8_t config = 0;
+	HAL_StatusTypeDef error = pca9539_read_pin(
+		pdu->ctrl_expander, PCA_INPUT_1_REG, PIN_BRKLIGHT_CTRL, &config);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+	*status = config;
+
+	osMutexRelease(pdu->mutex);
 	return 0;
 }
