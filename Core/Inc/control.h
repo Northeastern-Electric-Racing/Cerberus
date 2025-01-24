@@ -13,6 +13,4 @@ void vControl(void *param);
 
 void control_fanbattbox_record(can_msg_t args);
 
-int eval_fanbattbox_state();
-
 #endif
