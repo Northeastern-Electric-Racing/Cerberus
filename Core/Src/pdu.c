@@ -1,48 +1,72 @@
 #include "pdu.h"
-
+#include "fault.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* PDU 24A Control GPIO */
+/* CTRL GPIO Expander */
 #define CTRL_ADDR PCA_I2C_ADDR_0
-// Pins 00 through 07 (PCA_..._0_REG):
-#define PIN_PUMP_CTRL_0	      0
-#define PIN_PUMP_CTRL_1	      1
-#define PIN_24V_12V_BUCK_CTRL 2
-#define PIN_BRKLIGHT_CTRL     3
-#define PIN_FANBATTBOX_CTRL   4
-// Pins 10 through 17 (PCA_..._1_REG):
-#define PIN_RTDS_CTRL 7
+// BANK 0 (Read with PCA_OUTPUT_0_REG or PCA_INPUT_0_REG):
+#define PIN_PUMP_CTRL_0		    0 // P00
+#define PIN_PUMP_CTRL_1		    1 // P01
+#define PIN_24V_12V_BUCK_CTRL	2 // P02
+#define PIN_BRKLIGHT_CTRL	    3 // P03
+#define PIN_FANBATTBOX_CTRL 	4 // P04
+#define PIN_BATTBOX_FUSE_STAT	5 // P05
+#define PIN_LV_BOARDS_FUSE_STAT 6 // P06
+#define PIN_RADFAN_FUSE_STAT	7 // P07
+// BANK 1 (Read with PCA_OUTPUT_1_REG or PCA_INPUT_1_REG):
+#define PIN_BUCK_FUSE_STAT	     0 // P10
+#define PIN_FANBATTBOX_FUSE_STAT 1 // P11
+#define PIN_PUMP_FUSE_STAT0	     2 // P12
+#define PIN_DASHBOARD_FUSE_STAT	 3 // P13
+#define PIN_BRKLIGHT_FUSE_STAT	 4 // P14
+#define PIN_SD_TO_BRB_FUSE_STAT	 5 // P15
+#define PIN_PUMP_FUSE_STAT1	     6 // P16
+#define PIN_RTDS_CTRL		     7 // P17
 
-#define MUTEX_TIMEOUT osWaitForever /* ms */
-
+/* Shutdown GPIO Expander */
 #define SHUTDOWN_ADDR PCA_I2C_ADDR_1
-#define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
+// BANK 0 (Read with PCA_OUTPUT_0_REG or PCA_INPUT_0_REG):
+#define PIN_CKPT_BRB_CLR    0 // P00
+#define PIN_BMS_GOOD	    1 // P01
+#define PIN_INERTIA_SW_GOOD 2 // P02
+#define PIN_SPARE_GPIO1	    3 // P03
+#define PIN_IMD_GOOD	    4 // P04
+#define PIN_BSPD_GOOD	    5 // P05
+#define PIN_SHUTDOWN_06	    6 // P06 (X)
+#define PIN_SHUTDOWN_07	    7 // P07 (X)
+// BANK 1 (Read with PCA_OUTPUT_1_REG or PCA_INPUT_1_REG):
+#define PIN_SHUTDOWN_10	   0 // P10 (X)
+#define PIN_MC_STAT	   	   1 // P11
+#define PIN_SPARE_MON	   2 // P12
+#define PIN_SPARE_FAULT	   3 // P13
+#define PIN_TSMS_SENSE	   4 // P14
+#define PIN_BOTS_GOOD	   5 // P15
+#define PIN_HVD_INTLK_GOOD 6 // P16
+#define PIN_HVC_INTLK_GOOD 7 // P17
 
+/* Current Sensors */
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
 #define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x42
 #define PUMPS_CURRENT_SENSOR_ADDR	     0x44
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
 
-static osMutexAttr_t pdu_mutex_attributes;
+/* Misc */
+#define MUTEX_TIMEOUT osWaitForever /* ms */
+#define RTDS_DURATION 1750 /* ms at 1kHz tick rate */
 
-//hi2c2 variable to pass to the function wrappers (defined in main.c)
+static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
 
-//Function wrapper for the STM specific HAL write function
-//Serves as function pointer for PCA PAL
+/* Wrappers for GPIO Expander I2C */
 static inline uint8_t pca_i2c_write(uint16_t dev_address, uint8_t reg,
 				    uint8_t *data, uint8_t length)
-
 {
 	return HAL_I2C_Mem_Write(&hi2c2, dev_address, reg, I2C_MEMADD_SIZE_8BIT,
 				 data, length, HAL_MAX_DELAY);
 }
-
-//Function wrapper for the STM specific HAL read function
-//Serves as function pointer for PCA PAL
 static inline uint8_t pca_i2c_read(uint16_t dev_address, uint8_t reg,
 				   uint8_t *data, uint8_t length)
 {
@@ -50,9 +74,7 @@ static inline uint8_t pca_i2c_read(uint16_t dev_address, uint8_t reg,
 				data, length, HAL_MAX_DELAY);
 }
 
-extern I2C_HandleTypeDef hi2c2;
-
-// Wrapper for reading ina226 (current sensor) registers
+/* Wrappers for Current Sensor Read & Write */
 static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 {
 	uint8_t buff[2];
@@ -67,8 +89,6 @@ static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	*data = (buff[0] << 8) | buff[1];
 	return 0;
 }
-
-// Wrapper for writing ina226 (current sensor) registers
 static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 {
 	uint8_t buff[2];
@@ -115,13 +135,10 @@ void vRTDS(void *arg)
 
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
-	/* Create PDU struct */
 	pdu_t *pdu = malloc(sizeof(pdu_t));
 	assert(pdu);
-
 	pdu->hi2c = hi2c;
 	pdu->pump_sensors_adc = pump_sensors_adc;
-
 	assert(!HAL_ADC_Start_DMA(
 		pdu->pump_sensors_adc, pdu->pump_sensors_dma_buf,
 		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint32_t)));
@@ -214,8 +231,6 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->ctrl_expander);
-
-	//NEED
 	pca9539_init(pdu->ctrl_expander, pca_i2c_write, pca_i2c_read,
 		     CTRL_ADDR);
 
@@ -252,7 +267,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	return pdu;
 }
 
-// PDU 24A control functions:
+/* CTRL Line Functions */
 static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 {
 	if (!pdu)
@@ -303,8 +318,8 @@ int8_t write_rtds(pdu_t *pdu, bool state)
 {
 	return write_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
 }
-// PDU 24A control functions ^^
 
+/* Read Pump Sensors ADC DMA */
 void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 {
 	memcpy(pump_sensors_buf, &pdu->pump_sensors_dma_buf,
@@ -348,16 +363,16 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 	bool bank1[8];
 	deconstruct_buf(bank1_d, bank1);
 
-	status[BATTBOX_FUSE_STAT] = bank0[5];
-	status[LV_BOARDS_FUSE_STAT] = bank0[6];
-	status[RADFAN_FUSE_STAT] = bank0[7];
-	status[BUCK_FUSE_STAT] = bank1[0];
-	status[FANBATTBOX_FUSE_STAT] = bank1[1];
-	status[PUMP_FUSE_STAT0] = bank1[2];
-	status[DASHBOARD_FUSE_STAT] = bank1[3];
-	status[BRKLIGHT_FUSE_STAT] = bank1[4];
-	status[SD_TO_BRB_FUSE_STAT] = bank1[5];
-	status[PUMP_FUSE_STAT1] = bank1[6];
+	status[BATTBOX_FUSE_STAT] = bank0[PIN_BATTBOX_FUSE_STAT];
+	status[LV_BOARDS_FUSE_STAT] = bank0[PIN_LV_BOARDS_FUSE_STAT];
+	status[RADFAN_FUSE_STAT] = bank0[PIN_RADFAN_FUSE_STAT];
+	status[BUCK_FUSE_STAT] = bank1[PIN_BUCK_FUSE_STAT];
+	status[FANBATTBOX_FUSE_STAT] = bank1[PIN_FANBATTBOX_FUSE_STAT];
+	status[PUMP_FUSE_STAT0] = bank1[PIN_PUMP_FUSE_STAT0];
+	status[DASHBOARD_FUSE_STAT] = bank1[PIN_DASHBOARD_FUSE_STAT];
+	status[BRKLIGHT_FUSE_STAT] = bank1[PIN_BRKLIGHT_FUSE_STAT];
+	status[SD_TO_BRB_FUSE_STAT] = bank1[PIN_SD_TO_BRB_FUSE_STAT];
+	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -373,10 +388,10 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 		return stat;
 
 	/* read pin over i2c */
-	const uint8_t tsms_pin = 4;
 	uint8_t config = 0;
-	HAL_StatusTypeDef error = pca9539_read_pin(
-		pdu->shutdown_expander, PCA_INPUT_1_REG, tsms_pin, &config);
+	HAL_StatusTypeDef error = pca9539_read_pin(pdu->shutdown_expander,
+						   PCA_INPUT_1_REG,
+						   PIN_TSMS_SENSE, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -417,15 +432,15 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	bool bank1[8];
 	deconstruct_buf(bank1_d, bank1);
 
-	status[CKPT_BRB_CLR] = bank0[0];
-	status[BMS_GOOD] = bank0[1];
-	status[INERTIA_SW_GOOD] = bank0[2];
-	status[SPARE_GPIO1] = bank0[3];
-	status[IMD_GOOD] = bank0[4];
-	status[BSPD_GOOD] = bank0[5];
-	status[BOTS_GOOD] = bank1[5];
-	status[HVD_INTLK_GOOD] = bank1[6];
-	status[HVC_INTLK_GOOD] = bank1[7];
+	status[CKPT_BRB_CLR] = bank0[PIN_CKPT_BRB_CLR];
+	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
+	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
+	status[SPARE_GPIO1] = bank0[PIN_SPARE_GPIO1];
+	status[IMD_GOOD] = bank0[PIN_IMD_GOOD];
+	status[BSPD_GOOD] = bank0[PIN_BSPD_GOOD];
+	status[BOTS_GOOD] = bank1[PIN_BOTS_GOOD];
+	status[HVD_INTLK_GOOD] = bank1[PIN_HVD_INTLK_GOOD];
+	status[HVC_INTLK_GOOD] = bank1[PIN_HVC_INTLK_GOOD];
 
 	osMutexRelease(pdu->mutex);
 	return 0;
