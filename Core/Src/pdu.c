@@ -8,23 +8,23 @@
 /* CTRL GPIO Expander */
 #define CTRL_ADDR PCA_I2C_ADDR_0
 // BANK 0 (Read with PCA_OUTPUT_0_REG or PCA_INPUT_0_REG):
-#define PIN_PUMP_CTRL_0		    0 // P00
-#define PIN_PUMP_CTRL_1		    1 // P01
+#define PIN_PUMP_CTRL_0		0 // P00
+#define PIN_PUMP_CTRL_1		1 // P01
 #define PIN_24V_12V_BUCK_CTRL	2 // P02
-#define PIN_BRKLIGHT_CTRL	    3 // P03
-#define PIN_FANBATTBOX_CTRL 	4 // P04
+#define PIN_BRKLIGHT_CTRL	3 // P03
+#define PIN_FANBATTBOX_CTRL	4 // P04
 #define PIN_BATTBOX_FUSE_STAT	5 // P05
 #define PIN_LV_BOARDS_FUSE_STAT 6 // P06
 #define PIN_RADFAN_FUSE_STAT	7 // P07
 // BANK 1 (Read with PCA_OUTPUT_1_REG or PCA_INPUT_1_REG):
-#define PIN_BUCK_FUSE_STAT	     0 // P10
+#define PIN_BUCK_FUSE_STAT	 0 // P10
 #define PIN_FANBATTBOX_FUSE_STAT 1 // P11
-#define PIN_PUMP_FUSE_STAT0	     2 // P12
+#define PIN_PUMP_FUSE_STAT0	 2 // P12
 #define PIN_DASHBOARD_FUSE_STAT	 3 // P13
 #define PIN_BRKLIGHT_FUSE_STAT	 4 // P14
 #define PIN_SD_TO_BRB_FUSE_STAT	 5 // P15
-#define PIN_PUMP_FUSE_STAT1	     6 // P16
-#define PIN_RTDS_CTRL		     7 // P17
+#define PIN_PUMP_FUSE_STAT1	 6 // P16
+#define PIN_RTDS_CTRL		 7 // P17
 
 /* Shutdown GPIO Expander */
 #define SHUTDOWN_ADDR PCA_I2C_ADDR_1
@@ -39,7 +39,7 @@
 #define PIN_SHUTDOWN_07	    7 // P07 (X)
 // BANK 1 (Read with PCA_OUTPUT_1_REG or PCA_INPUT_1_REG):
 #define PIN_SHUTDOWN_10	   0 // P10 (X)
-#define PIN_MC_STAT	   	   1 // P11
+#define PIN_MC_STAT	   1 // P11
 #define PIN_SPARE_MON	   2 // P12
 #define PIN_SPARE_FAULT	   3 // P13
 #define PIN_TSMS_SENSE	   4 // P14
@@ -202,31 +202,28 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
 	assert(pdu->shutdown_expander);
-	// pca9539_init(pdu->shutdown_expander, pdu->hi2c, SHUTDOWN_ADDR);
-	// if (status != HAL_OK) {
-	// 	printf("\n\rshutdown init fail\n\r");
-	// 	free(pdu->shutdown_expander);
-	// 	free(pdu);
-	// 	return NULL;
-	// }
+	pca9539_init(pdu->shutdown_expander, pca_i2c_write, pca_i2c_read,
+		     SHUTDOWN_ADDR);
 
 	// all shutdown expander things are inputs
-	// uint8_t shutdown_config_directions = 0b00000000;
-	//  HAL_StatusTypeDef status = pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_0_REG,
-	//  shutdown_config_directions);
-	// if (status != HAL_OK) {
-	// 	printf("\n\rshutdown write fail\n\r");
-	// 	free(pdu->shutdown_expander);
-	// 	free(pdu);
-	// 	return NULL;
-	// }
-	// status
-	// 	= pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_1_REG,
-	// shutdown_config_directions); if (status != HAL_OK) { 	printf("\n\rshutdown wrtie 2 fail\n\r");
-	// 	free(pdu->shutdown_expander);
-	// 	free(pdu);
-	// 	return NULL;
-	// }
+	uint8_t shutdown_config_directions = 0b00000000;
+	HAL_StatusTypeDef status =
+		pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_0_REG,
+				  shutdown_config_directions);
+	if (status != HAL_OK) {
+		printf("\n\rshutdown write fail\n\r");
+		free(pdu->shutdown_expander);
+		free(pdu);
+		return NULL;
+	}
+	status = pca9539_write_reg(pdu->shutdown_expander, PCA_DIRECTION_1_REG,
+				   shutdown_config_directions);
+	if (status != HAL_OK) {
+		printf("\n\rshutdown wrtie 2 fail\n\r");
+		free(pdu->shutdown_expander);
+		free(pdu);
+		return NULL;
+	}
 
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(pca9539_t));
@@ -241,7 +238,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	// pin 0 to the right
 	buf = 0b11110000;
-	HAL_StatusTypeDef status =
+	status =
 		pca9539_write_reg(pdu->ctrl_expander, PCA_DIRECTION_0_REG, buf);
 	if (status != HAL_OK) {
 		printf("cntrl init fail\n");
