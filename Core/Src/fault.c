@@ -12,7 +12,8 @@
 #define NUM_OF_FAULTS		18UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
-osMessageQueueId_t fault_handle_queue;
+osMessageQueueId_t fault_handle_high_priority_queue;
+osMessageQueueId_t fault_handle_low_priority_queue;
 
 uint32_t faults = 0;
 
@@ -23,11 +24,15 @@ fault_sev_t *severity_levels = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
-	if (!fault_handle_queue)
+	if (!fault_handle_high_priority_queue || !fault_handle_low_priority_queue)
 		return -1;
 
-	osStatus_t status =
-		osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
+	if(fault_data->severity <= DEFCON3){
+		osStatus_t status = osMessageQueuePut(fault_handle_high_priority_queue, fault_data, 0U, 0U);
+	 } else {
+        osStatus_t status = osMessageQueuePut(fault_handle_low_priority_queue, fault_data, 0U, 0U);
+    }
+
 	return status;
 }
 
@@ -53,16 +58,18 @@ void vFaultHandler(void *pv_params)
 		}
 	}
 
+// break this out into a new function, and have vFaultHandler call it, placing either into it to process. 
 	fault_data_t fault_data;
-	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
+	fault_handle_low_priority_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE/2,
 					       sizeof(fault_data_t), NULL);
-
+	fault_handle_low_priority_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE/2,
+					       sizeof(fault_data_t), NULL);
 	for (;;) {
 		// process fault if one was received
 		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
 			// Set Fault
-			uint32_t *fault_id = malloc(sizeof(uint32_t));
+			uint32_t *fault_id = m 	alloc(sizeof(uint32_t));
 			*fault_id = (uint32_t)fault_data.id;
 			faults |= *fault_id;
 
@@ -82,9 +89,6 @@ void vFaultHandler(void *pv_params)
 			// Get New Maximum Severity Level
 			severity_levels[index] = fault_data.severity;
 			max_severity_level = getMaxSeverity();
-
-			printf("Fault Handler! Diagnostic Info:\t%s\n",
-			       fault_data.diag);
 
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
@@ -106,6 +110,7 @@ void vFaultHandler(void *pv_params)
 				break;
 			}
 		}
+			
 
 		// Send Can Message (even if a new fault was not received)
 		can_msg_t msg;
