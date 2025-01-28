@@ -58,71 +58,78 @@ void vFaultHandler(void *pv_params)
 		}
 	}
 
-// break this out into a new function, and have vFaultHandler call it, placing either into it to process. 
 	fault_data_t fault_data;
 	fault_handle_low_priority_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE/2,
 					       sizeof(fault_data_t), NULL);
 	fault_handle_low_priority_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE/2,
 					       sizeof(fault_data_t), NULL);
 	for (;;) {
-		// process fault if one was received
-		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
-				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
-			// Set Fault
-			uint32_t *fault_id = m 	alloc(sizeof(uint32_t));
-			*fault_id = (uint32_t)fault_data.id;
-			faults |= *fault_id;
-
-			uint32_t index = (uint32_t)log2(*fault_id);
-
-			// Create Timers
-			if (!timers[index]) {
-				timers[index] = osTimerNew(clearFault,
-							   osTimerOnce,
-							   fault_id, NULL);
-			}
-
-			if (osTimerStart(timers[index], 4000) != osOK) {
-				return;
-			}
-
-			// Get New Maximum Severity Level
-			severity_levels[index] = fault_data.severity;
-			max_severity_level = getMaxSeverity();
-
-			switch (fault_data.severity) {
-			case DEFCON1: /* Highest(1st) Priority */
-				fault();
-				break;
-			case DEFCON2:
-				fault();
-				break;
-			case DEFCON3:
-				fault();
-				break;
-			case DEFCON4:
-				break;
-			case DEFCON5: /* Lowest Priority */
-				break;
-			case DEFCON_NONE:
-				break;
-			default:
-				break;
-			}
-		}
-			
-
-		// Send Can Message (even if a new fault was not received)
-		can_msg_t msg;
-		msg.id = CANID_FAULT_MSG;
-		msg.len = 8;
-
-		memcpy(msg.data, &faults, sizeof(faults));
-		memcpy(msg.data + sizeof(faults), &max_severity_level,
-		       sizeof(max_severity_level));
-
-		queue_can_msg(msg);
+		if (osMessageQueueGet(high_priority_queue, &fault_data, NULL, pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
+            // Process high-priority fault
+            process_fault(fault_data);
+        }// If no high-priority fault, check low-priority queue
+        else if (osMessageQueueGet(low_priority_queue, &fault_data, NULL, pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
+            process_fault(fault_data);  
+        }
 	}
+}
+
+void process_fault(fault_data_t fault_data)
+{
+	// Set Fault
+	uint32_t *fault_id = m 	alloc(sizeof(uint32_t));
+	*fault_id = (uint32_t)fault_data.id;
+	faults |= *fault_id;
+
+	uint32_t index = (uint32_t)log2(*fault_id);
+
+	// Create Timers
+	if (!timers[index]) {
+		timers[index] = osTimerNew(clearFault,
+						osTimerOnce,
+						fault_id, NULL);
+	}
+
+	if (osTimerStart(timers[index], 4000) != osOK) {
+		return;
+	}
+
+	// Get New Maximum Severity Level
+	severity_levels[index] = fault_data.severity;
+	max_severity_level = getMaxSeverity();
+
+	switch (fault_data.severity) {
+	case DEFCON1: /* Highest(1st) Priority */
+		fault();
+		break;
+	case DEFCON2:
+		fault();
+		break;
+	case DEFCON3:
+		fault();
+		break;
+	case DEFCON4:
+		break;
+	case DEFCON5: /* Lowest Priority */
+		break;
+	case DEFCON_NONE:
+		break;
+	default:
+		break;
+	}
+
+	
+
+// Send Can Message (even if a new fault was not received)
+can_msg_t msg;
+msg.id = CANID_FAULT_MSG;
+msg.len = 8;
+
+memcpy(msg.data, &faults, sizeof(faults));
+memcpy(msg.data + sizeof(faults), &max_severity_level,
+		sizeof(max_severity_level));
+
+queue_can_msg(msg);
 }
 
 void clearFault(void *args)
