@@ -37,7 +37,7 @@ int8_t write_rtds(pdu_t *pdu, bool state);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
-	BATTBOX_FUSE_STAT,
+	BATTBOX_FUSE_STAT = 0,
 	LV_BOARDS_FUSE_STAT,
 	RADFAN_FUSE_STAT,
 	BUCK_FUSE_STAT,
@@ -50,6 +50,10 @@ typedef enum {
 	MAX_FUSES
 } fuse_t;
 
+typedef struct {
+	uint16_t f : 10; // 10 = fuse_t.values().length()
+} fuse_bitfield;
+
 /**
  * @brief Read the status of the PDU fuses.
  * 
@@ -57,7 +61,7 @@ typedef enum {
  * @param status Buffer that fuse data will be written to
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
+int8_t read_fuses(pdu_t *pdu, fuse_bitfield *status);
 
 /**
  * @brief Read the state of the TSMS signal.
@@ -70,7 +74,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
-	CKPT_BRB_CLR, /* Cockpit BRB */
+	CKPT_BRB_CLR = 0, /* Cockpit BRB */
 	BMS_GOOD, /* Battery Management System (Shepherd) */
 	INERTIA_SW_GOOD, /* Inertia Switch */
 	SPARE_GPIO1,
@@ -84,6 +88,10 @@ typedef enum {
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
+typedef struct {
+	uint16_t s : 9; // 9 = shutdown_stage_t.values().length()
+} shutdown_bitfield;
+
 /**
  * @brief Read the status of the shutdown loop.
  * 
@@ -91,7 +99,7 @@ typedef enum {
  * @param status Buffer that fuse data will be written to
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+int8_t read_shutdown(pdu_t *pdu, shutdown_bitfield *status);
 
 /**
  * @brief Read the status of the shutdown loop.
