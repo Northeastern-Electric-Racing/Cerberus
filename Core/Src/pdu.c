@@ -295,23 +295,17 @@ int8_t read_fuses(pdu_t *pdu, fuse_bitfield *status)
 		return error;
 	}
 
-	status->f |= ((bank0_d >> PIN_BATTBOX_FUSE_STAT) & 1)
-		     << BATTBOX_FUSE_STAT;
-	status->f |= ((bank0_d >> PIN_LV_BOARDS_FUSE_STAT) & 1)
-		     << LV_BOARDS_FUSE_STAT;
-	status->f |= ((bank0_d >> PIN_RADFAN_FUSE_STAT) & 1)
-		     << RADFAN_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_BUCK_FUSE_STAT) & 1) << BUCK_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_FANBATTBOX_FUSE_STAT) & 1)
-		     << FANBATTBOX_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_PUMP_FUSE_STAT0) & 1) << PUMP_FUSE_STAT0;
-	status->f |= ((bank1_d >> PIN_DASHBOARD_FUSE_STAT) & 1)
-		     << DASHBOARD_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_BRKLIGHT_FUSE_STAT) & 1)
-		     << BRKLIGHT_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_SD_TO_BRB_FUSE_STAT) & 1)
-		     << SD_TO_BRB_FUSE_STAT;
-	status->f |= ((bank1_d >> PIN_PUMP_FUSE_STAT1) & 1) << PUMP_FUSE_STAT1;
+	status->BATTBOX_FUSE_STAT = (bank0_d >> PIN_BATTBOX_FUSE_STAT) & 1;
+	status->LV_BOARDS_FUSE_STAT = (bank0_d >> PIN_LV_BOARDS_FUSE_STAT) & 1;
+	status->RADFAN_FUSE_STAT = (bank0_d >> PIN_RADFAN_FUSE_STAT) & 1;
+	status->BUCK_FUSE_STAT = (bank1_d >> PIN_BUCK_FUSE_STAT) & 1;
+	status->FANBATTBOX_FUSE_STAT = (bank1_d >> PIN_FANBATTBOX_FUSE_STAT) &
+				       1;
+	status->PUMP_FUSE_STAT0 = (bank1_d >> PIN_PUMP_FUSE_STAT0) & 1;
+	status->DASHBOARD_FUSE_STAT = (bank1_d >> PIN_DASHBOARD_FUSE_STAT) & 1;
+	status->BRKLIGHT_FUSE_STAT = (bank1_d >> PIN_BRKLIGHT_FUSE_STAT) & 1;
+	status->SD_TO_BRB_FUSE_STAT = (bank1_d >> PIN_SD_TO_BRB_FUSE_STAT) & 1;
+	status->PUMP_FUSE_STAT1 = (bank1_d >> PIN_PUMP_FUSE_STAT1) & 1;
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -365,15 +359,15 @@ int8_t read_shutdown(pdu_t *pdu, shutdown_bitfield *status)
 		return error;
 	}
 
-	status->s |= ((bank0_d >> PIN_CKPT_BRB_CLR) & 1) << CKPT_BRB_CLR;
-	status->s |= ((bank0_d >> PIN_BMS_GOOD) & 1) << BMS_GOOD;
-	status->s |= ((bank0_d >> PIN_INERTIA_SW_GOOD) & 1) << INERTIA_SW_GOOD;
-	status->s |= ((bank0_d >> PIN_SPARE_GPIO1) & 1) << SPARE_GPIO1;
-	status->s |= ((bank0_d >> PIN_IMD_GOOD) & 1) << IMD_GOOD;
-	status->s |= ((bank0_d >> PIN_BSPD_GOOD) & 1) << BSPD_GOOD;
-	status->s |= ((bank1_d >> PIN_BOTS_GOOD) & 1) << BOTS_GOOD;
-	status->s |= ((bank1_d >> PIN_HVD_INTLK_GOOD) & 1) << HVD_INTLK_GOOD;
-	status->s |= ((bank1_d >> PIN_HVC_INTLK_GOOD) & 1) << HVC_INTLK_GOOD;
+	status->CKPT_BRB_CLR = (bank0_d >> PIN_CKPT_BRB_CLR) & 1;
+	status->BMS_GOOD = (bank0_d >> PIN_BMS_GOOD) & 1;
+	status->INERTIA_SW_GOOD = (bank0_d >> PIN_INERTIA_SW_GOOD) & 1;
+	status->SPARE_GPIO1 = (bank0_d >> PIN_SPARE_GPIO1) & 1;
+	status->IMD_GOOD = (bank0_d >> PIN_IMD_GOOD) & 1;
+	status->BSPD_GOOD = (bank0_d >> PIN_BSPD_GOOD) & 1;
+	status->BOTS_GOOD = (bank1_d >> PIN_BOTS_GOOD) & 1;
+	status->HVD_INTLK_GOOD = (bank1_d >> PIN_HVD_INTLK_GOOD) & 1;
+	status->HVC_INTLK_GOOD = (bank1_d >> PIN_HVC_INTLK_GOOD) & 1;
 
 	osMutexRelease(pdu->mutex);
 	return 0;

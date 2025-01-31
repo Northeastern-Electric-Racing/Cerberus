@@ -35,23 +35,18 @@ int8_t write_brakelight(pdu_t *pdu, bool state);
 int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
 
-/* Function to Read the Status of Fuses from PDU */
-typedef enum {
-	BATTBOX_FUSE_STAT = 0,
-	LV_BOARDS_FUSE_STAT,
-	RADFAN_FUSE_STAT,
-	BUCK_FUSE_STAT,
-	FANBATTBOX_FUSE_STAT,
-	PUMP_FUSE_STAT0,
-	DASHBOARD_FUSE_STAT,
-	BRKLIGHT_FUSE_STAT,
-	SD_TO_BRB_FUSE_STAT,
-	PUMP_FUSE_STAT1,
-	MAX_FUSES
-} fuse_t;
-
 typedef struct {
-	uint16_t f : 10; // 10 = fuse_t.values().length()
+	char BATTBOX_FUSE_STAT : 1;
+	char LV_BOARDS_FUSE_STAT : 1;
+	char RADFAN_FUSE_STAT : 1;
+	char BUCK_FUSE_STAT : 1;
+	char FANBATTBOX_FUSE_STAT : 1;
+	char PUMP_FUSE_STAT0 : 1;
+	char DASHBOARD_FUSE_STAT : 1;
+	char BRKLIGHT_FUSE_STAT : 1;
+	char SD_TO_BRB_FUSE_STAT : 1;
+	char PUMP_FUSE_STAT1 : 1;
+	char MAX_FUSES : 1;
 } fuse_bitfield;
 
 /**
@@ -72,24 +67,19 @@ int8_t read_fuses(pdu_t *pdu, fuse_bitfield *status);
  */
 int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
-/* Functions to Read Status of Various Stages of Shutdown Loop */
-typedef enum {
-	CKPT_BRB_CLR = 0, /* Cockpit BRB */
-	BMS_GOOD, /* Battery Management System (Shepherd) */
-	INERTIA_SW_GOOD, /* Inertia Switch */
-	SPARE_GPIO1,
-	IMD_GOOD, /* Insulation Monitoring Device */
-	BSPD_GOOD, /* Brake System Plausbility Device */
-	BOTS_GOOD, /* Brake Over Travel Switch */
-	HVD_INTLK_GOOD, /* HVD Interlock */
-	HVC_INTLK_GOOD, /* HV C Interlock*/
-	//SIDE_BRB_CLR,	/* Side BRB */
-	//TSMS,			/* Tractive System Main Switch */
-	MAX_SHUTDOWN_STAGES
-} shutdown_stage_t;
-
 typedef struct {
-	uint16_t s : 9; // 9 = shutdown_stage_t.values().length()
+	char CKPT_BRB_CLR : 1; /* Cockpit BRB */
+	char BMS_GOOD : 1; /* Battery Management System (Shepherd) */
+	char INERTIA_SW_GOOD : 1; /* Inertia Switch */
+	char SPARE_GPIO1;
+	char IMD_GOOD : 1; /* Insulation Monitoring Device */
+	char BSPD_GOOD : 1; /* Brake System Plausbility Device */
+	char BOTS_GOOD : 1; /* Brake Over Travel Switch */
+	char HVD_INTLK_GOOD : 1; /* HVD Interlock */
+	char HVC_INTLK_GOOD : 1; /* HV C Interlock*/
+	//char SIDE_BRB_CLR : 1;	/* Side BRB */
+	//char TSMS : 1;			/* Tractive System Main Switch */
+	char MAX_SHUTDOWN_STAGES : 1;
 } shutdown_bitfield;
 
 /**

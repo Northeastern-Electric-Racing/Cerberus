@@ -159,22 +159,25 @@ void read_fuse_data(void *arg)
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
 				    .severity = DEFCON5 };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-
+	uint16_t fuse_buf;
 	fuse_bitfield fuses;
-	fuses.f = 0;
 
 	struct __attribute__((__packed__)) {
 		uint8_t fuse_1;
 		uint8_t fuse_2;
 	} fuse_data;
 
+	fuse_buf = 0;
+
 	if (read_fuses(pdu, &fuses)) {
 		fault_data.diag = "Failed to read fuses";
 		queue_fault(&fault_data);
 	}
 
-	fuse_data.fuse_1 = fuses.f & 0xFF;
-	fuse_data.fuse_2 = (fuses.f >> 8) & 0xFF;
+	memcpy(&fuse_buf, &fuses, 2);
+
+	fuse_data.fuse_1 = fuse_buf & 0xFF;
+	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
 
 	// reverse the bit order
 	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
@@ -348,8 +351,8 @@ void vShutdownMonitor(void *pv_params)
 				   .len = 2,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
+	uint16_t shutdown_buf;
 	shutdown_bitfield shutdowns;
-	shutdowns.s = 0;
 
 	struct __attribute__((__packed__)) {
 		uint8_t shut_1;
@@ -357,14 +360,18 @@ void vShutdownMonitor(void *pv_params)
 	} shutdown_data;
 
 	for (;;) {
+		shutdown_buf = 0;
+
 		if (read_shutdown(pdu, &shutdowns)) {
 			fault_data.diag = "Failed to read shutdown buffer";
 			queue_fault(&fault_data);
 		}
 
+		memcpy(&shutdown_buf, &shutdowns, 2);
+
 		/* seperate each byte */
-		shutdown_data.shut_1 = shutdowns.s & 0xFF;
-		shutdown_data.shut_2 = (shutdowns.s >> 8) & 0xFF;
+		shutdown_data.shut_1 = shutdown_buf & 0xFF;
+		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
 
 		// reverse the bit order
 		shutdown_data.shut_1 = reverse_bits(shutdown_data.shut_1);
