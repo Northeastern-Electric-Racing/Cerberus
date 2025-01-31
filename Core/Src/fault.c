@@ -67,17 +67,17 @@ void vFaultHandler(void *pv_params) {
     if (osMessageQueueGet(fault_handle_high_priority_queue, &fault_data, NULL,
                           pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
       // Process high-priority fault
-      process_fault(fault_data);
+      processFault(fault_data);
     } else if (osMessageQueueGet(fault_handle_low_priority_queue, &fault_data,
                                  NULL,
                                  pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
       // Process low-priority fault
-      process_fault(fault_data);
+      processFault(fault_data);
     }
   }
 }
 
-void process_fault(fault_data_t fault_data) {
+void processFault(fault_data_t fault_data) {
   // Set Fault
   uint32_t *fault_id = malloc(sizeof(uint32_t));
   *fault_id = (uint32_t)fault_data.id;
