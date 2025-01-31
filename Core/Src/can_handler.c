@@ -157,8 +157,8 @@ void vCanReceive(void *pv_params)
 			case CONTROL_CANID_FANBATTBOX:
 				control_fanbattbox_record(msg);
 				break;
-			case CONTROL_CANID_PUMP0:
-				control_pump0_record(msg);
+			case CONTROL_CANID_PUMP:
+				control_pump_record(msg);
 			default:
 				break;
 			}
