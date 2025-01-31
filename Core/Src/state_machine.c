@@ -191,7 +191,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 			}
 		}
 	}
-#endif 
+#endif
 
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
