@@ -4,39 +4,39 @@
 #include "cmsis_os.h"
 
 typedef enum {
-  DEFCON1 = 1,
-  DEFCON2,
-  DEFCON3,
-  DEFCON4,
-  DEFCON5,
-  DEFCON_NONE
+	DEFCON1 = 1,
+	DEFCON2,
+	DEFCON3,
+	DEFCON4,
+	DEFCON5,
+	DEFCON_NONE
 } fault_sev_t;
 
 typedef enum {
-  FAULTS_CLEAR = (1 << 0),
-  ONBOARD_TEMP_FAULT = (1 << 1),
-  ONBOARD_PEDAL_FAULT = (1 << 2),
-  IMU_FAULT = (1 << 3),
-  CAN_DISPATCH_FAULT = (1 << 4),
-  CAN_ROUTING_FAULT = (1 << 5),
-  FUSE_MONITOR_FAULT = (1 << 6),
-  SHUTDOWN_MONITOR_FAULT = (1 << 7),
-  DTI_ROUTING_FAULT = (1 << 8),
-  STEERINGIO_ROUTING_FAULT = (1 << 9),
-  STATE_RECEIVED_FAULT = (1 << 10),
-  INVALID_TRANSITION_FAULT = (1 << 11),
-  BMS_CAN_MONITOR_FAULT = (1 << 12),
-  BUTTONS_MONITOR_FAULT = (1 << 13),
-  BSPD_PREFAULT = (1 << 14),
-  LV_MONITOR_FAULT = (1 << 15),
-  RTDS_FAULT = (1 << 16),
-  MAX_FAULTS = (1 << 17)
+	FAULTS_CLEAR = (1 << 0),
+	ONBOARD_TEMP_FAULT = (1 << 1),
+	ONBOARD_PEDAL_FAULT = (1 << 2),
+	IMU_FAULT = (1 << 3),
+	CAN_DISPATCH_FAULT = (1 << 4),
+	CAN_ROUTING_FAULT = (1 << 5),
+	FUSE_MONITOR_FAULT = (1 << 6),
+	SHUTDOWN_MONITOR_FAULT = (1 << 7),
+	DTI_ROUTING_FAULT = (1 << 8),
+	STEERINGIO_ROUTING_FAULT = (1 << 9),
+	STATE_RECEIVED_FAULT = (1 << 10),
+	INVALID_TRANSITION_FAULT = (1 << 11),
+	BMS_CAN_MONITOR_FAULT = (1 << 12),
+	BUTTONS_MONITOR_FAULT = (1 << 13),
+	BSPD_PREFAULT = (1 << 14),
+	LV_MONITOR_FAULT = (1 << 15),
+	RTDS_FAULT = (1 << 16),
+	MAX_FAULTS = (1 << 17)
 } fault_code_t;
 
 typedef struct {
-  fault_code_t id;
-  fault_sev_t severity;
-  char *diag;
+	fault_code_t id;
+	fault_sev_t severity;
+	char *diag;
 } fault_data_t;
 
 /**
