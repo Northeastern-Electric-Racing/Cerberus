@@ -174,7 +174,7 @@ void read_fuse_data(void *arg)
 		queue_fault(&fault_data);
 	}
 
-	memcpy(&fuse_buf, &fuses, 2);
+	memcpy(&fuse_buf, &fuses, sizeof(fuses));
 
 	fuse_data.fuse_1 = fuse_buf & 0xFF;
 	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
@@ -367,7 +367,7 @@ void vShutdownMonitor(void *pv_params)
 			queue_fault(&fault_data);
 		}
 
-		memcpy(&shutdown_buf, &shutdowns, 2);
+		memcpy(&shutdown_buf, &shutdowns, sizeof(shutdowns));
 
 		/* seperate each byte */
 		shutdown_data.shut_1 = shutdown_buf & 0xFF;
