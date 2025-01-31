@@ -36,17 +36,17 @@ int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
 
 typedef struct {
-	char BATTBOX_FUSE_STAT : 1;
-	char LV_BOARDS_FUSE_STAT : 1;
-	char RADFAN_FUSE_STAT : 1;
-	char BUCK_FUSE_STAT : 1;
-	char FANBATTBOX_FUSE_STAT : 1;
-	char PUMP_FUSE_STAT0 : 1;
-	char DASHBOARD_FUSE_STAT : 1;
-	char BRKLIGHT_FUSE_STAT : 1;
-	char SD_TO_BRB_FUSE_STAT : 1;
-	char PUMP_FUSE_STAT1 : 1;
-	char MAX_FUSES : 1;
+	uint8_t BATTBOX_FUSE_STAT : 1;
+	uint8_t LV_BOARDS_FUSE_STAT : 1;
+	uint8_t RADFAN_FUSE_STAT : 1;
+	uint8_t BUCK_FUSE_STAT : 1;
+	uint8_t FANBATTBOX_FUSE_STAT : 1;
+	uint8_t PUMP_FUSE_STAT0 : 1;
+	uint8_t DASHBOARD_FUSE_STAT : 1;
+	uint8_t BRKLIGHT_FUSE_STAT : 1;
+	uint8_t SD_TO_BRB_FUSE_STAT : 1;
+	uint8_t PUMP_FUSE_STAT1 : 1;
+	uint8_t MAX_FUSES : 1;
 } fuse_bitfield;
 
 /**
@@ -68,18 +68,18 @@ int8_t read_fuses(pdu_t *pdu, fuse_bitfield *status);
 int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 typedef struct {
-	char CKPT_BRB_CLR : 1; /* Cockpit BRB */
-	char BMS_GOOD : 1; /* Battery Management System (Shepherd) */
-	char INERTIA_SW_GOOD : 1; /* Inertia Switch */
-	char SPARE_GPIO1;
-	char IMD_GOOD : 1; /* Insulation Monitoring Device */
-	char BSPD_GOOD : 1; /* Brake System Plausbility Device */
-	char BOTS_GOOD : 1; /* Brake Over Travel Switch */
-	char HVD_INTLK_GOOD : 1; /* HVD Interlock */
-	char HVC_INTLK_GOOD : 1; /* HV C Interlock*/
-	//char SIDE_BRB_CLR : 1;	/* Side BRB */
-	//char TSMS : 1;			/* Tractive System Main Switch */
-	char MAX_SHUTDOWN_STAGES : 1;
+	uint8_t CKPT_BRB_CLR : 1; /* Cockpit BRB */
+	uint8_t BMS_GOOD : 1; /* Battery Management System (Shepherd) */
+	uint8_t INERTIA_SW_GOOD : 1; /* Inertia Switch */
+	uint8_t SPARE_GPIO1;
+	uint8_t IMD_GOOD : 1; /* Insulation Monitoring Device */
+	uint8_t BSPD_GOOD : 1; /* Brake System Plausbility Device */
+	uint8_t BOTS_GOOD : 1; /* Brake Over Travel Switch */
+	uint8_t HVD_INTLK_GOOD : 1; /* HVD Interlock */
+	uint8_t HVC_INTLK_GOOD : 1; /* HV C Interlock*/
+	//uint8_t SIDE_BRB_CLR : 1;	/* Side BRB */
+	//uint8_t TSMS : 1;			/* Tractive System Main Switch */
+	uint8_t MAX_SHUTDOWN_STAGES : 1;
 } shutdown_bitfield;
 
 /**
