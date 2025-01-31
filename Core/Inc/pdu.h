@@ -175,7 +175,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 // Stuff that will be used eventually
 /* 
-/* CTRL Expander
+CTRL Expander
 #define CTRL_ADDR		 PCA_I2C_ADDR_0
 #define PIN_PUMP_CTRL_0		 0 // P00
 #define PIN_PUMP_CTRL_1		 1 // P01
@@ -194,7 +194,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_PUMP_FUSE_STAT1	 6 // P16
 #define PIN_RTDS_CTRL		 7 // P17
 
-/* Shutdown Expander
+Shutdown Expander
 #define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
 #define PIN_CKPT_BRB_CLR    0 // P00
 #define PIN_BMS_GOOD	    1 // P01
