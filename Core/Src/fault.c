@@ -29,10 +29,9 @@ osStatus_t queue_fault(fault_data_t *fault_data) {
   if (fault_data->severity <= DEFCON3) {
     osStatus_t status =
         osMessageQueuePut(fault_handle_high_priority_queue, fault_data, 0U, 0U);
-  } else {
-    osStatus_t status =
-        osMessageQueuePut(fault_handle_low_priority_queue, fault_data, 0U, 0U);
   }
+  osStatus_t status =
+      osMessageQueuePut(fault_handle_low_priority_queue, fault_data, 0U, 0U);
 
   return status;
 }
