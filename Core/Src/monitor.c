@@ -351,7 +351,7 @@ void vShutdownMonitor(void *pv_params)
 				   .len = 2,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
-	uint16_t shutdown_buf;
+	uint32_t shutdown_buf;
 	shutdown_bitfield shutdowns;
 
 	struct __attribute__((__packed__)) {
