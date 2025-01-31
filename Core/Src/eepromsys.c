@@ -3,23 +3,22 @@
 
 void eepromInit()
 {
-
 	// Need to setup a Telemetry Section in Memory
 	// Establish size for 10 values of size 32 bytes
-	eeprom_data[0].key = (char*)("DATA");
+	eeprom_data[0].key = (char *)("DATA");
 
 	eeprom_data[0].size = 1 + (32 * NUM_EEPROM_TELEM);
 
 	// Need to setup a Faults Section in Memory
 	// Establish Size for 5 values of size 4 bytes
-	eeprom_data[1].key	= (char*)("FAULTS");
+	eeprom_data[1].key = (char *)("FAULTS");
 	eeprom_data[1].size = 1 + (4 * NUM_EEPROM_FAULTS);
 
 	// Initialize Address of the Data which will cover memory addresses starting at 0
 	eeprom_data[0].address = EEPROM_BASE_ADD;
 
 	int offset = 0;
-	int i	   = 1;
+	int i = 1;
 	// While Loop Initializes the Sections After the Initial Section at Index 0
 	while (eeprom_data[i].key != NULL) {
 		offset += eeprom_data[i - 1].size;
@@ -29,7 +28,7 @@ void eepromInit()
 }
 
 // Use by Writes/Reads with the EEPROM key
-uint16_t eeprom_get_index(char* key)
+uint16_t eeprom_get_index(char *key)
 {
 	int i = 0;
 	while (eeprom_data[i].key != NULL) {
@@ -41,7 +40,7 @@ uint16_t eeprom_get_index(char* key)
 	return -1;
 }
 
-bool eeprom_write_key(char* key, void* data, uint16_t size)
+bool eeprom_write_key(char *key, void *data, uint16_t size)
 {
 	if (!data) {
 		return false;
@@ -52,9 +51,8 @@ bool eeprom_write_key(char* key, void* data, uint16_t size)
 	return true;
 }
 
-bool eeprom_read_key(char* key, void* data, uint16_t size)
+bool eeprom_read_key(char *key, void *data, uint16_t size)
 {
-
 	if (!data) {
 		return false;
 	}
@@ -66,7 +64,7 @@ bool eeprom_read_key(char* key, void* data, uint16_t size)
 
 // Using the addresses to get
 // Calls the driver function to read from EEPROM
-bool eeprom_read_data_address(uint16_t address, void* data, uint16_t size)
+bool eeprom_read_data_address(uint16_t address, void *data, uint16_t size)
 {
 	if (!data) {
 		return false;
@@ -77,7 +75,7 @@ bool eeprom_read_data_address(uint16_t address, void* data, uint16_t size)
 }
 
 // Calls the driver function to write to EEPROM
-bool eeprom_write_data_address(uint16_t address, void* data, uint16_t size)
+bool eeprom_write_data_address(uint16_t address, void *data, uint16_t size)
 {
 	if (!data) {
 		return false;
@@ -97,13 +95,15 @@ void write_faults(uint32_t fault_code)
 	uint8_t reg_to_write;
 
 	// Get's the data address to be written to next (8 bit number, up to 128)
-	eeprom_read_data_address(eeprom_get_index((char*)("FAULTS")), &reg_to_write, 1);
+	eeprom_read_data_address(eeprom_get_index((char *)("FAULTS")),
+				 &reg_to_write, 1);
 
 	// This will get the initial address the EEPROM "FAULTS" began with
-	uint8_t startInd = eeprom_data[eeprom_get_index((char*)("FAULTS"))].address;
+	uint8_t startInd =
+		eeprom_data[eeprom_get_index((char *)("FAULTS"))].address;
 
 	// This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
-	uint8_t size = eeprom_data[eeprom_get_index((char*)("FAULTS"))].size;
+	uint8_t size = eeprom_data[eeprom_get_index((char *)("FAULTS"))].size;
 
 	uint8_t available_space = (startInd + size) - reg_to_write;
 	if (available_space < 4) {
@@ -119,19 +119,20 @@ void write_faults(uint32_t fault_code)
 
 void read_faults()
 {
-
 	// This will get the initial address the EEPROM "FAULTS" began with
-	uint8_t startAdd = eeprom_data[eeprom_get_index((char*)("FAULTS"))].address;
+	uint8_t startAdd =
+		eeprom_data[eeprom_get_index((char *)("FAULTS"))].address;
 
 	// This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
-	uint8_t size = eeprom_data[eeprom_get_index((char*)("FAULTS"))].size;
+	uint8_t size = eeprom_data[eeprom_get_index((char *)("FAULTS"))].size;
 
 	// Iterating with the current register
 	uint8_t curr_reg = startAdd + 1;
 
 	int numFaults = 0;
 	while (numFaults < NUM_EEPROM_FAULTS) {
-		eeprom_read_data_address(curr_reg, &eeprom_faults[numFaults], 4);
+		eeprom_read_data_address(curr_reg, &eeprom_faults[numFaults],
+					 4);
 		numFaults++;
 
 		if (curr_reg == size + startAdd - 3) {
@@ -144,19 +145,20 @@ void read_faults()
 
 void write_data(uint32_t data_point)
 {
-
 	uint32_t data = data_point;
 
 	uint8_t reg_to_write;
 
 	// Get's the data address to be written to next (8 bit number, up to 128)
-	eeprom_read_data_address(eeprom_get_index((char*)("DATA")), &reg_to_write, 1);
+	eeprom_read_data_address(eeprom_get_index((char *)("DATA")),
+				 &reg_to_write, 1);
 
 	// This will get the initial address the EEPROM "FAULTS" began with
-	uint8_t startInd = eeprom_data[eeprom_get_index((char*)("DATA"))].address;
+	uint8_t startInd =
+		eeprom_data[eeprom_get_index((char *)("DATA"))].address;
 
 	// This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
-	uint8_t size = eeprom_data[eeprom_get_index((char*)("DATA"))].size;
+	uint8_t size = eeprom_data[eeprom_get_index((char *)("DATA"))].size;
 
 	uint8_t available_space = (startInd + size) - reg_to_write;
 	if (available_space < 32) {
@@ -172,12 +174,12 @@ void write_data(uint32_t data_point)
 
 void read_data()
 {
-
 	// This will get the initial address the EEPROM "FAULTS" began with
-	uint8_t startAdd = eeprom_data[eeprom_get_index((char*)("DATA"))].address;
+	uint8_t startAdd =
+		eeprom_data[eeprom_get_index((char *)("DATA"))].address;
 
 	// This will get the size of the EEPROM "FAULTS" section to determine where to put the new fault
-	uint8_t size = eeprom_data[eeprom_get_index((char*)("DATA"))].size;
+	uint8_t size = eeprom_data[eeprom_get_index((char *)("DATA"))].size;
 
 	// Iterating with the current register
 	uint8_t curr_reg = 1 + startAdd;
