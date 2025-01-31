@@ -13,7 +13,7 @@
 
 #define SEND_NERO_TIMEOUT 500 /*in millis*/
 
-#define DISABLE_REVERSE
+//#define DISABLE_REVERSE
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
