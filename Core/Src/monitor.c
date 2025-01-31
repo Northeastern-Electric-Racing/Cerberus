@@ -16,6 +16,81 @@ static bool tsms = false;
 osMutexId_t tsms_mutex;
 
 /**
+ * @brief Read voltage of Pump Sensors and send a CAN message with the result.
+ */
+void read_pump_sens(pdu_t *pdu)
+{
+	// put fault stuff tomorrow
+	fault_data_t fault_data = { .id = PUMP_SENSORS_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
+
+	uint32_t pump_volts_int[2];
+
+	read_pump_sensors(pdu, pump_volts_int);
+
+	// convert to real voltage
+	float pump_sensor0_volts_real = (pump_volts_int[0] / 4095.0) * 3.3;
+	float pump_sensor1_volts_real = (pump_volts_int[1] / 4095.0) * 3.3;
+
+	pump_volts_int[0] = (uint32_t)(pump_sensor0_volts_real * 10000);
+	pump_volts_int[1] = (uint32_t)(pump_sensor1_volts_real * 10000);
+
+	memcpy(msg.data, pump_volts_int, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send pump sensor CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+/**
+ * @brief Read current of MC, battox fans, pumps, and LV boards and send a CAN message with the result.
+ */
+void read_current(pdu_t *pdu)
+{
+	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
+
+	float motor_controller_current;
+	float battbox_fans_current;
+	float pumps_current;
+	float lv_boards_current;
+
+	if (read_all_current(pdu, &motor_controller_current,
+			     &battbox_fans_current, &pumps_current,
+			     &lv_boards_current)) {
+		fault_data.diag = "Failed to read current";
+		queue_fault(&fault_data);
+	}
+
+	uint16_t int_motor_controller_current =
+		(uint16_t)(motor_controller_current * 1000);
+	uint16_t int_battbox_fans_current =
+		(uint16_t)(battbox_fans_current * 1000);
+	uint16_t int_pumps_current = (uint16_t)(pumps_current * 1000);
+	uint16_t int_lv_boards_current = (uint16_t)(lv_boards_current * 1000);
+
+	struct __attribute__((__packed__)) {
+		uint16_t motor_controller;
+		uint16_t battbox_fans;
+		uint16_t pumps_current;
+		uint16_t lv_boards;
+	} current_data;
+
+	current_data.motor_controller = int_motor_controller_current;
+	current_data.battbox_fans = int_battbox_fans_current;
+	current_data.pumps_current = int_pumps_current;
+	current_data.lv_boards = int_lv_boards_current;
+
+	memcpy(msg.data, &current_data, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send current CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+/**
  * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
  */
 void read_lv_sense(void *arg)
@@ -138,6 +213,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 	for (;;) {
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
+		read_current(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
