@@ -24,14 +24,17 @@ fault_sev_t *severity_levels = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data) {
   if (!fault_handle_high_priority_queue || !fault_handle_low_priority_queue)
-    return -1;
+    return osErrorParameter; // Return proper error code
+
+  osStatus_t status; // Declare status once before the if/else block
 
   if (fault_data->severity <= DEFCON3) {
-    osStatus_t status =
+    status =
         osMessageQueuePut(fault_handle_high_priority_queue, fault_data, 0U, 0U);
+  } else {
+    status =
+        osMessageQueuePut(fault_handle_low_priority_queue, fault_data, 0U, 0U);
   }
-  osStatus_t status =
-      osMessageQueuePut(fault_handle_low_priority_queue, fault_data, 0U, 0U);
 
   return status;
 }
