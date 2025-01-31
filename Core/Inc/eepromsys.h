@@ -18,7 +18,7 @@
  *
  */
 struct eeprom {
-	char* key;
+	char *key;
 	uint16_t size;
 	uint16_t address;
 };
@@ -53,7 +53,7 @@ void eepromInit();
  * @param key Name of the eeprom partition
  * @return uint16_t The memory address to update and write to next
  */
-uint16_t eeprom_get_index(char* key);
+uint16_t eeprom_get_index(char *key);
 
 /**
  * @brief This function writes the data to the newest memory address of one of the EEPROM partitions
@@ -64,7 +64,7 @@ uint16_t eeprom_get_index(char* key);
  * @return true If HAL writes properly
  * @return false If HAL fails to write
  */
-bool eeprom_write_key(char* key, void* data, uint16_t size);
+bool eeprom_write_key(char *key, void *data, uint16_t size);
 
 /**
  * @brief This function reads the data at the most recently used memory address of
@@ -76,7 +76,7 @@ bool eeprom_write_key(char* key, void* data, uint16_t size);
  * @return true If this reads properly using HAL
  * @return false If this fails to read with HAL
  */
-bool eeprom_read_key(char* key, void* data, uint16_t size);
+bool eeprom_read_key(char *key, void *data, uint16_t size);
 
 /**
  * @brief Function to read data from EEPROM based on the latest address stored in the partition
@@ -87,7 +87,7 @@ bool eeprom_read_key(char* key, void* data, uint16_t size);
  * @return true Successful
  * @return false Unsuccessful
  */
-bool eeprom_read_data_address(uint16_t address, void* data, uint16_t size);
+bool eeprom_read_data_address(uint16_t address, void *data, uint16_t size);
 
 /**
  * @brief Function to write data to EEPROM with updated address
@@ -98,7 +98,7 @@ bool eeprom_read_data_address(uint16_t address, void* data, uint16_t size);
  * @return true Successful
  * @return false Unsuccessful
  */
-bool eeprom_write_data_address(uint16_t address, void* data, uint16_t size);
+bool eeprom_write_data_address(uint16_t address, void *data, uint16_t size);
 
 /**
  * @brief Accepts a fault, updates the register saved in the eeprom partition, and
