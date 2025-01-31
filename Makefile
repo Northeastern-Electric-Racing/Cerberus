@@ -50,6 +50,7 @@ Core/Src/monitor.c \
 Core/Src/fault.c \
 Core/Src/can_handler.c \
 Core/Src/serial_monitor.c \
+Core/Src/eepromsys.c \
 Core/Src/dti.c \
 Core/Src/state_machine.c \
 Core/Src/bms.c \
