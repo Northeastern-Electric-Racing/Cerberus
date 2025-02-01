@@ -55,8 +55,8 @@ osStatus_t queue_fault(fault_data_t *fault_data);
 void vFaultHandler(void *pv_params);
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
-void clearFault(void *args);
-void processFault(fault_data_t fault_data);
-fault_sev_t getMaxSeverity();
+void clear_fault(void *args);
+void process_fault(fault_data_t fault_data);
+fault_sev_t get_max_severity();
 
 #endif // FAULT_H
