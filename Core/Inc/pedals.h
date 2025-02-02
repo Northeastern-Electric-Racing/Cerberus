@@ -42,6 +42,15 @@ void increase_torque_limit();
 void decrease_torque_limit();
 
 /**
+ * @brief Sets the torque limit to a specific percentage
+ * 
+ * @param percentage Percentage of the torque limit. Acceptable values are between 0 and 1.
+ * 
+ * @return uint8_t Error code. 0 if successful, 1 if percentage is out of bounds.
+ */
+uint8_t set_torque_limit(float percentage);
+
+/**
  * @brief Get the current torque limit percentage
  * 
  * @return torque limit percentage

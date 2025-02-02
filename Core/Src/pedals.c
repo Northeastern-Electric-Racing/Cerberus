@@ -57,6 +57,16 @@ void decrease_torque_limit()
 	}
 }
 
+uint8_t set_torque_limit(float percentage)
+{
+	// If the percentage is out of bounds, return an error.
+	if (percentage < 0 || percentage > 1) {
+		return 1;
+	}
+	torque_limit_percentage = percentage;
+	return 0;
+}
+
 float get_torque_limit_percentage()
 {
 	return torque_limit_percentage;
