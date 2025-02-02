@@ -150,8 +150,11 @@ void vCanReceive(void *pv_params)
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
 				break;
-			case STEERING_CANID_IO:
-				steeringio_update(msg);
+			case BUTTON_CANID_IO:
+				buttons_update(msg);
+				break;
+			case DIAL_CANID_IO:
+				dial_update(msg);
 				break;
 			default:
 				break;

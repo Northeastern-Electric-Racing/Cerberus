@@ -21,7 +21,7 @@ static void right_button_cb()
 	}
 }
 
-void steeringio_update(can_msg_t msg)
+void buttons_update(can_msg_t msg)
 {
 	uint8_t button_id = msg.data[0];
 
@@ -51,6 +51,29 @@ void steeringio_update(can_msg_t msg)
 		select_nero_index();
 		break;
 	default:
+		break;
+	}
+}
+
+void dial_update(can_msg_t msg)
+{
+	uint8_t dial_switch_id = msg.data[0];
+
+	switch (dial_switch_id) {
+	case DIAL_SWITCH_1:
+		printf("Dial set to switch 1 \n");
+		break;
+	case DIAL_SWITCH_2:
+		printf("Dial set to switch 2 \n");
+		break;
+	case DIAL_SWITCH_3:
+		printf("Dial set to switch 3 \n");
+		break;
+	case DIAL_SWITCH_4:
+		printf("Dial set to switch 4 \n");
+		break;
+	case DIAL_SWITCH_5:
+		printf("Dial set to switch 5 \n");
 		break;
 	}
 }
