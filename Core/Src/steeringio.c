@@ -50,6 +50,9 @@ void buttons_update(can_msg_t msg)
 		printf("Enter button pressed \n");
 		select_nero_index();
 		break;
+	case BUTTON_SPARE:
+		printf("Spare button pressed \n");
+		break;
 	default:
 		break;
 	}
