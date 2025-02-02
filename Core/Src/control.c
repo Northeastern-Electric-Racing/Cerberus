@@ -19,10 +19,10 @@ void vControl(void *params)
 
 		write_pump_0(control_args->pdu,
 			     control_args->pumpState0 &&
-				     dti_get_motor_temp() <= TEMP_MOTOR_LIMIT);
+				     dti_get_motor_temp() <= MOTOR_TEMP_LIMIT);
 		write_pump_1(control_args->pdu,
 			     control_args->pumpState1 &&
-				     dti_get_motor_temp() <= TEMP_MOTOR_LIMIT);
+				     dti_get_motor_temp() <= MOTOR_TEMP_LIMIT);
 
 		osDelay(1000);
 	}
