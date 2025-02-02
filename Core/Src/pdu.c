@@ -236,17 +236,17 @@ static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 
 int8_t write_pump_0(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL_0, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_pump_1(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL_1, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_24V_12V_buck(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_24V_12V_BUCK_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_BUCK_CTRL, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_brakelight(pdu_t *pdu, bool state)
@@ -261,7 +261,7 @@ int8_t write_fan_battbox(pdu_t *pdu, bool state)
 
 int8_t write_rtds(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
+	return write_ctrl(pdu, state, PIN_RTD_CTRL, PCA_OUTPUT_1_REG);
 }
 
 /* Read Pump Sensors ADC DMA */
@@ -324,7 +324,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = pca9539_read_pin(pdu->shutdown_expander,
 						   PCA_INPUT_1_REG,
-						   PIN_TSMS_SENSE, &config);
+						   PIN_TMS_SENSE, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;

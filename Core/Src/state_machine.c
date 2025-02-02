@@ -13,6 +13,8 @@
 
 #define SEND_NERO_TIMEOUT 500 /*in millis*/
 
+//#define DISABLE_REVERSE
+
 /* Internal State of Vehicle */
 static state_t cerberus_state;
 
@@ -176,6 +178,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	if (new_state.nero_index >= MAX_NERO_STATES)
 		new_state.nero_index = MAX_NERO_STATES - 1;
 
+#ifndef DISABLE_REVERSE
 	// Wasn't in home mode and still are not in home mode (Infer a Select Request)
 	if (!current_nero_state.home_mode && !new_state.home_mode) {
 		// Only Check if we are in pit mode to toggle direction
@@ -191,6 +194,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 			}
 		}
 	}
+#endif
 
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
