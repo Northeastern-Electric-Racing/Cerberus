@@ -24,6 +24,8 @@ static osMutexAttr_t dti_mutex_attributes;
 
 static uint8_t mph = 0;
 
+static uint8_t motorTemp = 0;
+
 dti_t *dti_init()
 {
 	dti_t *mc = malloc(sizeof(dti_t));
@@ -282,6 +284,23 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
 	mph = dti_get_mph(mc);
+}
+
+void dti_record_motor_temp(dti_t *mc, can_msg_t msg)
+{
+	uint16_t temp = (msg.data[0] << 8) + (msg.data[1]);
+
+	temp /= 10;
+
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->motor_temp = temp;
+	osMutexRelease(*mc->mutex);
+	motorTemp = temp;
+}
+
+uint16_t dti_get_motor_temp()
+{
+	return motorTemp;
 }
 
 uint8_t get_mph()

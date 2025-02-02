@@ -148,6 +148,9 @@ void vCanReceive(void *pv_params)
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
+			case DTI_CANID_TEMPS_FAULT:
+				dti_record_motor_temp(mc, msg);
+				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
 				break;

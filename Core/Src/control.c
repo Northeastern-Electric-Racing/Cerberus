@@ -1,5 +1,4 @@
 #include "control.h"
-#include "pdu.h"
 
 osThreadId_t control_handle;
 const osThreadAttr_t control_attributes = {
@@ -8,21 +7,22 @@ const osThreadAttr_t control_attributes = {
 	.priority = (osPriority_t)osPriorityRealtime,
 };
 
-static int fanBattBoxState = 0;
+static control_args_t *control_args;
 
-static int pumpState0 = 0;
-
-static int pumpState1 = 0;
-
-void vControl(void *param)
+void vControl(void *params)
 {
-	pdu_t *pdu = (pdu_t *)param;
+	control_args = (control_args_t *)params;
 
 	for (;;) {
-		write_fan_battbox(pdu, fanBattBoxState);
+		write_fan_battbox(control_args->pdu,
+				  control_args->fanBattBoxState);
 
-		write_pump_0(pdu, pumpState0);
-		write_pump_1(pdu, pumpState1);
+		write_pump_0(control_args->pdu,
+			     control_args->pumpState0 &&
+				     dti_get_motor_temp() <= TEMP_MOTOR_LIMIT);
+		write_pump_1(control_args->pdu,
+			     control_args->pumpState1 &&
+				     dti_get_motor_temp() <= TEMP_MOTOR_LIMIT);
 
 		osDelay(1000);
 	}
@@ -30,24 +30,11 @@ void vControl(void *param)
 
 void control_fanbattbox_record(can_msg_t msg)
 {
-	if (msg.data[0] > 0) {
-		fanBattBoxState = 1;
-	} else {
-		fanBattBoxState = 0;
-	}
+	control_args->fanBattBoxState = msg.data[0] > 0;
 }
 
 void control_pump_record(can_msg_t msg)
 {
-	if (msg.data[0] > 0) {
-		pumpState0 = 1;
-	} else {
-		pumpState0 = 0;
-	}
-
-	if (msg.data[1] > 0) {
-		pumpState1 = 1;
-	} else {
-		pumpState1 = 0;
-	}
+	control_args->pumpState0 = msg.data[0] > 0;
+	control_args->pumpState1 = msg.data[1] > 0;
 }
