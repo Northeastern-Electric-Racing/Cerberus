@@ -37,16 +37,16 @@ int8_t write_rtds(pdu_t *pdu, bool state);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
-	BATTBOX_FUSE_STAT,
+	PUMP_FUSE_STAT0,
+	SD_TO_BRB_FUSE,
 	LV_BOARDS_FUSE_STAT,
 	RADFAN_FUSE_STAT,
+	BATTBOX_FUSE_STAT,
 	BUCK_FUSE_STAT,
-	FANBATTBOX_FUSE_STAT,
-	PUMP_FUSE_STAT0,
+	FANBATTBOX_STAT,
+	PUMP_FUSE_STAT1,
 	DASHBOARD_FUSE_STAT,
 	BRKLIGHT_FUSE_STAT,
-	SD_TO_BRB_FUSE_STAT,
-	PUMP_FUSE_STAT1,
 	MAX_FUSES
 } fuse_t;
 
@@ -70,17 +70,15 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
 
 /* Functions to Read Status of Various Stages of Shutdown Loop */
 typedef enum {
-	CKPT_BRB_CLR, /* Cockpit BRB */
-	BMS_GOOD, /* Battery Management System (Shepherd) */
-	INERTIA_SW_GOOD, /* Inertia Switch */
-	SPARE_GPIO1,
-	IMD_GOOD, /* Insulation Monitoring Device */
-	BSPD_GOOD, /* Brake System Plausbility Device */
-	BOTS_GOOD, /* Brake Over Travel Switch */
-	HVD_INTLK_GOOD, /* HVD Interlock */
-	HVC_INTLK_GOOD, /* HV C Interlock*/
-	//SIDE_BRB_CLR,	/* Side BRB */
-	//TSMS,			/* Tractive System Main Switch */
+	HVD_GOOD,
+	HVC_GOOD,
+	BOTS_GOOD,
+	CKPT_BRB,
+	BMS_GOOD,
+	INERTIA_SW_GOOD,
+	SPARE_GPIO0,
+	IMD_GOOD,
+	BSPD_GOOD,
 	MAX_SHUTDOWN_STAGES
 } shutdown_stage_t;
 
@@ -124,7 +122,59 @@ extern const osThreadAttr_t rtds_attributes;
  */
 int8_t read_brake_state(pdu_t *pdu, bool *status);
 
-/* CTRL GPIO Expander */
+/* Current Sensors */
+#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
+#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x42
+#define PUMPS_CURRENT_SENSOR_ADDR	     0x44
+#define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
+
+/* Misc */
+#define MUTEX_TIMEOUT	osWaitForever /* ms */
+#define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
+#define SOUND_RTDS_FLAG 1U
+
+// Temp stuff
+/* CTRL Expander */
+#define CTRL_ADDR		PCA_I2C_ADDR_0
+#define PIN_PUMP_FUSE_STAT0	0 // P00
+#define PIN_RTD_CTRL		1 // P01
+#define PIN_SD_TO_BRB_FUSE_STAT 2 // P02
+#define PIN_PUMP_CTRL0		3 // P03
+#define PIN_PUMP_CTRL1		4 // P04
+#define PIN_BUCK_CTRL		5 // P05
+#define PIN_BRKLIGHT_CTRL	6 // P06
+#define PIN_FANBATTBOX_CTRL	7 // P07
+#define PIN_LV_BOARDS_FUSE_STAT 0 // P10
+#define PIN_RADFAN_FUSE_STAT	1 // P11
+#define PIN_BATTBOX_FUSE_STAT	2 // P12
+#define PIN_BUCK_FUSE_STAT	3 // P13
+#define PIN_FANBATTBOX_STAT	4 // P14
+#define PIN_PUMP_FUSE_STAT1	5 // P15
+#define PIN_DASHBOARD_FUSE_STAT 6 // P16
+#define PIN_BRKLIGHT_FUSE_STAT	7 // P17
+
+/* Shutdown Expander */
+#define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
+#define PIN_HVD_GOOD	    0 // P00
+#define PIN_HVC_GOOD	    1 // P01
+#define PIN_BOTS_GOOD	    2 // P02
+#define PIN_CKPT_BRB	    3 // P03
+#define PIN_BMS_GOOD	    4 // P04
+#define PIN_INERTIA_SW_GOOD 5 // P05
+#define PIN_SPARE_GPIO0	    6 // P06
+#define PIN_IMD_GOOD	    7 // P07
+#define PIN_SHUTDOWN_10	    0 // P10 (x)
+#define PIN_SHUTDOWN_11	    1 // P11 (x)
+#define PIN_BSPD_GOOD	    2 // P12
+#define PIN_SHUTDOWN_13	    3 // P13 (x)
+#define PIN_MC_STAT	    4 // P14
+#define PIN_SPARE_1	    5 // P15
+#define PIN_SPARE_2	    6 // P16
+#define PIN_TMS_SENSE	    7 // P17
+
+// Stuff that will be used eventually
+/* 
+CTRL Expander
 #define CTRL_ADDR		 PCA_I2C_ADDR_0
 #define PIN_PUMP_CTRL_0		 0 // P00
 #define PIN_PUMP_CTRL_1		 1 // P01
@@ -143,7 +193,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_PUMP_FUSE_STAT1	 6 // P16
 #define PIN_RTDS_CTRL		 7 // P17
 
-/* Shutdown GPIO Expander */
+Shutdown Expander
 #define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
 #define PIN_CKPT_BRB_CLR    0 // P00
 #define PIN_BMS_GOOD	    1 // P01
@@ -161,16 +211,6 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_BOTS_GOOD	    5 // P15
 #define PIN_HVD_INTLK_GOOD  6 // P16
 #define PIN_HVC_INTLK_GOOD  7 // P17
-
-/* Current Sensors */
-#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
-#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x42
-#define PUMPS_CURRENT_SENSOR_ADDR	     0x44
-#define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
-
-/* Misc */
-#define MUTEX_TIMEOUT	osWaitForever /* ms */
-#define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
-#define SOUND_RTDS_FLAG 1U
+*/
 
 #endif /* PDU_H */

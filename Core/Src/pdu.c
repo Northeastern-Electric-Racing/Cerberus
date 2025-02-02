@@ -236,17 +236,17 @@ static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 
 int8_t write_pump_0(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL_0, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_pump_1(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL_1, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_24V_12V_buck(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_24V_12V_BUCK_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_BUCK_CTRL, PCA_OUTPUT_0_REG);
 }
 
 int8_t write_brakelight(pdu_t *pdu, bool state)
@@ -261,7 +261,7 @@ int8_t write_fan_battbox(pdu_t *pdu, bool state)
 
 int8_t write_rtds(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_RTDS_CTRL, PCA_OUTPUT_1_REG);
+	return write_ctrl(pdu, state, PIN_RTD_CTRL, PCA_OUTPUT_1_REG);
 }
 
 /* Read Pump Sensors ADC DMA */
@@ -308,16 +308,16 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 	bool bank1[8];
 	deconstruct_buf(bank1_d, bank1);
 
-	status[BATTBOX_FUSE_STAT] = bank0[PIN_BATTBOX_FUSE_STAT];
-	status[LV_BOARDS_FUSE_STAT] = bank0[PIN_LV_BOARDS_FUSE_STAT];
-	status[RADFAN_FUSE_STAT] = bank0[PIN_RADFAN_FUSE_STAT];
+	status[PUMP_FUSE_STAT0] = bank0[PIN_PUMP_FUSE_STAT0];
+	status[SD_TO_BRB_FUSE] = bank0[PIN_SD_TO_BRB_FUSE_STAT];
+	status[LV_BOARDS_FUSE_STAT] = bank1[PIN_LV_BOARDS_FUSE_STAT];
+	status[RADFAN_FUSE_STAT] = bank1[PIN_RADFAN_FUSE_STAT];
+	status[BATTBOX_FUSE_STAT] = bank1[PIN_BATTBOX_FUSE_STAT];
 	status[BUCK_FUSE_STAT] = bank1[PIN_BUCK_FUSE_STAT];
-	status[FANBATTBOX_FUSE_STAT] = bank1[PIN_FANBATTBOX_FUSE_STAT];
-	status[PUMP_FUSE_STAT0] = bank1[PIN_PUMP_FUSE_STAT0];
+	status[FANBATTBOX_STAT] = bank1[PIN_FANBATTBOX_STAT];
+	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
 	status[DASHBOARD_FUSE_STAT] = bank1[PIN_DASHBOARD_FUSE_STAT];
 	status[BRKLIGHT_FUSE_STAT] = bank1[PIN_BRKLIGHT_FUSE_STAT];
-	status[SD_TO_BRB_FUSE_STAT] = bank1[PIN_SD_TO_BRB_FUSE_STAT];
-	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -336,7 +336,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = pca9539_read_pin(pdu->shutdown_expander,
 						   PCA_INPUT_1_REG,
-						   PIN_TSMS_SENSE, &config);
+						   PIN_TMS_SENSE, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -377,15 +377,16 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	bool bank1[8];
 	deconstruct_buf(bank1_d, bank1);
 
-	status[CKPT_BRB_CLR] = bank0[PIN_CKPT_BRB_CLR];
+	status[HVD_GOOD] = bank0[PIN_HVD_GOOD];
+	status[HVC_GOOD] = bank0[PIN_HVC_GOOD];
+	status[BOTS_GOOD] = bank0[PIN_BOTS_GOOD];
+	status[CKPT_BRB] = bank0[PIN_CKPT_BRB];
 	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
 	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
-	status[SPARE_GPIO1] = bank0[PIN_SPARE_GPIO1];
+	status[SPARE_GPIO0] = bank0[PIN_SPARE_GPIO0];
 	status[IMD_GOOD] = bank0[PIN_IMD_GOOD];
-	status[BSPD_GOOD] = bank0[PIN_BSPD_GOOD];
-	status[BOTS_GOOD] = bank1[PIN_BOTS_GOOD];
-	status[HVD_INTLK_GOOD] = bank1[PIN_HVD_INTLK_GOOD];
-	status[HVC_INTLK_GOOD] = bank1[PIN_HVC_INTLK_GOOD];
+
+	status[BSPD_GOOD] = bank1[PIN_BSPD_GOOD];
 
 	osMutexRelease(pdu->mutex);
 	return 0;
