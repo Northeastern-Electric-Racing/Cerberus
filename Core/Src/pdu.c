@@ -380,7 +380,7 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 	status[HVD_GOOD] = bank0[PIN_HVD_GOOD];
 	status[HVC_GOOD] = bank0[PIN_HVC_GOOD];
 	status[BOTS_GOOD] = bank0[PIN_BOTS_GOOD];
-	status[CKPT_BRB]= bank0[PIN_CKPT_BRB];
+	status[CKPT_BRB] = bank0[PIN_CKPT_BRB];
 	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
 	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
 	status[SPARE_GPIO0] = bank0[PIN_SPARE_GPIO0];
