@@ -23,7 +23,7 @@ can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
 static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG,
-			      STEERING_CANID_IO };
+			      BUTTON_CANID_IO, DIAL_CANID_IO };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
