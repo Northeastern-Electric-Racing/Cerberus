@@ -21,21 +21,20 @@ void vControl(void *params)
 	set_pump->control = control;
 
 	for (;;) {
-		// Write to fan batt box
 		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
 
-		// Pump debounce
-		if (dti_get_motor_temp() > MOTOR_TEMP_LIMIT) {
+		uint16_t motorTemp = dti_get_motor_temp();
+
+		if (motorTemp > MOTOR_TEMP_LIMIT) {
 			set_pump->state = 1;
-			debounce(dti_get_motor_temp() > MOTOR_TEMP_LIMIT,
-				 &pumpTimer, 10000, &setPumpState, &set_pump);
+			debounce(motorTemp > MOTOR_TEMP_LIMIT, &pumpTimer,
+				 10000, &setPumpState, &set_pump);
 		} else {
 			set_pump->state = 0;
-			debounce(dti_get_motor_temp() <= MOTOR_TEMP_LIMIT,
-				 &pumpTimer, 10000, &setPumpState, &set_pump);
+			debounce(motorTemp <= MOTOR_TEMP_LIMIT, &pumpTimer,
+				 10000, &setPumpState, &set_pump);
 		}
 
-		// Write to pumps
 		write_pump_0(control_args->pdu, control->pumpState0);
 		write_pump_1(control_args->pdu, control->pumpState1);
 
