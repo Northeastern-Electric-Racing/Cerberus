@@ -227,10 +227,24 @@ int main(void)
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 
+  /* Control File Thread */
+  control_args_t *control_args = malloc(sizeof(control_args_t));
+  control_args->pdu = pdu;
+  control_args->control = malloc(sizeof(control_t));
+  control_args->control->fanBattBoxState = 0;
+  control_args->control->pumpState0 = 0;
+  control_args->control->pumpState1 = 0;
+  control_handle = osThreadNew(vControl, control_args, &control_attributes);
+  assert(control_handle);
+
   /* Messaging */
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
+
+  can_receive_t *can_receive = malloc(sizeof(can_receive));
+  can_receive->mc = mc;
+  can_receive->control = control_args->control;
+  can_receive_thread = osThreadNew(vCanReceive, can_receive, &can_receive_attributes);
   assert(can_receive_thread);
 
   /* Control Logic */
@@ -253,15 +267,6 @@ int main(void)
   sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
-
-  /* Control File Thread */
-  control_args_t *control_args = malloc(sizeof(control_args_t));
-  control_args->pdu = pdu;
-  control_args->fanBattBoxState = 0;
-  control_args->pumpState0 = 0;
-  control_args->pumpState1 = 0;
-  control_handle = osThreadNew(vControl, control_args, &control_attributes);
-  assert(control_handle);
 
   /* USER CODE END RTOS_THREADS */
 

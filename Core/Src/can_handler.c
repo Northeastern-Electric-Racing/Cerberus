@@ -133,8 +133,8 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	dti_t *mc = (dti_t *)pv_params;
-	assert(mc);
+	can_receive_t *can_receive = (can_receive_t *)pv_params;
+	assert(can_receive);
 
 	can_msg_t msg;
 
@@ -146,10 +146,10 @@ void vCanReceive(void *pv_params)
 			switch (msg.id) {
 			/* Messages Relevant to Motor Controller */
 			case DTI_CANID_ERPM:
-				dti_record_rpm(mc, msg);
+				dti_record_rpm(can_receive->mc, msg);
 				break;
 			case DTI_CANID_TEMPS_FAULT:
-				dti_record_motor_temp(mc, msg);
+				dti_record_motor_temp(can_receive->mc, msg);
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
@@ -158,10 +158,11 @@ void vCanReceive(void *pv_params)
 				steeringio_update(msg);
 				break;
 			case CONTROL_CANID_FANBATTBOX:
-				control_fanbattbox_record(msg);
+				control_fanbattbox_record(can_receive->control,
+							  msg);
 				break;
 			case CONTROL_CANID_PUMP:
-				control_pump_record(msg);
+				control_pump_record(can_receive->control, msg);
 			default:
 				break;
 			}

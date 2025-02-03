@@ -1,4 +1,7 @@
+#include <stdlib.h>
+
 #include "control.h"
+#include "cerb_utils.h"
 
 osThreadId_t control_handle;
 const osThreadAttr_t control_attributes = {
@@ -7,34 +10,53 @@ const osThreadAttr_t control_attributes = {
 	.priority = (osPriority_t)osPriorityRealtime,
 };
 
-static control_args_t *control_args;
-
 void vControl(void *params)
 {
-	control_args = (control_args_t *)params;
+	control_args_t *control_args = (control_args_t *)params;
+	control_t *control = control_args->control;
+
+	nertimer_t pumpTimer;
+
+	set_pump_state_t *set_pump = malloc(sizeof(set_pump_state_t));
+	set_pump->control = control;
 
 	for (;;) {
-		write_fan_battbox(control_args->pdu,
-				  control_args->fanBattBoxState);
+		// Write to fan batt box
+		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
 
-		write_pump_0(control_args->pdu,
-			     control_args->pumpState0 &&
-				     dti_get_motor_temp() <= MOTOR_TEMP_LIMIT);
-		write_pump_1(control_args->pdu,
-			     control_args->pumpState1 &&
-				     dti_get_motor_temp() <= MOTOR_TEMP_LIMIT);
+		// Pump debounce
+		if (dti_get_motor_temp() > MOTOR_TEMP_LIMIT) {
+			set_pump->state = 1;
+			debounce(dti_get_motor_temp() > MOTOR_TEMP_LIMIT,
+				 &pumpTimer, 10000, &setPumpState, &set_pump);
+		} else {
+			set_pump->state = 0;
+			debounce(dti_get_motor_temp() <= MOTOR_TEMP_LIMIT,
+				 &pumpTimer, 10000, &setPumpState, &set_pump);
+		}
+
+		// Write to pumps
+		write_pump_0(control_args->pdu, control->pumpState0);
+		write_pump_1(control_args->pdu, control->pumpState1);
 
 		osDelay(1000);
 	}
 }
 
-void control_fanbattbox_record(can_msg_t msg)
+void setPumpState(void *params)
 {
-	control_args->fanBattBoxState = msg.data[0] > 0;
+	set_pump_state_t *set_pump_state = (set_pump_state_t *)params;
+	set_pump_state->control->pumpState0 = set_pump_state->state;
+	set_pump_state->control->pumpState1 = set_pump_state->state;
 }
 
-void control_pump_record(can_msg_t msg)
+void control_fanbattbox_record(control_t *control, can_msg_t msg)
 {
-	control_args->pumpState0 = msg.data[0] > 0;
-	control_args->pumpState1 = msg.data[1] > 0;
+	control->fanBattBoxState = msg.data[0] > 0;
+}
+
+void control_pump_record(control_t *control, can_msg_t msg)
+{
+	control->pumpState0 = msg.data[0] > 0;
+	control->pumpState1 = msg.data[1] > 0;
 }

@@ -14,16 +14,27 @@ extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
 
 typedef struct {
-	pdu_t *pdu;
 	bool fanBattBoxState;
 	bool pumpState0;
 	bool pumpState1;
+} control_t;
+
+typedef struct {
+	pdu_t *pdu;
+	control_t *control;
 } control_args_t;
+
+typedef struct {
+	bool state;
+	control_t *control;
+} set_pump_state_t;
 
 void vControl(void *param);
 
-void control_fanbattbox_record(can_msg_t args);
+void setPumpState(void *params);
 
-void control_pump_record(can_msg_t msg);
+void control_fanbattbox_record(control_t *control, can_msg_t msg);
+
+void control_pump_record(control_t *control, can_msg_t msg);
 
 #endif
