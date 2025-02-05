@@ -15,7 +15,7 @@ typedef enum {
 	F_PIT,
 	F_PERFORMANCE,
 	F_EFFICIENCY,
-	F_REVERSE,
+	F_REVERSE, // can only enter reverse from PIT
 	FAULTED,
 	MAX_FUNC_STATES
 } func_state_t;

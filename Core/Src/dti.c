@@ -22,8 +22,6 @@
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 
-static uint8_t mph = 0;
-
 dti_t *dti_init()
 {
 	dti_t *mc = malloc(sizeof(dti_t));
@@ -281,10 +279,4 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
-	mph = dti_get_mph(mc);
-}
-
-uint8_t get_mph()
-{
-	return mph;
 }

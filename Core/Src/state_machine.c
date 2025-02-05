@@ -35,7 +35,7 @@ const osThreadAttr_t sm_director_attributes = {
 
 static osMessageQueueId_t state_trans_queue;
 
-static void send_nero_msg()
+static void send_nero_msg(dti_t *mc)
 {
 	struct __attribute__((__packed__)) {
 		uint8_t home_mode;
@@ -46,7 +46,7 @@ static void send_nero_msg()
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
-	nero_data.mph = get_mph();
+	nero_data.mph = dti_get_mph(mc);
 	nero_data.tsms = (uint8_t)get_tsms();
 	/* Percentage from 0 - 1, multiplied by 100 */
 	nero_data.torque_lim_percentage =
@@ -165,6 +165,17 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	if (current_nero_state.home_mode && !new_state.home_mode) {
 		if (new_state.nero_index < DEBUG &&
 		    new_state.nero_index > OFF) {
+			if (transition_functional_state(new_state.nero_index,
+							pdu, mc, mpu))
+				return 1;
+		}
+
+		/* TSMS and MPH = 0 to enter games */
+		if (new_state.nero_index == GAMES) {
+			if (get_tsms() && dti_get_mph(mc) <= 1) {
+				return 1;
+			}
+
 			if (transition_functional_state(new_state.nero_index,
 							pdu, mc, mpu))
 				return 1;
@@ -312,6 +323,6 @@ void vStateMachineDirector(void *pv_params)
 		}
 
 		// send nero data periodically
-		send_nero_msg();
+		send_nero_msg(mc);
 	}
 }
