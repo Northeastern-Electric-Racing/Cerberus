@@ -170,7 +170,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 				return 1;
 		}
 
-		/* TSMS and MPH = 0 to enter games */
+		/* TSMS OFF and MPH = 0 to enter games */
 		if (new_state.nero_index == GAMES) {
 			if (!get_tsms() && dti_get_mph(mc) <= 1) {
 				return 1;
