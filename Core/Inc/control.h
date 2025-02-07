@@ -2,7 +2,6 @@
 #define CONTROL_H
 
 #include "pdu.h"
-#include "dti.h"
 #include "can.h"
 
 #define CONTROL_CANID_FANBATTBOX 0x4A1

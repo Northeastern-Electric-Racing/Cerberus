@@ -2,6 +2,7 @@
 
 #include "control.h"
 #include "cerb_utils.h"
+#include "dti.h"
 
 osThreadId_t control_handle;
 const osThreadAttr_t control_attributes = {
