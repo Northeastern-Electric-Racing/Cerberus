@@ -12,8 +12,7 @@
 #define NUM_OF_FAULTS		18UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
-osMessageQueueId_t fault_handle_high_priority_queue;
-osMessageQueueId_t fault_handle_low_priority_queue;
+osMessageQueueId_t fault_handle_queue;
 
 uint32_t faults = 0;
 
@@ -24,18 +23,17 @@ fault_sev_t *severity_levels = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
-	if (!fault_handle_high_priority_queue ||
-	    !fault_handle_low_priority_queue)
-		return osErrorParameter; // Return proper error code
+	if (!fault_handle_queue)
+		return osErrorParameter;
 
-	osStatus_t status; // Declare status once before the if/else block
+	osStatus_t status;
 
 	if (fault_data->severity <= DEFCON3) {
-		status = osMessageQueuePut(fault_handle_high_priority_queue,
-					   fault_data, 0U, 0U);
+		status = osMessageQueuePut(fault_handle_queue, fault_data, 2,
+					   0U);
 	} else {
-		status = osMessageQueuePut(fault_handle_low_priority_queue,
-					   fault_data, 0U, 0U);
+		status = osMessageQueuePut(fault_handle_queue, fault_data, 1,
+					   0U);
 	}
 
 	return status;
@@ -64,21 +62,26 @@ void vFaultHandler(void *pv_params)
 	}
 
 	fault_data_t fault_data;
-	fault_handle_low_priority_queue = osMessageQueueNew(
-		FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
-	fault_handle_low_priority_queue = osMessageQueueNew(
-		FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
+	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
+					       sizeof(fault_data_t), NULL);
+	// fault_handle_low_priority_queue = osMessageQueueNew(
+	// 	FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
 	for (;;) {
-		if (osMessageQueueGet(fault_handle_high_priority_queue,
-				      &fault_data, NULL,
+		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
 			process_fault(fault_data);
-		} else if (osMessageQueueGet(fault_handle_low_priority_queue,
-					     &fault_data, NULL,
-					     pdMS_TO_TICKS(SEND_FAULT_TIME)) ==
-			   osOK) {
-			process_fault(fault_data);
 		}
+
+		// Send Can Message (even if a new fault was not received)
+		can_msg_t msg;
+		msg.id = CANID_FAULT_MSG;
+		msg.len = 8;
+
+		memcpy(msg.data, &faults, sizeof(faults));
+		memcpy(msg.data + sizeof(faults), &max_severity_level,
+		       sizeof(max_severity_level));
+
+		queue_can_msg(msg);
 	}
 }
 
@@ -105,6 +108,8 @@ void process_fault(fault_data_t fault_data)
 	severity_levels[index] = fault_data.severity;
 	max_severity_level = get_max_severity();
 
+	printf("Fault Handler! Diagnostic Info:\t%s\n", fault_data.diag);
+
 	switch (fault_data.severity) {
 	case DEFCON1: /* Highest(1st) Priority */
 		fault();
@@ -124,17 +129,6 @@ void process_fault(fault_data_t fault_data)
 	default:
 		break;
 	}
-
-	// Send Can Message (even if a new fault was not received)
-	can_msg_t msg;
-	msg.id = CANID_FAULT_MSG;
-	msg.len = 8;
-
-	memcpy(msg.data, &faults, sizeof(faults));
-	memcpy(msg.data + sizeof(faults), &max_severity_level,
-	       sizeof(max_severity_level));
-
-	queue_can_msg(msg);
 }
 
 void clear_fault(void *args)
