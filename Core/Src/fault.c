@@ -9,17 +9,14 @@
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
-#define NUM_OF_FAULTS		18UL
+#define NUM_OF_CRIT_FAULTS	9UL
+#define NUM_OF_NON_CRIT_FAULTS	9UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
 osMessageQueueId_t fault_handle_queue;
-
-uint32_t faults = 0;
-
+uint16_t crit_fault;
+uint32_t non_crit_fault;
 osTimerId_t *timers = NULL;
-
-fault_sev_t max_severity_level = DEFCON_NONE;
-fault_sev_t *severity_levels = NULL;
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
@@ -28,7 +25,7 @@ osStatus_t queue_fault(fault_data_t *fault_data)
 
 	osStatus_t status;
 
-	if (fault_data->severity <= DEFCON3) {
+	if (fault_data->id == CRITICAL) {
 		status = osMessageQueuePut(fault_handle_queue, fault_data, 2,
 					   0U);
 	} else {
@@ -50,22 +47,13 @@ void vFaultHandler(void *pv_params)
 {
 	// Create Timers Array
 	if (timers == NULL) {
-		timers = calloc(NUM_OF_FAULTS, sizeof(osTimerId_t));
-	}
-
-	// Create Severity Levels Array (all DEFCON_NONE initially)
-	if (severity_levels == NULL) {
-		severity_levels = calloc(NUM_OF_FAULTS, sizeof(fault_sev_t));
-		for (int i = 0; i < NUM_OF_FAULTS; i++) {
-			severity_levels[i] = DEFCON_NONE;
-		}
+		timers = calloc((NUM_OF_CRIT_FAULTS + NUM_OF_NON_CRIT_FAULTS),
+				sizeof(osTimerId_t));
 	}
 
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
-	// fault_handle_low_priority_queue = osMessageQueueNew(
-	// 	FAULT_HANDLE_QUEUE_SIZE, sizeof(fault_data_t), NULL);
 	for (;;) {
 		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
@@ -88,11 +76,20 @@ void vFaultHandler(void *pv_params)
 void process_fault(fault_data_t fault_data)
 {
 	// Set Fault
+	uint32_t index;
 	uint32_t *fault_id = malloc(sizeof(uint32_t));
-	*fault_id = (uint32_t)fault_data.id;
-	faults |= *fault_id;
 
-	uint32_t index = (uint32_t)log2(*fault_id);
+	if (fault_data.id == CRITICAL) {
+		crit_fault |= *fault_id;
+		*fault_id = (uint32_t)fault_data.fault_data_t.crit_fault;
+		index = (uint32_t)log2((*fault_id));
+
+		fault();
+	} else if (fault_data.id == NONCRITICAL) {
+		non_crit_fault |= *fault_id;
+		*fault_id = (uint32_t)fault_data.fault_data_t.non_crit_fault;
+		index = (uint32_t)log2((*fault_id)) + NUM_OF_CRIT_FAULTS;
+	}
 
 	// Create Timers
 	if (!timers[index]) {
@@ -104,59 +101,24 @@ void process_fault(fault_data_t fault_data)
 		return;
 	}
 
-	// Get New Maximum Severity Level
-	severity_levels[index] = fault_data.severity;
-	max_severity_level = get_max_severity();
-
 	printf("Fault Handler! Diagnostic Info:\t%s\n", fault_data.diag);
-
-	switch (fault_data.severity) {
-	case DEFCON1: /* Highest(1st) Priority */
-		fault();
-		break;
-	case DEFCON2:
-		fault();
-		break;
-	case DEFCON3:
-		fault();
-		break;
-	case DEFCON4:
-		break;
-	case DEFCON5: /* Lowest Priority */
-		break;
-	case DEFCON_NONE:
-		break;
-	default:
-		break;
-	}
 }
 
 void clear_fault(void *args)
 {
 	uint32_t *fault_id = (uint32_t *)args;
 
-	// Remove this timer's fault from total faults
-	faults &= ~(*fault_id);
-
-	// Remove this timer's severity from total severity
-	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
-	max_severity_level = get_max_severity();
+	// Removes the current fault critical counters
+	if (((*fault_id) & crit_fault) == (*fault_id)) {
+		crit_fault &= ~((*fault_id));
+	} else if (((*fault_id) & non_crit_fault) == (*fault_id)) {
+		non_crit_fault &= ~((*fault_id));
+	}
 
 	// unfault car if all critical faults are cleared
-	if (max_severity_level > DEFCON3) {
+	if (crit_fault) {
 		set_ready_mode();
 	}
 
 	free(fault_id);
-}
-
-fault_sev_t get_max_severity()
-{
-	int max = DEFCON_NONE;
-	for (int i = 0; i < NUM_OF_FAULTS; i++) {
-		if (severity_levels[i] < max) {
-			max = severity_levels[i];
-		}
-	}
-	return (fault_sev_t)max;
 }

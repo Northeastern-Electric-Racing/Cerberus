@@ -2,6 +2,7 @@
 #define CERBERUS_FAULT_H
 
 #include "cmsis_os.h"
+#include <stdbool.h>
 
 typedef enum {
 	DEFCON1 = 1,
@@ -30,12 +31,32 @@ typedef enum {
 	BSPD_PREFAULT = (1 << 14),
 	LV_MONITOR_FAULT = (1 << 15),
 	RTDS_FAULT = (1 << 16),
-	MAX_FAULTS = (1 << 17)
+	MAX_FAULTS = (1 << 17),
 } fault_code_t;
 
-typedef struct {
-	fault_code_t id;
-	fault_sev_t severity;
+typedef enum {
+	ONBOARD_TEMP_FAULT = (1 << 1),
+	ONBOARD_PEDAL_FAULT = (1 << 2),
+	IMU_FAULT = (1 << 3),
+	CAN_DISPATCH_FAULT = (1 << 4),
+	MAX_CRIT_FAULTS = (1 << 4)
+
+} critical_fault_code_t
+
+	typedef enum {
+		ONBOARD_TEMP_FAULT = (1 << 1),
+		ONBOARD_PEDAL_FAULT = (1 << 2),
+		IMU_FAULT = (1 << 3),
+		CAN_DISPATCH_FAULT = (1 << 4),
+
+	} noncritical_fault_code_t
+
+	typedef struct {
+	enum { CRITICAL, NONCRITICAL } id;
+	union {
+		crit_fault_t crit_fault;
+		non_crit_fault_t non_crit_fault;
+	} fault_code;
 	char *diag;
 } fault_data_t;
 
