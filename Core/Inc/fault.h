@@ -13,50 +13,42 @@ typedef enum {
 	DEFCON_NONE
 } fault_sev_t;
 
+// typedef enum {
+
+// 	DTI_ROUTING_FAULT = (1 << 8),
+// 	STEERINGIO_ROUTING_FAULT = (1 << 9),
+// 	STATE_RECEIVED_FAULT = (1 << 10),
+// 	INVALID_TRANSITION_FAULT = (1 << 11),
+
+// 	BUTTONS_MONITOR_FAULT = (1 << 13),
+// 	MAX_FAULTS = (1 << 17),
+// } fault_code_t;
+
 typedef enum {
-	FAULTS_CLEAR = (1 << 0),
-	ONBOARD_TEMP_FAULT = (1 << 1),
-	ONBOARD_PEDAL_FAULT = (1 << 2),
-	IMU_FAULT = (1 << 3),
-	CAN_DISPATCH_FAULT = (1 << 4),
-	CAN_ROUTING_FAULT = (1 << 5),
-	FUSE_MONITOR_FAULT = (1 << 6),
-	SHUTDOWN_MONITOR_FAULT = (1 << 7),
-	DTI_ROUTING_FAULT = (1 << 8),
-	STEERINGIO_ROUTING_FAULT = (1 << 9),
-	STATE_RECEIVED_FAULT = (1 << 10),
-	INVALID_TRANSITION_FAULT = (1 << 11),
-	BMS_CAN_MONITOR_FAULT = (1 << 12),
-	BUTTONS_MONITOR_FAULT = (1 << 13),
-	BSPD_PREFAULT = (1 << 14),
-	LV_MONITOR_FAULT = (1 << 15),
-	RTDS_FAULT = (1 << 16),
-	MAX_FAULTS = (1 << 17),
-} fault_code_t;
+	ONBOARD_PEDAL_FAULT = (1 << 1),
+	CAN_DISPATCH_FAULT = (1 << 2),
+	CAN_ROUTING_FAULT = (1 << 3),
+	BMS_CAN_MONITOR_FAULT = (1 << 4),
+	MAX_CRITICAL_FAULT = (1 << 5)
+} crit_fault_t;
 
 typedef enum {
 	ONBOARD_TEMP_FAULT = (1 << 1),
-	ONBOARD_PEDAL_FAULT = (1 << 2),
-	IMU_FAULT = (1 << 3),
-	CAN_DISPATCH_FAULT = (1 << 4),
-	MAX_CRIT_FAULTS = (1 << 4)
+	IMU_FAULT = (1 << 2),
+	FUSE_MONITOR_FAULT = (1 << 3),
+	SHUTDOWN_MONITOR_FAULT = (1 << 4),
+	LV_MONITOR_FAULT = (1 << 5),
+	BSPD_PREFAULT = (1 << 6),
+	RTDS_FAULT = (1 << 7),
+	MAX_NOCRITICAL_FAULT = (1 << 6)
+} non_crit_fault_t;
 
-} critical_fault_code_t
-
-	typedef enum {
-		ONBOARD_TEMP_FAULT = (1 << 1),
-		ONBOARD_PEDAL_FAULT = (1 << 2),
-		IMU_FAULT = (1 << 3),
-		CAN_DISPATCH_FAULT = (1 << 4),
-
-	} noncritical_fault_code_t
-
-	typedef struct {
-	enum { CRITICAL, NONCRITICAL } id;
+typedef struct {
+	enum { CRITICAL, NONCRITICAL } severity;
 	union {
 		crit_fault_t crit_fault;
 		non_crit_fault_t non_crit_fault;
-	} fault_code;
+	} id;
 	char *diag;
 } fault_data_t;
 

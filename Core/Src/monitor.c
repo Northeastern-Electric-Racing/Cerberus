@@ -21,8 +21,8 @@ osMutexId_t tsms_mutex;
 void read_lv_sense(void *arg)
 {
 	mpu_t *mpu = (mpu_t *)arg;
-	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .id.non_crit_fault = LV_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
 	uint32_t v_int;
@@ -81,8 +81,8 @@ void read_lv_sense(void *arg)
 void read_fuse_data(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .id.non_crit_fault = FUSE_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 	uint16_t fuse_buf;
 	bool fuses[MAX_FUSES] = { 0 };
@@ -169,8 +169,8 @@ void tsms_debounce_cb(void *arg)
 void read_tsms(pdu_t *pdu)
 {
 	static nertimer_t timer;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .id.non_crit_fault = FUSE_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	bool tsms_reading;
 
 	/* If the TSMS reading throws an error, queue TSMS fault */
@@ -229,8 +229,8 @@ void vDataCollection(void *pv_params)
 
 // void vTempMonitor(void *pv_params)
 // {
-// 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-// 				    .severity = DEFCON5 };
+// 	fault_data_t fault_data = { .id.non_crit_fault = ONBOARD_TEMP_FAULT,
+// 				    .severity = NONCRITICAL };
 // 	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
 // 			       .len = 4,
 // 			       .data = { 0 } };
@@ -273,8 +273,8 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .id.non_crit_fault = SHUTDOWN_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
 				   .len = 2,
 				   .data = { 0 } };
@@ -331,7 +331,7 @@ void vShutdownMonitor(void *pv_params)
 // {
 // 	const uint8_t num_samples = 10;
 // 	static imu_data_t sensor_data;
-// 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
+// 	fault_data_t fault_data = { .id.non_crit_fault = IMU_FAULT, .severity = NONCRITICAL };
 // 	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
 // 				    .len = 6,
 // 				    .data = { 0 } };

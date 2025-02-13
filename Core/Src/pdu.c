@@ -95,7 +95,8 @@ void vRTDS(void *arg)
 	pdu_t *pdu = (pdu_t *)arg;
 	assert(pdu);
 
-	fault_data_t rtds_fault = { .id = RTDS_FAULT, .severity = DEFCON4 };
+	fault_data_t rtds_fault = { .id.non_crit_fault = RTDS_FAULT,
+				    .severity = NONCRITICAL };
 
 	for (;;) {
 		osThreadFlagsWait(SOUND_RTDS_FLAG, osFlagsWaitAny,
