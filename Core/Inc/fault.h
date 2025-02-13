@@ -13,17 +13,6 @@ typedef enum {
 	DEFCON_NONE
 } fault_sev_t;
 
-// typedef enum {
-
-// 	DTI_ROUTING_FAULT = (1 << 8),
-// 	STEERINGIO_ROUTING_FAULT = (1 << 9),
-// 	STATE_RECEIVED_FAULT = (1 << 10),
-// 	INVALID_TRANSITION_FAULT = (1 << 11),
-
-// 	BUTTONS_MONITOR_FAULT = (1 << 13),
-// 	MAX_FAULTS = (1 << 17),
-// } fault_code_t;
-
 typedef enum {
 	ONBOARD_PEDAL_FAULT = (1 << 1),
 	CAN_DISPATCH_FAULT = (1 << 2),
@@ -31,6 +20,13 @@ typedef enum {
 	BMS_CAN_MONITOR_FAULT = (1 << 4),
 	MAX_CRITICAL_FAULT = (1 << 5)
 } crit_fault_t;
+
+// Unused Fault Message IDs
+// DTI_ROUTING_FAULT
+// STEERINGIO_ROUTING_FAULT
+// STATE_RECEIVED_FAULT
+// INVALID_TRANSITION_FAULT
+// BUTTONS_MONITOR_FAULT
 
 typedef enum {
 	ONBOARD_TEMP_FAULT = (1 << 1),
