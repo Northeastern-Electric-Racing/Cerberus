@@ -20,12 +20,13 @@ void vControl(void *params)
 	set_pump_state_t *set_pump = malloc(sizeof(set_pump_state_t));
 	set_pump->control = control;
 
+	bool hv;
+
 	for (;;) {
 		// Handle Batt Box State
 		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
 
 		// Handle Pump States
-		bool hv;
 		read_tsms_sense(control_args->pdu, &hv);
 
 		if (hv) {
