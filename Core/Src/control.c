@@ -39,6 +39,9 @@ void vControl(void *params)
 		write_pump_0(control_args->pdu, control->pumpState0);
 		write_pump_1(control_args->pdu, control->pumpState1);
 
+		// Handle Radiator Fan States
+		// TODO: Implement
+
 		osDelay(1000);
 	}
 }
