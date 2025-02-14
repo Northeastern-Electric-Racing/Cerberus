@@ -264,6 +264,16 @@ int8_t write_rtds(pdu_t *pdu, bool state)
 	return write_ctrl(pdu, state, PIN_RTD_CTRL, PCA_OUTPUT_1_REG);
 }
 
+int8_t write_radfan_0(pdu_t *pdu, bool state)
+{
+	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
+}
+
+int8_t write_radfan_1(pdu_t *pdu, bool state)
+{
+	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
+}
+
 /* Read Pump Sensors ADC DMA */
 void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 {

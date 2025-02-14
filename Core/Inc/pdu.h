@@ -34,6 +34,8 @@ int8_t write_24V_12V_buck(pdu_t *pdu, bool state);
 int8_t write_brakelight(pdu_t *pdu, bool state);
 int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
+int8_t write_radfan_0(pdu_t *pdu, bool state);
+int8_t write_radfan_1(pdu_t *pdu, bool state);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
