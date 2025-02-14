@@ -23,8 +23,8 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, CONTROL_CANID_FANBATTBOX,
-			      BMS_DCL_MSG, STEERING_CANID_IO };
+static uint32_t id_list[] = { CONTROL_CANID_FANBATTBOX, DTI_CANID_CURRENTS, BMS_DCL_MSG,
+			      BUTTON_CANID_IO, DIAL_CANID_IO };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -154,8 +154,11 @@ void vCanReceive(void *pv_params)
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
 				break;
-			case STEERING_CANID_IO:
-				steeringio_update(msg);
+			case BUTTON_CANID_IO:
+				buttons_update(msg);
+				break;
+			case DIAL_CANID_IO:
+				dial_update(msg);
 				break;
 			case CONTROL_CANID_FANBATTBOX:
 				control_fanbattbox_record(can_receive->control,
