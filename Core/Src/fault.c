@@ -10,7 +10,7 @@
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 #define NUM_OF_CRIT_FAULTS	5UL
-#define NUM_OF_NON_CRIT_FAULTS	6UL
+#define NUM_OF_NON_CRIT_FAULTS	8UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
 osMessageQueueId_t fault_handle_queue;
