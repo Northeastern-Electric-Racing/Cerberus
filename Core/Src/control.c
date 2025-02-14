@@ -31,7 +31,6 @@ void vControl(void *params)
 		if (hv) {
 			control->pumpState0 = 1;
 			control->pumpState1 = 1;
-			return;
 		} else {
 			debounce_motor_temp(set_pump, &pump_timer);
 		}
