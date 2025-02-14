@@ -7,6 +7,7 @@
 
 #define CONTROL_CANID_FANBATTBOX 0x4A1
 #define CONTROL_CANID_PUMP	 0x4A0
+#define CONTROL_CANID_RADFAN	 0x499
 
 #define MOTOR_TEMP_LIMIT 50
 
@@ -17,6 +18,8 @@ typedef struct {
 	bool fanBattBoxState;
 	bool pumpState0;
 	bool pumpState1;
+	bool radFanState0;
+	bool radFanState1;
 } control_t;
 
 typedef struct {
@@ -38,5 +41,7 @@ void set_pump_state(void *params);
 void control_fanbattbox_record(control_t *control, can_msg_t msg);
 
 void control_pump_record(control_t *control, can_msg_t msg);
+
+void control_radfan_record(control_t *control, can_msg_t msg);
 
 #endif

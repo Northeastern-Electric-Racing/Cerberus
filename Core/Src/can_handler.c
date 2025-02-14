@@ -23,9 +23,10 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS,
-			      BMS_DCL_MSG,    BUTTON_CANID_IO,
-			      DIAL_CANID_IO,  CONTROL_CANID_FANBATTBOX };
+static uint32_t id_list[] = { DTI_CANID_ERPM,	   DTI_CANID_CURRENTS,
+			      BMS_DCL_MSG,	   BUTTON_CANID_IO,
+			      DIAL_CANID_IO,	   CONTROL_CANID_FANBATTBOX,
+			      CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -40,8 +41,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	uint32_t id_list_size_four1[4] = { id_list[0], id_list[1], id_list[2],
 					   id_list[3] };
 
-	uint32_t id_list_size_four2[4] = { id_list[4], id_list[5], id_list[5],
-					   id_list[5] };
+	uint32_t id_list_size_four2[4] = { id_list[4], id_list[5], id_list[6],
+					   id_list[6] };
 
 	assert(!can_add_filter(can1, id_list_size_four1));
 	assert(!can_add_filter(can1, id_list_size_four2));
@@ -172,6 +173,9 @@ void vCanReceive(void *pv_params)
 				break;
 			case CONTROL_CANID_PUMP:
 				control_pump_record(can_receive->control, msg);
+			case CONTROL_CANID_RADFAN:
+				control_radfan_record(can_receive->control,
+						      msg);
 			default:
 				break;
 			}

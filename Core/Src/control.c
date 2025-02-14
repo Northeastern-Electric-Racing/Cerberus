@@ -45,7 +45,6 @@ void vControl(void *params)
 
 void debounce_motor_temp(set_pump_state_t *set_pump, nertimer_t *pump_timer)
 {
-	// Debounce for tempature
 	uint16_t motorTemp = dti_get_motor_temp();
 
 	if (motorTemp > MOTOR_TEMP_LIMIT) {
@@ -75,4 +74,10 @@ void control_pump_record(control_t *control, can_msg_t msg)
 {
 	control->pumpState0 = msg.data[0] > 0;
 	control->pumpState1 = msg.data[1] > 0;
+}
+
+void control_radfan_record(control_t *control, can_msg_t msg)
+{
+	control->radFanState0 = msg.data[0] > 0;
+	control->radFanState1 = msg.data[1] > 0;
 }
