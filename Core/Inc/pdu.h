@@ -125,10 +125,10 @@ extern const osThreadAttr_t rtds_attributes;
 int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 /* Current Sensors */
-#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x40
-#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x42
-#define PUMPS_CURRENT_SENSOR_ADDR	     0x44
-#define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x45
+#define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x80
+#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x84
+#define PUMPS_CURRENT_SENSOR_ADDR	     0x88
+#define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x8A
 
 /* Misc */
 #define MUTEX_TIMEOUT	osWaitForever /* ms */

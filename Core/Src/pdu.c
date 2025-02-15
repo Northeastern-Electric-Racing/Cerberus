@@ -47,6 +47,8 @@ static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	status = HAL_I2C_Mem_Write(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
 				   buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
+		printf("status: %d\n", status);
+		printf("dev_addr: %d\n", dev_addr);
 		return -1;
 	}
 
