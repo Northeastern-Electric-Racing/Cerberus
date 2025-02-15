@@ -53,34 +53,6 @@ static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	return 0;
 }
 
-osThreadId_t rtds_thread;
-const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
-					 .stack_size = 512,
-					 /* The task will run infrequently */
-					 .priority = osPriorityRealtime7 };
-
-void vRTDS(void *arg)
-{
-	pdu_t *pdu = (pdu_t *)arg;
-	assert(pdu);
-
-	fault_data_t rtds_fault = { .id = RTDS_FAULT, .severity = DEFCON4 };
-
-	for (;;) {
-		osThreadFlagsWait(SOUND_RTDS_FLAG, osFlagsWaitAny,
-				  osWaitForever);
-		if (write_rtds(pdu, true)) {
-			rtds_fault.diag = "Unable to sound RTDS";
-			queue_fault(&rtds_fault);
-		}
-		osDelay(RTDS_DURATION);
-		if (write_rtds(pdu, false)) {
-			rtds_fault.diag = "Unable to stop RTDS";
-			queue_fault(&rtds_fault);
-		}
-	}
-}
-
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
 	pdu_t *pdu = malloc(sizeof(pdu_t));
@@ -210,6 +182,34 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	assert(pdu->mutex);
 
 	return pdu;
+}
+
+osThreadId_t rtds_thread;
+const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
+					 .stack_size = 512,
+					 /* The task will run infrequently */
+					 .priority = osPriorityRealtime7 };
+
+void vRTDS(void *arg)
+{
+	pdu_t *pdu = (pdu_t *)arg;
+	assert(pdu);
+
+	fault_data_t rtds_fault = { .id = RTDS_FAULT, .severity = DEFCON4 };
+
+	for (;;) {
+		osThreadFlagsWait(SOUND_RTDS_FLAG, osFlagsWaitAny,
+				  osWaitForever);
+		if (write_rtds(pdu, true)) {
+			rtds_fault.diag = "Unable to sound RTDS";
+			queue_fault(&rtds_fault);
+		}
+		osDelay(RTDS_DURATION);
+		if (write_rtds(pdu, false)) {
+			rtds_fault.diag = "Unable to stop RTDS";
+			queue_fault(&rtds_fault);
+		}
+	}
 }
 
 /* CTRL Line Functions */
