@@ -382,22 +382,20 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	bitstream_t shutdown;
+	uint8_t shutdown_data[2];
+	bitstream_init(&shutdown, shutdown_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[HVD_GOOD] = bank0[PIN_HVD_GOOD];
-	status[HVC_GOOD] = bank0[PIN_HVC_GOOD];
-	status[BOTS_GOOD] = bank0[PIN_BOTS_GOOD];
-	status[CKPT_BRB] = bank0[PIN_CKPT_BRB];
-	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
-	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
-	status[SPARE_GPIO0] = bank0[PIN_SPARE_GPIO0];
-	status[IMD_GOOD] = bank0[PIN_IMD_GOOD];
-
-	status[BSPD_GOOD] = bank1[PIN_BSPD_GOOD];
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
+	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
+	bitstream_add(&shutdown, NER_GET_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
+	bitstream_add(&shutdown, 0, 7); 											// Extra (7 bits)
 
 	osMutexRelease(pdu->mutex);
 	return 0;
