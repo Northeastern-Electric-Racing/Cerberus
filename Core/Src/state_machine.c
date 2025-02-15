@@ -81,6 +81,20 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
+	/* Special case: should be able to fault no matter what conditions */
+	if (new_state == FAULTED) {
+		/* Turn off high power peripherals */
+		// write_fan_battbox(pdu, true);
+		write_pump(pdu, false);
+		cerberus_state.nero =
+			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+		write_fault(mpu, true);
+
+		osDelay(1000); /* Delay for 1 sec before faulting car */
+
+		printf("FAULTED\r\n");
+	}
+
 	/* Make sure wheels are not spinning before changing modes */
 	if (dti_get_mph(mc) > 1)
 		return 1;
@@ -125,16 +139,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Can only enter reverse mode if already in pit mode */
 		if (cerberus_state.functional != F_PIT)
 			return 4;
+#else
+		printf("Reverse is disabled.");
+		return 4;
 #endif
-		break;
-	case FAULTED:
-		/* Turn off high power peripherals */
-		// write_fan_battbox(pdu, true);
-		write_pump(pdu, false);
-		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = false };
-		write_fault(mpu, true);
-		printf("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing
@@ -163,7 +171,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
-		if (new_state.nero_index < DEBUG &&
+		if (new_state.nero_index < GAMES &&
 		    new_state.nero_index > OFF) {
 			if (transition_functional_state(new_state.nero_index,
 							pdu, mc, mpu))
