@@ -288,8 +288,9 @@ static void deconstruct_buf(uint8_t data, bool config[8])
 	}
 }
 
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
+int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream)
 {
+	// clang-format off
 	if (!pdu)
 		return -1;
 
@@ -312,25 +313,25 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	bitstream_t fuses;
+	uint8_t fuse_data[2];
+	bitstream_init(&fuses, fuse_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[PUMP_FUSE_STAT0] = bank0[PIN_PUMP_FUSE_STAT0];
-	status[SD_TO_BRB_FUSE] = bank0[PIN_SD_TO_BRB_FUSE_STAT];
-	status[LV_BOARDS_FUSE_STAT] = bank1[PIN_LV_BOARDS_FUSE_STAT];
-	status[RADFAN_FUSE_STAT] = bank1[PIN_RADFAN_FUSE_STAT];
-	status[BATTBOX_FUSE_STAT] = bank1[PIN_BATTBOX_FUSE_STAT];
-	status[BUCK_FUSE_STAT] = bank1[PIN_BUCK_FUSE_STAT];
-	status[FANBATTBOX_STAT] = bank1[PIN_FANBATTBOX_STAT];
-	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
-	status[DASHBOARD_FUSE_STAT] = bank1[PIN_DASHBOARD_FUSE_STAT];
-	status[BRKLIGHT_FUSE_STAT] = bank1[PIN_BRKLIGHT_FUSE_STAT];
+	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
+	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
+	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
+	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
+	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
+	bitstream_add(&fuses, 0, 6); 												// Extra (6 bits)
 
 	osMutexRelease(pdu->mutex);
 	return 0;
+	// clang-format on
 }
 
 int8_t read_tsms_sense(pdu_t *pdu, bool *status)

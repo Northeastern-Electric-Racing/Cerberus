@@ -8,6 +8,8 @@
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "bitstream.h"
+#include "c_utils.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
@@ -56,10 +58,10 @@ typedef enum {
  * @brief Read the status of the PDU fuses.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream for storing fuse data
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
+int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream);
 
 /**
  * @brief Read the state of the TSMS signal.
