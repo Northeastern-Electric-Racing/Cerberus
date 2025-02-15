@@ -281,13 +281,6 @@ void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-static void deconstruct_buf(uint8_t data, bool config[8])
-{
-	for (uint8_t i = 0; i < 8; i++) {
-		config[i] = (data >> i) & 1;
-	}
-}
-
 int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream)
 {
 	// clang-format off
@@ -358,7 +351,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
+int8_t read_shutdown(pdu_t *pdu, bitstream_t* bitstream)
 {
 	if (!pdu)
 		return -1;

@@ -90,10 +90,10 @@ typedef enum {
  * @brief Read the status of the shutdown loop.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream to store shutdown data
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+int8_t read_shutdown(pdu_t *pdu, bitstream_t* bitstream);
 
 /**
  * @brief Read the status of the shutdown loop.
