@@ -371,14 +371,7 @@ void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-static void deconstruct_buf(uint8_t data, bool config[8])
-{
-	for (uint8_t i = 0; i < 8; i++) {
-		config[i] = (data >> i) & 1;
-	}
-}
-
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
+int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
@@ -402,22 +395,23 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	bitstream_t fuses;
+	uint8_t fuse_data[2];
+	bitstream_init(&fuses, fuse_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[PUMP_FUSE_STAT0] = bank0[PIN_PUMP_FUSE_STAT0];
-	status[SD_TO_BRB_FUSE] = bank0[PIN_SD_TO_BRB_FUSE_STAT];
-	status[LV_BOARDS_FUSE_STAT] = bank1[PIN_LV_BOARDS_FUSE_STAT];
-	status[RADFAN_FUSE_STAT] = bank1[PIN_RADFAN_FUSE_STAT];
-	status[BATTBOX_FUSE_STAT] = bank1[PIN_BATTBOX_FUSE_STAT];
-	status[BUCK_FUSE_STAT] = bank1[PIN_BUCK_FUSE_STAT];
-	status[FANBATTBOX_STAT] = bank1[PIN_FANBATTBOX_STAT];
-	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
-	status[DASHBOARD_FUSE_STAT] = bank1[PIN_DASHBOARD_FUSE_STAT];
-	status[BRKLIGHT_FUSE_STAT] = bank1[PIN_BRKLIGHT_FUSE_STAT];
+	// clang-format off
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
+	bitstream_add(&fuses, 0, 6); 												// Extra (6 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -447,7 +441,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
+int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
@@ -471,22 +465,22 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	// clang-format off
+	bitstream_t shutdown;
+	uint8_t shutdown_data[2];
+	bitstream_init(&shutdown, shutdown_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[HVD_GOOD] = bank0[PIN_HVD_GOOD];
-	status[HVC_GOOD] = bank0[PIN_HVC_GOOD];
-	status[BOTS_GOOD] = bank0[PIN_BOTS_GOOD];
-	status[CKPT_BRB] = bank0[PIN_CKPT_BRB];
-	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
-	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
-	status[SPARE_GPIO0] = bank0[PIN_SPARE_GPIO0];
-	status[IMD_GOOD] = bank0[PIN_IMD_GOOD];
-
-	status[BSPD_GOOD] = bank1[PIN_BSPD_GOOD];
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
+	bitstream_add(&shutdown, 0, 7); 											// Extra (7 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;

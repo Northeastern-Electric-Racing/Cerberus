@@ -8,6 +8,8 @@
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "bitstream.h"
+#include "c_utils.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
@@ -56,10 +58,10 @@ typedef enum {
  * @brief Read the status of the PDU fuses.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream for storing fuse data
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
+int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream);
 
 /**
  * @brief Read the state of the TSMS signal.
@@ -88,10 +90,10 @@ typedef enum {
  * @brief Read the status of the shutdown loop.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream to store shutdown data
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
 
 /**
  * @brief Read the status of the shutdown loop.
@@ -134,6 +136,10 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define MUTEX_TIMEOUT	osWaitForever /* ms */
 #define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
 #define SOUND_RTDS_FLAG 1U
+
+/* Extracts the specified bit from a byte. */
+/* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
+#define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
 
 // clang-format off
 /* CTRL Expander */
