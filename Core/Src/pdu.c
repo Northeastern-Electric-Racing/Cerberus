@@ -53,6 +53,21 @@ static inline int ina_write_reg(uint16_t dev_addr, uint16_t reg, uint16_t *data)
 	return 0;
 }
 
+int init_ina(pdu_t *pdu, ina226_t *ina, uint16_t dev_addr, float r_shunt,
+	     float max_current)
+{
+	ina226_init(ina, ina_write_reg, ina_read_reg, dev_addr);
+	int stat = ina226_calibrate(ina, r_shunt, max_current);
+	if (stat != 0) {
+		printf("Current Sensor Init Failed - (ID: %X)\n", dev_addr);
+		free(ina);
+		free(pdu);
+		return -1;
+	}
+	printf("Current Sensor Init Success - (ID: %X)\n", dev_addr);
+	return 0;
+}
+
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
 	pdu_t *pdu = malloc(sizeof(pdu_t));
@@ -66,62 +81,31 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->motor_controller_current_sensor);
-	ina226_init(pdu->motor_controller_current_sensor, ina_write_reg,
-		    ina_read_reg, MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR);
-	int stat1 = ina226_calibrate(pdu->motor_controller_current_sensor,
-				     0.01f, 3.0f);
-	if (stat1 != 0) {
-		printf("\n\rMotor Controller Current Sensor Init - Fail\n\r");
-		free(pdu->motor_controller_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->motor_controller_current_sensor,
+		      MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
 		return NULL;
 	}
-	printf("\n\rMotor Controller Current Sensor Init - Success\n\r");
 
 	/* Initialize Battbox Fans Current Sensor */
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->battbox_fans_current_sensor);
-	ina226_init(pdu->battbox_fans_current_sensor, ina_write_reg,
-		    ina_read_reg, BATTBOX_FANS_CURRENT_SENSOR_ADDR);
-	int stat2 =
-		ina226_calibrate(pdu->battbox_fans_current_sensor, 0.01f, 5.0f);
-	if (stat2 != 0) {
-		printf("\n\rBattbox Fans Current Sensor Init - Fail\n\r");
-		free(pdu->battbox_fans_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->battbox_fans_current_sensor,
+		      BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
 		return NULL;
 	}
-	printf("Battbox Fans Current Sensor Init - Success\n\r");
 
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->pumps_current_sensor);
-	ina226_init(pdu->pumps_current_sensor, ina_write_reg, ina_read_reg,
-		    PUMPS_CURRENT_SENSOR_ADDR);
-	int stat3 = ina226_calibrate(pdu->pumps_current_sensor, 0.01f, 2.0f);
-	if (stat3 != 0) {
-		printf("\n\rPumps Current Sensor Init - Fail\n\r");
-		free(pdu->pumps_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
+		      0.01f, 2.0f)) {
 		return NULL;
 	}
-	printf("Pumps Current Sensor Init - Success\n\r");
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->lv_boards_current_sensor);
-	ina226_init(pdu->lv_boards_current_sensor, ina_write_reg, ina_read_reg,
-		    LV_BOARDS_CURRENT_SENSOR_ADDR);
-	int stat4 =
-		ina226_calibrate(pdu->lv_boards_current_sensor, 0.01f, 1.25f);
-	if (stat4 != 0) {
-		printf("\n\rLV Boards Current Sensor Init - Fail\n\r");
-		free(pdu->lv_boards_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->lv_boards_current_sensor,
+		      LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
 	}
-	printf("LV Boards Current Sensor Init - Success\n\r");
 
 	/* (Debug) Read All Current Sensors - Bus Voltage */
 	float mc_volt;
