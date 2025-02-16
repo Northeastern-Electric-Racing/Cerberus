@@ -86,7 +86,6 @@ void process_fault(fault_data_t fault_data)
 		*fault_id = (uint32_t)(1 << fault_data.id.non_crit_fault);
 		non_crit_fault |= *fault_id;
 		index = fault_data.id.non_crit_fault + MAX_CRITICAL_FAULT;
-
 	}
 
 	// Create Timers
