@@ -14,11 +14,11 @@ typedef enum {
 } fault_sev_t;
 
 typedef enum {
-	ONBOARD_PEDAL_FAULT = (1 << 0),
-	CAN_DISPATCH_FAULT = (1 << 1),
-	CAN_ROUTING_FAULT = (1 << 2),
-	BMS_CAN_MONITOR_FAULT = (1 << 3),
-	MAX_CRITICAL_FAULT = (1 << 4)
+	ONBOARD_PEDAL_FAULT = 0,
+	CAN_DISPATCH_FAULT = 1,
+	CAN_ROUTING_FAULT = 2,
+	BMS_CAN_MONITOR_FAULT = 3,
+	MAX_CRITICAL_FAULT = 4
 } crit_fault_t;
 
 // Unused Fault Message IDs
@@ -29,14 +29,14 @@ typedef enum {
 // BUTTONS_MONITOR_FAULT
 
 typedef enum {
-	ONBOARD_TEMP_FAULT = (1 << 0),
-	IMU_FAULT = (1 << 1),
-	FUSE_MONITOR_FAULT = (1 << 2),
-	SHUTDOWN_MONITOR_FAULT = (1 << 3),
-	LV_MONITOR_FAULT = (1 << 4),
-	BSPD_PREFAULT = (1 << 5),
-	RTDS_FAULT = (1 << 6),
-	MAX_NOCRITICAL_FAULT = (1 << 7)
+	ONBOARD_TEMP_FAULT = 0,
+	IMU_FAULT = 1,
+	FUSE_MONITOR_FAULT = 2,
+	SHUTDOWN_MONITOR_FAULT = 3,
+	LV_MONITOR_FAULT = 4,
+	BSPD_PREFAULT = 5,
+	RTDS_FAULT = 6,
+	MAX_NON_CRITICAL_FAULT = 7
 } non_crit_fault_t;
 
 typedef struct {

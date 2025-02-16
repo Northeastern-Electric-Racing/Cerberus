@@ -9,8 +9,6 @@
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
-#define NUM_OF_CRIT_FAULTS	5UL
-#define NUM_OF_NON_CRIT_FAULTS	8UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
 osMessageQueueId_t fault_handle_queue;
@@ -47,7 +45,7 @@ void vFaultHandler(void *pv_params)
 {
 	// Create Timers Array
 	if (timers == NULL) {
-		timers = calloc((NUM_OF_CRIT_FAULTS + NUM_OF_NON_CRIT_FAULTS),
+		timers = calloc((MAX_CRITICAL_FAULT + MAX_NON_CRITICAL_FAULT),
 				sizeof(osTimerId_t));
 	}
 
@@ -80,15 +78,15 @@ void process_fault(fault_data_t fault_data)
 	uint32_t *fault_id = malloc(sizeof(uint32_t));
 
 	if (fault_data.severity == CRITICAL) {
-		*fault_id = (uint32_t)fault_data.id.crit_fault;
+		*fault_id = (uint32_t)(1 << fault_data.id.crit_fault);
 		crit_fault |= *fault_id;
-		index = (uint32_t)log2((*fault_id));
-
+		index = fault_data.id.crit_fault;
 		fault();
 	} else if (fault_data.severity == NONCRITICAL) {
-		*fault_id = (uint32_t)fault_data.id.non_crit_fault;
+		*fault_id = (uint32_t)(1 << fault_data.id.non_crit_fault);
 		non_crit_fault |= *fault_id;
-		index = (uint32_t)log2((*fault_id)) + NUM_OF_CRIT_FAULTS;
+		index = fault_data.id.non_crit_fault + MAX_CRITICAL_FAULT;
+
 	}
 
 	// Create Timers
@@ -116,7 +114,7 @@ void clear_fault(void *args)
 	}
 
 	// unfault car if all critical faults are cleared
-	if (crit_fault != 0) {
+	if (crit_fault == 0) {
 		set_ready_mode();
 	}
 
