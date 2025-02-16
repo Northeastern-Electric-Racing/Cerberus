@@ -67,9 +67,10 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
 	assert(pdu->motor_controller_current_sensor);
-	ina226_init(pdu->motor_controller_current_sensor, ina_write_reg, ina_read_reg, MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR);
+	ina226_init(pdu->motor_controller_current_sensor, ina_write_reg,
+		    ina_read_reg, MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR);
 	int stat1 = ina226_calibrate(pdu->motor_controller_current_sensor,
-					   0.01f, 3.0f);
+				     0.01f, 3.0f);
 	if (stat1 != 0) {
 		printf("\n\rMotor Controller Current Sensor Init - Fail\n\r");
 		free(pdu->motor_controller_current_sensor);
@@ -81,9 +82,10 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Battbox Fans Current Sensor */
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
 	assert(pdu->battbox_fans_current_sensor);
-	ina226_init(pdu->battbox_fans_current_sensor, ina_write_reg, ina_read_reg, BATTBOX_FANS_CURRENT_SENSOR_ADDR);
-	int stat2 = ina226_calibrate(pdu->battbox_fans_current_sensor,
-					   0.01f, 5.0f);
+	ina226_init(pdu->battbox_fans_current_sensor, ina_write_reg,
+		    ina_read_reg, BATTBOX_FANS_CURRENT_SENSOR_ADDR);
+	int stat2 =
+		ina226_calibrate(pdu->battbox_fans_current_sensor, 0.01f, 5.0f);
 	if (stat2 != 0) {
 		printf("\n\rBattbox Fans Current Sensor Init - Fail\n\r");
 		free(pdu->battbox_fans_current_sensor);
@@ -123,8 +125,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* (Debug) Read All Current Sensors - Bus Voltage */
 	float mc_volt;
-	int stat5 = ina226_read_bus_voltage(pdu->motor_controller_current_sensor, &mc_volt);
-	if(stat5 != 0) {
+	int stat5 = ina226_read_bus_voltage(
+		pdu->motor_controller_current_sensor, &mc_volt);
+	if (stat5 != 0) {
 		printf("\n\rMotor Controller Current Sensor Read - Fail\n\r");
 		free(pdu->motor_controller_current_sensor);
 		free(pdu);
@@ -132,8 +135,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Motor Controller Bus Voltage: %f\n\r", mc_volt);
 	float bbf_voltage;
-	int stat6 = ina226_read_bus_voltage(pdu->battbox_fans_current_sensor, &bbf_voltage);
-	if(stat6 != 0) {
+	int stat6 = ina226_read_bus_voltage(pdu->battbox_fans_current_sensor,
+					    &bbf_voltage);
+	if (stat6 != 0) {
 		printf("\n\rBattbox Fans Current Sensor Read - Fail\n\r");
 		free(pdu->battbox_fans_current_sensor);
 		free(pdu);
@@ -141,8 +145,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Battbox Fans Bus Voltage: %f\n\r", bbf_voltage);
 	float pumps_voltage;
-	int stat7 = ina226_read_bus_voltage(pdu->pumps_current_sensor, &pumps_voltage);
-	if(stat7 != 0) {
+	int stat7 = ina226_read_bus_voltage(pdu->pumps_current_sensor,
+					    &pumps_voltage);
+	if (stat7 != 0) {
 		printf("\n\rPumps Current Sensor Read - Fail\n\r");
 		free(pdu->pumps_current_sensor);
 		free(pdu);
@@ -150,8 +155,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Pumps Bus Voltage: %f\n\r", pumps_voltage);
 	float lv_voltage;
-	int stat8 = ina226_read_bus_voltage(pdu->lv_boards_current_sensor, &lv_voltage);
-	if(stat8 != 0) {
+	int stat8 = ina226_read_bus_voltage(pdu->lv_boards_current_sensor,
+					    &lv_voltage);
+	if (stat8 != 0) {
 		printf("\n\rLV Boards Current Sensor Read - Fail\n\r");
 		free(pdu->lv_boards_current_sensor);
 		free(pdu);
@@ -160,11 +166,12 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	printf("LV Boards Bus Voltage: %f\n\r", lv_voltage);
 
 	printf("\n\r");
-	
+
 	/* (Debug) Read All Current Sensors - Shunt Voltage */
 	float mc_volt2;
-	int stat9 = ina226_read_shunt_voltage(pdu->motor_controller_current_sensor, &mc_volt2);
-	if(stat9 != 0) {
+	int stat9 = ina226_read_shunt_voltage(
+		pdu->motor_controller_current_sensor, &mc_volt2);
+	if (stat9 != 0) {
 		printf("\n\rMotor Controller Current Sensor Read - Fail\n\r");
 		free(pdu->motor_controller_current_sensor);
 		free(pdu);
@@ -172,8 +179,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Motor Controller Shunt Voltage: %f\n\r", mc_volt2);
 	float bbf_voltage2;
-	int stat10 = ina226_read_shunt_voltage(pdu->battbox_fans_current_sensor, &bbf_voltage2);
-	if(stat10 != 0) {
+	int stat10 = ina226_read_shunt_voltage(pdu->battbox_fans_current_sensor,
+					       &bbf_voltage2);
+	if (stat10 != 0) {
 		printf("\n\rBattbox Fans Current Sensor Read - Fail\n\r");
 		free(pdu->battbox_fans_current_sensor);
 		free(pdu);
@@ -181,8 +189,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Battbox Fans Shunt Voltage: %f\n\r", bbf_voltage2);
 	float pumps_voltage2;
-	int stat11 = ina226_read_shunt_voltage(pdu->pumps_current_sensor, &pumps_voltage2);
-	if(stat11 != 0) {
+	int stat11 = ina226_read_shunt_voltage(pdu->pumps_current_sensor,
+					       &pumps_voltage2);
+	if (stat11 != 0) {
 		printf("\n\rPumps Current Sensor Read - Fail\n\r");
 		free(pdu->pumps_current_sensor);
 		free(pdu);
@@ -190,15 +199,15 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	}
 	printf("Pumps Shunt Voltage: %f\n\r", pumps_voltage2);
 	float lv_voltage2;
-	int stat12 = ina226_read_shunt_voltage(pdu->lv_boards_current_sensor, &lv_voltage2);
-	if(stat12 != 0) {
+	int stat12 = ina226_read_shunt_voltage(pdu->lv_boards_current_sensor,
+					       &lv_voltage2);
+	if (stat12 != 0) {
 		printf("\n\rLV Boards Current Sensor Read - Fail\n\r");
 		free(pdu->lv_boards_current_sensor);
 		free(pdu);
 		return NULL;
 	}
 	printf("LV Boards Shunt Voltage: %f\n\r", lv_voltage2);
-
 
 	/* Initialize Shutdown GPIO Expander */
 	pdu->shutdown_expander = malloc(sizeof(pca9539_t));
