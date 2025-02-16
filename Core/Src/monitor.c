@@ -93,9 +93,8 @@ void read_fuse_data(void *arg)
 	} fuse_data;
 
 	fuse_buf = 0;
-	
-	if (true){
-		read_fuses(pdu, fuses);
+
+	if (read_fuses(pdu, fuses)) {
 		fault_data.diag = "Failed to read fuses";
 		queue_fault(&fault_data);
 	}

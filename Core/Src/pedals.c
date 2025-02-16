@@ -81,16 +81,12 @@ uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
  * 
  * @param arg The fault message as a char*.
  */
- int has_fault = 0;
 void pedal_fault_cb(void *arg)
 {
 	fault_data_t fault_data = { .id.crit_fault = ONBOARD_PEDAL_FAULT,
 				    .severity = CRITICAL };
 	fault_data.diag = (char *)arg;
-	if(has_fault < 2){
 	queue_fault(&fault_data);
-	has_fault++;
-	}
 }
 
 /**
