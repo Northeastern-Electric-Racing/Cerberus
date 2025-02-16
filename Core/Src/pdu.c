@@ -371,7 +371,7 @@ void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream)
+int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
@@ -441,7 +441,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bitstream_t* bitstream)
+int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
