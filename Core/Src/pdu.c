@@ -373,7 +373,6 @@ void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 
 int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream)
 {
-	// clang-format off
 	if (!pdu)
 		return -1;
 
@@ -400,21 +399,22 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t* bitstream)
 	uint8_t fuse_data[2];
 	bitstream_init(&fuses, fuse_data, 2);
 
-	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
-	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
-	bitstream_add(&fuses, NER_GET_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
-	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
-	bitstream_add(&fuses, NER_GET_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
+	// clang-format off
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
 	bitstream_add(&fuses, 0, 6); 												// Extra (6 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;
-	// clang-format on
 }
 
 int8_t read_tsms_sense(pdu_t *pdu, bool *status)
@@ -465,20 +465,22 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t* bitstream)
 		return error;
 	}
 
+	// clang-format off
 	bitstream_t shutdown;
 	uint8_t shutdown_data[2];
 	bitstream_init(&shutdown, shutdown_data, 2);
 
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
-	bitstream_add(&shutdown, NER_GET_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
-	bitstream_add(&shutdown, NER_GET_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
 	bitstream_add(&shutdown, 0, 7); 											// Extra (7 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;
