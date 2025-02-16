@@ -169,7 +169,31 @@ int main(void)
   MX_IWDG_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
+  /* I2C Detect */
+  uint8_t devices = 0u;
 
+  printf("Searching for I2C devices on the bus...\n");
+  /* Values outside 0x03 and 0x77 are invalid. */
+  for (uint8_t i = 0x03u; i < 0x78u; i++)
+  {
+    HAL_IWDG_Refresh(&hiwdg);
+    uint8_t address = i << 1u ;
+    /* In case there is a positive feedback, print it out. */
+    if (HAL_OK == HAL_I2C_IsDeviceReady(&hi2c2, address, 3u, 10u))
+    {
+      printf("Device found: 0x%02X\n", address);
+      devices++;
+    }
+  }
+  /* Feedback of the total number of devices. */
+  if (0u == devices)
+  {
+    printf("No device found.\n");
+  }
+  else
+  {
+    printf("Total found devices: %d\n", devices);
+  }
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hadc3, &hadc1, GPIOC, GPIOB);
   assert(mpu);
