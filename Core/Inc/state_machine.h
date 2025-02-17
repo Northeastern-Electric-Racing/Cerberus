@@ -2,8 +2,8 @@
 #define STATE_MACHINE_H
 
 #include "pdu.h"
-#include "dti.h"
 #include "mpu.h"
+#include "dti.h"
 
 /**
  * @brief Enum defining the functional states of the car.

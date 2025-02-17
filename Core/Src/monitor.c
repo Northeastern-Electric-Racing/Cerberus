@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "can_handler.h"
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"

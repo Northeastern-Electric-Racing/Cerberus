@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bms.h"
 #include "cerb_utils.h"
-#include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
 
@@ -132,8 +130,8 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	dti_t *mc = (dti_t *)pv_params;
-	assert(mc);
+	can_handler_args_t *args = (can_handler_args_t *)pv_params;
+	assert(args);
 
 	can_msg_t msg;
 
@@ -145,10 +143,10 @@ void vCanReceive(void *pv_params)
 			switch (msg.id) {
 			/* Messages Relevant to Motor Controller */
 			case DTI_CANID_ERPM:
-				dti_record_rpm(mc, msg);
+				dti_record_rpm(args->mc, msg);
 				break;
 			case BMS_DCL_MSG:
-				handle_dcl_msg();
+				handle_dcl_msg(args->bms);
 				break;
 			case BUTTON_CANID_IO:
 				buttons_update(msg);

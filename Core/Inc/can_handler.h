@@ -2,7 +2,13 @@
 #define CAN_HANDLER_H
 
 #include "can.h"
-#include "cmsis_os.h"
+#include "dti.h"
+#include "bms.h"
+
+typedef struct {
+	dti_t *mc;
+	bms_t *bms;
+} can_handler_args_t;
 
 /**
  * @brief Callback to be called when a message is received on CAN line 1.
