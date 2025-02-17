@@ -57,6 +57,18 @@ void decrease_torque_limit()
 	}
 }
 
+void set_torque_limit(float percentage)
+{
+	torque_limit_percentage = percentage;
+
+	// Make sure the percentage is within the valid range
+	if (torque_limit_percentage > 1.0) {
+		torque_limit_percentage = 1.0;
+	} else if (torque_limit_percentage < 0.0) {
+		torque_limit_percentage = 0.0;
+	}
+}
+
 float get_torque_limit_percentage()
 {
 	return torque_limit_percentage;
