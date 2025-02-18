@@ -46,6 +46,7 @@ static void send_nero_msg(dti_t *mc)
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
+	nero_data.nero_index = (uint8_t)get_nero_state().nero_index;
 	nero_data.mph = dti_get_mph(mc);
 	nero_data.tsms = (uint8_t)get_tsms();
 	/* Percentage from 0 - 1, multiplied by 100 */
@@ -86,8 +87,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
-		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+		//cerberus_state.nero =
+		//	(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		write_fault(mpu, true);
 
 		osDelay(1000); /* Delay for 1 sec before faulting car */
@@ -319,8 +320,10 @@ void vStateMachineDirector(void *pv_params)
 	for (;;) {
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
-			    osOK &&
-		    check_state_change(new_state_req)) {
+		    osOK) {
+			if (!check_state_change(new_state_req)) {
+				continue;
+			}
 			if (new_state_req.id == NERO)
 				transition_nero_state(new_state_req.state.nero,
 						      pdu, mc, mpu);
