@@ -87,8 +87,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		write_pump(pdu, false);
-		//cerberus_state.nero =
-		//	(nero_state_t){ .nero_index = OFF, .home_mode = false };
+		cerberus_state.nero =
+			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		write_fault(mpu, true);
 
 		osDelay(1000); /* Delay for 1 sec before faulting car */
@@ -97,9 +97,9 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
-	if (dti_get_mph(mc) > 1)
+	if (!get_tsms() && dti_get_mph(mc) > 1)
 		return 1;
-	bool brake_state;
+	bool brake_state = true;
 
 	/* Catching state transitions */
 	switch (new_state) {
@@ -110,12 +110,19 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		write_fault(mpu, false);
 		printf("READY\r\n");
 		break;
+	case F_REVERSE:
+#ifdef DISABLE_REVERSE
+		printf("Reverse is disabled.");
+		return 4;
+#endif
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
+		/*
 		if (read_brake_state(pdu, &brake_state)) {
 			return 3;
 		}
+			*/
 #ifdef TSMS_OVERRIDE
 		if (!brake_state) {
 			return 3;
@@ -133,17 +140,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		write_pump(pdu, true);
 		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
-		break;
-
-	case F_REVERSE:
-#ifndef DISABLE_REVERSE
-		/* Can only enter reverse mode if already in pit mode */
-		if (cerberus_state.functional != F_PIT)
-			return 4;
-#else
-		printf("Reverse is disabled.");
-		return 4;
-#endif
 		break;
 	default:
 		// Do Nothing
@@ -181,13 +177,10 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 
 		/* TSMS OFF and MPH = 0 to enter games */
 		if (new_state.nero_index == GAMES) {
-			if (!get_tsms() && dti_get_mph(mc) <= 1) {
+			if (get_tsms() || dti_get_mph(mc) >= 1) {
 				return 1;
 			}
-
-			if (transition_functional_state(new_state.nero_index,
-							pdu, mc, mpu))
-				return 1;
+			new_state.home_mode = false;
 		}
 	}
 
