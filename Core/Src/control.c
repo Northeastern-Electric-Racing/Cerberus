@@ -83,13 +83,14 @@ void vControl(void *params)
 		write_pump_0(control_args->pdu, control->pumpState0);
 		write_pump_1(control_args->pdu, control->pumpState1);
 
-		write_radfan_0(control->radfanState0);
-		write_radfan_1(control->radfanState1);
+		write_radfan_0(control_args->pdu, control->radfanState0);
+		write_radfan_1(control_args->pdu, control->radfanState1);
 
 		osDelay(1000);
 	}
 }
 
+// Complicated Logic
 void control_pump(bool hv, uint16_t temp, uint16_t upper, uint16_t lower,
 		  nertimer_t *timer, set_state_t *set_state,
 		  void (*func)(void *arg), bool *control_state,

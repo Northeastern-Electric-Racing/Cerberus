@@ -57,27 +57,21 @@ void control_radfan(uint16_t temp, uint16_t upper, uint16_t lower,
 		    bool *calypso_state);
 
 void set_pump0_state(void *params);
-
 void set_pump1_state(void *params);
 
 void set_radfan0_state(void *params);
-
 void set_radfan1_state(void *params);
 
 void control_fanbattbox_record(control_t *calypso_states, can_msg_t msg);
-
 void control_pump_record(control_t *calypso_states, can_msg_t msg);
-
 void control_radfan_record(control_t *calypso_states, can_msg_t msg);
 
 int8_t write_fan_battbox(pdu_t *pdu, bool state);
 
 int8_t write_pump_0(pdu_t *pdu, bool state);
-
 int8_t write_pump_1(pdu_t *pdu, bool state);
 
 int8_t write_radfan_0(pdu_t *pdu, bool state);
-
 int8_t write_radfan_1(pdu_t *pdu, bool state);
 
 #endif
