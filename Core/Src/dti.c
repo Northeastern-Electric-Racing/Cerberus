@@ -289,7 +289,7 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mph = dti_get_mph(mc);
 }
 
-void dti_record_motor_controller_temp()
+void dti_record_motor_controller_temp(dti_t *mc, can_msg_t msg)
 {
 }
 
