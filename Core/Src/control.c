@@ -2,6 +2,7 @@
 
 #include "control.h"
 #include "dti.h"
+#include "pdu.h"
 #include "state_machine.h"
 
 osThreadId_t control_handle;
@@ -178,6 +179,31 @@ void set_radfan1_state(void *params)
 {
 	set_state_t *set = (set_state_t *)params;
 	set->control->radfanState1 = set->state;
+}
+
+int8_t write_fan_battbox(pdu_t *pdu, bool state)
+{
+	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
+}
+
+int8_t write_pump_0(pdu_t *pdu, bool state)
+{
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, PCA_OUTPUT_0_REG);
+}
+
+int8_t write_pump_1(pdu_t *pdu, bool state)
+{
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, PCA_OUTPUT_0_REG);
+}
+
+int8_t write_radfan_0(pdu_t *pdu, bool state)
+{
+	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
+}
+
+int8_t write_radfan_1(pdu_t *pdu, bool state)
+{
+	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
 }
 
 void control_fanbattbox_record(control_t *calypso_states, can_msg_t msg)
