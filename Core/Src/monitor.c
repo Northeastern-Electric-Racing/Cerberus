@@ -10,6 +10,7 @@
 #include "fault.h"
 #include "state_machine.h"
 #include "can_handler.h"
+#include "bitstream.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -160,35 +161,14 @@ void read_fuse_data(void *arg)
 	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
 				    .severity = DEFCON5 };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-	uint16_t fuse_buf;
-	bool fuses[MAX_FUSES] = { 0 };
 
-	struct __attribute__((__packed__)) {
-		uint8_t fuse_1;
-		uint8_t fuse_2;
-	} fuse_data;
-
-	fuse_buf = 0;
-
-	if (read_fuses(pdu, fuses)) {
+	bitstream_t fuses;
+	if (read_fuses(pdu, &fuses)) {
 		fault_data.diag = "Failed to read fuses";
 		queue_fault(&fault_data);
 	}
 
-	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-		fuse_buf |=
-			fuses[fuse]
-			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
-	}
-
-	fuse_data.fuse_1 = fuse_buf & 0xFF;
-	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
-
-	// reverse the bit order
-	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
-	fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
-
-	memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
+	memcpy(fuse_msg.data, &fuses.data, fuse_msg.len);
 	if (queue_can_msg(fuse_msg)) {
 		fault_data.diag = "Failed to send CAN message";
 		queue_fault(&fault_data);
@@ -356,38 +336,17 @@ void vShutdownMonitor(void *pv_params)
 				   .len = 2,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
-	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
-	uint16_t shutdown_buf;
-
-	struct __attribute__((__packed__)) {
-		uint8_t shut_1;
-		uint8_t shut_2;
-	} shutdown_data;
-
 	for (;;) {
-		shutdown_buf = 0;
+		bitstream_t shutdown;
+		uint8_t bitstream_data[2];
+		bitstream_init(&shutdown, bitstream_data, 2);
 
-		if (read_shutdown(pdu, shutdown_loop)) {
+		if (read_shutdown(pdu, &shutdown)) {
 			fault_data.diag = "Failed to read shutdown buffer";
 			queue_fault(&fault_data);
 		}
 
-		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES;
-		     stage++) {
-			shutdown_buf |=
-				shutdown_loop[stage]
-				<< stage; /* Sets the bit at position `stage` to the state of the stage */
-		}
-
-		/* seperate each byte */
-		shutdown_data.shut_1 = shutdown_buf & 0xFF;
-		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
-
-		// reverse the bit order
-		shutdown_data.shut_1 = reverse_bits(shutdown_data.shut_1);
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
-
-		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
+		memcpy(shutdown_msg.data, &shutdown.data, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);
