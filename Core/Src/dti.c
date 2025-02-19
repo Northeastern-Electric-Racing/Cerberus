@@ -29,8 +29,7 @@ static uint16_t motorTemp = 0;
 
 static uint16_t motorControllerTemp = 0;
 
-	dti_t *
-	dti_init()
+dti_t *dti_init()
 {
 	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
@@ -290,8 +289,8 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mph = dti_get_mph(mc);
 }
 
-void dti_record_motor_controller_temp() {
-	
+void dti_record_motor_controller_temp()
+{
 }
 
 void dti_record_motor_temp(dti_t *mc, can_msg_t msg)
@@ -312,7 +311,7 @@ uint16_t dti_get_motor_temp()
 }
 
 uint16_t dti_get_motor_controller_temp()
-{ 
+{
 	return motorControllerTemp;
 }
 

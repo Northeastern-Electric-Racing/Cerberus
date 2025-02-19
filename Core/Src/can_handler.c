@@ -168,14 +168,15 @@ void vCanReceive(void *pv_params)
 				dial_update(msg);
 				break;
 			case CONTROL_CANID_FANBATTBOX:
-				control_fanbattbox_record(can_receive->calypso_states,
-							  msg);
+				control_fanbattbox_record(
+					can_receive->calypso_states, msg);
 				break;
 			case CONTROL_CANID_PUMP:
-				control_pump_record(can_receive->calypso_states, msg);
+				control_pump_record(can_receive->calypso_states,
+						    msg);
 			case CONTROL_CANID_RADFAN:
-				control_radfan_record(can_receive->calypso_states,
-						      msg);
+				control_radfan_record(
+					can_receive->calypso_states, msg);
 			default:
 				break;
 			}
