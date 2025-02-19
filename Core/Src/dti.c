@@ -27,7 +27,7 @@ static uint16_t mph = 0;
 
 static uint16_t motorTemp = 0;
 
-static uint16_t motorControllerTemp = 0;
+static uint16_t controllerTemp = 0;
 
 dti_t *dti_init()
 {
@@ -289,20 +289,21 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mph = dti_get_mph(mc);
 }
 
-void dti_record_motor_controller_temp(dti_t *mc, can_msg_t msg)
+void dti_record_temp(dti_t *mc, can_msg_t msg)
 {
-}
+	uint16_t controllerTemp = (msg.data[0] << 8) + (msg.data[1]);
+	uint16_t motorTemp = (msg.data[2] << 8) + (msg.data[3]);
 
-void dti_record_motor_temp(dti_t *mc, can_msg_t msg)
-{
-	uint16_t temp = (msg.data[0] << 8) + (msg.data[1]);
-
-	temp /= 10;
+	controllerTemp /= 10;
+	motorTemp /= 10;
 
 	osMutexAcquire(*mc->mutex, osWaitForever);
-	mc->motor_temp = temp;
+	mc->contr_temp = controllerTemp;
+	mc->motor_temp = motorTemp;
 	osMutexRelease(*mc->mutex);
-	motorTemp = temp;
+
+	controllerTemp = controllerTemp;
+	motorTemp = motorTemp;
 }
 
 uint16_t dti_get_motor_temp()
@@ -310,9 +311,9 @@ uint16_t dti_get_motor_temp()
 	return motorTemp;
 }
 
-uint16_t dti_get_motor_controller_temp()
+uint16_t dti_get_controller_temp()
 {
-	return motorControllerTemp;
+	return controllerTemp;
 }
 
 uint8_t get_mph()

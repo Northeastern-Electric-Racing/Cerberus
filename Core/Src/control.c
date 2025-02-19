@@ -15,7 +15,7 @@ const osThreadAttr_t control_attributes = {
 void vControl(void *params)
 {
 	// Motor temp = RADFAN0 AND PUMP0
-	// Motor Controler temp = RADFAN0 AND PUMP0
+	// Controler temp = RADFAN0 AND PUMP0
 	// PUMP0 and RADFAN0 temps not the same
 	// PUMP1 and RADFAN1 temps not the same
 
@@ -47,8 +47,7 @@ void vControl(void *params)
 		hv = get_active();
 
 		uint16_t motorTemp = dti_get_motor_temp();
-		uint16_t motorControllerTemp = dti_get_motor_controller_temp();
-		dti_get_motor_controller_temp();
+		uint16_t controllerTemp = dti_get_controller_temp();
 
 		// PUMP 0
 		control_pump(hv, motorTemp, PUMP_UPPER_MOTOR_TEMP,
@@ -64,17 +63,15 @@ void vControl(void *params)
 			       &calypso_states->radfanState0);
 
 		// PUMP 1
-		control_pump(hv, motorControllerTemp,
-			     PUMP_UPPER_MOTOR_CONTROLLER_TEMP,
-			     PUMP_LOWER_MOTOR_CONTROLLER_TEMP, &pump_timer1,
+		control_pump(hv, controllerTemp, PUMP_UPPER_CONTROLLER_TEMP,
+			     PUMP_LOWER_CONTROLLER_TEMP, &pump_timer1,
 			     set_pump1, &set_pump1_state, &control->pumpState1,
 			     &calypso_states->pumpState1);
 
 		// RADFAN 1
-		control_radfan(motorControllerTemp,
-			       RADFAN_UPPER_MOTOR_CONTROLLER_TEMP,
-			       RADFAN_LOWER_MOTOR_CONTROLLER_TEMP,
-			       &radfan_timer1, set_radfan1, &set_radfan1_state,
+		control_radfan(controllerTemp, RADFAN_UPPER_CONTROLLER_TEMP,
+			       RADFAN_LOWER_CONTROLLER_TEMP, &radfan_timer1,
+			       set_radfan1, &set_radfan1_state,
 			       &control->radfanState1,
 			       &calypso_states->radfanState1);
 

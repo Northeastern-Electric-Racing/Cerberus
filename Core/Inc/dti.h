@@ -133,20 +133,12 @@ void dti_set_relative_current(int16_t relative_current);
 void dti_set_drive_enable(bool drive_enable);
 
 /**
- * @brief Record the motor controller temperature in the DTI
+ * @brief Record the controller and motor temperature in the DTI
  * 
  * @param mc Pointer to DTI struct 
  * @param msg CAN message containing temperature data
  */
-void dti_record_motor_controller_temp(dti_t *mc, can_msg_t msg);
-
-/**
- * @brief Record the motor temperature in the DTI
- * 
- * @param mc Pointer to DTI struct 
- * @param msg CAN message containing temperature data
- */
-void dti_record_motor_temp(dti_t *mc, can_msg_t msg);
+void dti_record_temp(dti_t *mc, can_msg_t msg);
 
 /**
  * @brief gets the current motor temperature from the DTI
@@ -156,7 +148,7 @@ uint16_t dti_get_motor_temp();
 /**
  * @brief gets the motor controller tempature
  */
-uint16_t dti_get_motor_controller_temp();
+uint16_t dti_get_controller_temp();
 
 /**
  * @brief gets the current mph from the DTI

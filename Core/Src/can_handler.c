@@ -156,7 +156,7 @@ void vCanReceive(void *pv_params)
 				dti_record_rpm(can_receive->mc, msg);
 				break;
 			case DTI_CANID_TEMPS_FAULT:
-				dti_record_motor_temp(can_receive->mc, msg);
+				dti_record_temp(can_receive->mc, msg);
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
