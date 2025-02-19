@@ -8,7 +8,7 @@
 
 typedef struct {
 	dti_t *mc;
-	control_t *control;
+	control_t *calypso_states;
 } can_receive_t;
 
 /**

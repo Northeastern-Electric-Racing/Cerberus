@@ -255,6 +255,7 @@ int main(void)
   control_args_t *control_args = malloc(sizeof(control_args_t));
   control_args->pdu = pdu;
   control_args->control = malloc(sizeof(control_t));
+  control_args->calypso_states = malloc(sizeof(control_t));
   control_args->control->fanBattBoxState = 0;
   control_args->control->pumpState0 = 0;
   control_args->control->pumpState1 = 0;
@@ -267,7 +268,7 @@ int main(void)
 
   can_receive_t *can_receive = malloc(sizeof(can_receive));
   can_receive->mc = mc;
-  can_receive->control = control_args->control;
+  can_receive->calypso_states = control_args->calypso_states;
   can_receive_thread = osThreadNew(vCanReceive, can_receive, &can_receive_attributes);
   assert(can_receive_thread);
 

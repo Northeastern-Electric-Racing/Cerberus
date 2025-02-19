@@ -23,11 +23,14 @@
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 
-static uint8_t mph = 0;
+static uint16_t mph = 0;
 
-static uint8_t motorTemp = 0;
+static uint16_t motorTemp = 0;
 
-dti_t *dti_init()
+static uint16_t motorControllerTemp = 0;
+
+	dti_t *
+	dti_init()
 {
 	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
@@ -287,6 +290,10 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	mph = dti_get_mph(mc);
 }
 
+void dti_record_motor_controller_temp() {
+	
+}
+
 void dti_record_motor_temp(dti_t *mc, can_msg_t msg)
 {
 	uint16_t temp = (msg.data[0] << 8) + (msg.data[1]);
@@ -302,6 +309,11 @@ void dti_record_motor_temp(dti_t *mc, can_msg_t msg)
 uint16_t dti_get_motor_temp()
 {
 	return motorTemp;
+}
+
+uint16_t dti_get_motor_controller_temp()
+{ 
+	return motorControllerTemp;
 }
 
 uint8_t get_mph()
