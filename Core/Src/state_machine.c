@@ -97,8 +97,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
+#ifndef TSMS_OVERRIDE
 	if (!get_tsms() && dti_get_mph(mc) > 1)
 		return 1;
+#endif
 	bool brake_state = true;
 
 	/* Catching state transitions */
@@ -127,6 +129,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		if (!brake_state) {
 			return 3;
 		}
+		printf("Ignoring tsms\n\n");
 #else
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
@@ -177,9 +180,11 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 
 		/* TSMS OFF and MPH = 0 to enter games */
 		if (new_state.nero_index == GAMES) {
+#ifndef TSMS_OVERRIDE
 			if (get_tsms() || dti_get_mph(mc) >= 1) {
 				return 1;
 			}
+#endif
 			new_state.home_mode = false;
 		}
 	}
@@ -275,12 +280,18 @@ int set_home_mode()
 
 int set_ready_mode()
 {
+#ifdef IGNORE_FAULT
+		return 1;
+#endif
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
 int fault()
 {
+#ifdef IGNORE_FAULT
+	return 1;
+#endif
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }

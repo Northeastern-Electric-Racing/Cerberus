@@ -187,10 +187,11 @@ void read_tsms(pdu_t *pdu)
 		 * low. Think of this as debouncing a "TSMS off is active" debounce. */
 		debounce(!tsms_reading, &timer, TSMS_DEBOUNCE_PERIOD,
 			 &tsms_debounce_cb, &tsms_reading);
-
+#ifndef TSMS_OVERRIDE
 	if (get_active() && get_tsms() == false) {
 		set_home_mode();
 	}
+#endif
 }
 
 osThreadId_t data_collection_thread;
