@@ -23,10 +23,10 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM,	   DTI_CANID_CURRENTS,
-			      BMS_DCL_MSG,	   BUTTON_CANID_IO,
-			      DIAL_CANID_IO,	   CONTROL_CANID_FANBATTBOX,
-			      CONTROL_CANID_RADFAN };
+static uint32_t id_list[] = { DTI_CANID_ERPM,	  DTI_CANID_CURRENTS,
+			      BMS_DCL_MSG,	  BUTTON_CANID_IO,
+			      DIAL_CANID_IO,	  CONTROL_CANID_FANBATTBOX,
+			      CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -42,7 +42,7 @@ void init_can1(CAN_HandleTypeDef *hcan)
 					   id_list[3] };
 
 	uint32_t id_list_size_four2[4] = { id_list[4], id_list[5], id_list[6],
-					   id_list[6] };
+					   id_list[7] };
 
 	assert(!can_add_filter(can1, id_list_size_four1));
 	assert(!can_add_filter(can1, id_list_size_four2));

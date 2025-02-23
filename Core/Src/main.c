@@ -259,6 +259,9 @@ int main(void)
   control_args->control->fanBattBoxState = 0;
   control_args->control->pumpState0 = 0;
   control_args->control->pumpState1 = 0;
+  control_args->calypso_states->fanBattBoxState = 0;
+  control_args->calypso_states->pumpState0 = 0;
+  control_args->calypso_states->pumpState1 = 0;
   control_handle = osThreadNew(vControl, control_args, &control_attributes);
   assert(control_handle);
 

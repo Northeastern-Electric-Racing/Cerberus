@@ -112,6 +112,8 @@ void vRTDS(void *arg);
 extern osThreadId_t rtds_thread;
 extern const osThreadAttr_t rtds_attributes;
 
+int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg);
+
 /**
  * @brief Read the status of brakes
  * 
