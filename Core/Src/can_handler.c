@@ -130,7 +130,7 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	can_handler_args_t *args = (can_handler_args_t *)pv_params;
+	can_receive_args_t *args = (can_receive_args_t *)pv_params;
 	assert(args);
 
 	can_msg_t msg;
