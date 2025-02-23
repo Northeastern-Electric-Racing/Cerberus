@@ -14,21 +14,18 @@ const osThreadAttr_t control_attributes = {
 
 void vControl(void *params)
 {
-	// Motor temp = RADFAN0 AND PUMP0
-	// Controler temp = RADFAN0 AND PUMP0
-	// PUMP0 and RADFAN0 temps not the same
-	// PUMP1 and RADFAN1 temps not the same
-
 	control_args_t *control_args = (control_args_t *)params;
 	control_t *control = control_args->control;
 	control_t *calypso_states = control_args->calypso_states;
 
+	// Debounce timers
 	nertimer_t pump_timer0;
 	nertimer_t radfan_timer0;
 
 	nertimer_t pump_timer1;
 	nertimer_t radfan_timer1;
 
+	// Debounce setteres
 	set_state_t *set_pump0 = malloc(sizeof(set_state_t));
 	set_pump0->control = control;
 
@@ -41,41 +38,40 @@ void vControl(void *params)
 	set_state_t *set_radfan1 = malloc(sizeof(set_state_t));
 	set_radfan1->control = control;
 
-	bool hv;
-
 	for (;;) {
-		hv = get_active();
+		bool hv = get_active();
 
 		uint16_t motorTemp = dti_get_motor_temp();
 		uint16_t controllerTemp = dti_get_controller_temp();
 
-		// PUMP 0
+		// Determine PUMP0 state
 		control_pump(hv, motorTemp, PUMP_UPPER_MOTOR_TEMP,
 			     PUMP_LOWER_MOTOR_TEMP, &pump_timer0, set_pump0,
 			     &set_pump0_state, &(control->pumpState0),
 			     &(calypso_states->pumpState0));
 
-		// RADFAN 0
+		// Determine RADFAN0 state
 		control_radfan(motorTemp, RADFAN_UPPER_MOTOR_TEMP,
 			       RADFAN_LOWER_MOTOR_TEMP, &radfan_timer0,
 			       set_radfan0, &set_radfan0_state,
 			       &(control->radfanState0),
 			       &(calypso_states->radfanState0));
 
-		// PUMP 1
+		// Determine PUMP1 state
 		control_pump(hv, controllerTemp, PUMP_UPPER_CONTROLLER_TEMP,
 			     PUMP_LOWER_CONTROLLER_TEMP, &pump_timer1,
 			     set_pump1, &set_pump1_state,
 			     &(control->pumpState1),
 			     &(calypso_states->pumpState1));
 
-		// RADFAN 1
+		// Determine RADFAN1 state
 		control_radfan(controllerTemp, RADFAN_UPPER_CONTROLLER_TEMP,
 			       RADFAN_LOWER_CONTROLLER_TEMP, &radfan_timer1,
 			       set_radfan1, &set_radfan1_state,
 			       &(control->radfanState1),
 			       &(calypso_states->radfanState1));
 
+		// Write state to devices
 		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
 
 		write_pump_0(control_args->pdu, control->pumpState0);
@@ -88,7 +84,7 @@ void vControl(void *params)
 	}
 }
 
-// Complicated Logic
+// Control logic for pumps
 void control_pump(bool hv, uint16_t temp, uint16_t upper, uint16_t lower,
 		  nertimer_t *timer, set_state_t *set_state,
 		  void (*func)(void *arg), bool *control_state,
@@ -109,6 +105,7 @@ void control_pump(bool hv, uint16_t temp, uint16_t upper, uint16_t lower,
 	}
 }
 
+// Control logic for radfans
 void control_radfan(uint16_t temp, uint16_t upper, uint16_t lower,
 		    nertimer_t *timer, set_state_t *set_state,
 		    void (*func)(void *arg), bool *control_state,
@@ -127,8 +124,7 @@ void control_radfan(uint16_t temp, uint16_t upper, uint16_t lower,
 	}
 }
 
-// Setting State From Debounce Functions
-
+// Setting state from debounce
 void set_pump0_state(void *params)
 {
 	set_state_t *set = (set_state_t *)params;
@@ -153,7 +149,7 @@ void set_radfan1_state(void *params)
 	set->control->radfanState1 = set->state;
 }
 
-// Recording CAN Message State
+// Recording CAN message state
 void control_fanbattbox_record(control_t *calypso_states, can_msg_t msg)
 {
 	calypso_states->fanBattBoxState = msg.data[0] > 0;
@@ -171,7 +167,7 @@ void control_radfan_record(control_t *calypso_states, can_msg_t msg)
 	calypso_states->radfanState1 = msg.data[1] > 0;
 }
 
-// Writing To Devices
+// writing to devices
 int8_t write_fan_battbox(pdu_t *pdu, bool state)
 {
 	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
