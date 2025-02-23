@@ -9,6 +9,7 @@
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"
+#include "can_handler.h"
 #include "bitstream.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */

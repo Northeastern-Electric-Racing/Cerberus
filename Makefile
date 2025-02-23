@@ -82,6 +82,7 @@ Core/Src/state_machine.c \
 Core/Src/bms.c \
 Core/Src/pdu.c \
 Core/Src/mpu.c \
+Core/Src/control.c \
 Core/Src/steeringio.c \
 Core/Src/pedals.c \
 Core/Src/cerb_utils.c \

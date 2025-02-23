@@ -7,6 +7,7 @@
 
 #include "cerberus_conf.h"
 #include "state_machine.h"
+#include "can_handler.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
 #define NUM_OF_FAULTS		18UL
