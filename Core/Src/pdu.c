@@ -287,7 +287,7 @@ void vRTDS(void *arg)
 }
 
 /* CTRL Line Functions */
-static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
+int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 {
 	if (!pdu)
 		return -1;

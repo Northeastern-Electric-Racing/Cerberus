@@ -52,28 +52,29 @@ void vControl(void *params)
 		// PUMP 0
 		control_pump(hv, motorTemp, PUMP_UPPER_MOTOR_TEMP,
 			     PUMP_LOWER_MOTOR_TEMP, &pump_timer0, set_pump0,
-			     &set_pump0_state, &contorl->pumpState0,
-			     &calypso_states->pumpState0);
+			     &set_pump0_state, &(control->pumpState0),
+			     &(calypso_states->pumpState0));
 
 		// RADFAN 0
 		control_radfan(motorTemp, RADFAN_UPPER_MOTOR_TEMP,
 			       RADFAN_LOWER_MOTOR_TEMP, &radfan_timer0,
 			       set_radfan0, &set_radfan0_state,
-			       &control->radfanState0,
-			       &calypso_states->radfanState0);
+			       &(control->radfanState0),
+			       &(calypso_states->radfanState0));
 
 		// PUMP 1
 		control_pump(hv, controllerTemp, PUMP_UPPER_CONTROLLER_TEMP,
 			     PUMP_LOWER_CONTROLLER_TEMP, &pump_timer1,
-			     set_pump1, &set_pump1_state, &control->pumpState1,
-			     &calypso_states->pumpState1);
+			     set_pump1, &set_pump1_state,
+			     &(control->pumpState1),
+			     &(calypso_states->pumpState1));
 
 		// RADFAN 1
 		control_radfan(controllerTemp, RADFAN_UPPER_CONTROLLER_TEMP,
 			       RADFAN_LOWER_CONTROLLER_TEMP, &radfan_timer1,
 			       set_radfan1, &set_radfan1_state,
-			       &control->radfanState1,
-			       &calypso_states->radfanState1);
+			       &(control->radfanState1),
+			       &(calypso_states->radfanState1));
 
 		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
 
