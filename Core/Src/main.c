@@ -252,7 +252,7 @@ int main(void)
   // assert(shutdown_monitor_handle);
 
   /* Control File Thread */
-  control_args_t *control_args = init_control(pdu);
+  control_args_t *control_args = control_init(pdu);
   control_handle = osThreadNew(vControl, control_args, &control_attributes);
   assert(control_handle);
 

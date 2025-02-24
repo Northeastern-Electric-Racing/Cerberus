@@ -13,7 +13,7 @@ const osThreadAttr_t control_attributes = {
 	.priority = (osPriority_t)osPriorityRealtime,
 };
 
-control_args_t *init_control(pdu_t *pdu)
+control_args_t *control_init(pdu_t *pdu)
 {
 	assert(pdu);
 

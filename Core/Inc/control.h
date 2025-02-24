@@ -67,8 +67,9 @@ typedef struct {
  * @brief Initializes control_args_t struct
  * 
  * @param pdu Pointer pdu_t struct
+ * @return control_args_t* Pointer to Control Arguments struct
  */
-control_args_t *init_control(pdu_t *pdu);
+control_args_t *control_init(pdu_t *pdu);
 
 /**
  * @brief Main control loop
