@@ -1,25 +1,33 @@
 :name: Cerberus Simulation
 :description: This runs the Cerberus FreeRTOS application using a precompiled ELF
 
-using sysbus
+mach create "cerberus"
 
-mach create
+logLevel 1
 
-i @Test/renode/LSM6DSO_IMU_I2C.cs
-i @Test/renode/STM32F4_I2C_NER.cs
-machine LoadPlatformDescription @Test/renode/mpu.repl
+emulation CreateCANHub "canHub"
 
-# Uncomment to view callstack and peripheral access
-#sysbus.cpu LogFunctionNames true
-#sysbus LogAllPeripheralsAccess true
+include $CWD/Drivers/Embedded-Base/dev/renode/can/STMCAN_NER.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/can/SocketCANBridgeNER.cs
 
-sysbus.cpu PerformanceInMips 1
-emulation SetGlobalQuantum "0.10000"
+machine LoadPlatformDescription $CWD/mpu.repl
 
-emulation CreateUartPtyTerminal "term" "/dev/ttyACM0"
-connector Connect sysbus.usart3 term
+sysbus LoadELF $CWD/build/cerberus.elf
 
-sysbus LoadELF @build/cerberus.elf
+machine CreateSocketCANBridgeNER "socketcan" "vcan0" 
 
-# Uncomment for autostart
-#start
+machine StartGdbServer 3334 true
+
+connector Connect sysbus.can1 canHub
+
+connector Connect sysbus.socketcan canHub 
+
+showAnalyzer sysbus.usart3
+
+# start
+
+#sysbus.gpioPortB.button0 PressAndRelease 
+# To connect to GDB server run gdb-multiarch ./build/*.elf -ex "target remote localhost:3333"
+# To see the can messages emitted run `candump vcan0` on host in a separate terminal
+# To initialize the vcan run `sudo modprobe vcan` and then `sudo ip link add dev vcan0 type vcan` and `sudo ip link set up vcan0`
+# sudo docker run --rm --network=host -it -v $(pwd):/mnt -w /mnt antmicro/renode renode -e "include @/mnt/wheel.resc"

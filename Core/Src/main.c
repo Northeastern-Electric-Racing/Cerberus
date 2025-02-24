@@ -31,7 +31,6 @@
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
-#include "bms.h"
 #include "pdu.h"
 #include "mpu.h"
 #include "dti.h"
@@ -133,7 +132,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -142,9 +140,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-  HAL_Delay(2000);
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -564,7 +559,7 @@ static void MX_IWDG_Init(void)
 
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
@@ -618,11 +613,6 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
 
@@ -754,7 +744,7 @@ void StartDefaultTask(void *argument)
 
   /* Infinite loop */
   for(;;) {
-
+    printf("%ld \n \n", HAL_GetTick());
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
@@ -771,6 +761,27 @@ void StartDefaultTask(void *argument)
     //osDelay(YELLOW_LED_BLINK_DELAY);
   }
   /* USER CODE END 5 */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
 }
 
 /**
