@@ -252,16 +252,7 @@ int main(void)
   // assert(shutdown_monitor_handle);
 
   /* Control File Thread */
-  control_args_t *control_args = malloc(sizeof(control_args_t));
-  control_args->pdu = pdu;
-  control_args->control = malloc(sizeof(control_t));
-  control_args->calypso_states = malloc(sizeof(control_t));
-  control_args->control->fanBattBoxState = 0;
-  control_args->control->pumpState0 = 0;
-  control_args->control->pumpState1 = 0;
-  control_args->calypso_states->fanBattBoxState = 0;
-  control_args->calypso_states->pumpState0 = 0;
-  control_args->calypso_states->pumpState1 = 0;
+  control_args_t *control_args = init_control(pdu);
   control_handle = osThreadNew(vControl, control_args, &control_attributes);
   assert(control_handle);
 
