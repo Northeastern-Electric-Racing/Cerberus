@@ -6,10 +6,9 @@
 #include "cerberus_conf.h"
 #include "fault.h"
 
-bms_t *bms;
-
-void bms_fault_callback()
+static void bms_fault_callback(void *args)
 {
+	bms_t *bms = (bms_t *)args;
 	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT,
 				    .severity = DEFCON1 };
 	fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
@@ -17,16 +16,18 @@ void bms_fault_callback()
 	queue_fault(&fault_data);
 }
 
-void bms_init()
+bms_t *bms_init()
 {
-	bms = malloc(sizeof(bms_t));
+	bms_t *bms = malloc(sizeof(bms_t));
 	assert(bms);
 
 	bms->bms_monitor_timer =
-		osTimerNew(&bms_fault_callback, osTimerOnce, NULL, NULL);
+		osTimerNew(&bms_fault_callback, osTimerOnce, bms, NULL);
+
+	return bms;
 }
 
-void handle_dcl_msg()
+void handle_dcl_msg(bms_t *bms)
 {
 	osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 }
