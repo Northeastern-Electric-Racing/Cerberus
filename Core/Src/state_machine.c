@@ -281,7 +281,7 @@ int set_home_mode()
 int set_ready_mode()
 {
 #ifdef IGNORE_FAULT
-		return 1;
+	return 1;
 #endif
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
