@@ -44,17 +44,22 @@ typedef struct {
 	control_t *control;
 } set_state_t;
 
+typedef struct {
+	bool *control_state;
+	bool *calypso_state;
+	nertimer_t timer;
+	set_state_t *set_state;
+	void (*set_state_func)(void *arg);
+	uint16_t upper_temp;
+	uint16_t lower_temp;
+} device_control_t;
+
+typedef enum { DEVICE_PUMP, DEVICE_RADFAN } device_type_t;
+
 void vControl(void *params);
 
-void control_pump(bool hv, uint16_t temp, uint16_t upper, uint16_t lower,
-		  nertimer_t *timer, set_state_t *set_state,
-		  void (*func)(void *arg), bool *control_state,
-		  bool *calypso_state);
-
-void control_radfan(uint16_t temp, uint16_t upper, uint16_t lower,
-		    nertimer_t *timer, set_state_t *set_state,
-		    void (*func)(void *arg), bool *control_state,
-		    bool *calypso_state);
+void control_device(device_type_t type, bool hv, uint16_t temp,
+		    device_control_t *device);
 
 void set_pump0_state(void *params);
 void set_pump1_state(void *params);

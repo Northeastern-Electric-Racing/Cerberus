@@ -18,65 +18,62 @@ void vControl(void *params)
 	control_t *control = control_args->control;
 	control_t *calypso_states = control_args->calypso_states;
 
-	// Debounce timers
-	nertimer_t pump_timer0;
-	nertimer_t radfan_timer0;
+	// Pump 0 Structure
+	device_control_t pump0 = { .control_state = &(control->pumpState0),
+				   .calypso_state =
+					   &(calypso_states->pumpState0),
+				   .set_state_func = set_pump0_state,
+				   .upper_temp = PUMP_UPPER_MOTOR_TEMP,
+				   .lower_temp = PUMP_LOWER_MOTOR_TEMP };
+	pump0.set_state = malloc(sizeof(set_state_t));
+	pump0.set_state->control = control;
 
-	nertimer_t pump_timer1;
-	nertimer_t radfan_timer1;
+	// Radfan 0 Structure
+	device_control_t radfan0 = { .control_state = &(control->radfanState0),
+				     .calypso_state =
+					     &(calypso_states->radfanState0),
+				     .set_state_func = set_radfan0_state,
+				     .upper_temp = RADFAN_UPPER_MOTOR_TEMP,
+				     .lower_temp = RADFAN_LOWER_MOTOR_TEMP };
+	radfan0.set_state = malloc(sizeof(set_state_t));
+	radfan0.set_state->control = control;
 
-	// Debounce setteres
-	set_state_t *set_pump0 = malloc(sizeof(set_state_t));
-	set_pump0->control = control;
+	// Pump 1 Structure
+	device_control_t pump1 = { .control_state = &(control->pumpState1),
+				   .calypso_state =
+					   &(calypso_states->pumpState1),
+				   .set_state_func = set_pump1_state,
+				   .upper_temp = PUMP_UPPER_CONTROLLER_TEMP,
+				   .lower_temp = PUMP_LOWER_CONTROLLER_TEMP };
+	pump1.set_state = malloc(sizeof(set_state_t));
+	pump1.set_state->control = control;
 
-	set_state_t *set_radfan0 = malloc(sizeof(set_state_t));
-	set_radfan0->control = control;
-
-	set_state_t *set_pump1 = malloc(sizeof(set_state_t));
-	set_pump1->control = control;
-
-	set_state_t *set_radfan1 = malloc(sizeof(set_state_t));
-	set_radfan1->control = control;
+	// Radfan 1 Structure
+	device_control_t radfan1 = {
+		.control_state = &(control->radfanState1),
+		.calypso_state = &(calypso_states->radfanState1),
+		.set_state_func = set_radfan1_state,
+		.upper_temp = RADFAN_UPPER_CONTROLLER_TEMP,
+		.lower_temp = RADFAN_LOWER_CONTROLLER_TEMP
+	};
+	radfan1.set_state = malloc(sizeof(set_state_t));
+	radfan1.set_state->control = control;
 
 	for (;;) {
 		bool hv = get_active();
+		uint16_t motor_temp = dti_get_motor_temp();
+		uint16_t controller_temp = dti_get_controller_temp();
 
-		uint16_t motorTemp = dti_get_motor_temp();
-		uint16_t controllerTemp = dti_get_controller_temp();
+		// Control devices
+		control_device(DEVICE_PUMP, hv, motor_temp, &pump0);
+		control_device(DEVICE_RADFAN, hv, motor_temp, &radfan0);
+		control_device(DEVICE_PUMP, hv, controller_temp, &pump1);
+		control_device(DEVICE_RADFAN, hv, controller_temp, &radfan1);
 
-		// Determine PUMP0 state
-		control_pump(hv, motorTemp, PUMP_UPPER_MOTOR_TEMP,
-			     PUMP_LOWER_MOTOR_TEMP, &pump_timer0, set_pump0,
-			     &set_pump0_state, &(control->pumpState0),
-			     &(calypso_states->pumpState0));
-
-		// Determine RADFAN0 state
-		control_radfan(motorTemp, RADFAN_UPPER_MOTOR_TEMP,
-			       RADFAN_LOWER_MOTOR_TEMP, &radfan_timer0,
-			       set_radfan0, &set_radfan0_state,
-			       &(control->radfanState0),
-			       &(calypso_states->radfanState0));
-
-		// Determine PUMP1 state
-		control_pump(hv, controllerTemp, PUMP_UPPER_CONTROLLER_TEMP,
-			     PUMP_LOWER_CONTROLLER_TEMP, &pump_timer1,
-			     set_pump1, &set_pump1_state,
-			     &(control->pumpState1),
-			     &(calypso_states->pumpState1));
-
-		// Determine RADFAN1 state
-		control_radfan(controllerTemp, RADFAN_UPPER_CONTROLLER_TEMP,
-			       RADFAN_LOWER_CONTROLLER_TEMP, &radfan_timer1,
-			       set_radfan1, &set_radfan1_state,
-			       &(control->radfanState1),
-			       &(calypso_states->radfanState1));
-
-		// Write state to devices
+		// Write states
 		write_fan_battbox(control_args->pdu, control->fanBattBoxState);
-
 		write_pump_0(control_args->pdu, control->pumpState0);
 		write_pump_1(control_args->pdu, control->pumpState1);
-
 		write_radfan_0(control_args->pdu, control->radfanState0);
 		write_radfan_1(control_args->pdu, control->radfanState1);
 
@@ -84,43 +81,30 @@ void vControl(void *params)
 	}
 }
 
-// Control logic for pumps
-void control_pump(bool hv, uint16_t temp, uint16_t upper, uint16_t lower,
-		  nertimer_t *timer, set_state_t *set_state,
-		  void (*func)(void *arg), bool *control_state,
-		  bool *calypso_state)
+// Control logic for devices
+void control_device(device_type_t type, bool hv, uint16_t temp,
+		    device_control_t *device)
 {
-	if (hv) {
-		(*control_state) = 1;
-	} else if (temp > upper || temp < lower || is_timer_active(timer)) {
-		if (temp > upper) {
-			set_state->state = 1;
-			debounce(temp > upper, timer, 10000, func, set_state);
-		} else {
-			set_state->state = 0;
-			debounce(temp < lower, timer, 10000, func, set_state);
-		}
-	} else {
-		(*control_state) = (*calypso_state);
+	if (type == DEVICE_PUMP && hv) {
+		*(device->control_state) = 1;
+		return;
 	}
-}
 
-// Control logic for radfans
-void control_radfan(uint16_t temp, uint16_t upper, uint16_t lower,
-		    nertimer_t *timer, set_state_t *set_state,
-		    void (*func)(void *arg), bool *control_state,
-		    bool *calypso_state)
-{
-	if (temp > upper || temp < lower || is_timer_active(timer)) {
-		if (temp > upper) {
-			set_state->state = 1;
-			debounce(temp > upper, timer, 10000, func, set_state);
+	if (temp > device->upper_temp || temp < device->lower_temp ||
+	    is_timer_active(&device->timer)) {
+		if (temp > device->upper_temp) {
+			device->set_state->state = 1;
+			debounce(temp > device->upper_temp, &(device->timer),
+				 10000, device->set_state_func,
+				 device->set_state);
 		} else {
-			set_state->state = 0;
-			debounce(temp < lower, timer, 10000, func, set_state);
+			device->set_state->state = 0;
+			debounce(temp < device->lower_temp, &(device->timer),
+				 10000, device->set_state_func,
+				 device->set_state);
 		}
 	} else {
-		(*control_state) = (*calypso_state);
+		*(device->control_state) = *(device->calypso_state);
 	}
 }
 
