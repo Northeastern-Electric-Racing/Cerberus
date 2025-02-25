@@ -7,6 +7,7 @@
 
 typedef struct {
 	osTimerId bms_monitor_timer;
+	osMutexId_t *mutex;
 } bms_t;
 
 /**

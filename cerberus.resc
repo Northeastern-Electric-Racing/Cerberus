@@ -9,6 +9,7 @@ emulation CreateCANHub "canHub"
 
 include $CWD/Drivers/Embedded-Base/dev/renode/can/STMCAN_NER.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/can/SocketCANBridgeNER.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/PCA9539.cs
 
 machine LoadPlatformDescription $CWD/mpu.repl
 
