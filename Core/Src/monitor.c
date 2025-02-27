@@ -10,6 +10,7 @@
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"
+#include "stdio.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
@@ -35,6 +36,8 @@ void read_lv_sense(void *arg)
 	} lv_data;
 
 	read_lv_voltage(mpu, &v_int);
+
+	printf("LV Sense: %ld\n", v_int);
 
 	/* Convert from raw ADC reading to voltage level */
 

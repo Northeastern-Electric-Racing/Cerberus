@@ -10,6 +10,8 @@ emulation CreateCANHub "canHub"
 include $CWD/Drivers/Embedded-Base/dev/renode/can/STMCAN_NER.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/can/SocketCANBridgeNER.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/PCA9539.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/STM32DMANER.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/STM32ADCNER.cs
 
 machine LoadPlatformDescription $CWD/mpu.repl
 
@@ -24,6 +26,13 @@ connector Connect sysbus.can1 canHub
 connector Connect sysbus.socketcan canHub 
 
 showAnalyzer sysbus.usart3
+
+sysbus.pedalsAdc FeedSample 650 0 -1
+sysbus.pedalsAdc FeedSample 650 1 -1
+sysbus.pedalsAdc FeedSample 1800 2 -1
+sysbus.pedalsAdc FeedSample 1000 3 -1
+
+sysbus.lvAdc FeedSample 0xFF 0x08 -1
 
 # start
 

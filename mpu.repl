@@ -1,2 +1,13 @@
 using "Drivers/Embedded-Base/dev/renode/cpus/stm32f405_ner.repl"
 
+pduGPIOPortShutdown: I2C.PCA9539 @ i2c2  0x77
+
+pduGPIOPortCTRL: I2C.PCA9539 @ i2c2 0x76
+
+lvAdc: Analog.STM32ADCNER @ sysbus 0x40012000
+    IRQ->nvic@18
+    DMARequest->dma2@4
+
+pedalsAdc: Analog.STM32ADCNER @ sysbus 0x40012200
+    IRQ->nvic@18
+    DMARequest->dma2@0
