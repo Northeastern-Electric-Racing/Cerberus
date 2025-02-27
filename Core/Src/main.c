@@ -212,8 +212,8 @@ int main(void)
   assert(data_collection_thread);
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   // assert(temp_monitor_handle);
-  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
-  //assert(imu_monitor_handle);
+  // imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+  // assert(imu_monitor_handle);
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 

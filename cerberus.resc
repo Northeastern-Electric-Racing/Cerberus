@@ -12,6 +12,8 @@ include $CWD/Drivers/Embedded-Base/dev/renode/can/SocketCANBridgeNER.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/PCA9539.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/STM32DMANER.cs
 include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/STM32ADCNER.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/LSM6DSO_IMU_NER.cs
+include $CWD/Drivers/Embedded-Base/dev/renode/peripherals/LSM6DSO_IMU_I2C.cs
 
 machine LoadPlatformDescription $CWD/mpu.repl
 

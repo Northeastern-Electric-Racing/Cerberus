@@ -11,3 +11,7 @@ lvAdc: Analog.STM32ADCNER @ sysbus 0x40012000
 pedalsAdc: Analog.STM32ADCNER @ sysbus 0x40012200
     IRQ->nvic@18
     DMARequest->dma2@0
+
+imu: Sensors.LSM6DSO_IMU_I2C @i2c1 0xD5
+
+temp: I2C.SHT21 @ i2c1 0x40
