@@ -26,9 +26,13 @@ control_args_t *control_init(pdu_t *pdu)
 	control_args->control->fanBattBoxState = 0;
 	control_args->control->pumpState0 = 0;
 	control_args->control->pumpState1 = 0;
+	control_args->control->radfanState0 = 0;
+	control_args->control->radfanState1 = 0;
 	control_args->calypso_states->fanBattBoxState = 0;
 	control_args->calypso_states->pumpState0 = 0;
 	control_args->calypso_states->pumpState1 = 0;
+	control_args->calypso_states->radfanState0 = 0;
+	control_args->calypso_states->radfanState1 = 0;
 
 	return control_args;
 }
