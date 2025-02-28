@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bms.h"
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
@@ -174,7 +173,7 @@ int main(void)
   dti_t *mc   = dti_init();
   assert(mc);
   init_can1(&hcan1);
-  bms_t *bms = bms_init();
+  init_bms();
 
   printf("\n\n\nInit Success...\n\n\n");
 
@@ -225,10 +224,7 @@ int main(void)
   /* Messaging */
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  can_receive_args_t* can_receive_args = malloc(sizeof(can_receive_args));
-  can_receive_args->bms = bms;
-  can_receive_args->mc = mc;
-  can_receive_thread = osThreadNew(vCanReceive, can_receive_args, &can_receive_attributes);
+  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
 
   /* Control Logic */

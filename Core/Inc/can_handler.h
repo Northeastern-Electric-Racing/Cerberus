@@ -5,11 +5,6 @@
 #include "dti.h"
 #include "bms.h"
 
-typedef struct {
-	dti_t *mc;
-	bms_t *bms;
-} can_receive_args_t;
-
 /**
  * @brief Callback to be called when a message is received on CAN line 1.
  * 
