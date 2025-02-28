@@ -18,10 +18,10 @@ static void bms_fault_callback(void *args)
 	queue_fault(&fault_data);
 }
 
-void init_bms() {
+void init_bms()
+{
 	bms_timer = osTimerNew(bms_fault_callback, osTimerOnce, NULL, NULL);
 }
-
 
 void handle_dcl_msg()
 {
