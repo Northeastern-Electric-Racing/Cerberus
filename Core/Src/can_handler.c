@@ -66,7 +66,14 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	}
 
 	new_msg.len = rx_header.DLC;
-	new_msg.id = rx_header.StdId;
+	(rx_header.StdId == 0) ?
+		(new_msg.id = rx_header.ExtId) :
+		(new_msg.id_is_extended =
+			 true); // If the messsage has an extended CAN ID, save the message accordingly.
+	(rx_header.ExtId == 0) ?
+		(new_msg.id = rx_header.StdId) :
+		(new_msg.id_is_extended =
+			 false); // If the message has a standard CAN ID, save the message accordingly.
 
 	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
 			   NEW_CAN_MSG_FLAG);
