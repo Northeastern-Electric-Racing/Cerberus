@@ -3,10 +3,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-#include "bms.h"
 #include "cerb_utils.h"
-#include "dti.h"
 #include "fault.h"
 #include "steeringio.h"
 

@@ -13,7 +13,6 @@
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "dti.h"
-#include "bms.h"
 #include "emrax.h"
 #include "monitor.h"
 #include <assert.h>
