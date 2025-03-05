@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define APPS_1_GPIO_Port GPIOA
 #define APPS_2_Pin GPIO_PIN_3
 #define APPS_2_GPIO_Port GPIOA
+#define SPI1_CS_Pin GPIO_PIN_4
+#define SPI1_CS_GPIO_Port GPIOA
 #define SPARE_GPIO_1_Pin GPIO_PIN_4
 #define SPARE_GPIO_1_GPIO_Port GPIOC
 #define SPARE_GPIO_2_Pin GPIO_PIN_5
@@ -87,6 +89,10 @@ void Error_Handler(void);
 #define EXPAND_RST0_GPIO_Port GPIOC
 #define EXPAND_RST1_Pin GPIO_PIN_7
 #define EXPAND_RST1_GPIO_Port GPIOC
+#define DEBUG_LED1_Pin GPIO_PIN_8
+#define DEBUG_LED1_GPIO_Port GPIOC
+#define DEBUG_LED2_Pin GPIO_PIN_9
+#define DEBUG_LED2_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 
