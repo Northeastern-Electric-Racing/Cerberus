@@ -8,6 +8,8 @@
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "bitstream.h"
+#include "c_utils.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
@@ -56,10 +58,10 @@ typedef enum {
  * @brief Read the status of the PDU fuses.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream for storing fuse data
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES]);
+int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream);
 
 /**
  * @brief Read the state of the TSMS signal.
@@ -88,10 +90,10 @@ typedef enum {
  * @brief Read the status of the shutdown loop.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Buffer that fuse data will be written to
+ * @param status Bitstream to store shutdown data
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES]);
+int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
 
 /**
  * @brief Read the status of the shutdown loop.
@@ -126,7 +128,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 /* Current Sensors */
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x80
-#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x84
+#define BATTBOX_FANS_CURRENT_SENSOR_ADDR     0x82
 #define PUMPS_CURRENT_SENSOR_ADDR	     0x88
 #define LV_BOARDS_CURRENT_SENSOR_ADDR	     0x8A
 
@@ -135,23 +137,27 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
 #define SOUND_RTDS_FLAG 1U
 
-// Temp stuff
+/* Extracts the specified bit from a byte. */
+/* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
+#define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
+
+// clang-format off
 /* CTRL Expander */
-#define CTRL_ADDR		PCA_I2C_ADDR_0
-#define PIN_PUMP_FUSE_STAT0	0 // P00
-#define PIN_RTD_CTRL		1 // P01
+#define CTRL_ADDR				PCA_I2C_ADDR_0
+#define PIN_PUMP_FUSE_STAT0		0 // P00
+#define PIN_RTD_CTRL			1 // P01
 #define PIN_SD_TO_BRB_FUSE_STAT 2 // P02
-#define PIN_PUMP_CTRL0		3 // P03
-#define PIN_PUMP_CTRL1		4 // P04
-#define PIN_BUCK_CTRL		5 // P05
-#define PIN_BRKLIGHT_CTRL	6 // P06
-#define PIN_FANBATTBOX_CTRL	7 // P07
+#define PIN_PUMP_CTRL0			3 // P03
+#define PIN_PUMP_CTRL1			4 // P04
+#define PIN_BUCK_CTRL			5 // P05
+#define PIN_BRKLIGHT_CTRL		6 // P06
+#define PIN_FANBATTBOX_CTRL		7 // P07
 #define PIN_LV_BOARDS_FUSE_STAT 0 // P10
 #define PIN_RADFAN_FUSE_STAT	1 // P11
 #define PIN_BATTBOX_FUSE_STAT	2 // P12
-#define PIN_BUCK_FUSE_STAT	3 // P13
-#define PIN_FANBATTBOX_STAT	4 // P14
-#define PIN_PUMP_FUSE_STAT1	5 // P15
+#define PIN_BUCK_FUSE_STAT		3 // P13
+#define PIN_FANBATTBOX_STAT		4 // P14
+#define PIN_PUMP_FUSE_STAT1		5 // P15
 #define PIN_DASHBOARD_FUSE_STAT 6 // P16
 #define PIN_BRKLIGHT_FUSE_STAT	7 // P17
 
@@ -169,31 +175,31 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_SHUTDOWN_11	    1 // P11 (x)
 #define PIN_BSPD_GOOD	    2 // P12
 #define PIN_SHUTDOWN_13	    3 // P13 (x)
-#define PIN_MC_STAT	    4 // P14
-#define PIN_SPARE_1	    5 // P15
-#define PIN_SPARE_2	    6 // P16
+#define PIN_MC_STAT	    	4 // P14
+#define PIN_SPARE_1	    	5 // P15
+#define PIN_SPARE_2	    	6 // P16
 #define PIN_TMS_SENSE	    7 // P17
 
 // Stuff that will be used eventually
 /* 
 CTRL Expander
-#define CTRL_ADDR		 PCA_I2C_ADDR_0
-#define PIN_PUMP_CTRL_0		 0 // P00
-#define PIN_PUMP_CTRL_1		 1 // P01
-#define PIN_24V_12V_BUCK_CTRL	 2 // P02
-#define PIN_BRKLIGHT_CTRL	 3 // P03
-#define PIN_FANBATTBOX_CTRL	 4 // P04
-#define PIN_BATTBOX_FUSE_STAT	 5 // P05
-#define PIN_LV_BOARDS_FUSE_STAT	 6 // P06
-#define PIN_RADFAN_FUSE_STAT	 7 // P07
-#define PIN_BUCK_FUSE_STAT	 0 // P10
-#define PIN_FANBATTBOX_FUSE_STAT 1 // P11
-#define PIN_PUMP_FUSE_STAT0	 2 // P12
-#define PIN_DASHBOARD_FUSE_STAT	 3 // P13
-#define PIN_BRKLIGHT_FUSE_STAT	 4 // P14
-#define PIN_SD_TO_BRB_FUSE_STAT	 5 // P15
-#define PIN_PUMP_FUSE_STAT1	 6 // P16
-#define PIN_RTDS_CTRL		 7 // P17
+#define CTRL_ADDR		 			PCA_I2C_ADDR_0
+#define PIN_PUMP_CTRL_0		 		0 // P00
+#define PIN_PUMP_CTRL_1		 		1 // P01
+#define PIN_24V_12V_BUCK_CTRL		2 // P02
+#define PIN_BRKLIGHT_CTRL	 		3 // P03
+#define PIN_FANBATTBOX_CTRL	 		4 // P04
+#define PIN_BATTBOX_FUSE_STAT		5 // P05
+#define PIN_LV_BOARDS_FUSE_STAT		6 // P06
+#define PIN_RADFAN_FUSE_STAT		7 // P07
+#define PIN_BUCK_FUSE_STAT	 		0 // P10
+#define PIN_FANBATTBOX_FUSE_STAT 	1 // P11
+#define PIN_PUMP_FUSE_STAT0	 		2 // P12
+#define PIN_DASHBOARD_FUSE_STAT	 	3 // P13
+#define PIN_BRKLIGHT_FUSE_STAT	 	4 // P14
+#define PIN_SD_TO_BRB_FUSE_STAT	 	5 // P15
+#define PIN_PUMP_FUSE_STAT1	 		6 // P16
+#define PIN_RTDS_CTRL		 		7 // P17
 
 Shutdown Expander
 #define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
@@ -206,7 +212,7 @@ Shutdown Expander
 #define PIN_SHUTDOWN_06	    6 // P06 (X)
 #define PIN_SHUTDOWN_07	    7 // P07 (X)
 #define PIN_SHUTDOWN_10	    0 // P10 (X)
-#define PIN_MC_STAT	    1 // P11
+#define PIN_MC_STAT	    	1 // P11
 #define PIN_SPARE_MON	    2 // P12
 #define PIN_SPARE_FAULT	    3 // P13
 #define PIN_TSMS_SENSE	    4 // P14
@@ -214,5 +220,6 @@ Shutdown Expander
 #define PIN_HVD_INTLK_GOOD  6 // P16
 #define PIN_HVC_INTLK_GOOD  7 // P17
 */
+// clang-format on
 
 #endif /* PDU_H */

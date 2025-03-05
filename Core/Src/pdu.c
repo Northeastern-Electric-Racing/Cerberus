@@ -23,12 +23,12 @@ static inline uint8_t pca_i2c_read(uint16_t dev_address, uint8_t reg,
 }
 
 /* Wrappers for Current Sensor Read & Write */
-static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
+static inline int ina_read_reg(uint16_t dev_addr, uint16_t reg, uint16_t *data)
 {
 	uint8_t buff[2];
 	HAL_StatusTypeDef status;
 
-	status = HAL_I2C_Mem_Read(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
+	status = HAL_I2C_Mem_Read(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_8BIT,
 				  buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
 		return -1;
@@ -37,21 +37,34 @@ static inline int ina_read_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
 	*data = (buff[0] << 8) | buff[1];
 	return 0;
 }
-static inline int ina_write_reg(uint16_t dev_addr, uint8_t reg, uint16_t *data)
+static inline int ina_write_reg(uint16_t dev_addr, uint16_t reg, uint16_t *data)
 {
 	uint8_t buff[2];
 	buff[0] = (*data >> 8) & 0xFF;
 	buff[1] = *data & 0xFF;
 
 	HAL_StatusTypeDef status;
-	status = HAL_I2C_Mem_Write(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_16BIT,
+	status = HAL_I2C_Mem_Write(&hi2c2, dev_addr, reg, I2C_MEMADD_SIZE_8BIT,
 				   buff, 2, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
-		printf("status: %d\n", status);
-		printf("dev_addr: %d\n", dev_addr);
 		return -1;
 	}
 
+	return 0;
+}
+
+int init_ina(pdu_t *pdu, ina226_t *ina, uint16_t dev_addr, float r_shunt,
+	     float max_current)
+{
+	ina226_init(ina, ina_write_reg, ina_read_reg, dev_addr);
+	int stat = ina226_calibrate(ina, r_shunt, max_current);
+	if (stat != 0) {
+		printf("Current Sensor Init Failed - (ID: %X)\n", dev_addr);
+		free(ina);
+		free(pdu);
+		return -1;
+	}
+	printf("Current Sensor Init Success - (ID: %X)\n", dev_addr);
 	return 0;
 }
 
@@ -68,56 +81,29 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->motor_controller_current_sensor);
-	ina226_init(pdu->motor_controller_current_sensor, ina_write_reg,
-		    ina_read_reg, MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR);
-	int status_init = ina226_calibrate(pdu->motor_controller_current_sensor,
-					   0.01f, 3.0f);
-	if (status_init != 0) {
-		printf("\n\rmotor controller current sensor init fail\n\r");
-		free(pdu->motor_controller_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->motor_controller_current_sensor,
+		      MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
 		return NULL;
 	}
 
 	/* Initialize Battbox Fans Current Sensor */
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->battbox_fans_current_sensor);
-	ina226_init(pdu->battbox_fans_current_sensor, ina_write_reg,
-		    ina_read_reg, BATTBOX_FANS_CURRENT_SENSOR_ADDR);
-	status_init =
-		ina226_calibrate(pdu->battbox_fans_current_sensor, 0.01f, 5.0f);
-	if (status_init != 0) {
-		printf("\n\rbattbox fans current sensor init fail\n\r");
-		free(pdu->battbox_fans_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->battbox_fans_current_sensor,
+		      BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
 		return NULL;
 	}
 
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->pumps_current_sensor);
-	ina226_init(pdu->pumps_current_sensor, ina_write_reg, ina_read_reg,
-		    PUMPS_CURRENT_SENSOR_ADDR);
-	status_init = ina226_calibrate(pdu->pumps_current_sensor, 0.01f, 2.0f);
-	if (status_init != 0) {
-		printf("\n\rpumps current sensor init fail\n\r");
-		free(pdu->pumps_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
+		      0.01f, 2.0f)) {
 		return NULL;
 	}
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
-	assert(pdu->lv_boards_current_sensor);
-	ina226_init(pdu->lv_boards_current_sensor, ina_write_reg, ina_read_reg,
-		    LV_BOARDS_CURRENT_SENSOR_ADDR);
-	status_init =
-		ina226_calibrate(pdu->lv_boards_current_sensor, 0.01f, 1.25f);
-	if (status_init != 0) {
-		printf("\n\rlv boards current sensor init fail\n\r");
-		free(pdu->lv_boards_current_sensor);
-		free(pdu);
+	if (!init_ina(pdu, pdu->lv_boards_current_sensor,
+		      LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
 	}
 
@@ -283,14 +269,7 @@ void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-static void deconstruct_buf(uint8_t data, bool config[8])
-{
-	for (uint8_t i = 0; i < 8; i++) {
-		config[i] = (data >> i) & 1;
-	}
-}
-
-int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
+int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
@@ -314,22 +293,23 @@ int8_t read_fuses(pdu_t *pdu, bool status[MAX_FUSES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	bitstream_t fuses;
+	uint8_t fuse_data[2];
+	bitstream_init(&fuses, fuse_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[PUMP_FUSE_STAT0] = bank0[PIN_PUMP_FUSE_STAT0];
-	status[SD_TO_BRB_FUSE] = bank0[PIN_SD_TO_BRB_FUSE_STAT];
-	status[LV_BOARDS_FUSE_STAT] = bank1[PIN_LV_BOARDS_FUSE_STAT];
-	status[RADFAN_FUSE_STAT] = bank1[PIN_RADFAN_FUSE_STAT];
-	status[BATTBOX_FUSE_STAT] = bank1[PIN_BATTBOX_FUSE_STAT];
-	status[BUCK_FUSE_STAT] = bank1[PIN_BUCK_FUSE_STAT];
-	status[FANBATTBOX_STAT] = bank1[PIN_FANBATTBOX_STAT];
-	status[PUMP_FUSE_STAT1] = bank1[PIN_PUMP_FUSE_STAT1];
-	status[DASHBOARD_FUSE_STAT] = bank1[PIN_DASHBOARD_FUSE_STAT];
-	status[BRKLIGHT_FUSE_STAT] = bank1[PIN_BRKLIGHT_FUSE_STAT];
+	// clang-format off
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
+	bitstream_add(&fuses, 0, 6); 												// Extra (6 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;
@@ -359,7 +339,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
+int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 {
 	if (!pdu)
 		return -1;
@@ -383,22 +363,22 @@ int8_t read_shutdown(pdu_t *pdu, bool status[MAX_SHUTDOWN_STAGES])
 		return error;
 	}
 
-	bool bank0[8];
-	deconstruct_buf(bank0_d, bank0);
+	// clang-format off
+	bitstream_t shutdown;
+	uint8_t shutdown_data[2];
+	bitstream_init(&shutdown, shutdown_data, 2);
 
-	bool bank1[8];
-	deconstruct_buf(bank1_d, bank1);
-
-	status[HVD_GOOD] = bank0[PIN_HVD_GOOD];
-	status[HVC_GOOD] = bank0[PIN_HVC_GOOD];
-	status[BOTS_GOOD] = bank0[PIN_BOTS_GOOD];
-	status[CKPT_BRB] = bank0[PIN_CKPT_BRB];
-	status[BMS_GOOD] = bank0[PIN_BMS_GOOD];
-	status[INERTIA_SW_GOOD] = bank0[PIN_INERTIA_SW_GOOD];
-	status[SPARE_GPIO0] = bank0[PIN_SPARE_GPIO0];
-	status[IMD_GOOD] = bank0[PIN_IMD_GOOD];
-
-	status[BSPD_GOOD] = bank1[PIN_BSPD_GOOD];
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
+	bitstream_add(&shutdown, 0, 7); 											// Extra (7 bits)
+	// clang-format on
 
 	osMutexRelease(pdu->mutex);
 	return 0;
