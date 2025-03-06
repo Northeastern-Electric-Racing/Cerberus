@@ -108,9 +108,9 @@ void vFaultHandler(void *pv_params)
 		}
 
 		// Send Can Message (even if a new fault was not received)
-		can_msg_t msg;
-		msg.id = CANID_FAULT_MSG;
-		msg.len = 8;
+		can_msg_t msg = { .id = CANID_FAULT_MSG,
+				  .len = 8,
+				  .data = { 0 } };
 
 		memcpy(msg.data, &faults, sizeof(faults));
 		memcpy(msg.data + sizeof(faults), &max_severity_level,
