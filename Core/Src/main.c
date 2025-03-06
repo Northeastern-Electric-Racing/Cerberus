@@ -194,7 +194,7 @@ int main(void)
     printf("Total found devices: %d\n", devices);
   }
   /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hadc3, &hadc1, GPIOC, GPIOB);
+  mpu_t *mpu  = init_mpu(&hadc3, &hadc1);
   assert(mpu);
   pdu_t *pdu  = init_pdu(&hi2c2, &hadc2);
   assert(pdu);
