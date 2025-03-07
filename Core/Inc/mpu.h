@@ -37,7 +37,7 @@ typedef struct {
  * @param lv_adc Pointer to struct representing LV battery ADC
  * @return mpu_t* Pointer to struct representing the MPU
  */
-mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc );
+mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc);
 
 /**
  * @brief Read pedal ADCs with DMA.
