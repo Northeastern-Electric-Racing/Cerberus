@@ -27,7 +27,7 @@ void read_pump_sens(pdu_t *pdu)
 				    .severity = DEFCON5 };
 	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
 
-	uint32_t pump_volts_int[2];
+	uint16_t pump_volts_int[2];
 
 	read_pump_sensors(pdu, pump_volts_int);
 
@@ -38,7 +38,12 @@ void read_pump_sens(pdu_t *pdu)
 	pump_volts_int[0] = (uint32_t)(pump_sensor0_volts_real * 10000);
 	pump_volts_int[1] = (uint32_t)(pump_sensor1_volts_real * 10000);
 
-	memcpy(msg.data, pump_volts_int, msg.len);
+	uint32_t pump_volts_int_new[2] = {
+		(uint32_t)(pump_sensor0_volts_real * 10000),
+		(uint32_t)(pump_sensor1_volts_real * 10000)
+	};
+
+	memcpy(msg.data, pump_volts_int_new, msg.len);
 	if (queue_can_msg(msg)) {
 		fault_data.diag = "Failed to send pump sensor CAN message";
 		queue_fault(&fault_data);
@@ -119,10 +124,11 @@ void read_lv_sense(void *arg)
 	// Calibrated on 3/5 by jack, using vref=3.291 and a magic number for tuning
 	// testpoints and multimeters were used
 	// estimated accuracy -0.15V, +0.05V (weigh towards low report)
-	float v_dec = ((v_int / 4096.0) * 3.291) / (10000.0 / (10000.0 + 100000)) * 0.9963;
+	float v_dec = ((v_int / 4096.0) * 3.291) /
+		      (10000.0 / (10000.0 + 100000)) * 0.9963;
 
 	// get final voltage
-	v_int = (uint32_t)(v_dec * 10.0);
+	v_int = (uint32_t)(v_dec * 10000.0);
 
 	// Calculate SoC using logistic function
 	// - Normal charged voltage is 29.4V
