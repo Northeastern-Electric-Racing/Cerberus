@@ -75,7 +75,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	pdu->hi2c = hi2c;
 	pdu->pump_sensors_adc = pump_sensors_adc;
 	assert(!HAL_ADC_Start_DMA(
-		pdu->pump_sensors_adc, (uint32_t *) pdu->pump_sensors_dma_buf,
+		pdu->pump_sensors_adc, (uint32_t *)pdu->pump_sensors_dma_buf,
 		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint16_t)));
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
