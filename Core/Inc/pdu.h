@@ -23,7 +23,7 @@ typedef struct {
 	ina226_t *lv_boards_current_sensor;
 
 	ADC_HandleTypeDef *pump_sensors_adc;
-	uint32_t pump_sensors_dma_buf[2];
+	uint16_t pump_sensors_dma_buf[2];
 } pdu_t;
 
 /* Creates a new PDU interface */
@@ -101,7 +101,7 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
  * @param pdu Pointer to struct representing the PDU
  * @param status Buffer that the data from both sensors will be written to
  */
-void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2]);
+void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2]);
 
 // Function for reading current
 int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
