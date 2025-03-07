@@ -126,7 +126,7 @@ Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/Embedded-Base/middleware/src/ringbuffer.c \
 Drivers/Embedded-Base/middleware/src/c_utils.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
-Drivers/Embedded-Base/general/src/pca9539.c \
+Drivers/Embedded-Base/general/src/tca9539.c \
 Drivers/Embedded-Base/general/src/INA226.c \
 Drivers/Embedded-Base/middleware/src/bitstream.c
 
