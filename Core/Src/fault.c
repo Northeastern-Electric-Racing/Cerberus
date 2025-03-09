@@ -83,8 +83,8 @@ void vFaultHandler(void *pv_params)
 			severity_levels[index] = fault_data.severity;
 			max_severity_level = getMaxSeverity();
 
-			//printf("Fault Handler! Diagnostic Info:\t%s\n",
-			//       fault_data.diag);
+			printf("Fault Handler! Diagnostic Info:\t%s\n",
+			       fault_data.diag);
 
 			switch (fault_data.severity) {
 			case DEFCON1: /* Highest(1st) Priority */
