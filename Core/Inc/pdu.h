@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "bitstream.h"
 #include "c_utils.h"
+#include "stm32f4xx_hal.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
@@ -140,6 +141,10 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 /* Extracts the specified bit from a byte. */
 /* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
 #define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
+
+/* GPIO Expander Reset Pins */
+#define CTRL_RESET_PIN	   GPIO_PIN_6
+#define SHUTDOWN_RESET_PIN GPIO_PIN_7
 
 // clang-format off
 /* CTRL Expander */
