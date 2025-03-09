@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "debounce.h"
-#include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"
 
