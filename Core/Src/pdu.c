@@ -70,6 +70,7 @@ int init_ina(pdu_t *pdu, ina226_t *ina, uint16_t dev_addr, float r_shunt,
 
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
+	// clang-format off
 	pdu_t *pdu = malloc(sizeof(pdu_t));
 	assert(pdu);
 	pdu->hi2c = hi2c;
@@ -77,6 +78,14 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	assert(!HAL_ADC_Start_DMA(
 		pdu->pump_sensors_adc, (uint32_t *)pdu->pump_sensors_dma_buf,
 		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint16_t)));
+
+	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_RESET);		// Resets CTRL Expander (Active-Low).
+	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_RESET);	// Resets Shutdown Expander (Active-Low).
+	HAL_Delay(1);													// Delay 1 ms for reset to take effect.
+
+	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_SET);			// Unresets CTRL Expander.
+	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_SET);		// Unresets Shutdown Expander.
+	HAL_Delay(1);													// Delay 1 ms for reset to take effect.
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
@@ -170,6 +179,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	assert(pdu->mutex);
 
 	return pdu;
+	// clang-format on
 }
 
 osThreadId_t rtds_thread;

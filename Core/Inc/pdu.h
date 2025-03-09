@@ -141,6 +141,10 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 /* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
 #define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
 
+/* GPIO Expander Reset Pins */
+#define CTRL_RESET_PIN	   GPIO_PIN_6
+#define SHUTDOWN_RESET_PIN GPIO_PIN_7
+
 // clang-format off
 /* CTRL Expander */
 #define CTRL_ADDR				TCA_I2C_ADDR_0
