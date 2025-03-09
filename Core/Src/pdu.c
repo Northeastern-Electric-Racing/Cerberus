@@ -75,8 +75,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	pdu->hi2c = hi2c;
 	pdu->pump_sensors_adc = pump_sensors_adc;
 	assert(!HAL_ADC_Start_DMA(
-		pdu->pump_sensors_adc, pdu->pump_sensors_dma_buf,
-		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint32_t)));
+		pdu->pump_sensors_adc, (uint32_t *)pdu->pump_sensors_dma_buf,
+		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint16_t)));
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
@@ -263,7 +263,7 @@ int8_t write_radfan_1(pdu_t *pdu, bool state)
 }
 
 /* Read Pump Sensors ADC DMA */
-void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2])
+void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2])
 {
 	memcpy(pump_sensors_buf, &pdu->pump_sensors_dma_buf,
 	       sizeof(pdu->pump_sensors_dma_buf));
