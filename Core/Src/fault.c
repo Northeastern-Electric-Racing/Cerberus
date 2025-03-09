@@ -16,6 +16,11 @@ uint16_t crit_fault;
 uint16_t non_crit_fault;
 osTimerId_t *timers = NULL;
 
+typedef struct {
+	uint8_t index;
+	severity_t severity;
+} fault_header_t;
+
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
 	if (!fault_handle_queue)
@@ -77,10 +82,14 @@ void process_fault(fault_data_t fault_data)
 	uint32_t index = 0;
 	uint32_t fault_id = 0;
 
+	fault_header_t *fault_header = malloc(sizeof(fault_header_t));
+
 	if (fault_data.severity == CRITICAL) {
 		fault_id = (uint32_t)(1 << fault_data.fault_index.crit_fault);
 		crit_fault |= fault_id;
 		index = fault_data.fault_index.crit_fault;
+		fault_header->index = fault_data.fault_index.crit_fault;
+		fault_header->severity = CRITICAL;
 		fault();
 	} else if (fault_data.severity == NONCRITICAL) {
 		fault_id =
@@ -88,12 +97,14 @@ void process_fault(fault_data_t fault_data)
 		non_crit_fault |= fault_id;
 		index = fault_data.fault_index.non_crit_fault +
 			MAX_CRITICAL_FAULT;
+		fault_header->index = fault_data.fault_index.non_crit_fault;
+		fault_header->severity = NONCRITICAL;
 	}
 
 	// Create Timers
 	if (!timers[index]) {
-		timers[index] =
-			osTimerNew(clear_fault, osTimerOnce, &fault_data, NULL);
+		timers[index] = osTimerNew(clear_fault, osTimerOnce,
+					   fault_header, NULL);
 	}
 
 	if (osTimerStart(timers[index], 4000) != osOK) {
@@ -105,15 +116,14 @@ void process_fault(fault_data_t fault_data)
 
 void clear_fault(void *args)
 {
-	fault_data_t *fault_data = (fault_data_t *)args;
+	fault_header_t *fault_header = (fault_header_t *)args;
 	uint32_t fault_id = 0;
 
-	if (fault_data->severity == CRITICAL) {
-		fault_id = (uint32_t)(1 << fault_data->fault_index.crit_fault);
+	if (fault_header->severity == CRITICAL) {
+		fault_id = (uint32_t)(1 << fault_header->index);
 		crit_fault &= ~fault_id;
-	} else if (fault_data->severity == NONCRITICAL) {
-		fault_id =
-			(uint32_t)(1 << fault_data->fault_index.non_crit_fault);
+	} else if (fault_header->severity == NONCRITICAL) {
+		fault_id = (uint32_t)(1 << fault_header->index);
 		non_crit_fault &= ~fault_id;
 	}
 
@@ -121,4 +131,6 @@ void clear_fault(void *args)
 	if (crit_fault == 0) {
 		set_ready_mode();
 	}
+
+	free(fault_header);
 }
