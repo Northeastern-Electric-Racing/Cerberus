@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "cerberus_conf.h"
 #include "state_machine.h"
@@ -83,6 +84,7 @@ void process_fault(fault_data_t fault_data)
 	uint32_t fault_id = 0;
 
 	fault_header_t *fault_header = malloc(sizeof(fault_header_t));
+	assert(fault_header);
 
 	if (fault_data.severity == CRITICAL) {
 		fault_id = (uint32_t)(1 << fault_data.fault_index.crit_fault);
