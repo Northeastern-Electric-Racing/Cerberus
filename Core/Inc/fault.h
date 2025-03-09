@@ -39,7 +39,7 @@ typedef enum {
 	MAX_NON_CRITICAL_FAULT = 7
 } non_crit_fault_t;
 
-typedef enum { CRITICAL, NONCRITICAL} severity_t;
+typedef enum { CRITICAL, NONCRITICAL } severity_t;
 
 typedef struct {
 	severity_t severity;
