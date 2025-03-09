@@ -35,6 +35,8 @@ dti_t *dti_init()
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
 	assert(mc->mutex);
 
+	mc->rpm = 0;
+
 	return mc;
 }
 

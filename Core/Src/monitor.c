@@ -4,16 +4,98 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "cerb_utils.h"
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"
+#include "bitstream.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 
 static bool tsms = false;
 osMutexId_t tsms_mutex;
+
+/**
+ * @brief Read voltage of Pump Sensors and send a CAN message with the result.
+ */
+void read_pump_sens(pdu_t *pdu)
+{
+	// put fault stuff tomorrow
+	fault_data_t fault_data = { .id = PUMP_SENSORS_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
+
+	uint16_t pump_volts_int[2];
+
+	read_pump_sensors(pdu, pump_volts_int);
+
+	// convert to real voltage
+	float pump_sensor0_volts_real = (pump_volts_int[0] / 4095.0) * 3.3;
+	float pump_sensor1_volts_real = (pump_volts_int[1] / 4095.0) * 3.3;
+
+	pump_volts_int[0] = (uint32_t)(pump_sensor0_volts_real * 10000);
+	pump_volts_int[1] = (uint32_t)(pump_sensor1_volts_real * 10000);
+
+	uint32_t pump_volts_int_new[2] = {
+		(uint32_t)(pump_sensor0_volts_real * 10000),
+		(uint32_t)(pump_sensor1_volts_real * 10000)
+	};
+
+	memcpy(msg.data, pump_volts_int_new, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send pump sensor CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+/**
+ * @brief Read current of MC, battox fans, pumps, and LV boards and send a CAN message with the result.
+ */
+void read_current(pdu_t *pdu)
+{
+	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
+				    .severity = DEFCON5 };
+	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
+
+	float motor_controller_current;
+	float battbox_fans_current;
+	float pumps_current;
+	float lv_boards_current;
+
+	if (read_all_current(pdu, &motor_controller_current,
+			     &battbox_fans_current, &pumps_current,
+			     &lv_boards_current)) {
+		fault_data.diag = "Failed to read current";
+		queue_fault(&fault_data);
+	}
+
+	uint16_t int_motor_controller_current =
+		(uint16_t)(motor_controller_current * 1000);
+	uint16_t int_battbox_fans_current =
+		(uint16_t)(battbox_fans_current * 1000);
+	uint16_t int_pumps_current = (uint16_t)(pumps_current * 1000);
+	uint16_t int_lv_boards_current = (uint16_t)(lv_boards_current * 1000);
+
+	struct __attribute__((__packed__)) {
+		uint16_t motor_controller;
+		uint16_t battbox_fans;
+		uint16_t pumps_current;
+		uint16_t lv_boards;
+	} current_data;
+
+	current_data.motor_controller = int_motor_controller_current;
+	current_data.battbox_fans = int_battbox_fans_current;
+	current_data.pumps_current = int_pumps_current;
+	current_data.lv_boards = int_lv_boards_current;
+
+	memcpy(msg.data, &current_data, msg.len);
+	if (queue_can_msg(msg)) {
+		fault_data.diag = "Failed to send current CAN message";
+		queue_fault(&fault_data);
+	}
+}
 
 /**
  * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
@@ -26,7 +108,7 @@ void read_lv_sense(void *arg)
 				    .severity = NONCRITICAL };
 	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
-	uint32_t v_int;
+	uint16_t v_int;
 	uint32_t soc_int;
 
 	struct __attribute__((__packed__)) {
@@ -38,14 +120,16 @@ void read_lv_sense(void *arg)
 
 	/* Convert from raw ADC reading to voltage level */
 
-	// scale up then truncate
-	// convert to out of 24 volts
-	// since 12 bits / 4096
-	// Magic number bc idk the resistors on the voltage divider
-	float v_dec = v_int * 8.967;
+	// 1. get it into voltage 12 bits so 4096 steps to 3.3 volts
+	// 2. voltage divider formula, r2 = 10k, r1=100k
+	// Calibrated on 3/5 by jack, using vref=3.291 and a magic number for tuning
+	// testpoints and multimeters were used
+	// estimated accuracy -0.15V, +0.05V (weigh towards low report)
+	float v_dec = ((v_int / 4096.0) * 3.291) /
+		      (10000.0 / (10000.0 + 100000)) * 0.9963;
 
 	// get final voltage
-	v_int = (uint32_t)(v_dec * 10.0);
+	v_int = (uint32_t)(v_dec * 10000.0);
 
 	// Calculate SoC using logistic function
 	// - Normal charged voltage is 29.4V
@@ -86,35 +170,14 @@ void read_fuse_data(void *arg)
 					    FUSE_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
-	uint16_t fuse_buf;
-	bool fuses[MAX_FUSES] = { 0 };
 
-	struct __attribute__((__packed__)) {
-		uint8_t fuse_1;
-		uint8_t fuse_2;
-	} fuse_data;
-
-	fuse_buf = 0;
-
-	if (read_fuses(pdu, fuses)) {
+	bitstream_t fuses;
+	if (read_fuses(pdu, &fuses)) {
 		fault_data.diag = "Failed to read fuses";
 		queue_fault(&fault_data);
 	}
 
-	for (fuse_t fuse = 0; fuse < MAX_FUSES; fuse++) {
-		fuse_buf |=
-			fuses[fuse]
-			<< fuse; /* Sets the bit at position `fuse` to the state of the fuse */
-	}
-
-	fuse_data.fuse_1 = fuse_buf & 0xFF;
-	fuse_data.fuse_2 = (fuse_buf >> 8) & 0xFF;
-
-	// reverse the bit order
-	fuse_data.fuse_1 = reverse_bits(fuse_data.fuse_1);
-	fuse_data.fuse_2 = reverse_bits(fuse_data.fuse_2);
-
-	memcpy(fuse_msg.data, &fuse_data, fuse_msg.len);
+	memcpy(fuse_msg.data, &fuses.data, fuse_msg.len);
 	if (queue_can_msg(fuse_msg)) {
 		fault_data.diag = "Failed to send CAN message";
 		queue_fault(&fault_data);
@@ -140,6 +203,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 	for (;;) {
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
+		read_current(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
@@ -283,38 +347,17 @@ void vShutdownMonitor(void *pv_params)
 				   .len = 2,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
-	bool shutdown_loop[MAX_SHUTDOWN_STAGES] = { 0 };
-	uint16_t shutdown_buf;
-
-	struct __attribute__((__packed__)) {
-		uint8_t shut_1;
-		uint8_t shut_2;
-	} shutdown_data;
-
 	for (;;) {
-		shutdown_buf = 0;
+		bitstream_t shutdown;
+		uint8_t bitstream_data[2];
+		bitstream_init(&shutdown, bitstream_data, 2);
 
-		if (read_shutdown(pdu, shutdown_loop)) {
+		if (read_shutdown(pdu, &shutdown)) {
 			fault_data.diag = "Failed to read shutdown buffer";
 			queue_fault(&fault_data);
 		}
 
-		for (shutdown_stage_t stage = 0; stage < MAX_SHUTDOWN_STAGES;
-		     stage++) {
-			shutdown_buf |=
-				shutdown_loop[stage]
-				<< stage; /* Sets the bit at position `stage` to the state of the stage */
-		}
-
-		/* seperate each byte */
-		shutdown_data.shut_1 = shutdown_buf & 0xFF;
-		shutdown_data.shut_2 = (shutdown_buf >> 8) & 0xFF;
-
-		// reverse the bit order
-		shutdown_data.shut_1 = reverse_bits(shutdown_data.shut_1);
-		shutdown_data.shut_2 = reverse_bits(shutdown_data.shut_2);
-
-		memcpy(shutdown_msg.data, &shutdown_data, shutdown_msg.len);
+		memcpy(shutdown_msg.data, &shutdown.data, shutdown_msg.len);
 		if (queue_can_msg(shutdown_msg)) {
 			fault_data.diag = "Failed to send CAN message";
 			queue_fault(&fault_data);

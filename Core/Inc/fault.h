@@ -5,15 +5,6 @@
 #include <stdbool.h>
 
 typedef enum {
-	DEFCON1 = 1,
-	DEFCON2,
-	DEFCON3,
-	DEFCON4,
-	DEFCON5,
-	DEFCON_NONE
-} fault_sev_t;
-
-typedef enum {
 	ONBOARD_PEDAL_FAULT = 0,
 	CAN_DISPATCH_FAULT = 1,
 	CAN_ROUTING_FAULT = 2,
