@@ -50,7 +50,7 @@ void init_can1(CAN_HandleTypeDef *hcan)
 void can1_callback(CAN_HandleTypeDef *hcan)
 {
 	fault_data_t fault_data = {
-		.id.crit_fault = CAN_ROUTING_FAULT,
+		.fault_index.crit_fault = CAN_ROUTING_FAULT,
 		.severity = CRITICAL,
 	};
 
@@ -90,7 +90,8 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void *pv_params)
 {
-	fault_data_t fault_data = { .id.crit_fault = CAN_DISPATCH_FAULT,
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    CAN_DISPATCH_FAULT,
 				    .severity = CRITICAL };
 
 	can_msg_t msg_from_queue;

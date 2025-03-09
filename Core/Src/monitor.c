@@ -21,7 +21,8 @@ osMutexId_t tsms_mutex;
 void read_lv_sense(void *arg)
 {
 	mpu_t *mpu = (mpu_t *)arg;
-	fault_data_t fault_data = { .id.non_crit_fault = LV_MONITOR_FAULT,
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    LV_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
@@ -81,7 +82,8 @@ void read_lv_sense(void *arg)
 void read_fuse_data(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
-	fault_data_t fault_data = { .id.non_crit_fault = FUSE_MONITOR_FAULT,
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    FUSE_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 	uint16_t fuse_buf;
@@ -169,7 +171,8 @@ void tsms_debounce_cb(void *arg)
 void read_tsms(pdu_t *pdu)
 {
 	static nertimer_t timer;
-	fault_data_t fault_data = { .id.non_crit_fault = FUSE_MONITOR_FAULT,
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    FUSE_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	bool tsms_reading;
 
@@ -273,7 +276,8 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	fault_data_t fault_data = { .id.non_crit_fault = SHUTDOWN_MONITOR_FAULT,
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    SHUTDOWN_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
 				   .len = 2,

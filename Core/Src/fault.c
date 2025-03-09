@@ -75,23 +75,25 @@ void process_fault(fault_data_t fault_data)
 {
 	// Set Fault
 	uint32_t index = 0;
-	uint32_t *fault_id = malloc(sizeof(uint32_t));
+	uint32_t fault_id = 0;
 
 	if (fault_data.severity == CRITICAL) {
-		*fault_id = (uint32_t)(1 << fault_data.id.crit_fault);
-		crit_fault |= *fault_id;
-		index = fault_data.id.crit_fault;
+		fault_id = (uint32_t)(1 << fault_data.fault_index.crit_fault);
+		crit_fault |= fault_id;
+		index = fault_data.fault_index.crit_fault;
 		fault();
 	} else if (fault_data.severity == NONCRITICAL) {
-		*fault_id = (uint32_t)(1 << fault_data.id.non_crit_fault);
-		non_crit_fault |= *fault_id;
-		index = fault_data.id.non_crit_fault + MAX_CRITICAL_FAULT;
+		fault_id =
+			(uint32_t)(1 << fault_data.fault_index.non_crit_fault);
+		non_crit_fault |= fault_id;
+		index = fault_data.fault_index.non_crit_fault +
+			MAX_CRITICAL_FAULT;
 	}
 
 	// Create Timers
 	if (!timers[index]) {
 		timers[index] =
-			osTimerNew(clear_fault, osTimerOnce, fault_id, NULL);
+			osTimerNew(clear_fault, osTimerOnce, &fault_data, NULL);
 	}
 
 	if (osTimerStart(timers[index], 4000) != osOK) {
@@ -103,19 +105,20 @@ void process_fault(fault_data_t fault_data)
 
 void clear_fault(void *args)
 {
-	uint32_t *fault_id = (uint32_t *)args;
+	fault_data_t *fault_data = (fault_data_t *)args;
+	uint32_t fault_id = 0;
 
-	// Removes the current fault critical counters
-	if (((*fault_id) & crit_fault) == (*fault_id)) {
-		crit_fault &= ~((*fault_id));
-	} else if (((*fault_id) & non_crit_fault) == (*fault_id)) {
-		non_crit_fault &= ~((*fault_id));
+	if (fault_data->severity == CRITICAL) {
+		fault_id = (uint32_t)(1 << fault_data->fault_index.crit_fault);
+		crit_fault &= ~fault_id;
+	} else if (fault_data->severity == NONCRITICAL) {
+		fault_id =
+			(uint32_t)(1 << fault_data->fault_index.non_crit_fault);
+		non_crit_fault &= ~fault_id;
 	}
 
 	// unfault car if all critical faults are cleared
 	if (crit_fault == 0) {
 		set_ready_mode();
 	}
-
-	free(fault_id);
 }

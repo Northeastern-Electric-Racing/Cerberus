@@ -44,7 +44,7 @@ typedef struct {
 	union {
 		crit_fault_t crit_fault;
 		non_crit_fault_t non_crit_fault;
-	} id;
+	} fault_index;
 	char *diag;
 } fault_data_t;
 

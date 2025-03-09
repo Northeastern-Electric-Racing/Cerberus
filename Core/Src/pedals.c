@@ -95,7 +95,8 @@ uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
  */
 void pedal_fault_cb(void *arg)
 {
-	fault_data_t fault_data = { .id.crit_fault = ONBOARD_PEDAL_FAULT,
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    ONBOARD_PEDAL_FAULT,
 				    .severity = CRITICAL };
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
@@ -184,7 +185,8 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val)
 {
-	static fault_data_t fault_data = { .id.non_crit_fault = BSPD_PREFAULT,
+	static fault_data_t fault_data = { .fault_index.non_crit_fault =
+						   BSPD_PREFAULT,
 					   .severity = NONCRITICAL,
 					   .diag = "BSPD prefault triggered" };
 	static bool motor_disabled = false;
