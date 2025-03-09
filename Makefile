@@ -111,6 +111,7 @@ Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c \
 Core/Src/sysmem.c \
 Core/Src/syscalls.c \
+Core/Src/control.c \
 Core/Src/monitor.c \
 Core/Src/fault.c \
 Core/Src/can_handler.c \

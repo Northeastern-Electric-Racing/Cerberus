@@ -149,12 +149,12 @@ void control_radfan_record(control_t *calypso_states, can_msg_t msg)
 
 int8_t write_fan_battbox(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, TCA_OUTPUT_0_REG);
 }
 
 int8_t write_pump_0(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, TCA_OUTPUT_0_REG);
 }
 
 int8_t write_radfan_0(pdu_t *pdu, bool state)
@@ -164,7 +164,7 @@ int8_t write_radfan_0(pdu_t *pdu, bool state)
 
 int8_t write_pump_1(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, PCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, TCA_OUTPUT_0_REG);
 }
 
 int8_t write_radfan_1(pdu_t *pdu, bool state)

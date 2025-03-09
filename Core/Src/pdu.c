@@ -222,16 +222,6 @@ int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 	return 0;
 }
 
-int8_t write_pump_0(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, TCA_OUTPUT_0_REG);
-}
-
-int8_t write_pump_1(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, TCA_OUTPUT_0_REG);
-}
-
 int8_t write_24V_12V_buck(pdu_t *pdu, bool state)
 {
 	return write_ctrl(pdu, state, PIN_BUCK_CTRL, TCA_OUTPUT_0_REG);
@@ -242,24 +232,9 @@ int8_t write_brakelight(pdu_t *pdu, bool state)
 	return write_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, TCA_OUTPUT_0_REG);
 }
 
-int8_t write_fan_battbox(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, TCA_OUTPUT_0_REG);
-}
-
 int8_t write_rtds(pdu_t *pdu, bool state)
 {
 	return write_ctrl(pdu, state, PIN_RTD_CTRL, TCA_OUTPUT_1_REG);
-}
-
-int8_t write_radfan_0(pdu_t *pdu, bool state)
-{
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
-}
-
-int8_t write_radfan_1(pdu_t *pdu, bool state)
-{
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
 }
 
 /* Read Pump Sensors ADC DMA */
