@@ -5,11 +5,11 @@
 #include <stdbool.h>
 
 typedef enum {
-	ONBOARD_PEDAL_FAULT = 0,
-	CAN_DISPATCH_FAULT = 1,
-	CAN_ROUTING_FAULT = 2,
-	BMS_CAN_MONITOR_FAULT = 3,
-	MAX_CRITICAL_FAULT = 4
+	ONBOARD_PEDAL_FAULT,
+	CAN_DISPATCH_FAULT,
+	CAN_ROUTING_FAULT,
+	BMS_CAN_MONITOR_FAULT,
+	MAX_CRITICAL_FAULT
 } crit_fault_t;
 
 // Unused Fault Message IDs
@@ -20,14 +20,16 @@ typedef enum {
 // BUTTONS_MONITOR_FAULT
 
 typedef enum {
-	ONBOARD_TEMP_FAULT = 0,
-	IMU_FAULT = 1,
-	FUSE_MONITOR_FAULT = 2,
-	SHUTDOWN_MONITOR_FAULT = 3,
-	LV_MONITOR_FAULT = 4,
-	BSPD_PREFAULT = 5,
-	RTDS_FAULT = 6,
-	MAX_NON_CRITICAL_FAULT = 7
+	ONBOARD_TEMP_FAULT,
+	IMU_FAULT,
+	FUSE_MONITOR_FAULT,
+	SHUTDOWN_MONITOR_FAULT,
+	LV_MONITOR_FAULT,
+	BSPD_PREFAULT,
+	RTDS_FAULT,
+	PUMP_SENSORS_FAULT,
+	PDU_CURRENT_FAULT,
+	MAX_NON_CRITICAL_FAULT
 } non_crit_fault_t;
 
 typedef enum { CRITICAL, NONCRITICAL } severity_t;
@@ -61,16 +63,16 @@ void vFaultHandler(void *pv_params);
  * 
  * @param fault_data includes diag, index, and severity
  */
-void process_fault(fault_data_t fault_data)
+void process_fault(fault_data_t fault_data);
 
-	/**
+/**
  * @brief callback function to clear fault after timeout
  * 
  * @param args fault header with index and severity
  */
-	void clear_fault(void *args)
+void clear_fault(void *args);
 
-		extern osThreadId_t fault_handle;
+extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
 
 #endif // FAULT_H

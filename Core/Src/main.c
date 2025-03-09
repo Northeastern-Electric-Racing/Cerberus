@@ -168,9 +168,7 @@ int main(void)
   MX_IWDG_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-  /* I2C Detect */
-  uint8_t devices = 0u;
-
+  
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hadc3, &hadc1);
   assert(mpu);

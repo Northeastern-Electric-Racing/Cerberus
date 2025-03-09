@@ -23,8 +23,9 @@ osMutexId_t tsms_mutex;
 void read_pump_sens(pdu_t *pdu)
 {
 	// put fault stuff tomorrow
-	fault_data_t fault_data = { .id = PUMP_SENSORS_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    PUMP_SENSORS_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
 
 	uint16_t pump_volts_int[2];
@@ -55,8 +56,9 @@ void read_pump_sens(pdu_t *pdu)
  */
 void read_current(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    PDU_CURRENT_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
 
 	float motor_controller_current;
