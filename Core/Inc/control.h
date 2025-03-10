@@ -48,8 +48,8 @@ typedef struct {
 /* Information given when thread initializes */
 typedef struct {
 	pdu_t *pdu;
-	control_t *control; /* True state of device */
-	control_t *calypso_states; /* State calypso wants to set the device to */
+	control_t *control; /* True states of device */
+	control_t *calypso_states; /* States calypso wants to set the device to */
 } control_args_t;
 
 /* Holds all the information needed to determine and set the state of a device */
