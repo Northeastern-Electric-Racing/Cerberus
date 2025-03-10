@@ -168,7 +168,7 @@ int main(void)
   MX_IWDG_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-
+  
   /* Create Interfaces to Represent Relevant Hardware */
   mpu_t *mpu  = init_mpu(&hadc3, &hadc1);
   assert(mpu);
