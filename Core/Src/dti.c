@@ -17,6 +17,7 @@
 
 #include "emrax.h"
 #include "bms.h"
+#include "can_handler.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
@@ -30,6 +31,8 @@ dti_t *dti_init()
 	/* Create Mutex */
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
 	assert(mc->mutex);
+
+	mc->rpm = 0;
 
 	return mc;
 }

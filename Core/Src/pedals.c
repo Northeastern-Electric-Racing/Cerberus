@@ -13,7 +13,6 @@
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "dti.h"
-#include "bms.h"
 #include "emrax.h"
 #include "monitor.h"
 #include <assert.h>
@@ -54,6 +53,18 @@ void decrease_torque_limit()
 		torque_limit_percentage = 0;
 	} else {
 		torque_limit_percentage -= 0.1;
+	}
+}
+
+void set_torque_limit(float percentage)
+{
+	torque_limit_percentage = percentage;
+
+	// Make sure the percentage is within the valid range
+	if (torque_limit_percentage > 1.0) {
+		torque_limit_percentage = 1.0;
+	} else if (torque_limit_percentage < 0.0) {
+		torque_limit_percentage = 0.0;
 	}
 }
 

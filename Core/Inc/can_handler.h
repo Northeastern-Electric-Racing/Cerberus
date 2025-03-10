@@ -2,7 +2,8 @@
 #define CAN_HANDLER_H
 
 #include "can.h"
-#include "cmsis_os.h"
+#include "dti.h"
+#include "bms.h"
 
 /**
  * @brief Callback to be called when a message is received on CAN line 1.
