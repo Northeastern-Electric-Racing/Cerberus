@@ -81,37 +81,37 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Reset GPIO Expanders Before Init */
 	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_RESET);
-	HAL_Delay(1);
+	osDelay(1);
 	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_SET);
-	HAL_Delay(1);
+	osDelay(1);
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
-	if (!init_ina(pdu, pdu->motor_controller_current_sensor,
-		      MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
+	if (init_ina(pdu, pdu->motor_controller_current_sensor,
+		     MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
 		return NULL;
 	}
 
 	/* Initialize Battbox Fans Current Sensor */
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
-	if (!init_ina(pdu, pdu->battbox_fans_current_sensor,
-		      BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
+	if (init_ina(pdu, pdu->battbox_fans_current_sensor,
+		     BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
 		return NULL;
 	}
 
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
-	if (!init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
-		      0.01f, 2.0f)) {
+	if (init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
+		     0.01f, 2.0f)) {
 		return NULL;
 	}
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
-	if (!init_ina(pdu, pdu->lv_boards_current_sensor,
-		      LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
+	if (init_ina(pdu, pdu->lv_boards_current_sensor,
+		     LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
 	}
 
