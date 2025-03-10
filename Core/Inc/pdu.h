@@ -138,10 +138,6 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
 #define SOUND_RTDS_FLAG 1U
 
-/* Extracts the specified bit from a byte. */
-/* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
-#define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
-
 /* Function that approximates the pump sensor temperature. Takes in resistance and outputs temperature. */
 // (Created based on "GE Series RvT" PDU Altium table)
 #define PUMP_TEMP_APPROX(R)                                      \
