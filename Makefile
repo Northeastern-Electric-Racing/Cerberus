@@ -84,7 +84,6 @@ Core/Src/pdu.c \
 Core/Src/mpu.c \
 Core/Src/steeringio.c \
 Core/Src/pedals.c \
-Core/Src/cerb_utils.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
@@ -108,6 +107,8 @@ Drivers/Embedded-Base/general/src/tca9539.c \
 Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/Embedded-Base/middleware/src/ringbuffer.c \
 Drivers/Embedded-Base/middleware/src/c_utils.c \
+Drivers/Embedded_Base/middleware/src/debounce.c \
+Drivers/Embedded-Base/os/src/rtos_utils.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
@@ -189,6 +190,7 @@ C_INCLUDES =  \
 -IDrivers/Embedded-Base/general/include \
 -IDrivers/Embedded-Base/platforms/stm32f405/include \
 -IDrivers/Embedded-Base/middleware/include \
+-IDrivers/Embedded-Base/os/inc \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
