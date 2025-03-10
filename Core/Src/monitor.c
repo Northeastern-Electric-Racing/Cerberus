@@ -11,6 +11,7 @@
 #include "fault.h"
 #include "state_machine.h"
 #include "bitstream.h"
+#include "can_handler.h"
 
 #define TSMS_DEBOUNCE_PERIOD 500 /* ms */
 

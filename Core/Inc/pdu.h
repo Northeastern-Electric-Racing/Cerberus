@@ -2,7 +2,6 @@
 #define PDU_H
 
 #include <stdbool.h>
-#include "fault.h"
 #include "cmsis_os.h"
 #include "tca9539.h"
 #include "INA226.h"
