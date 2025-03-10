@@ -8,6 +8,7 @@
 #include "cerb_utils.h"
 #include "monitor.h"
 #include "pedals.h"
+#include "can_handler.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
 

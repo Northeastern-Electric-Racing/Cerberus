@@ -106,7 +106,7 @@ void control_device(device_control_t *device, bool hv, uint16_t temp)
 	assert(device);
 
 	if (device->type == DEVICE_PUMP && hv) {
-		*(device->control_state) = 1;
+		device->control_state = 1;
 		return;
 	}
 
@@ -122,14 +122,14 @@ void control_device(device_control_t *device, bool hv, uint16_t temp)
 				 10000, set_device_state, device);
 		}
 	} else {
-		*(device->control_state) = *(device->calypso_state);
+		device->control_state = device->calypso_state;
 	}
 }
 
 void set_device_state(void *params)
 {
 	device_control_t *device = (device_control_t *)params;
-	*(device->control_state) = device->toSet;
+	device->control_state = device->toSet;
 }
 
 void control_fanbattbox_record(control_t *calypso_states, can_msg_t msg)
