@@ -67,7 +67,7 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 
 	new_msg.len = rx_header.DLC;
 
-	if (rx_header.StdId == 0) {
+	if (rx_header.IDE == CAN_ID_EXT) {
 		// If the message has an extended CAN ID, save the message accordingly.
 		new_msg.id = rx_header.ExtId;
 		new_msg.id_is_extended = true;
