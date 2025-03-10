@@ -10,7 +10,7 @@ osThreadId_t control_handle;
 const osThreadAttr_t control_attributes = {
 	.name = "Control",
 	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime,
+	.priority = (osPriority_t)osPriorityHigh,
 };
 
 control_args_t *control_init(pdu_t *pdu)
@@ -103,6 +103,8 @@ void vControl(void *params)
 
 void control_device(device_control_t *device, bool hv, uint16_t temp)
 {
+	assert(device);
+
 	if (device->type == DEVICE_PUMP && hv) {
 		*(device->control_state) = 1;
 		return;
@@ -145,29 +147,4 @@ void control_radfan_record(control_t *calypso_states, can_msg_t msg)
 {
 	calypso_states->radfanState0 = msg.data[0] > 0;
 	calypso_states->radfanState1 = msg.data[1] > 0;
-}
-
-int8_t write_fan_battbox(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, TCA_OUTPUT_0_REG);
-}
-
-int8_t write_pump_0(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, TCA_OUTPUT_0_REG);
-}
-
-int8_t write_radfan_0(pdu_t *pdu, bool state)
-{
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
-}
-
-int8_t write_pump_1(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, TCA_OUTPUT_0_REG);
-}
-
-int8_t write_radfan_1(pdu_t *pdu, bool state)
-{
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
 }

@@ -48,8 +48,8 @@ typedef struct {
 /* Information given when thread initializes */
 typedef struct {
 	pdu_t *pdu;
-	control_t *control;
-	control_t *calypso_states;
+	control_t *control; /* True state of device */
+	control_t *calypso_states; /* State calypso wants to set the device to */
 } control_args_t;
 
 /* Holds all the information needed to determine and set the state of a device */
@@ -117,50 +117,5 @@ void control_pump_record(control_t *calypso_states, can_msg_t msg);
  * @param msg CAN message sent
  */
 void control_radfan_record(control_t *calypso_states, can_msg_t msg);
-
-/**
- * @brief Writes the given state into the fan battbox
- * 
- * @param pdu Pointer to pdu struct
- * @param state State being written to fan battbox
- * @return 8 bit integer
- */
-int8_t write_fan_battbox(pdu_t *pdu, bool state);
-
-/**
- * @brief Writes the given state into pump0
- * 
- * @param pdu Pointer to pdu struct
- * @param state State being written to pump0
- * @return 8 bit integer
- */
-int8_t write_pump_0(pdu_t *pdu, bool state);
-
-/**
- * @brief Writes the given state into radfan0
- * 
- * @param pdu Pointer to pdu struct
- * @param state State being written to radfan0
- * @return 8 bit integer
- */
-int8_t write_radfan_0(pdu_t *pdu, bool state);
-
-/**
- * @brief Writes the given state into pump1
- * 
- * @param pdu Pointer to pdu struct
- * @param state State being written to pump1
- * @return 8 bit integer
- */
-int8_t write_pump_1(pdu_t *pdu, bool state);
-
-/**
- * @brief Writes the given state into radfan1
- * 
- * @param pdu Pointer to pdu struct
- * @param state State being written to radfan1
- * @return 8 bit integer
- */
-int8_t write_radfan_1(pdu_t *pdu, bool state);
 
 #endif

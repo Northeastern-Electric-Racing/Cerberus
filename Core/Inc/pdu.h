@@ -30,9 +30,14 @@ typedef struct {
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc);
 
 /* Functions to Control PDU */
+int8_t write_pump_0(pdu_t *pdu, bool state);
+int8_t write_pump_1(pdu_t *pdu, bool state);
 int8_t write_24V_12V_buck(pdu_t *pdu, bool state);
 int8_t write_brakelight(pdu_t *pdu, bool state);
+int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
+int8_t write_radfan_0(pdu_t *pdu, bool state);
+int8_t write_radfan_1(pdu_t *pdu, bool state);
 
 /* Function to Read the Status of Fuses from PDU */
 typedef enum {
@@ -111,8 +116,6 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 void vRTDS(void *arg);
 extern osThreadId_t rtds_thread;
 extern const osThreadAttr_t rtds_attributes;
-
-int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg);
 
 /**
  * @brief Read the status of brakes
