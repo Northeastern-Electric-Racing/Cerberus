@@ -4,18 +4,19 @@
 #include <stdbool.h>
 #include "fault.h"
 #include "cmsis_os.h"
-#include "pca9539.h"
+#include "tca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "bitstream.h"
 #include "c_utils.h"
+#include "stm32f4xx_hal.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
 	osMutexId_t *mutex;
-	pca9539_t *shutdown_expander;
-	pca9539_t *ctrl_expander;
+	tca9539_t *shutdown_expander;
+	tca9539_t *ctrl_expander;
 
 	ina226_t *motor_controller_current_sensor;
 	ina226_t *battbox_fans_current_sensor;
@@ -23,7 +24,7 @@ typedef struct {
 	ina226_t *lv_boards_current_sensor;
 
 	ADC_HandleTypeDef *pump_sensors_adc;
-	uint32_t pump_sensors_dma_buf[2];
+	uint16_t pump_sensors_dma_buf[2];
 } pdu_t;
 
 /* Creates a new PDU interface */
@@ -101,7 +102,7 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
  * @param pdu Pointer to struct representing the PDU
  * @param status Buffer that the data from both sensors will be written to
  */
-void read_pump_sensors(pdu_t *pdu, uint32_t pump_sensors_buf[2]);
+void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2]);
 
 // Function for reading current
 int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
@@ -141,9 +142,13 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 /* Gets the most significant bit first. So, bit 0 is the leftmost bit in the byte. */
 #define EXTRACT_BIT(num, bit) ((num >> (7 - bit)) & 0x01)
 
+/* GPIO Expander Reset Pins */
+#define CTRL_RESET_PIN	   GPIO_PIN_6
+#define SHUTDOWN_RESET_PIN GPIO_PIN_7
+
 // clang-format off
 /* CTRL Expander */
-#define CTRL_ADDR				PCA_I2C_ADDR_0
+#define CTRL_ADDR				TCA_I2C_ADDR_0
 #define PIN_PUMP_FUSE_STAT0		0 // P00
 #define PIN_RTD_CTRL			1 // P01
 #define PIN_SD_TO_BRB_FUSE_STAT 2 // P02
@@ -162,7 +167,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_BRKLIGHT_FUSE_STAT	7 // P17
 
 /* Shutdown Expander */
-#define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_1
 #define PIN_HVD_GOOD	    0 // P00
 #define PIN_HVC_GOOD	    1 // P01
 #define PIN_BOTS_GOOD	    2 // P02
@@ -183,7 +188,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 // Stuff that will be used eventually
 /* 
 CTRL Expander
-#define CTRL_ADDR		 			PCA_I2C_ADDR_0
+#define CTRL_ADDR		 			TCA_I2C_ADDR_0
 #define PIN_PUMP_CTRL_0		 		0 // P00
 #define PIN_PUMP_CTRL_1		 		1 // P01
 #define PIN_24V_12V_BUCK_CTRL		2 // P02
@@ -202,7 +207,7 @@ CTRL Expander
 #define PIN_RTDS_CTRL		 		7 // P17
 
 Shutdown Expander
-#define SHUTDOWN_ADDR	    PCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_1
 #define PIN_CKPT_BRB_CLR    0 // P00
 #define PIN_BMS_GOOD	    1 // P01
 #define PIN_INERTIA_SW_GOOD 2 // P02

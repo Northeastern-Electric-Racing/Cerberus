@@ -37,7 +37,7 @@ float torque_limit_percentage = 1.0;
 #define PEDAL_DIFF_THRESH 30
 #define PEDAL_FAULT_TIME  500 /* ms */
 
-enum { ACCELPIN_2, ACCELPIN_1, BRAKEPIN_1, BRAKEPIN_2 };
+enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 void increase_torque_limit()
 {
@@ -95,8 +95,9 @@ uint16_t adjust_pedal_val(uint32_t raw, int32_t offset, int32_t max)
  */
 void pedal_fault_cb(void *arg)
 {
-	fault_data_t fault_data = { .id = ONBOARD_PEDAL_FAULT,
-				    .severity = DEFCON1 };
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    ONBOARD_PEDAL_FAULT,
+				    .severity = CRITICAL };
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
 }
@@ -184,8 +185,9 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val)
 {
-	static fault_data_t fault_data = { .id = BSPD_PREFAULT,
-					   .severity = DEFCON5,
+	static fault_data_t fault_data = { .fault_index.non_crit_fault =
+						   BSPD_PREFAULT,
+					   .severity = NONCRITICAL,
 					   .diag = "BSPD prefault triggered" };
 	static bool motor_disabled = false;
 

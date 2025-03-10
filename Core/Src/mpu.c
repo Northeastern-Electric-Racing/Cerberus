@@ -1,4 +1,5 @@
 #include "mpu.h"
+#include "main.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -6,11 +7,6 @@
 #include <string.h>
 
 #include "c_utils.h"
-
-#define YLED_PIN      GPIO_PIN_8
-#define RLED_PIN      GPIO_PIN_9
-#define WATCHDOG_PIN  GPIO_PIN_15
-#define CAN_FAULT_PIN GPIO_PIN_3
 
 #define ADC_TIMEOUT 2 /* ms */
 
@@ -31,13 +27,10 @@ extern I2C_HandleTypeDef hi2c1; /* defined in main.c */
 // 				 HAL_MAX_DELAY);
 // }
 
-mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
-		GPIO_TypeDef *led_gpio, GPIO_TypeDef *watchdog_gpio)
+mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc)
 {
 	assert(pedals_adc);
 	assert(lv_adc);
-	assert(led_gpio);
-	assert(watchdog_gpio);
 
 	/* Create MPU struct */
 	mpu_t *mpu = malloc(sizeof(mpu_t));
@@ -46,8 +39,6 @@ mpu_t *init_mpu(ADC_HandleTypeDef *pedals_adc, ADC_HandleTypeDef *lv_adc,
 	mpu->hi2c = &hi2c1;
 	mpu->pedals_adc = pedals_adc;
 	mpu->lv_adc = lv_adc;
-	mpu->led_gpio = led_gpio;
-	mpu->watchdog_gpio = watchdog_gpio;
 
 	/* Initialize the Onboard Temperature Sensor */
 	// mpu->temp_sensor = malloc(sizeof(sht30_t));
@@ -83,7 +74,7 @@ int8_t write_rled(mpu_t *mpu, bool status)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_WritePin(mpu->led_gpio, RLED_PIN, status);
+	HAL_GPIO_WritePin(DEBUG_LED2_GPIO_Port, DEBUG_LED2_Pin, status);
 	return 0;
 }
 
@@ -92,7 +83,7 @@ int8_t toggle_rled(mpu_t *mpu)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_TogglePin(mpu->led_gpio, RLED_PIN);
+	HAL_GPIO_TogglePin(DEBUG_LED2_GPIO_Port, DEBUG_LED2_Pin);
 	return 0;
 }
 
@@ -101,7 +92,7 @@ int8_t write_yled(mpu_t *mpu, bool status)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_WritePin(mpu->led_gpio, YLED_PIN, status);
+	HAL_GPIO_WritePin(DEBUG_LED1_GPIO_Port, DEBUG_LED1_Pin, status);
 	return 0;
 }
 
@@ -110,7 +101,7 @@ int8_t toggle_yled(mpu_t *mpu)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_TogglePin(mpu->led_gpio, YLED_PIN);
+	HAL_GPIO_TogglePin(DEBUG_LED1_GPIO_Port, DEBUG_LED1_Pin);
 	return 0;
 }
 
@@ -119,14 +110,14 @@ int8_t pet_watchdog(mpu_t *mpu)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(mpu->watchdog_gpio, WATCHDOG_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(WATCHDOG_GPIO_Port, WATCHDOG_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(WATCHDOG_GPIO_Port, WATCHDOG_Pin, GPIO_PIN_RESET);
 	return 0;
 }
 
-void read_lv_voltage(mpu_t *mpu, uint32_t *lv_buf)
+void read_lv_voltage(mpu_t *mpu, uint16_t *lv_buf)
 {
-	memcpy(lv_buf, &mpu->lv_dma_buf, sizeof(mpu->lv_dma_buf));
+	memcpy(lv_buf, &mpu->lv_dma_buf, sizeof(*lv_buf));
 }
 
 void read_pedals(mpu_t *mpu, uint32_t pedal_buf[4])
@@ -200,7 +191,7 @@ int8_t write_fault(mpu_t *mpu, bool status)
 	if (!mpu)
 		return -1;
 
-	HAL_GPIO_WritePin(mpu->led_gpio, CAN_FAULT_PIN, !status);
+	HAL_GPIO_WritePin(MCU_FAULT_GPIO_Port, MCU_FAULT_Pin, !status);
 
 	return 0;
 }

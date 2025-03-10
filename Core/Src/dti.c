@@ -29,6 +29,8 @@ dti_t *dti_init()
 	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
 
+	mc->rpm = 0;
+
 	/* Create Mutex */
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
 	assert(mc->mutex);
