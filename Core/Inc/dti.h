@@ -12,9 +12,8 @@
 #ifndef DTI_H
 #define DTI_H
 
-#include "stdbool.h"
-#include "cmsis_os2.h"
 #include "can.h"
+#include "cmsis_os.h"
 
 /* Message IDs from DTI CAN Datasheet */
 #define DTI_CANID_ERPM	      0x416 /* ERPM, Duty, Input Voltage */
@@ -132,6 +131,24 @@ void dti_set_relative_current(int16_t relative_current);
  * @param drive_enable True to enable driving, false to disable
  */
 void dti_set_drive_enable(bool drive_enable);
+
+/**
+ * @brief Record the controller and motor temperature in the DTI
+ * 
+ * @param mc Pointer to DTI struct 
+ * @param msg CAN message containing temperature data
+ */
+void dti_record_temp(dti_t *mc, can_msg_t msg);
+
+/**
+ * @brief gets the current motor temperature from the DTI
+ */
+uint16_t dti_get_motor_temp();
+
+/**
+ * @brief gets the motor controller tempature
+ */
+uint16_t dti_get_controller_temp();
 
 /**
  * @brief gets the current mph from the DTI
