@@ -9,11 +9,10 @@
  */
 #include "pedals.h"
 #include "state_machine.h"
-#include "cerb_utils.h"
+#include "debounce.h"
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "dti.h"
-#include "bms.h"
 #include "emrax.h"
 #include "monitor.h"
 #include <assert.h>
@@ -21,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cerb_utils.h"
-#include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"
 

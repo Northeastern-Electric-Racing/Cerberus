@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cerb_utils.h"
+#include "dti.h"
 #include "monitor.h"
 #include "pedals.h"
 #include "can_handler.h"

@@ -122,14 +122,15 @@ Core/Src/pdu.c \
 Core/Src/mpu.c \
 Core/Src/steeringio.c \
 Core/Src/pedals.c \
-Core/Src/cerb_utils.c \
 Drivers/Embedded-Base/middleware/src/timer.c \
 Drivers/Embedded-Base/middleware/src/ringbuffer.c \
 Drivers/Embedded-Base/middleware/src/c_utils.c \
 Drivers/Embedded-Base/platforms/stm32f405/src/can.c \
 Drivers/Embedded-Base/general/src/tca9539.c \
 Drivers/Embedded-Base/general/src/INA226.c \
-Drivers/Embedded-Base/middleware/src/bitstream.c
+Drivers/Embedded-Base/middleware/src/bitstream.c \
+Drivers/Embedded-Base/middleware/src/debounce.c \
+Drivers/Embedded-Base/os/src/rtos_utils.c \
 
 # ASM sources
 ASM_SOURCES =  \
@@ -200,7 +201,8 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Include \
 -IDrivers/Embedded-Base/general/include \
 -IDrivers/Embedded-Base/platforms/stm32f405/include \
--IDrivers/Embedded-Base/middleware/include
+-IDrivers/Embedded-Base/middleware/include \
+-IDrivers/Embedded-Base/os/inc
 
 
 # compile gcc flags

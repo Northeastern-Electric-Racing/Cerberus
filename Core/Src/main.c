@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bms.h"
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
@@ -178,7 +177,7 @@ int main(void)
   dti_t *mc   = dti_init();
   assert(mc);
   init_can1(&hcan1);
-  bms_init();
+  init_bms();
 
   printf("\n\n\nInit Success...\n\n\n");
 

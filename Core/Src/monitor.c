@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "cerb_utils.h"
+#include "can_handler.h"
+#include "debounce.h"
 #include "cerberus_conf.h"
 #include "fault.h"
 #include "state_machine.h"

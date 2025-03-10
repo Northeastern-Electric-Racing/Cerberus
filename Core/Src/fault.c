@@ -6,6 +6,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "can_handler.h"
 #include "cerberus_conf.h"
 #include "state_machine.h"
 
