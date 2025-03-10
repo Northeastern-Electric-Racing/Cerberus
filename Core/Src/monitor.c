@@ -23,27 +23,41 @@ osMutexId_t tsms_mutex;
 void read_pump_sens(pdu_t *pdu)
 {
 	// put fault stuff tomorrow
-	fault_data_t fault_data = { .id = PUMP_SENSORS_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    PUMP_SENSORS_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
 
-	uint16_t pump_volts_int[2];
+	uint16_t buffer[2];
 
-	read_pump_sensors(pdu, pump_volts_int);
+	read_pump_sensors(pdu, buffer);
 
-	// convert to real voltage
-	float pump_sensor0_volts_real = (pump_volts_int[0] / 4095.0) * 3.3;
-	float pump_sensor1_volts_real = (pump_volts_int[1] / 4095.0) * 3.3;
+	struct __attribute__((__packed__)) {
+		uint16_t pump0_voltage;
+		uint16_t pump1_voltage;
+		int16_t pump0_temp;
+		int16_t pump1_temp;
+	} pump_data;
 
-	pump_volts_int[0] = (uint32_t)(pump_sensor0_volts_real * 10000);
-	pump_volts_int[1] = (uint32_t)(pump_sensor1_volts_real * 10000);
+	/* Determine real voltage values */
+	float pump0_voltage_real = (buffer[0] / 4095.0) * 3.3;
+	float pump1_voltage_real = (buffer[1] / 4095.0) * 3.3;
 
-	uint32_t pump_volts_int_new[2] = {
-		(uint32_t)(pump_sensor0_volts_real * 10000),
-		(uint32_t)(pump_sensor1_volts_real * 10000)
-	};
+	/* Determine real temperature values */
+	float r_pump0 =
+		(pump0_voltage_real / (3.3 - pump_data.pump0_voltage)) * 10000;
+	float r_pump1 =
+		(pump1_voltage_real / (3.3 - pump_data.pump1_voltage)) * 10000;
+	int16_t temp_pump0 = PUMP_TEMP_APPROX(r_pump0);
+	int16_t temp_pump1 = PUMP_TEMP_APPROX(r_pump1);
 
-	memcpy(msg.data, pump_volts_int_new, msg.len);
+	/* Convert to int and store in struct */
+	pump_data.pump0_voltage = pump0_voltage_real * 1000;
+	pump_data.pump1_voltage = pump1_voltage_real * 1000;
+	pump_data.pump0_voltage = (int16_t)roundf(temp_pump0);
+	pump_data.pump1_voltage = (int16_t)roundf(temp_pump1);
+
+	memcpy(msg.data, &pump_data, msg.len);
 	if (queue_can_msg(msg)) {
 		fault_data.diag = "Failed to send pump sensor CAN message";
 		queue_fault(&fault_data);
@@ -55,8 +69,9 @@ void read_pump_sens(pdu_t *pdu)
  */
 void read_current(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .id = PDU_CURRENT_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    PDU_CURRENT_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
 
 	float motor_controller_current;
@@ -103,8 +118,9 @@ void read_current(pdu_t *pdu)
 void read_lv_sense(void *arg)
 {
 	mpu_t *mpu = (mpu_t *)arg;
-	fault_data_t fault_data = { .id = LV_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    LV_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
 	uint16_t v_int;
@@ -165,8 +181,9 @@ void read_lv_sense(void *arg)
 void read_fuse_data(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    FUSE_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 
 	bitstream_t fuses;
@@ -233,8 +250,9 @@ void tsms_debounce_cb(void *arg)
 void read_tsms(pdu_t *pdu)
 {
 	static nertimer_t timer;
-	fault_data_t fault_data = { .id = FUSE_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    FUSE_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	bool tsms_reading;
 
 	/* If the TSMS reading throws an error, queue TSMS fault */
@@ -293,8 +311,8 @@ void vDataCollection(void *pv_params)
 
 // void vTempMonitor(void *pv_params)
 // {
-// 	fault_data_t fault_data = { .id = ONBOARD_TEMP_FAULT,
-// 				    .severity = DEFCON5 };
+// 	fault_data_t fault_data = { .id.non_crit_fault = ONBOARD_TEMP_FAULT,
+// 				    .severity = NONCRITICAL };
 // 	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
 // 			       .len = 4,
 // 			       .data = { 0 } };
@@ -337,8 +355,9 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	fault_data_t fault_data = { .id = SHUTDOWN_MONITOR_FAULT,
-				    .severity = DEFCON5 };
+	fault_data_t fault_data = { .fault_index.non_crit_fault =
+					    SHUTDOWN_MONITOR_FAULT,
+				    .severity = NONCRITICAL };
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
 				   .len = 2,
 				   .data = { 0 } };
@@ -374,7 +393,7 @@ void vShutdownMonitor(void *pv_params)
 // {
 // 	const uint8_t num_samples = 10;
 // 	static imu_data_t sensor_data;
-// 	fault_data_t fault_data = { .id = IMU_FAULT, .severity = DEFCON5 };
+// 	fault_data_t fault_data = { .id.non_crit_fault = IMU_FAULT, .severity = NONCRITICAL };
 // 	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
 // 				    .len = 6,
 // 				    .data = { 0 } };
