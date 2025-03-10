@@ -4,14 +4,14 @@
 #include <stdbool.h>
 
 #include "cmsis_os.h"
-#include "pca9539.h"
+#include "tca9539.h"
 
 #define SOUND_RTDS_FLAG 1U
 
 typedef struct {
 	osMutexId_t *mutex;
-	pca9539_t *shutdown_expander;
-	pca9539_t *ctrl_expander;
+	tca9539_t *shutdown_expander;
+	tca9539_t *ctrl_expander;
 } pdu_t;
 
 /* Creates a new PDU interface */
