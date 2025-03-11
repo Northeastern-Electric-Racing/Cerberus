@@ -7,20 +7,6 @@
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 
-static void left_button_cb()
-{
-	if (get_func_state() == F_EFFICIENCY) {
-		increase_torque_limit();
-	}
-}
-
-static void right_button_cb()
-{
-	if (get_func_state() == F_EFFICIENCY) {
-		decrease_torque_limit();
-	}
-}
-
 static void set_torque_limit_wrapper(float percentage)
 {
 	if (get_func_state() == F_EFFICIENCY) {
@@ -35,11 +21,17 @@ void buttons_update(can_msg_t msg)
 	switch (button_id) {
 	case BUTTON_LEFT:
 		printf("Left button pressed \n");
-		left_button_cb();
+		if (get_func_state() == F_EFFICIENCY) {
+			decrease_torque_limit();
+		}
+		decrement_nero_index();
 		break;
 	case BUTTON_RIGHT:
 		printf("Right button pressed \n");
-		right_button_cb();
+		if (get_func_state() == F_EFFICIENCY) {
+			increase_torque_limit();
+		}
+		increment_nero_index();
 		break;
 	case BUTTON_ESC:
 		printf("Esc button pressed \n");
@@ -47,11 +39,11 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_UP:
 		printf("Up button pressed \n");
-		increment_nero_index();
+		decrement_nero_index();
 		break;
 	case BUTTON_DOWN:
 		printf("Down button pressed \n");
-		decrement_nero_index();
+		increment_nero_index();
 		break;
 	case BUTTON_ENTER:
 		printf("Enter button pressed \n");

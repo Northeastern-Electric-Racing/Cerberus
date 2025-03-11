@@ -58,20 +58,6 @@ osStatus_t queue_fault(fault_data_t *fault_data);
  */
 void vFaultHandler(void *pv_params);
 
-/**
- * @brief adds incoming fault data to current fault state
- * 
- * @param fault_data includes diag, index, and severity
- */
-void process_fault(fault_data_t fault_data);
-
-/**
- * @brief callback function to clear fault after timeout
- * 
- * @param args fault header with index and severity
- */
-void clear_fault(void *args);
-
 extern osThreadId_t fault_handle;
 extern const osThreadAttr_t fault_handle_attributes;
 

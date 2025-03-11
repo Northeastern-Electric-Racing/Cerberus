@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bms.h"
 #include "fault.h"
 #include "can_handler.h"
 #include "state_machine.h"
@@ -37,6 +36,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
+#include "control.h"
 #include "monitor.h"
 #include "state_machine.h"
 /* USER CODE END Includes */
@@ -177,7 +177,7 @@ int main(void)
   dti_t *mc   = dti_init();
   assert(mc);
   init_can1(&hcan1);
-  bms_init();
+  init_bms();
 
   printf("\n\n\nInit Success...\n\n\n");
 
@@ -225,10 +225,19 @@ int main(void)
   // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
   // assert(shutdown_monitor_handle);
 
+  /* Control File Thread */
+  control_args_t *control_args = control_init(pdu);
+  control_handle = osThreadNew(vControl, control_args, &control_attributes);
+  assert(control_handle);
+
   /* Messaging */
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
+
+  can_receive_t *can_receive = malloc(sizeof(can_receive));
+  can_receive->mc = mc;
+  can_receive->calypso_states = control_args->calypso_states;
+  can_receive_thread = osThreadNew(vCanReceive, can_receive, &can_receive_attributes);
   assert(can_receive_thread);
 
   /* Control Logic */
@@ -251,6 +260,7 @@ int main(void)
   sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
+  
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
