@@ -119,6 +119,8 @@ void vControl(void *params)
 		control_device(&pump1, controller_temp);
 		control_device(&radfan1, controller_temp);
 
+		write_fan_battbox(pdu, calypso_states[DEVICE_FANBATTBOX]);
+
 		osDelay(1000);
 	}
 }
