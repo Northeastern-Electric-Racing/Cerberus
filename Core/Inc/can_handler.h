@@ -5,6 +5,7 @@
 #include "cmsis_os.h"
 #include "control.h"
 #include "dti.h"
+#include "stm32f4xx_hal.h"
 
 typedef struct {
 	dti_t *mc;
