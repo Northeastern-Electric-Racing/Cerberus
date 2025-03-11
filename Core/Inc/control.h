@@ -34,6 +34,8 @@
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
 
+typedef int8_t (*control_func_t)(pdu_t *pdu, bool state);
+
 typedef enum { DEVICE_PUMP, DEVICE_RADFAN } device_type_t;
 
 /* Holds the state information for all devices */
@@ -54,9 +56,10 @@ typedef struct {
 
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
+	pdu_t *pdu;
 	bool control_state; /* True state of device */
 	bool calypso_state; /* The state calypso wants to set the device to */
-	bool toSet; /* The state debounce wants to set the device to */
+	control_func_t control_func;
 	device_type_t type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */
 	uint16_t upper_temp; /* Upper Tempature Limit */
@@ -77,22 +80,6 @@ control_args_t *control_init(pdu_t *pdu);
  * @param params Pointer to control_args_t struct
  */
 void vControl(void *params);
-
-/**
- * @brief Determines and sets the state of the given device
- * 
- * @param device Device whose state is being determined
- * @param hv High voltage or not
- * @param temp Tempature reading to determine state 
- */
-void control_device(device_control_t *device, bool hv, uint16_t temp);
-
-/**
- * @brief Sets the device state determined by debounce
- * 
- * @param params Pointer to device_control_t struct
- */
-void set_device_state(void *params);
 
 /**
  * @brief Records the fan battbox state sent through CAN
