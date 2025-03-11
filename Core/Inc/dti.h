@@ -150,9 +150,4 @@ uint16_t dti_get_motor_temp();
  */
 uint16_t dti_get_controller_temp();
 
-/**
- * @brief gets the current mph from the DTI
- */
-uint8_t get_mph();
-
 #endif
