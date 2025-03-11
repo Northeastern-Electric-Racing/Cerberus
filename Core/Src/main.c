@@ -226,18 +226,14 @@ int main(void)
   // assert(shutdown_monitor_handle);
 
   /* Control File Thread */
-  control_args_t *control_args = control_init(pdu);
-  control_handle = osThreadNew(vControl, control_args, &control_attributes);
+  control_handle = osThreadNew(vControl, pdu, &control_attributes);
   assert(control_handle);
 
   /* Messaging */
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
 
-  can_receive_t *can_receive = malloc(sizeof(can_receive));
-  can_receive->mc = mc;
-  can_receive->calypso_states = control_args->calypso_states;
-  can_receive_thread = osThreadNew(vCanReceive, can_receive, &can_receive_attributes);
+  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
 
   /* Control Logic */
