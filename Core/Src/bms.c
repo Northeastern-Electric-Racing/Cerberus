@@ -11,8 +11,9 @@ osTimerId bms_timer;
 
 static void bms_fault_callback(void *args)
 {
-	fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT,
-				    .severity = DEFCON1 };
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    BMS_CAN_MONITOR_FAULT,
+				    .severity = CRITICAL };
 	fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
 	osTimerStart(bms_timer, BMS_CAN_MONITOR_DELAY);
 	queue_fault(&fault_data);

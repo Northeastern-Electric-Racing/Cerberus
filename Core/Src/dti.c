@@ -23,10 +23,16 @@
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
 
+static uint16_t motorTemp = 0;
+
+static uint16_t controllerTemp = 0;
+
 dti_t *dti_init()
 {
 	dti_t *mc = malloc(sizeof(dti_t));
 	assert(mc);
+
+	mc->rpm = 0;
 
 	/* Create Mutex */
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
@@ -282,4 +288,31 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	mc->rpm = rpm;
 	osMutexRelease(*mc->mutex);
+}
+
+void dti_record_temp(dti_t *mc, can_msg_t msg)
+{
+	uint16_t controllerTemp = (msg.data[0] << 8) + (msg.data[1]);
+	uint16_t motorTemp = (msg.data[2] << 8) + (msg.data[3]);
+
+	controllerTemp /= 10;
+	motorTemp /= 10;
+
+	osMutexAcquire(*mc->mutex, osWaitForever);
+	mc->contr_temp = controllerTemp;
+	mc->motor_temp = motorTemp;
+	osMutexRelease(*mc->mutex);
+
+	controllerTemp = controllerTemp;
+	motorTemp = motorTemp;
+}
+
+uint16_t dti_get_motor_temp()
+{
+	return motorTemp;
+}
+
+uint16_t dti_get_controller_temp()
+{
+	return controllerTemp;
 }
