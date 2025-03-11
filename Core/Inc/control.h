@@ -57,8 +57,8 @@ typedef struct {
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
 	pdu_t *pdu;
-	bool control_state; /* True state of device */
-	bool calypso_state; /* The state calypso wants to set the device to */
+	bool *control_state; /* True state of device */
+	bool *calypso_state; /* The state calypso wants to set the device to */
 	control_func_t control_func;
 	device_type_t type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */

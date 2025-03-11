@@ -39,7 +39,7 @@ static void control_device(device_control_t *device, uint16_t temp)
 
 	bool hv = get_active();
 	if (device->type == DEVICE_PUMP && hv) {
-		device->control_state = 1;
+		*device->control_state = 1;
 		return;
 	}
 
@@ -53,7 +53,7 @@ static void control_device(device_control_t *device, uint16_t temp)
 				 10000, set_device_off, device);
 		}
 	} else {
-		device->control_state = device->calypso_state;
+		*device->control_state = *device->calypso_state;
 	}
 }
 
@@ -96,8 +96,8 @@ void vControl(void *params)
 
 	device_control_t pump0 = {
 		.pdu = pdu,
-		.control_state = control->pumpState0,
-		.calypso_state = calypso_states->pumpState0,
+		.control_state = &(control->pumpState0),
+		.calypso_state = &(calypso_states->pumpState0),
 		.control_func = write_pump_0,
 		.upper_temp = PUMP_UPPER_MOTOR_TEMP,
 		.lower_temp = PUMP_LOWER_MOTOR_TEMP,
