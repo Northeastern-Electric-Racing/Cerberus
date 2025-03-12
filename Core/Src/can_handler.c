@@ -3,10 +3,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "cerb_utils.h"
+#include <stdio.h>
 #include "fault.h"
 #include "steeringio.h"
+#include "control.h"
+#include "bms.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
@@ -20,8 +21,15 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG,
-			      BUTTON_CANID_IO, DIAL_CANID_IO };
+static uint32_t id_list_1[] = {
+	DTI_CANID_ERPM,
+	DTI_CANID_CURRENTS,
+	BMS_DCL_MSG,
+	BUTTON_CANID_IO,
+};
+
+static uint32_t id_list_2[] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
+				CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -33,9 +41,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 
 	can1->hcan = hcan;
 
-	uint32_t id_list_size_four[4] = { id_list[0], id_list[1], id_list[2],
-					  id_list[3] };
-	assert(!can_add_filter(can1, id_list_size_four));
+	assert(!can_add_filter(can1, id_list_1));
+	assert(!can_add_filter(can1, id_list_2));
 	assert(!can_init(can1));
 
 	can_outbound_queue =
@@ -48,8 +55,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 void can1_callback(CAN_HandleTypeDef *hcan)
 {
 	fault_data_t fault_data = {
-		.id = CAN_ROUTING_FAULT,
-		.severity = DEFCON2,
+		.fault_index.crit_fault = CAN_ROUTING_FAULT,
+		.severity = CRITICAL,
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
@@ -88,8 +95,9 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void *pv_params)
 {
-	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT,
-				    .severity = DEFCON1 };
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    CAN_DISPATCH_FAULT,
+				    .severity = CRITICAL };
 
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
@@ -130,8 +138,8 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	can_receive_args_t *args = (can_receive_args_t *)pv_params;
-	assert(args);
+	can_receive_t *can_receive = (can_receive_t *)pv_params;
+	assert(can_receive);
 
 	can_msg_t msg;
 
@@ -143,10 +151,13 @@ void vCanReceive(void *pv_params)
 			switch (msg.id) {
 			/* Messages Relevant to Motor Controller */
 			case DTI_CANID_ERPM:
-				dti_record_rpm(args->mc, msg);
+				dti_record_rpm(can_receive->mc, msg);
+				break;
+			case DTI_CANID_TEMPS_FAULT:
+				dti_record_temp(can_receive->mc, msg);
 				break;
 			case BMS_DCL_MSG:
-				handle_dcl_msg(args->bms);
+				handle_dcl_msg(can_receive->bms);
 				break;
 			case BUTTON_CANID_IO:
 				buttons_update(msg);
@@ -154,6 +165,16 @@ void vCanReceive(void *pv_params)
 			case DIAL_CANID_IO:
 				dial_update(msg);
 				break;
+			case CONTROL_CANID_FANBATTBOX:
+				control_fanbattbox_record(
+					can_receive->calypso_states, msg);
+				break;
+			case CONTROL_CANID_PUMP:
+				control_pump_record(can_receive->calypso_states,
+						    msg);
+			case CONTROL_CANID_RADFAN:
+				control_radfan_record(
+					can_receive->calypso_states, msg);
 			default:
 				break;
 			}

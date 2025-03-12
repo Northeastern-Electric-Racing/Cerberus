@@ -21,4 +21,9 @@ bms_t *bms_init();
  */
 void handle_dcl_msg(bms_t *bms);
 
+/**
+ * @brief initializes bms timer
+ */
+void init_bms();
+
 #endif /*BMS_H*/

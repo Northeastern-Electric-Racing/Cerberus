@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cerb_utils.h"
 #include "dti.h"
 #include "monitor.h"
 #include "pedals.h"
@@ -15,7 +14,7 @@
 
 #define SEND_NERO_TIMEOUT 500 /*in millis*/
 
-//#define DISABLE_REVERSE
+// #define DISABLE_REVERSE
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
@@ -37,7 +36,7 @@ const osThreadAttr_t sm_director_attributes = {
 
 static osMessageQueueId_t state_trans_queue;
 
-static void send_nero_msg()
+static void send_nero_msg(dti_t *mc)
 {
 	struct __attribute__((__packed__)) {
 		uint8_t home_mode;
@@ -47,16 +46,9 @@ static void send_nero_msg()
 		uint8_t torque_lim_percentage;
 	} nero_data;
 
-	/* Since the screen on NERO relies on the NERO index, and reverse and pit have the same index,
-	 * reverse gets a special index */
-	if (get_func_state() == REVERSE) {
-		nero_data.nero_index = 255;
-	} else {
-		nero_data.nero_index = (uint8_t)get_nero_state().nero_index;
-	}
-
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
-	nero_data.mph = get_mph();
+	nero_data.nero_index = (uint8_t)get_nero_state().nero_index;
+	nero_data.mph = dti_get_mph(mc);
 	nero_data.tsms = (uint8_t)get_tsms();
 	/* Percentage from 0 - 1, multiplied by 100 */
 	nero_data.torque_lim_percentage =
@@ -80,7 +72,7 @@ bool get_active()
 	return cerberus_state.functional == F_EFFICIENCY ||
 	       cerberus_state.functional == F_PERFORMANCE ||
 	       cerberus_state.functional == F_PIT ||
-	       cerberus_state.functional == REVERSE;
+	       cerberus_state.functional == F_REVERSE;
 }
 
 nero_state_t get_nero_state()
@@ -91,66 +83,70 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
+	/* Special case: should be able to fault no matter what conditions */
+	if (new_state == FAULTED) {
+		/* Turn off high power peripherals */
+		// write_fan_battbox(pdu, true);
+		write_pump_0(pdu, false);
+		write_pump_1(pdu, false);
+		cerberus_state.nero =
+			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+		write_fault(mpu, true);
+
+		osDelay(1000); /* Delay for 1 sec before faulting car */
+
+		printf("FAULTED\r\n");
+	}
+
+	/* Make sure wheels are not spinning before changing modes */
+#ifndef TSMS_OVERRIDE
+	if (!get_tsms() && dti_get_mph(mc) > 1)
+		return 1;
+#endif
+	bool brake_state = true;
+
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
-		/* Make sure wheels are not spinning before changing modes */
-		if (dti_get_mph(mc) > 1)
-			return 1;
-
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, false);
-		write_pump(pdu, false);
+		write_pump_0(pdu, false);
+		write_pump_1(pdu, false);
 		write_fault(mpu, false);
 		printf("READY\r\n");
 		break;
+	case F_REVERSE:
+#ifdef DISABLE_REVERSE
+		printf("Reverse is disabled.");
+		return 4;
+#endif
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-		/* Entering active state from home mode */
-		if (cerberus_state.functional != REVERSE) {
-			/* Check that motor is not spinning before changing modes */
-			if (dti_get_mph(mc) > 1) {
-				return 2;
-			}
-			/* Only turn on motor if brakes engaged and tsms is on */
-			bool brake_state;
-			if (read_brake_state(pdu, &brake_state)) {
-				return 3;
-			}
-#ifdef TSMS_OVERRIDE
-			if (!brake_state) {
-				return 3;
-			}
-#else
-			if (!brake_state || !get_tsms()) {
-				return 3;
-			}
-#endif
-			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+		/*
+		if (read_brake_state(pdu, &brake_state)) {
+			return 3;
 		}
+			*/
+#ifdef TSMS_OVERRIDE
+		if (!brake_state) {
+			return 3;
+		}
+		printf("Ignoring tsms\n\n");
+#else
+		/* Only turn on motor if brakes engaged and tsms is on */
+		if (!brake_state || !get_tsms()) {
+			return 3;
+		}
+#endif
+		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 
 		/* Turn on high power peripherals */
 		// write_fan_battbox(pdu, true);
-		write_pump(pdu, true);
+		write_pump_0(pdu, true);
+		write_pump_1(pdu, true);
 		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
-		break;
-	case REVERSE:
-		/* Can only enter reverse mode if already in pit mode */
-		if (cerberus_state.functional != F_PIT)
-			return 4;
-		break;
-	case FAULTED:
-		/* Turn off high power peripherals */
-		// write_fan_battbox(pdu, true);
-		write_pump(pdu, false);
-		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = false };
-
-		osDelay(1000); /* Delay for 1 sec before faulting car */
-		write_fault(mpu, true);
-		printf("FAULTED\r\n");
 		break;
 	default:
 		// Do Nothing
@@ -177,31 +173,23 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	if (new_state.nero_index >= MAX_NERO_STATES)
 		new_state.nero_index = MAX_NERO_STATES - 1;
 
-#ifndef DISABLE_REVERSE
-	// Wasn't in home mode and still are not in home mode (Infer a Select Request)
-	if (!current_nero_state.home_mode && !new_state.home_mode) {
-		// Only Check if we are in pit mode to toggle direction
-		if (current_nero_state.nero_index == PIT) {
-			if (get_func_state() == REVERSE) {
-				if (transition_functional_state(F_PIT, pdu, mc,
-								mpu))
-					return 1;
-			} else if (get_func_state() == F_PIT) {
-				if (transition_functional_state(REVERSE, pdu,
-								mc, mpu))
-					return 1;
-			}
-		}
-	}
-#endif
-
 	// Selecting a mode on NERO
 	if (current_nero_state.home_mode && !new_state.home_mode) {
-		if (new_state.nero_index < DEBUG &&
+		if (new_state.nero_index < GAMES &&
 		    new_state.nero_index > OFF) {
 			if (transition_functional_state(new_state.nero_index,
 							pdu, mc, mpu))
 				return 1;
+		}
+
+		/* TSMS OFF and MPH = 0 to enter games */
+		if (new_state.nero_index == GAMES) {
+#ifndef TSMS_OVERRIDE
+			if (get_tsms() || dti_get_mph(mc) >= 1) {
+				return 1;
+			}
+#endif
+			new_state.home_mode = false;
 		}
 	}
 
@@ -296,12 +284,18 @@ int set_home_mode()
 
 int set_ready_mode()
 {
+#ifdef IGNORE_FAULT
+	return 1;
+#endif
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = READY });
 }
 
 int fault()
 {
+#ifdef IGNORE_FAULT
+	return 1;
+#endif
 	return queue_state_transition(
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
@@ -328,18 +322,17 @@ void vStateMachineDirector(void *pv_params)
 	free(args);
 
 	/* Write to GPIO expander to set initial state */
-	write_pump(pdu, false);
+	write_pump_0(pdu, false);
+	write_pump_1(pdu, false);
 	write_fault(mpu, false);
 
 	for (;;) {
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
 		    osOK) {
-			// transition state only if state was changed
 			if (!check_state_change(new_state_req)) {
 				continue;
 			}
-
 			if (new_state_req.id == NERO)
 				transition_nero_state(new_state_req.state.nero,
 						      pdu, mc, mpu);
@@ -350,6 +343,6 @@ void vStateMachineDirector(void *pv_params)
 		}
 
 		// send nero data periodically
-		send_nero_msg();
+		send_nero_msg(mc);
 	}
 }

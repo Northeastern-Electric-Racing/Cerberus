@@ -1,6 +1,9 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
+// #define TSMS_OVERRIDE Uncomment to remove all checks for state machine
+// #define IGNORE_FAULT
+
 #include "pdu.h"
 #include "mpu.h"
 #include "dti.h"
@@ -13,9 +16,9 @@ typedef enum {
 	READY,
 	/* F means functional */
 	F_PIT,
+	F_REVERSE, // can only enter reverse from PIT
 	F_PERFORMANCE,
 	F_EFFICIENCY,
-	REVERSE,
 	FAULTED,
 	MAX_FUNC_STATES
 } func_state_t;
@@ -27,11 +30,10 @@ typedef enum {
 typedef enum {
 	OFF,
 	PIT, //SPEED_LIMITIED
+	REVERSE,
 	PERFORMANCE, //AUTOCROSS
 	EFFICIENCY, //ENDURANCE
-	DEBUG,
-	CONFIGURATION,
-	FLAPPY_BIRD,
+	GAMES,
 	EXIT,
 	MAX_NERO_STATES
 } nero_menu_t;

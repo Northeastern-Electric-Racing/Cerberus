@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "cerberus_conf.h"
 #include "fault.h"
@@ -11,8 +12,9 @@ static void bms_fault_callback(void* args)
 {
 	bms_t* bms = (bms_t*)args;
 	if (osMutexAcquire(bms->mutex, osWaitForever) == osOK) {
-		fault_data_t fault_data = { .id = BMS_CAN_MONITOR_FAULT, .severity = DEFCON1 };
-		fault_data.diag			= "Failing To Receive CAN Messages from Shepherd";
+		fault_data_t fault_data
+			= { .fault_index.crit_fault = BMS_CAN_MONITOR_FAULT, .severity = CRITICAL };
+		fault_data.diag = "Failing To Receive CAN Messages from Shepherd";
 		osTimerStart(bms->bms_monitor_timer, BMS_CAN_MONITOR_DELAY);
 		queue_fault(&fault_data);
 		osMutexRelease(bms->mutex);
