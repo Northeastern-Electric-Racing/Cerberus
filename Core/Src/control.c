@@ -32,7 +32,6 @@ static void set_device_off(void *params)
  * @brief Determines and sets the state of the given device
  * 
  * @param device Device whose state is being determined
- * @param hv High voltage or not
  * @param temp Tempature reading to determine state 
  */
 static void control_device(device_control_t *device, uint16_t temp)
