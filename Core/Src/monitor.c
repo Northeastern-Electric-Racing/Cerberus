@@ -135,8 +135,6 @@ void read_lv_sense(void *arg)
 
 	read_lv_voltage(mpu, &v_int);
 
-	printf("LV Sense: %ld\n", v_int);
-
 	/* Convert from raw ADC reading to voltage level */
 
 	// 1. get it into voltage 12 bits so 4096 steps to 3.3 volts

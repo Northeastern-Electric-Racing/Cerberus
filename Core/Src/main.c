@@ -820,7 +820,6 @@ void StartDefaultTask(void *argument)
 
   /* Infinite loop */
   for(;;) {
-    printf("%ld \n \n", HAL_GetTick());
     /* Pet watchdog */
     HAL_IWDG_Refresh(&hiwdg);
     /* Toggle LED at certain frequency */
