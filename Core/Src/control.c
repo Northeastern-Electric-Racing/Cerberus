@@ -39,12 +39,16 @@ static void control_device(device_control_t *device, uint16_t temp)
 	assert(device);
 	bool hv = get_active();
 
-	// turn on pumps when hv is on
-	if ((device->device_type == DEVICE_PUMP0 ||
-	     device->device_type == DEVICE_PUMP1) &&
-	    hv) {
-		set_device_on(device->pdu);
-		return;
+	// turn on pumps when hv is on / turn off when faulted
+	if (device->device_type == DEVICE_PUMP0 ||
+	    device->device_type == DEVICE_PUMP1) {
+		if (hv) {
+			set_device_on(device);
+			return;
+		} else if (get_func_state() == FAULTED) {
+			set_device_off(device);
+			return;
+		}
 	}
 
 	// turn on device if calypso sent message to turn it on
