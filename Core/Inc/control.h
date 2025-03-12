@@ -48,7 +48,7 @@ typedef enum {
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
 	pdu_t *pdu;
-	control_func_t control_func;
+	control_func_t control_func; /* function to set device state */
 	device_type_t device_type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */
 	uint16_t upper_temp; /* Upper Tempature Limit */
