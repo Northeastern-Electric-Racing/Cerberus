@@ -52,9 +52,6 @@ static void control_device(device_control_t *device, uint16_t temp)
 	if (calypso_states[device->device_type]) {
 		set_device_on(device);
 		return;
-	} else {
-		set_device_off(device);
-		return;
 	}
 
 	// set device state based on temps with debounce
