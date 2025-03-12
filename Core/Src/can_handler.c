@@ -140,8 +140,8 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	can_receive_t *can_receive = (can_receive_t *)pv_params;
-	assert(can_receive);
+	dti_t *mc = (dti_t *)pv_params;
+	assert(mc);
 
 	can_msg_t msg;
 
@@ -153,10 +153,10 @@ void vCanReceive(void *pv_params)
 			switch (msg.id) {
 			/* Messages Relevant to Motor Controller */
 			case DTI_CANID_ERPM:
-				dti_record_rpm(can_receive->mc, msg);
+				dti_record_rpm(mc, msg);
 				break;
 			case DTI_CANID_TEMPS_FAULT:
-				dti_record_temp(can_receive->mc, msg);
+				dti_record_temp(mc, msg);
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
@@ -168,15 +168,12 @@ void vCanReceive(void *pv_params)
 				dial_update(msg);
 				break;
 			case CONTROL_CANID_FANBATTBOX:
-				control_fanbattbox_record(
-					can_receive->calypso_states, msg);
+				control_fanbattbox_record(msg);
 				break;
 			case CONTROL_CANID_PUMP:
-				control_pump_record(can_receive->calypso_states,
-						    msg);
+				control_pump_record(msg);
 			case CONTROL_CANID_RADFAN:
-				control_radfan_record(
-					can_receive->calypso_states, msg);
+				control_radfan_record(msg);
 			default:
 				break;
 			}
