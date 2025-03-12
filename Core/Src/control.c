@@ -50,10 +50,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 
 	// turn on device if calypso sent message to turn it on
 	if (calypso_states[device->device_type]) {
-		set_device_on(device->pdu);
+		set_device_on(device);
 		return;
 	} else {
-		set_device_off(device->pdu);
+		set_device_off(device);
 		return;
 	}
 
