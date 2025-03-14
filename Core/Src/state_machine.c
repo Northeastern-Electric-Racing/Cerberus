@@ -85,14 +85,12 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 {
 	/* Special case: should be able to fault no matter what conditions */
 	if (new_state == FAULTED) {
-
 		/* Turn off high power peripherals */
-		// write_fan_battbox(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		write_fault(mpu, true);
 
-		printf("FAULTED\r\n");	
+		printf("FAULTED\r\n");
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
@@ -106,7 +104,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	switch (new_state) {
 	case READY:
 		/* Turn off high power peripherals */
-		// write_fan_battbox(pdu, false);
 		write_fault(mpu, false);
 		printf("READY\r\n");
 		break;
@@ -118,11 +115,9 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-		/*
 		if (read_brake_state(pdu, &brake_state)) {
 			return 3;
 		}
-			*/
 #ifdef TSMS_OVERRIDE
 		if (!brake_state) {
 			return 3;
@@ -137,7 +132,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 
 		/* Turn on high power peripherals */
-		// write_fan_battbox(pdu, true);
 		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
 		break;
