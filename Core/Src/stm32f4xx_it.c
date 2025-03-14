@@ -93,13 +93,13 @@ void HardFault_Handler(void)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
     volatile uint32_t i = 0;
-    while (i < 120000) {
+    while (i < 360000) {
       i += 1;
     }
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 0);
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, 0);
     i = 0;
-    while (i < 120000) {
+    while (i < 360000) {
       i += 1;
     }
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, 1);

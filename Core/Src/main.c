@@ -222,17 +222,14 @@ int main(void)
   // assert(shutdown_monitor_handle);
 
   /* Control File Thread */
-  control_args_t *control_args = control_init(pdu);
-  control_handle = osThreadNew(vControl, control_args, &control_attributes);
+  control_handle = osThreadNew(vControl, pdu, &control_attributes);
   assert(control_handle);
 
   /* Messaging */
   can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
   assert(can_dispatch_handle);
-  can_receive_t* can_receive_args = malloc(sizeof(can_receive_args));
-  can_receive_args->bms = bms;
-  can_receive_args->mc = mc;
-  can_receive_thread = osThreadNew(vCanReceive, can_receive_args, &can_receive_attributes);
+
+  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
   assert(can_receive_thread);
 
   /* Control Logic */
@@ -300,8 +297,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 100;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 84;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -817,6 +814,7 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   mpu_t *mpu = (mpu_t *) argument;
   assert(mpu);
+  toggle_yled(mpu);
 
   /* Infinite loop */
   for(;;) {
