@@ -85,15 +85,14 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 {
 	/* Special case: should be able to fault no matter what conditions */
 	if (new_state == FAULTED) {
+
 		/* Turn off high power peripherals */
 		// write_fan_battbox(pdu, true);
 		cerberus_state.nero =
 			(nero_state_t){ .nero_index = OFF, .home_mode = false };
 		write_fault(mpu, true);
 
-		osDelay(1000); /* Delay for 1 sec before faulting car */
-
-		printf("FAULTED\r\n");
+		printf("FAULTED\r\n");	
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
