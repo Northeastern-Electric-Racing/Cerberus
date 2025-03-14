@@ -12,8 +12,6 @@
 #ifndef DTI_H
 #define DTI_H
 
-#include "stdbool.h"
-#include "cmsis_os2.h"
 #include "can.h"
 #include "cmsis_os.h"
 

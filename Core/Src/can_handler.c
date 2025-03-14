@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "rtos_utils.h"
 #include "fault.h"
 #include "steeringio.h"
 #include "control.h"
@@ -157,7 +159,7 @@ void vCanReceive(void *pv_params)
 				dti_record_temp(mc, msg);
 				break;
 			case BMS_DCL_MSG:
-				handle_dcl_msg(can_receive->bms);
+				handle_dcl_msg();
 				break;
 			case BUTTON_CANID_IO:
 				buttons_update(msg);

@@ -1,8 +1,8 @@
 using "Drivers/Embedded-Base/dev/renode/cpus/stm32f405_ner.repl"
 
-pduGPIOPortShutdown: I2C.PCA9539 @ i2c2  0x77
+pduGPIOPortShutdown: I2C.PCA9539 @ i2c2  0x75
 
-pduGPIOPortCTRL: I2C.PCA9539 @ i2c2 0x76
+pduGPIOPortCTRL: I2C.PCA9539 @ i2c2 0x74
 
 motorControllerCurrentSensor: I2C.INA226 @ i2c2 0x40
 
