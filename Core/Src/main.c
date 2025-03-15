@@ -231,7 +231,10 @@ int main(void)
 	// assert(shutdown_monitor_handle);
 
 	/* Control File Thread */
-	control_handle = osThreadNew(vControl, pdu, &control_attributes);
+  control_args_t *control_args = malloc(sizeof(control_args_t));
+  control_args->pdu = pdu;
+  control_args->mc = mc;
+	control_handle = osThreadNew(vControl, control_args, &control_attributes);
 	assert(control_handle);
 
 	/* Messaging */

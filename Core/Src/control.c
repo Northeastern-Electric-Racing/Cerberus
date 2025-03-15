@@ -1,8 +1,7 @@
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "control.h"
-#include "dti.h"
 #include "state_machine.h"
 
 bool calypso_states[NUM_DEVICES];
@@ -30,9 +29,9 @@ static void set_device_off(void *params)
 
 /**
  * @brief Determines and sets the state of the given device
- * 
+ *
  * @param device Device whose state is being determined
- * @param temp Tempature reading to determine state 
+ * @param temp Tempature reading to determine state
  */
 static void control_device(device_control_t *device, uint16_t temp)
 {
@@ -72,7 +71,13 @@ static void control_device(device_control_t *device, uint16_t temp)
 
 void vControl(void *params)
 {
-	pdu_t *pdu = (pdu_t *)params;
+	control_args_t *args = (control_args_t *)params;
+	dti_t *mc = args->mc;
+	assert(mc);
+	pdu_t *pdu = args->pdu;
+	assert(pdu);
+
+	free(args);
 
 	device_control_t pump0 = {
 		.pdu = pdu,
@@ -110,8 +115,10 @@ void vControl(void *params)
 	write_pump_1(pdu, false);
 
 	for (;;) {
-		uint16_t motor_temp = dti_get_motor_temp();
-		uint16_t controller_temp = dti_get_controller_temp();
+		uint16_t motor_temp;
+		dti_get_motor_temp(mc, &motor_temp);
+		uint16_t controller_temp;
+		dti_get_controller_temp(mc, &controller_temp);
 
 		// Determine device state
 		control_device(&pump0, motor_temp);

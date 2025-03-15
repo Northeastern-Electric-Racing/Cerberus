@@ -25,7 +25,7 @@ can_t *can1;
 /* Relevant Info for Initializing CAN 1 */
 static uint32_t id_list_1[] = {
 	DTI_CANID_ERPM,
-	DTI_CANID_CURRENTS,
+	DTI_CANID_TEMPS_FAULT,
 	BMS_DCL_MSG,
 	BUTTON_CANID_IO,
 };
