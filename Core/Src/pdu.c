@@ -151,7 +151,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_1_REG, buf);
 
 	// pin 0 to the right
-	buf = 0b11110000;
+	buf = 0b01100000;
 	status =
 		tca9539_write_reg(pdu->ctrl_expander, TCA_DIRECTION_0_REG, buf);
 	if (status != HAL_OK) {
