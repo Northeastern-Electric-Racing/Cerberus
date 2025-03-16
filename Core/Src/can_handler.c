@@ -31,7 +31,7 @@ static uint16_t id_list_1[4] = {
 };
 
 static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
-				CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
+				 CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -43,8 +43,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 
 	can1->hcan = hcan;
 	assert(!can_init(can1));
-	assert(!can_add_filter(can1, id_list_1));
-	assert(!can_add_filter(can1, id_list_2));
+	assert(!can_add_filter_standard(can1, id_list_1));
+	assert(!can_add_filter_standard(can1, id_list_2));
 
 	can_outbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
