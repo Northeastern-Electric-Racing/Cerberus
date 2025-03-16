@@ -21,12 +21,13 @@
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY 10 /* ms */
-#define ACCEL1_OFFSET	    980
-#define ACCEL1_MAX_VAL	    1866
-#define ACCEL2_OFFSET	    1780
-#define ACCEL2_MAX_VAL	    3365
-#define PEDAL_BRAKE_THRESH  650
+#define PEDALS_SAMPLE_DELAY  10 /* ms */
+#define MAX_APPS_VOLTS	     1.5
+#define MAX_BRAKE_VOLTS	     3.5
+#define MIN_APPS_VOLTS	     0.5
+#define APPS1_VOLTAGE_OFFSET 1.5
+#define APPS2_VOLTAGE_OFFSET 0.5
+#define PEDAL_BRAKE_THRESH   0.42 /* percentage */
 
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
