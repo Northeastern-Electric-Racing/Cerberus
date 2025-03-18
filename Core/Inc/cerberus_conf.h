@@ -22,11 +22,11 @@
 
 /* Pedal tuning */
 #define PEDALS_SAMPLE_DELAY  10 /* ms */
-#define MAX_APPS_VOLTS	     1.5
-#define MAX_BRAKE_VOLTS	     3.5
-#define MIN_APPS_VOLTS	     0.5
-#define APPS1_VOLTAGE_OFFSET 1.5
-#define APPS2_VOLTAGE_OFFSET 0.5
+#define MAX_APPS_VOLTS	     1.5 /* volts */
+#define MAX_BRAKE_VOLTS	     3.5 /* volts */
+#define MIN_APPS_VOLTS	     0.5 /* volts */
+#define APPS1_VOLTAGE_OFFSET 1.5 /* volts */
+#define APPS2_VOLTAGE_OFFSET 0.5 /* volts */
 #define PEDAL_BRAKE_THRESH   0.42 /* percentage */
 
 /* Torque Tuning */
