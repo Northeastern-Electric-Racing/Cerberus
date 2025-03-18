@@ -450,7 +450,7 @@ void vProcessPedals(void *pv_params)
 		float accel1_volts = adc_to_volts(adc_data[ACCELPIN_1]);
 		float accel2_volts = adc_to_volts(adc_data[ACCELPIN_2]);
 
-		calc_pedal_faults(accel1_volts, accel1_volts);
+		calc_pedal_faults(accel1_volts, accel2_volts);
 
 		/* Normalize pedal values to be from 0-100 */
 		uint16_t accel1_norm = adjust_pedal_val(
@@ -459,7 +459,7 @@ void vProcessPedals(void *pv_params)
 			accel2_volts, APPS2_VOLTAGE_OFFSET, MAX_APPS_VOLTS);
 
 		/* Combine normalized values from both accel pedal sensors */
-		uint16_t accel_avg = (uint16_t)(accel1_norm + accel2_norm) / 2;
+		float accel_avg = (accel1_norm + accel2_norm) / 2;
 		/* same for brake values */
 		float brake_avg =
 			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
@@ -470,7 +470,7 @@ void vProcessPedals(void *pv_params)
 		write_brakelight(pdu, brake_avg > PEDAL_BRAKE_THRESH);
 
 		/* 0.0 - 1.0 */
-		float accelerator_value = (float)accel_avg / 100.0;
+		float accelerator_value = accel_avg / 100.0;
 
 		if (calc_bspd_prefault(accelerator_value, brake_value)) {
 			/* Prefault triggered */
