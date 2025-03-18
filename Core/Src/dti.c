@@ -322,5 +322,5 @@ osStatus_t dti_get_controller_temp(dti_t *mc, uint16_t *controllerTemp)
 
 	memcpy(controllerTemp, &mc->contr_temp, sizeof(mc->contr_temp));
 
-	return osMutexRelease(mc->mutex)
+	return osMutexRelease(mc->mutex);
 }
