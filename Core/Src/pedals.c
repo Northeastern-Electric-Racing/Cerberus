@@ -31,7 +31,7 @@ float torque_limit_percentage = 1.0;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b 4096
-#define MAX_VOLTS	3.3
+#define MAX_VOLTS	3.3 /* volts */
 
 #define PEDAL_DIFF_THRESH 15 /* percentage */
 #define PEDAL_FAULT_TIME  500 /* ms */
@@ -155,10 +155,7 @@ void send_pedal_data(void *arg)
 	uint32_t *adc_data = (uint32_t *)arg;
 
 	can_msg_t accel_pedals_msg = { .id = CANID_PEDALS_ACCEL_MSG,
-				       .len = 4,
-				       .data = { 0 } };
-	can_msg_t brake_pedals_msg = { .id = CANID_PEDALS_BRAKE_MSG,
-				       .len = 4,
+				       .len = 8,
 				       .data = { 0 } };
 
 	uint16_t voltage_data[4];
@@ -174,9 +171,6 @@ void send_pedal_data(void *arg)
 
 	memcpy(accel_pedals_msg.data, voltage_data, accel_pedals_msg.len);
 	queue_can_msg(accel_pedals_msg);
-
-	memcpy(brake_pedals_msg.data, voltage_data + 2, brake_pedals_msg.len);
-	queue_can_msg(brake_pedals_msg);
 }
 
 /**
