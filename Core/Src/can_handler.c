@@ -23,15 +23,15 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list_1[] = {
+static uint16_t id_list_1[4] = {
 	DTI_CANID_ERPM,
 	DTI_CANID_CURRENTS,
 	BMS_DCL_MSG,
 	BUTTON_CANID_IO,
 };
 
-static uint32_t id_list_2[] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
-				CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
+static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
+				 CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -42,10 +42,9 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(can1);
 
 	can1->hcan = hcan;
-
-	assert(!can_add_filter(can1, id_list_1));
-	assert(!can_add_filter(can1, id_list_2));
 	assert(!can_init(can1));
+	assert(!can_add_filter_standard(can1, id_list_1));
+	assert(!can_add_filter_standard(can1, id_list_2));
 
 	can_outbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -73,7 +72,16 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	}
 
 	new_msg.len = rx_header.DLC;
-	new_msg.id = rx_header.StdId;
+
+	if (rx_header.IDE == CAN_ID_EXT) {
+		// If the message has an extended CAN ID, save the message accordingly.
+		new_msg.id = rx_header.ExtId;
+		new_msg.id_is_extended = true;
+	} else {
+		// If the message has a standard CAN ID, save the message accordingly.
+		new_msg.id = rx_header.StdId;
+		new_msg.id_is_extended = false;
+	}
 
 	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
 			   NEW_CAN_MSG_FLAG);
