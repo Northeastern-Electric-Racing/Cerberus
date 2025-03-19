@@ -33,7 +33,7 @@ float torque_limit_percentage = 1.0;
 #define MAX_ADC_VAL_12b 4096
 #define MAX_VOLTS	3.3 /* volts */
 
-#define PEDAL_DIFF_THRESH 15 /* percentage */
+#define PEDAL_DIFF_THRESH 10 /* percentage */
 #define PEDAL_FAULT_TIME  500 /* ms */
 
 #define APPS_THRESHOLD_BUF 0.1
@@ -123,6 +123,9 @@ void calc_pedal_faults(float accel1, float accel2, uint16_t accel1_norm,
 	/* Pedal difference too large fault */
 	static nertimer_t diff_fault_timer;
 
+	/* EV3.5.4: For analog acceleration control signals, this error checking must detect open circuit, short to 
+	ground and short to sensor power. */
+
 	/* Pedal open circuit fault */
 	bool open_circuit = accel1 > MAX_APPS1_VOLTS - APPS_THRESHOLD_BUF ||
 			    accel2 > MAX_APPS2_VOLTS - APPS_THRESHOLD_BUF;
@@ -138,6 +141,8 @@ void calc_pedal_faults(float accel1, float accel2, uint16_t accel1_norm,
 		 "Pedal short circuit fault - no acceleration value");
 
 	/* Pedal difference fault evaluation */
+	// Fault registered when more than 10% is detected between the sensor readings
+	// to detect a short between the two sensors (outlined in 2025 ESF)
 	bool pedals_too_diff = abs(accel1_norm - accel2_norm) >
 			       PEDAL_DIFF_THRESH;
 	debounce(pedals_too_diff, &diff_fault_timer, PEDAL_FAULT_TIME,
