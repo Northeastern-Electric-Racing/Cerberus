@@ -154,9 +154,9 @@ void send_pedal_data(void *arg)
 {
 	uint32_t *adc_data = (uint32_t *)arg;
 
-	can_msg_t accel_pedals_msg = { .id = CANID_PEDALS_ACCEL_MSG,
-				       .len = 8,
-				       .data = { 0 } };
+	can_msg_t pedals_msg = { .id = CANID_PEDALS_MSG,
+				 .len = 8,
+				 .data = { 0 } };
 
 	uint16_t voltage_data[4];
 
@@ -169,8 +169,8 @@ void send_pedal_data(void *arg)
 	voltage_data[BRAKEPIN_2] =
 		(uint16_t)(adc_to_volts(adc_data[BRAKEPIN_2]) * 100);
 
-	memcpy(accel_pedals_msg.data, voltage_data, accel_pedals_msg.len);
-	queue_can_msg(accel_pedals_msg);
+	memcpy(pedals_msg.data, voltage_data, pedals_msg.len);
+	queue_can_msg(pedals_msg);
 }
 
 /**
