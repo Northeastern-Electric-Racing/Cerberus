@@ -31,8 +31,9 @@ float torque_limit_percentage = 1.0;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b 4096
+#define MAX_VOLTS	3.3
 
-#define PEDAL_DIFF_THRESH 30
+#define PEDAL_DIFF_THRESH 15 /* percentage */
 #define PEDAL_FAULT_TIME  500 /* ms */
 
 #define APPS_THRESHOLD_BUF 0.1
@@ -41,7 +42,7 @@ enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 static float adc_to_volts(uint32_t raw_adc)
 {
-	return raw_adc * MAX_APPS_VOLTS / MAX_ADC_VAL_12b;
+	return raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
 }
 
 /**
@@ -50,11 +51,9 @@ static float adc_to_volts(uint32_t raw_adc)
  * @param voltage the raw pedal value
  * @param offset the offset for the pedal
  */
-static uint16_t adjust_pedal_val(float voltage, float offset, float max)
+static float pedal_percent_pressed(float voltage, float offset, float max)
 {
-	float percentage = voltage - offset < 0 ? 0 : (voltage - offset) / max;
-
-	return (uint16_t)(percentage * 100);
+	return voltage - offset < 0 ? 0 : (voltage - offset) / (max - offset);
 }
 
 void increase_torque_limit()
@@ -112,7 +111,8 @@ void pedal_fault_cb(void *arg)
  * @param accel1 pedal 1 travel voltage reading 
  * @param accel2 pedal 2 travel voltage reading 
  */
-void calc_pedal_faults(float accel1, float accel2)
+void calc_pedal_faults(float accel1, float accel2, uint16_t accel1_norm,
+		       uint16_t accel2_norm)
 {
 	/* oc = Open Circuit */
 	static nertimer_t oc_fault_timer;
@@ -124,24 +124,18 @@ void calc_pedal_faults(float accel1, float accel2)
 	static nertimer_t diff_fault_timer;
 
 	/* Pedal open circuit fault */
-	bool open_circuit = accel1 > MAX_APPS_VOLTS - APPS_THRESHOLD_BUF ||
-			    accel2 > MAX_APPS_VOLTS - APPS_THRESHOLD_BUF;
+	bool open_circuit = accel1 > MAX_APPS1_VOLTS - APPS_THRESHOLD_BUF ||
+			    accel2 > MAX_APPS2_VOLTS - APPS_THRESHOLD_BUF;
 	debounce(open_circuit, &oc_fault_timer, PEDAL_FAULT_TIME,
 		 &pedal_fault_cb,
 		 "Pedal open circuit fault - max acceleration value");
 
 	/* Pedal short circuit fault */
-	bool short_circuit = accel1 < MIN_APPS_VOLTS + APPS_THRESHOLD_BUF ||
-			     accel2 < MIN_APPS_VOLTS + APPS_THRESHOLD_BUF;
+	bool short_circuit = accel1 < MIN_APPS1_VOLTS + APPS_THRESHOLD_BUF ||
+			     accel2 < MIN_APPS2_VOLTS + APPS_THRESHOLD_BUF;
 	debounce(short_circuit, &sc_fault_timer, PEDAL_FAULT_TIME,
 		 &pedal_fault_cb,
 		 "Pedal short circuit fault - no acceleration value");
-
-	/* Normalize pedal values to be from 0-100 */
-	uint16_t accel1_norm =
-		adjust_pedal_val(accel1, APPS1_VOLTAGE_OFFSET, MAX_APPS_VOLTS);
-	uint16_t accel2_norm =
-		adjust_pedal_val(accel2, APPS2_VOLTAGE_OFFSET, MAX_APPS_VOLTS);
 
 	/* Pedal difference fault evaluation */
 	bool pedals_too_diff = abs(accel1_norm - accel2_norm) >
@@ -178,12 +172,10 @@ void send_pedal_data(void *arg)
 	voltage_data[BRAKEPIN_2] =
 		(uint16_t)(adc_to_volts(adc_data[BRAKEPIN_2]) * 100);
 
-	memcpy(accel_pedals_msg.data, &voltage_data[ACCELPIN_1],
-	       accel_pedals_msg.len);
+	memcpy(accel_pedals_msg.data, voltage_data, accel_pedals_msg.len);
 	queue_can_msg(accel_pedals_msg);
 
-	memcpy(brake_pedals_msg.data, &voltage_data[BRAKEPIN_1],
-	       brake_pedals_msg.len);
+	memcpy(brake_pedals_msg.data, voltage_data + 2, brake_pedals_msg.len);
 	queue_can_msg(brake_pedals_msg);
 }
 
@@ -205,8 +197,7 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 	/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
 	to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 
-	/* BSPD braking theshold is arbitrary (currently set to 16%)*/
-	if (brake_val > 0.16 && accel_val > 0.25) {
+	if (brake_val > PEDAL_BRAKE_THRESH && accel_val > 0.25) {
 		motor_disabled = true;
 		queue_fault(&fault_data);
 	}
@@ -450,29 +441,27 @@ void vProcessPedals(void *pv_params)
 		float accel1_volts = adc_to_volts(adc_data[ACCELPIN_1]);
 		float accel2_volts = adc_to_volts(adc_data[ACCELPIN_2]);
 
-		calc_pedal_faults(accel1_volts, accel2_volts);
+		/* Normalize pedal values to be from 0-1 */
+		uint16_t accel1_norm = pedal_percent_pressed(
+			accel1_volts, APPS1_VOLTAGE_OFFSET, MAX_APPS1_VOLTS);
+		uint16_t accel2_norm = pedal_percent_pressed(
+			accel2_volts, APPS2_VOLTAGE_OFFSET, MAX_APPS2_VOLTS);
 
-		/* Normalize pedal values to be from 0-100 */
-		uint16_t accel1_norm = adjust_pedal_val(
-			accel1_volts, APPS1_VOLTAGE_OFFSET, MAX_APPS_VOLTS);
-		uint16_t accel2_norm = adjust_pedal_val(
-			accel2_volts, APPS2_VOLTAGE_OFFSET, MAX_APPS_VOLTS);
+		calc_pedal_faults(accel1_volts, accel2_volts, accel1_norm,
+				  accel2_norm);
 
-		/* Combine normalized values from both accel pedal sensors */
-		float accel_avg = (accel1_norm + accel2_norm) / 2;
 		/* same for brake values */
 		float brake_avg =
 			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
-		uint16_t brake_value = adjust_pedal_val(adc_to_volts(brake_avg),
-							0, MAX_BRAKE_VOLTS);
+		/* calc percent brake is pressed */
+		float brake_value = pedal_percent_pressed(
+			adc_to_volts(brake_avg), 0, MAX_VOLTS);
+		float accel_value = (accel1_norm - accel2_norm) / 2;
 
 		/* Turn brakelight on or off (calced with raw adc)*/
 		write_brakelight(pdu, brake_avg > PEDAL_BRAKE_THRESH);
 
-		/* 0.0 - 1.0 */
-		float accelerator_value = accel_avg / 100.0;
-
-		if (calc_bspd_prefault(accelerator_value, brake_value)) {
+		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
 			osDelay(delay_time);
 			continue;
@@ -482,21 +471,20 @@ void vProcessPedals(void *pv_params)
 		func_state_t func_state = get_func_state();
 		switch (func_state) {
 		case F_EFFICIENCY:
-			handle_endurance(mc, mph, accelerator_value,
-					 brake_value);
+			handle_endurance(mc, mph, accel_value, brake_value);
 			break;
 		case F_PERFORMANCE:
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-			linear_accel_to_torque(accelerator_value);
+			linear_accel_to_torque(accel_value);
 #else
-			power_regression_accel_to_torque(accelerator_value);
+			power_regression_accel_to_torque(accel_value);
 #endif
 			break;
 		case F_PIT:
-			handle_pit(mph, accelerator_value);
+			handle_pit(mph, accel_value);
 			break;
 		case REVERSE:
-			handle_reverse(mph, accelerator_value);
+			handle_reverse(mph, accel_value);
 			break;
 		default:
 			dti_set_torque(0);
