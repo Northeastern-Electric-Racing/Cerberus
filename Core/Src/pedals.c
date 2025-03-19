@@ -453,7 +453,7 @@ void vProcessPedals(void *pv_params)
 		float accel_value = (accel1_norm - accel2_norm) / 2;
 
 		/* Turn brakelight on or off (calced with raw adc)*/
-		write_brakelight(pdu, brake_avg > PEDAL_BRAKE_THRESH);
+		write_brakelight(pdu, brake_value > PEDAL_BRAKE_THRESH);
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
