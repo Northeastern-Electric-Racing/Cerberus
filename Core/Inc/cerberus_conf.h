@@ -24,7 +24,7 @@
 #define PEDALS_SAMPLE_DELAY  10 /* ms */
 #define MAX_APPS1_VOLTS	     3.0 /* volts */
 #define MIN_APPS1_VOLTS	     1.5 /* volts */
-#define MAX_APPS2_VOLTS	     1.5 /* volts */
+#define MAX_APPS2_VOLTS	     2.0 /* volts */
 #define MIN_APPS2_VOLTS	     0.5 /* volts */
 #define APPS1_VOLTAGE_OFFSET 1.5 /* volts */
 #define APPS2_VOLTAGE_OFFSET 0.5 /* volts */
