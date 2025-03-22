@@ -25,9 +25,9 @@ osMutexId_t tsms_mutex;
 void read_pump_sens(pdu_t *pdu)
 {
 	// put fault stuff tomorrow
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    PUMP_SENSORS_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = PUMP_SENSORS_FAULT,
+	};
 	can_msg_t msg = { .id = CANID_PUMP_SENSORS, .len = 8, .data = { 0 } };
 
 	uint16_t buffer[2];
@@ -71,9 +71,9 @@ void read_pump_sens(pdu_t *pdu)
  */
 void read_current(pdu_t *pdu)
 {
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    PDU_CURRENT_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = PDU_CURRENT_FAULT,
+	};
 	can_msg_t msg = { .id = CANID_PDU_CURRENT, .len = 8, .data = { 0 } };
 
 	float motor_controller_current;
@@ -120,9 +120,9 @@ void read_current(pdu_t *pdu)
 void read_lv_sense(void *arg)
 {
 	mpu_t *mpu = (mpu_t *)arg;
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    LV_MONITOR_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = LV_MONITOR_FAULT,
+	};
 	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
 
 	uint16_t v_int;
@@ -183,9 +183,9 @@ void read_lv_sense(void *arg)
 void read_fuse_data(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    FUSE_MONITOR_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = FUSE_MONITOR_FAULT,
+	};
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 
 	bitstream_t fuses;
@@ -252,9 +252,9 @@ void tsms_debounce_cb(void *arg)
 void read_tsms(pdu_t *pdu)
 {
 	static nertimer_t timer;
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    FUSE_MONITOR_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = FUSE_MONITOR_FAULT,
+	};
 	bool tsms_reading;
 
 	/* If the TSMS reading throws an error, queue TSMS fault */
@@ -314,8 +314,8 @@ void vDataCollection(void *pv_params)
 
 // void vTempMonitor(void *pv_params)
 // {
-// 	fault_data_t fault_data = { .id.non_crit_fault = ONBOARD_TEMP_FAULT,
-// 				    .severity = NONCRITICAL };
+// 	fault_data_t fault_data = { .fault_id = ONBOARD_TEMP_FAULT,
+// };
 // 	can_msg_t temp_msg = { .id = CANID_TEMP_SENSOR,
 // 			       .len = 4,
 // 			       .data = { 0 } };
@@ -358,9 +358,9 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 
 void vShutdownMonitor(void *pv_params)
 {
-	fault_data_t fault_data = { .fault_index.non_crit_fault =
-					    SHUTDOWN_MONITOR_FAULT,
-				    .severity = NONCRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = SHUTDOWN_MONITOR_FAULT,
+	};
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
 				   .len = 2,
 				   .data = { 0 } };
@@ -396,7 +396,7 @@ void vShutdownMonitor(void *pv_params)
 // {
 // 	const uint8_t num_samples = 10;
 // 	static imu_data_t sensor_data;
-// 	fault_data_t fault_data = { .id.non_crit_fault = IMU_FAULT, .severity = NONCRITICAL };
+// 	fault_data_t fault_data = { .fault_id = IMU_FAULT };
 // 	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
 // 				    .len = 6,
 // 				    .data = { 0 } };

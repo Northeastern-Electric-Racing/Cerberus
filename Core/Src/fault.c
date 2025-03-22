@@ -18,11 +18,6 @@ uint16_t crit_fault;
 uint16_t non_crit_fault;
 osTimerId_t *timers = NULL;
 
-typedef struct {
-	uint8_t index;
-	severity_t severity;
-} fault_header_t;
-
 /**
  * @brief callback function to clear fault after timeout
  * 
@@ -30,15 +25,14 @@ typedef struct {
  */
 static void clear_fault(void *args)
 {
-	fault_header_t *fault_header = (fault_header_t *)args;
-	uint32_t fault_id = 0;
+	uint32_t *fault_id = (uint32_t *)args;
+	uint32_t fault_index = (uint32_t)(1 << *fault_id);
 
-	if (fault_header->severity == CRITICAL) {
-		fault_id = (uint32_t)(1 << fault_header->index);
-		crit_fault &= ~fault_id;
-	} else if (fault_header->severity == NONCRITICAL) {
-		fault_id = (uint32_t)(1 << fault_header->index);
-		non_crit_fault &= ~fault_id;
+	if (*fault_id < MAX_CRITICAL_FAULT) {
+		crit_fault &= ~fault_index;
+	} else if (*fault_id < MAX_CRITICAL_FAULT &&
+		   *fault_id < MAX_NON_CRITICAL_FAULT) {
+		non_crit_fault &= ~fault_index;
 	}
 
 	// unfault car if all critical faults are cleared
@@ -46,7 +40,7 @@ static void clear_fault(void *args)
 		set_ready_mode();
 	}
 
-	free(fault_header);
+	free(fault_id);
 }
 
 /**
@@ -58,32 +52,24 @@ static void process_fault(fault_data_t fault_data)
 {
 	// Set Fault
 	uint32_t index = 0;
-	uint32_t fault_id = 0;
 
-	fault_header_t *fault_header = malloc(sizeof(fault_header_t));
-	assert(fault_header);
-
-	if (fault_data.severity == CRITICAL) {
-		fault_id = (uint32_t)(1 << fault_data.fault_index.crit_fault);
-		crit_fault |= fault_id;
-		index = fault_data.fault_index.crit_fault;
-		fault_header->index = fault_data.fault_index.crit_fault;
-		fault_header->severity = CRITICAL;
+	if (fault_data.fault_id < MAX_CRITICAL_FAULT) {
+		index = fault_data.fault_id;
+		crit_fault |= (uint32_t)(1 << index);
 		fault();
-	} else if (fault_data.severity == NONCRITICAL) {
-		fault_id =
-			(uint32_t)(1 << fault_data.fault_index.non_crit_fault);
-		non_crit_fault |= fault_id;
-		index = fault_data.fault_index.non_crit_fault +
-			MAX_CRITICAL_FAULT;
-		fault_header->index = fault_data.fault_index.non_crit_fault;
-		fault_header->severity = NONCRITICAL;
+	} else if (fault_data.fault_id > MAX_CRITICAL_FAULT &&
+		   fault_data.fault_id < MAX_NON_CRITICAL_FAULT) {
+		index = fault_data.fault_id - MAX_CRITICAL_FAULT - 1;
+		non_crit_fault |= (uint32_t)(1 << index);
 	}
+
+	uint32_t *fault_id = malloc(sizeof(index));
+	assert(fault_id);
 
 	// Create Timers
 	if (!timers[index]) {
-		timers[index] = osTimerNew(clear_fault, osTimerOnce,
-					   fault_header, NULL);
+		timers[index] =
+			osTimerNew(clear_fault, osTimerOnce, fault_id, NULL);
 	}
 
 	if (osTimerStart(timers[index], 4000) != osOK) {
@@ -100,7 +86,7 @@ osStatus_t queue_fault(fault_data_t *fault_data)
 
 	osStatus_t status;
 
-	if (fault_data->severity == CRITICAL) {
+	if (fault_data->fault_id < MAX_CRITICAL_FAULT) {
 		status = osMessageQueuePut(fault_handle_queue, fault_data, 2,
 					   0U);
 	} else {
@@ -122,7 +108,7 @@ void vFaultHandler(void *pv_params)
 {
 	// Create Timers Array
 	if (timers == NULL) {
-		timers = calloc((MAX_CRITICAL_FAULT + MAX_NON_CRITICAL_FAULT),
+		timers = calloc((MAX_NON_CRITICAL_FAULT - 1),
 				sizeof(osTimerId_t));
 	}
 
