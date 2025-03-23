@@ -8,6 +8,8 @@
 #include "rtos_utils.h"
 #include "fault.h"
 #include "steeringio.h"
+#include "control.h"
+#include "bms.h"
 
 #define CAN_MSG_QUEUE_SIZE 50 /* messages */
 
@@ -21,8 +23,15 @@ static osMessageQueueId_t can_inbound_queue;
 can_t *can1;
 
 /* Relevant Info for Initializing CAN 1 */
-static uint32_t id_list[] = { DTI_CANID_ERPM, DTI_CANID_CURRENTS, BMS_DCL_MSG,
-			      BUTTON_CANID_IO, DIAL_CANID_IO };
+static uint16_t id_list_1[4] = {
+	DTI_CANID_ERPM,
+	DTI_CANID_TEMPS_FAULT,
+	BMS_DCL_MSG,
+	BUTTON_CANID_IO,
+};
+
+static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
+				 CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -33,11 +42,9 @@ void init_can1(CAN_HandleTypeDef *hcan)
 	assert(can1);
 
 	can1->hcan = hcan;
-
-	uint32_t id_list_size_four[4] = { id_list[0], id_list[1], id_list[2],
-					  id_list[3] };
-	assert(!can_add_filter(can1, id_list_size_four));
 	assert(!can_init(can1));
+	assert(!can_add_filter_standard(can1, id_list_1));
+	assert(!can_add_filter_standard(can1, id_list_2));
 
 	can_outbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -49,8 +56,8 @@ void init_can1(CAN_HandleTypeDef *hcan)
 void can1_callback(CAN_HandleTypeDef *hcan)
 {
 	fault_data_t fault_data = {
-		.id = CAN_ROUTING_FAULT,
-		.severity = DEFCON2,
+		.fault_index.crit_fault = CAN_ROUTING_FAULT,
+		.severity = CRITICAL,
 	};
 
 	CAN_RxHeaderTypeDef rx_header;
@@ -65,7 +72,16 @@ void can1_callback(CAN_HandleTypeDef *hcan)
 	}
 
 	new_msg.len = rx_header.DLC;
-	new_msg.id = rx_header.StdId;
+
+	if (rx_header.IDE == CAN_ID_EXT) {
+		// If the message has an extended CAN ID, save the message accordingly.
+		new_msg.id = rx_header.ExtId;
+		new_msg.id_is_extended = true;
+	} else {
+		// If the message has a standard CAN ID, save the message accordingly.
+		new_msg.id = rx_header.StdId;
+		new_msg.id_is_extended = false;
+	}
 
 	queue_and_set_flag(can_inbound_queue, &new_msg, can_receive_thread,
 			   NEW_CAN_MSG_FLAG);
@@ -89,8 +105,9 @@ const osThreadAttr_t can_dispatch_attributes = {
 
 void vCanDispatch(void *pv_params)
 {
-	fault_data_t fault_data = { .id = CAN_DISPATCH_FAULT,
-				    .severity = DEFCON1 };
+	fault_data_t fault_data = { .fault_index.crit_fault =
+					    CAN_DISPATCH_FAULT,
+				    .severity = CRITICAL };
 
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
@@ -146,6 +163,9 @@ void vCanReceive(void *pv_params)
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
+			case DTI_CANID_TEMPS_FAULT:
+				dti_record_temp(mc, msg);
+				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
 				break;
@@ -155,6 +175,13 @@ void vCanReceive(void *pv_params)
 			case DIAL_CANID_IO:
 				dial_update(msg);
 				break;
+			case CONTROL_CANID_FANBATTBOX:
+				control_fanbattbox_record(msg);
+				break;
+			case CONTROL_CANID_PUMP:
+				control_pump_record(msg);
+			case CONTROL_CANID_RADFAN:
+				control_radfan_record(msg);
 			default:
 				break;
 			}

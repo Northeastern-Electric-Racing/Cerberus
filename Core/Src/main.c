@@ -36,6 +36,7 @@
 #include "dti.h"
 #include "steeringio.h"
 #include "pedals.h"
+#include "control.h"
 #include "monitor.h"
 #include "state_machine.h"
 /* USER CODE END Includes */
@@ -57,8 +58,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
 DMA_HandleTypeDef hdma_adc1;
+DMA_HandleTypeDef hdma_adc2;
 DMA_HandleTypeDef hdma_adc3;
 
 CAN_HandleTypeDef hcan1;
@@ -69,7 +72,6 @@ I2C_HandleTypeDef hi2c2;
 IWDG_HandleTypeDef hiwdg;
 
 UART_HandleTypeDef huart3;
-DMA_HandleTypeDef hdma_usart3_tx;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -94,6 +96,7 @@ static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_IWDG_Init(void);
+static void MX_ADC2_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -110,17 +113,18 @@ void StartDefaultTask(void *argument);
 
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-  return ch;
+	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+	return ch;
 }
 
-int _write(int file, char* ptr, int len) {
-  int DataIdx;
+int _write(int file, char *ptr, int len)
+{
+	int DataIdx;
 
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
-  }
-  return len;
+	for (DataIdx = 0; DataIdx < len; DataIdx++) {
+		__io_putchar(*ptr++);
+	}
+	return len;
 }
 /* USER CODE END 0 */
 
@@ -132,7 +136,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  printf("BOOT\n");
+	printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -142,7 +146,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  HAL_Delay(2000);
+	HAL_Delay(2000);
 
   /* USER CODE END Init */
 
@@ -163,19 +167,20 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC3_Init();
   MX_IWDG_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
-  /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hadc3, &hadc1, GPIOC, GPIOB);
-  assert(mpu);
-  pdu_t *pdu  = init_pdu(&hi2c2);
-  assert(pdu);
-  dti_t *mc   = dti_init();
-  assert(mc);
-  init_can1(&hcan1);
-  init_bms();
+	/* Create Interfaces to Represent Relevant Hardware */
+	mpu_t *mpu = init_mpu(&hadc3, &hadc1);
+	assert(mpu);
+	pdu_t *pdu = init_pdu(&hi2c2, &hadc2);
+	assert(pdu);
+	dti_t *mc = dti_init();
+	assert(mc);
+	init_can1(&hcan1);
+	init_bms();
 
-  printf("\n\n\nInit Success...\n\n\n");
+	printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -187,11 +192,11 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+	/* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -199,58 +204,76 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, mpu, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, (void*) mpu, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
-  /* Monitors */
-  non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
-  nfd_args->mpu = mpu;
-  nfd_args->pdu = pdu;
-  non_functional_data_thead = osThreadNew(vNonFunctionalDataCollection, nfd_args, &non_functional_data_attributes);
-  assert(non_functional_data_thead);
+	/* Monitors */
+	non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
+	nfd_args->mpu = mpu;
+	nfd_args->pdu = pdu;
+	non_functional_data_thead =
+		osThreadNew(vNonFunctionalDataCollection, nfd_args,
+			    &non_functional_data_attributes);
+	assert(non_functional_data_thead);
 
-  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
-  data_args->pdu = pdu;
-  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
-  assert(data_collection_thread);
-  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
-  // assert(temp_monitor_handle);
-  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
-  //assert(imu_monitor_handle);
-  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
-  // assert(shutdown_monitor_handle);
+	data_collection_args_t *data_args =
+		malloc(sizeof(data_collection_args_t));
+	data_args->pdu = pdu;
+	data_collection_thread = osThreadNew(vDataCollection, data_args,
+					     &data_collection_attributes);
+	assert(data_collection_thread);
+	// temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+	// assert(temp_monitor_handle);
+	//imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+	//assert(imu_monitor_handle);
+	// shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+	// assert(shutdown_monitor_handle);
 
-  /* Messaging */
-  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
-  assert(can_dispatch_handle);
-  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
-  assert(can_receive_thread);
+	/* Control File Thread */
+  control_args_t *control_args = malloc(sizeof(control_args_t));
+  control_args->pdu = pdu;
+  control_args->mc = mc;
+	control_handle = osThreadNew(vControl, control_args, &control_attributes);
+	assert(control_handle);
 
-  /* Control Logic */
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  assert(fault_handle);
+	/* Messaging */
+	can_dispatch_handle =
+		osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
+	assert(can_dispatch_handle);
 
-  rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
-  assert(rtds_thread);
+	can_receive_thread =
+		osThreadNew(vCanReceive, mc, &can_receive_attributes);
+	assert(can_receive_thread);
 
-  pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
-  pedals_args->mpu = mpu;
-  pedals_args->mc = mc;
-  pedals_args->pdu = pdu;
-  process_pedals_thread = osThreadNew(vProcessPedals, pedals_args, &process_pedals_attributes);
-  assert(process_pedals_thread);
+	/* Control Logic */
+	fault_handle =
+		osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+	assert(fault_handle);
 
-  sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
-  sm_args->pdu = pdu;
-  sm_args->mc = mc;
-  sm_args->mpu = mpu;
-  sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
-  assert(sm_director_handle);
+	rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
+	assert(rtds_thread);
+
+	pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
+	pedals_args->mpu = mpu;
+	pedals_args->mc = mc;
+	pedals_args->pdu = pdu;
+	process_pedals_thread = osThreadNew(vProcessPedals, pedals_args,
+					    &process_pedals_attributes);
+	assert(process_pedals_thread);
+
+	sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
+	sm_args->pdu = pdu;
+	sm_args->mc = mc;
+	sm_args->mpu = mpu;
+	sm_director_handle = osThreadNew(vStateMachineDirector, sm_args,
+					 &sm_director_attributes);
+	assert(sm_director_handle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
+	/* add events, ... */
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -260,12 +283,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -286,11 +308,15 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 84;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -300,12 +326,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -332,7 +358,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ENABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
@@ -350,7 +376,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -360,6 +386,67 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
+  hadc2.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc2.Init.ScanConvMode = ENABLE;
+  hadc2.Init.ContinuousConvMode = ENABLE;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.NbrOfConversion = 2;
+  hadc2.Init.DMAContinuousRequests = ENABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_11;
+  sConfig.Rank = 2;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
 
 }
 
@@ -384,7 +471,7 @@ static void MX_ADC3_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV6;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
   hadc3.Init.ScanConvMode = ENABLE;
   hadc3.Init.ContinuousConvMode = ENABLE;
@@ -458,10 +545,10 @@ static void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 2;
+  hcan1.Init.Prescaler = 6;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = ENABLE;
@@ -495,7 +582,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 1000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -616,12 +703,6 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 
 }
 
@@ -643,64 +724,63 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, MCU_FAULT_Pin|EXPAND_RST0_Pin|EXPAND_RST1_Pin|DEBUG_LED1_Pin
+                          |DEBUG_LED2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC3 PC8 PC9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_8|GPIO_PIN_9;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, SPARE_GPIO_3_Pin|WATCHDOG_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : MCU_FAULT_Pin EXPAND_RST0_Pin EXPAND_RST1_Pin DEBUG_LED1_Pin
+                           DEBUG_LED2_Pin */
+  GPIO_InitStruct.Pin = MCU_FAULT_Pin|EXPAND_RST0_Pin|EXPAND_RST1_Pin|DEBUG_LED1_Pin
+                          |DEBUG_LED2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PC4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PB15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  /*Configure GPIO pin : SPI1_CS_Pin */
+  GPIO_InitStruct.Pin = SPI1_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI1_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA11 PA12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+  /*Configure GPIO pins : PA5 PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPARE_GPIO_1_Pin */
+  GPIO_InitStruct.Pin = SPARE_GPIO_1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(SPARE_GPIO_1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPARE_GPIO_2_Pin */
+  GPIO_InitStruct.Pin = SPARE_GPIO_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SPARE_GPIO_2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SPARE_GPIO_3_Pin WATCHDOG_Pin */
+  GPIO_InitStruct.Pin = SPARE_GPIO_3_Pin|WATCHDOG_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPARE_GPIO_4_Pin */
+  GPIO_InitStruct.Pin = SPARE_GPIO_4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(SPARE_GPIO_4_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -708,33 +788,37 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 struct __attribute__((__packed__)) git_version_data {
-		uint8_t git_major_version;
-		uint8_t git_minor_version;
-		uint8_t git_patch_version;
-		bool git_is_upstream_clean;
-		bool git_is_local_clean;
-	} git_version_data;
+	uint8_t git_major_version;
+	uint8_t git_minor_version;
+	uint8_t git_patch_version;
+	bool git_is_upstream_clean;
+	bool git_is_local_clean;
+} git_version_data;
 
-  struct __attribute__((__packed__)) git_hash_data {
-    uint32_t git_shorthash;
-    uint32_t git_authorhash;
-  } git_hash_data;
-  
+struct __attribute__((__packed__)) git_hash_data {
+	uint32_t git_shorthash;
+	uint32_t git_authorhash;
+} git_hash_data;
+
 /**
  * @brief Sends git version infomation as a can message
  */
-void send_git_version_message() {
-  const struct git_hash_data git_hash_data2 = {GIT_SHORTHASH , GIT_AUTHORHASH};
-  const struct git_version_data git_version_data2 = {GIT_MAJOR_VERSION , GIT_MINOR_VERSION, GIT_PATCH_VERSION, GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN};
-  can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2)};
-  can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2)};
+void send_git_version_message()
+{
+	const struct git_hash_data git_hash_data2 = { GIT_SHORTHASH,
+						      GIT_AUTHORHASH };
+	const struct git_version_data git_version_data2 = {
+		GIT_MAJOR_VERSION, GIT_MINOR_VERSION, GIT_PATCH_VERSION,
+		GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN
+	};
+	can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2) };
+	can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2) };
 
-  memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
-  memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
+	memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
+	memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
 
-  queue_can_msg(msg1);
-  //queue_can_msg(msg2);
-  
+	queue_can_msg(msg1);
+	//queue_can_msg(msg2);
 }
 /* USER CODE END 4 */
 
@@ -748,28 +832,49 @@ void send_git_version_message() {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  mpu_t *mpu = (mpu_t *) argument;
-  assert(mpu);
+	mpu_t *mpu = (mpu_t *)argument;
+	assert(mpu);
+	toggle_yled(mpu);
 
-  /* Infinite loop */
-  for(;;) {
+	/* Infinite loop */
+	for (;;) {
+		/* Pet watchdog */
+		HAL_IWDG_Refresh(&hiwdg);
+		/* Toggle LED at certain frequency */
+		printf(".\n..\n");
+		toggle_yled(mpu);
+		toggle_rled(mpu);
 
-    /* Pet watchdog */
-    HAL_IWDG_Refresh(&hiwdg);
-    /* Toggle LED at certain frequency */
-    printf(".\n..\n");
-    toggle_yled(mpu);
+		// refresh the external watchdog so the car doesnt fault
+		pet_watchdog(mpu);
 
-    // refresh the external watchdog so the car doesnt fault
-    pet_watchdog(mpu);
-
-    
-    /* Send NERO state data continuously */
-    send_git_version_message();
-    osDelay(500);
-    //osDelay(YELLOW_LED_BLINK_DELAY);
-  }
+		/* Send NERO state data continuously */
+		send_git_version_message();
+		osDelay(500);
+		//osDelay(YELLOW_LED_BLINK_DELAY);
+	}
   /* USER CODE END 5 */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM3 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM3) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
 }
 
 /**
@@ -779,11 +884,10 @@ void StartDefaultTask(void *argument)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -798,7 +902,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+	/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }

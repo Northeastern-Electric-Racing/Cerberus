@@ -4,31 +4,110 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "can_handler.h"
 #include "cerberus_conf.h"
 #include "state_machine.h"
 
 #define FAULT_HANDLE_QUEUE_SIZE 16
-#define NUM_OF_FAULTS		18UL
 #define SEND_FAULT_TIME		500 /* in millis */
 
 osMessageQueueId_t fault_handle_queue;
-
-uint32_t faults = 0;
-
+uint16_t crit_fault;
+uint16_t non_crit_fault;
 osTimerId_t *timers = NULL;
 
-fault_sev_t max_severity_level = DEFCON_NONE;
-fault_sev_t *severity_levels = NULL;
+typedef struct {
+	uint8_t index;
+	severity_t severity;
+} fault_header_t;
+
+/**
+ * @brief callback function to clear fault after timeout
+ * 
+ * @param args fault header with index and severity
+ */
+static void clear_fault(void *args)
+{
+	fault_header_t *fault_header = (fault_header_t *)args;
+	uint32_t fault_id = 0;
+
+	if (fault_header->severity == CRITICAL) {
+		fault_id = (uint32_t)(1 << fault_header->index);
+		crit_fault &= ~fault_id;
+	} else if (fault_header->severity == NONCRITICAL) {
+		fault_id = (uint32_t)(1 << fault_header->index);
+		non_crit_fault &= ~fault_id;
+	}
+
+	// unfault car if all critical faults are cleared
+	if (crit_fault == 0) {
+		set_ready_mode();
+	}
+
+	free(fault_header);
+}
+
+/**
+ * @brief adds incoming fault data to current fault state
+ * 
+ * @param fault_data includes diag, index, and severity
+ */
+static void process_fault(fault_data_t fault_data)
+{
+	// Set Fault
+	uint32_t index = 0;
+	uint32_t fault_id = 0;
+
+	fault_header_t *fault_header = malloc(sizeof(fault_header_t));
+	assert(fault_header);
+
+	if (fault_data.severity == CRITICAL) {
+		fault_id = (uint32_t)(1 << fault_data.fault_index.crit_fault);
+		crit_fault |= fault_id;
+		index = fault_data.fault_index.crit_fault;
+		fault_header->index = fault_data.fault_index.crit_fault;
+		fault_header->severity = CRITICAL;
+		fault();
+	} else if (fault_data.severity == NONCRITICAL) {
+		fault_id =
+			(uint32_t)(1 << fault_data.fault_index.non_crit_fault);
+		non_crit_fault |= fault_id;
+		index = fault_data.fault_index.non_crit_fault +
+			MAX_CRITICAL_FAULT;
+		fault_header->index = fault_data.fault_index.non_crit_fault;
+		fault_header->severity = NONCRITICAL;
+	}
+
+	// Create Timers
+	if (!timers[index]) {
+		timers[index] = osTimerNew(clear_fault, osTimerOnce,
+					   fault_header, NULL);
+	}
+
+	if (osTimerStart(timers[index], 4000) != osOK) {
+		return;
+	}
+
+	printf("Fault Handler! Diagnostic Info:\t%s\n", fault_data.diag);
+}
 
 osStatus_t queue_fault(fault_data_t *fault_data)
 {
 	if (!fault_handle_queue)
-		return -1;
+		return osErrorParameter;
 
-	osStatus_t status =
-		osMessageQueuePut(fault_handle_queue, fault_data, 0U, 0U);
+	osStatus_t status;
+
+	if (fault_data->severity == CRITICAL) {
+		status = osMessageQueuePut(fault_handle_queue, fault_data, 2,
+					   0U);
+	} else {
+		status = osMessageQueuePut(fault_handle_queue, fault_data, 1,
+					   0U);
+	}
+
 	return status;
 }
 
@@ -43,110 +122,41 @@ void vFaultHandler(void *pv_params)
 {
 	// Create Timers Array
 	if (timers == NULL) {
-		timers = calloc(NUM_OF_FAULTS, sizeof(osTimerId_t));
-	}
-
-	// Create Severity Levels Array (all DEFCON_NONE initially)
-	if (severity_levels == NULL) {
-		severity_levels = calloc(NUM_OF_FAULTS, sizeof(fault_sev_t));
-		for (int i = 0; i < NUM_OF_FAULTS; i++) {
-			severity_levels[i] = DEFCON_NONE;
-		}
+		timers = calloc((MAX_CRITICAL_FAULT + MAX_NON_CRITICAL_FAULT),
+				sizeof(osTimerId_t));
 	}
 
 	fault_data_t fault_data;
 	fault_handle_queue = osMessageQueueNew(FAULT_HANDLE_QUEUE_SIZE,
 					       sizeof(fault_data_t), NULL);
-
 	for (;;) {
-		// process fault if one was received
 		if (osMessageQueueGet(fault_handle_queue, &fault_data, NULL,
 				      pdMS_TO_TICKS(SEND_FAULT_TIME)) == osOK) {
-			// Set Fault
-			uint32_t *fault_id = malloc(sizeof(uint32_t));
-			*fault_id = (uint32_t)fault_data.id;
-			faults |= *fault_id;
-
-			uint32_t index = (uint32_t)log2(*fault_id);
-
-			// Create Timers
-			if (!timers[index]) {
-				timers[index] = osTimerNew(clearFault,
-							   osTimerOnce,
-							   fault_id, NULL);
-			}
-
-			if (osTimerStart(timers[index], 4000) != osOK) {
-				return;
-			}
-
-			// Get New Maximum Severity Level
-			severity_levels[index] = fault_data.severity;
-			max_severity_level = getMaxSeverity();
-
-			printf("Fault Handler! Diagnostic Info:\t%s\n",
-			       fault_data.diag);
-
-			switch (fault_data.severity) {
-			case DEFCON1: /* Highest(1st) Priority */
-				fault();
-				break;
-			case DEFCON2:
-				fault();
-				break;
-			case DEFCON3:
-				fault();
-				break;
-			case DEFCON4:
-				break;
-			case DEFCON5: /* Lowest Priority */
-				break;
-			case DEFCON_NONE:
-				break;
-			default:
-				break;
-			}
+			process_fault(fault_data);
 		}
 
 		// Send Can Message (even if a new fault was not received)
-		can_msg_t msg;
-		msg.id = CANID_FAULT_MSG;
-		msg.len = 8;
+		can_msg_t msg = { .id = CANID_FAULT_MSG,
+				  .len = 8,
+				  .data = { 0 } };
 
-		memcpy(msg.data, &faults, sizeof(faults));
-		memcpy(msg.data + sizeof(faults), &max_severity_level,
-		       sizeof(max_severity_level));
+		uint8_t crit_bytes[2];
+		uint8_t noncrit_bytes[2];
+
+		crit_bytes[0] = crit_fault;
+		crit_bytes[1] = crit_fault >> 8;
+		noncrit_bytes[0] = non_crit_fault;
+		noncrit_bytes[1] = non_crit_fault >> 8;
+
+		crit_bytes[0] = reverse_bits(crit_bytes[0]);
+		crit_bytes[1] = reverse_bits(crit_bytes[1]);
+		noncrit_bytes[0] = reverse_bits(noncrit_bytes[0]);
+		noncrit_bytes[1] = reverse_bits(noncrit_bytes[1]);
+
+		memcpy(msg.data, crit_bytes, sizeof(crit_bytes));
+		memcpy(msg.data + sizeof(crit_bytes), noncrit_bytes,
+		       sizeof(noncrit_bytes));
 
 		queue_can_msg(msg);
 	}
-}
-
-void clearFault(void *args)
-{
-	uint32_t *fault_id = (uint32_t *)args;
-
-	// Remove this timer's fault from total faults
-	faults &= ~(*fault_id);
-
-	// Remove this timer's severity from total severity
-	severity_levels[(uint32_t)log2(*fault_id)] = DEFCON_NONE;
-	max_severity_level = getMaxSeverity();
-
-	// unfault car if all critical faults are cleared
-	if (max_severity_level > DEFCON3) {
-		set_ready_mode();
-	}
-
-	free(fault_id);
-}
-
-fault_sev_t getMaxSeverity()
-{
-	int max = DEFCON_NONE;
-	for (int i = 0; i < NUM_OF_FAULTS; i++) {
-		if (severity_levels[i] < max) {
-			max = severity_levels[i];
-		}
-	}
-	return (fault_sev_t)max;
 }

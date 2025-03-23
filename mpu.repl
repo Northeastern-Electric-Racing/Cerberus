@@ -1,0 +1,29 @@
+using "Drivers/Embedded-Base/dev/renode/cpus/stm32f405_ner.repl"
+
+pduGPIOPortShutdown: I2C.PCA9539 @ i2c2  0x75
+
+pduGPIOPortCTRL: I2C.PCA9539 @ i2c2 0x74
+
+motorControllerCurrentSensor: I2C.INA226 @ i2c2 0x40
+
+battboxFansCurrentSensor: I2C.INA226 @ i2c2 0x41
+
+pumpsCurrentSensor: I2C.INA226 @ i2c2 0x44
+
+lvBoardsCurrentSensor: I2C.INA226 @ i2c2 0x45
+
+imu: Sensors.LSM6DSO_IMU_I2C @i2c1 0xD5
+
+temp: I2C.SHT21 @ i2c1 0x40
+
+lvAdc: Analog.STM32ADCNER @ sysbus 0x40012000
+    IRQ->nvic@18
+    DMARequest->dma2@4
+
+pedalsAdc: Analog.STM32ADCNER @ sysbus 0x40012200
+    IRQ->nvic@18
+    DMARequest->dma2@0
+
+pumpsTempAdc: Analog.STM32ADCNER @ sysbus 0x40012400
+    IRQ->nvic@18
+    DMARequest->dma2@2
