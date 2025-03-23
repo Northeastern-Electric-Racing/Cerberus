@@ -81,7 +81,7 @@ void vControl(void *params)
 
 	device_control_t pump0 = {
 		.pdu = pdu,
-		.control_func = write_pump_0,
+		.control_func = write_pump_1,
 		.upper_temp = PUMP_UPPER_MOTOR_TEMP,
 		.lower_temp = PUMP_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_PUMP0,
@@ -89,7 +89,7 @@ void vControl(void *params)
 
 	device_control_t radfan0 = {
 		.pdu = pdu,
-		.control_func = write_radfan_0,
+		.control_func = write_radfan_1,
 		.upper_temp = RADFAN_UPPER_MOTOR_TEMP,
 		.lower_temp = RADFAN_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_RADFAN0,
@@ -97,7 +97,7 @@ void vControl(void *params)
 
 	device_control_t pump1 = {
 		.pdu = pdu,
-		.control_func = write_pump_1,
+		.control_func = write_pump_2,
 		.upper_temp = PUMP_UPPER_CONTROLLER_TEMP,
 		.lower_temp = PUMP_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_PUMP1,
@@ -105,14 +105,14 @@ void vControl(void *params)
 
 	device_control_t radfan1 = {
 		.pdu = pdu,
-		.control_func = write_radfan_1,
+		.control_func = write_radfan_2,
 		.upper_temp = RADFAN_UPPER_CONTROLLER_TEMP,
 		.lower_temp = RADFAN_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_RADFAN1,
 	};
 
-	write_pump_0(pdu, false);
 	write_pump_1(pdu, false);
+	write_pump_2(pdu, false);
 
 	for (;;) {
 		uint16_t motor_temp;
