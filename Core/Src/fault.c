@@ -26,12 +26,14 @@ osTimerId_t *timers = NULL;
 static void clear_fault(void *args)
 {
 	uint32_t *fault_id = (uint32_t *)args;
-	uint32_t fault_index = (uint32_t)(1 << *fault_id);
+	uint32_t fault_index;
 
 	if (*fault_id < MAX_CRITICAL_FAULT) {
+		fault_index = (1 << *fault_id);
 		crit_fault &= ~fault_index;
-	} else if (*fault_id < MAX_CRITICAL_FAULT &&
+	} else if (*fault_id > MAX_CRITICAL_FAULT &&
 		   *fault_id < MAX_NON_CRITICAL_FAULT) {
+		fault_index = (1 << (*fault_id - MAX_CRITICAL_FAULT - 1));
 		non_crit_fault &= ~fault_index;
 	}
 
@@ -63,8 +65,10 @@ static void process_fault(fault_data_t fault_data)
 		non_crit_fault |= (uint32_t)(1 << index);
 	}
 
-	uint32_t *fault_id = malloc(sizeof(index));
+	uint32_t *fault_id = malloc(sizeof(uint32_t));
 	assert(fault_id);
+
+	*fault_id = fault_data.fault_id;
 
 	// Create Timers
 	if (!timers[index]) {
