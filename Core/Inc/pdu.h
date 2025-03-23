@@ -144,13 +144,9 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 		(80.47 * log(R)) +                               \
 		457.6 // f(x) = -0.1102ln(x)^3 + 4.6521ln(x)^2 - 80.47ln(x) + 457.6
 
-/* GPIO Expander Reset Pins */
-#define CTRL_RESET_PIN	   GPIO_PIN_6
-#define SHUTDOWN_RESET_PIN GPIO_PIN_7
-
 // clang-format off
 /* CTRL Expander */
-#define CTRL_ADDR				TCA_I2C_ADDR_0
+#define CTRL_ADDR				TCA_I2C_ADDR_2
 #define PIN_PUMP_FUSE_STAT0		0 // P00
 #define PIN_RTD_CTRL			1 // P01
 #define PIN_SD_TO_BRB_FUSE_STAT 2 // P02
@@ -169,7 +165,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_BRKLIGHT_FUSE_STAT	7 // P17
 
 /* Shutdown Expander */
-#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_3
 #define PIN_HVD_GOOD	    0 // P00
 #define PIN_HVC_GOOD	    1 // P01
 #define PIN_BOTS_GOOD	    2 // P02

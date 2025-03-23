@@ -79,11 +79,13 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint16_t)));
 
 	/* Reset GPIO Expanders Before Init */
-	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(EXPAND_RST0_GPIO_Port, EXPAND_RST0_Pin,
+			  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(EXPAND_RST1_GPIO_Port, EXPAND_RST1_Pin,
+			  GPIO_PIN_RESET);
 	osDelay(1);
-	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(EXPAND_RST0_GPIO_Port, EXPAND_RST0_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(EXPAND_RST1_GPIO_Port, EXPAND_RST1_Pin, GPIO_PIN_SET);
 	osDelay(1);
 
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
