@@ -85,7 +85,6 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_SET);
 	osDelay(1);
-
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
@@ -153,7 +152,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_1_REG, buf);
 
 	// pin 0 to the right
-	buf = 0b11110000;
+	buf = 0b01100000;
 	status =
 		tca9539_write_reg(pdu->ctrl_expander, TCA_DIRECTION_0_REG, buf);
 	if (status != HAL_OK) {
@@ -420,17 +419,15 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *battbox_fans_current, float *pumps_current,
 			float *lv_boards_current)
 {
-	if (!read_current(pdu, pdu->motor_controller_current_sensor,
-			  motor_controller_current))
+	if (read_current(pdu, pdu->motor_controller_current_sensor,
+			 motor_controller_current))
 		return -1;
-	if (!read_current(pdu, pdu->battbox_fans_current_sensor,
-			  battbox_fans_current))
+	if (read_current(pdu, pdu->battbox_fans_current_sensor,
+			 battbox_fans_current))
 		return -1;
-	if (!read_current(pdu, pdu->pumps_current_sensor,
-			  motor_controller_current))
+	if (read_current(pdu, pdu->pumps_current_sensor, pumps_current))
 		return -1;
-	if (!read_current(pdu, pdu->lv_boards_current_sensor,
-			  battbox_fans_current))
+	if (read_current(pdu, pdu->lv_boards_current_sensor, lv_boards_current))
 		return -1;
 	return 0;
 }

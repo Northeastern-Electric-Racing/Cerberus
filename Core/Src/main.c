@@ -113,17 +113,18 @@ void StartDefaultTask(void *argument);
 
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-  return ch;
+	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+	return ch;
 }
 
-int _write(int file, char* ptr, int len) {
-  int DataIdx;
+int _write(int file, char *ptr, int len)
+{
+	int DataIdx;
 
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
-  }
-  return len;
+	for (DataIdx = 0; DataIdx < len; DataIdx++) {
+		__io_putchar(*ptr++);
+	}
+	return len;
 }
 /* USER CODE END 0 */
 
@@ -135,7 +136,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  printf("BOOT\n");
+	printf("BOOT\n");
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -145,7 +146,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  HAL_Delay(2000);
+	HAL_Delay(2000);
 
   /* USER CODE END Init */
 
@@ -168,18 +169,18 @@ int main(void)
   MX_IWDG_Init();
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
-  
-  /* Create Interfaces to Represent Relevant Hardware */
-  mpu_t *mpu  = init_mpu(&hadc3, &hadc1);
-  assert(mpu);
-  pdu_t *pdu  = init_pdu(&hi2c2, &hadc2);
-  assert(pdu);
-  dti_t *mc   = dti_init();
-  assert(mc);
-  init_can1(&hcan1);
-  init_bms();
 
-  printf("\n\n\nInit Success...\n\n\n");
+	/* Create Interfaces to Represent Relevant Hardware */
+	mpu_t *mpu = init_mpu(&hadc3, &hadc1);
+	assert(mpu);
+	pdu_t *pdu = init_pdu(&hi2c2, &hadc2);
+	assert(pdu);
+	dti_t *mc = dti_init();
+	assert(mc);
+	init_can1(&hcan1);
+	init_bms();
+
+	printf("\n\n\nInit Success...\n\n\n");
 
   /* USER CODE END 2 */
 
@@ -191,11 +192,11 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+	/* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+	/* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -207,60 +208,72 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 
-  /* Monitors */
-  non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
-  nfd_args->mpu = mpu;
-  nfd_args->pdu = pdu;
-  non_functional_data_thead = osThreadNew(vNonFunctionalDataCollection, nfd_args, &non_functional_data_attributes);
-  assert(non_functional_data_thead);
+	/* Monitors */
+	non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
+	nfd_args->mpu = mpu;
+	nfd_args->pdu = pdu;
+	non_functional_data_thead =
+		osThreadNew(vNonFunctionalDataCollection, nfd_args,
+			    &non_functional_data_attributes);
+	assert(non_functional_data_thead);
 
-  data_collection_args_t* data_args = malloc(sizeof(data_collection_args_t));
-  data_args->pdu = pdu;
-  data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
-  assert(data_collection_thread);
-  // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
-  // assert(temp_monitor_handle);
-  //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
-  //assert(imu_monitor_handle);
-  // shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
-  // assert(shutdown_monitor_handle);
+	data_collection_args_t *data_args =
+		malloc(sizeof(data_collection_args_t));
+	data_args->pdu = pdu;
+	data_collection_thread = osThreadNew(vDataCollection, data_args,
+					     &data_collection_attributes);
+	assert(data_collection_thread);
+	// temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
+	// assert(temp_monitor_handle);
+	//imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
+	//assert(imu_monitor_handle);
+	// shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
+	// assert(shutdown_monitor_handle);
 
-  /* Control File Thread */
-  control_handle = osThreadNew(vControl, pdu, &control_attributes);
-  assert(control_handle);
+	/* Control File Thread */
+  control_args_t *control_args = malloc(sizeof(control_args_t));
+  control_args->pdu = pdu;
+  control_args->mc = mc;
+	control_handle = osThreadNew(vControl, control_args, &control_attributes);
+	assert(control_handle);
 
-  /* Messaging */
-  can_dispatch_handle = osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
-  assert(can_dispatch_handle);
+	/* Messaging */
+	can_dispatch_handle =
+		osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
+	assert(can_dispatch_handle);
 
-  can_receive_thread = osThreadNew(vCanReceive, mc, &can_receive_attributes);
-  assert(can_receive_thread);
+	can_receive_thread =
+		osThreadNew(vCanReceive, mc, &can_receive_attributes);
+	assert(can_receive_thread);
 
-  /* Control Logic */
-  fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
-  assert(fault_handle);
+	/* Control Logic */
+	fault_handle =
+		osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
+	assert(fault_handle);
 
-  rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
-  assert(rtds_thread);
+	rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
+	assert(rtds_thread);
 
-  pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
-  pedals_args->mpu = mpu;
-  pedals_args->mc = mc;
-  pedals_args->pdu = pdu;
-  process_pedals_thread = osThreadNew(vProcessPedals, pedals_args, &process_pedals_attributes);
-  assert(process_pedals_thread);
+	pedals_args_t *pedals_args = malloc(sizeof(pedals_args_t));
+	pedals_args->mpu = mpu;
+	pedals_args->mc = mc;
+	pedals_args->pdu = pdu;
+	process_pedals_thread = osThreadNew(vProcessPedals, pedals_args,
+					    &process_pedals_attributes);
+	assert(process_pedals_thread);
 
-  sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
-  sm_args->pdu = pdu;
-  sm_args->mc = mc;
-  sm_args->mpu = mpu;
-  sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
-  assert(sm_director_handle);
-  
+	sm_director_args_t *sm_args = malloc(sizeof(sm_director_args_t));
+	sm_args->pdu = pdu;
+	sm_args->mc = mc;
+	sm_args->mpu = mpu;
+	sm_director_handle = osThreadNew(vStateMachineDirector, sm_args,
+					 &sm_director_attributes);
+	assert(sm_director_handle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
+	/* add events, ... */
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -270,12 +283,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -776,33 +788,37 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 struct __attribute__((__packed__)) git_version_data {
-		uint8_t git_major_version;
-		uint8_t git_minor_version;
-		uint8_t git_patch_version;
-		bool git_is_upstream_clean;
-		bool git_is_local_clean;
-	} git_version_data;
+	uint8_t git_major_version;
+	uint8_t git_minor_version;
+	uint8_t git_patch_version;
+	bool git_is_upstream_clean;
+	bool git_is_local_clean;
+} git_version_data;
 
-  struct __attribute__((__packed__)) git_hash_data {
-    uint32_t git_shorthash;
-    uint32_t git_authorhash;
-  } git_hash_data;
-  
+struct __attribute__((__packed__)) git_hash_data {
+	uint32_t git_shorthash;
+	uint32_t git_authorhash;
+} git_hash_data;
+
 /**
  * @brief Sends git version infomation as a can message
  */
-void send_git_version_message() {
-  const struct git_hash_data git_hash_data2 = {GIT_SHORTHASH , GIT_AUTHORHASH};
-  const struct git_version_data git_version_data2 = {GIT_MAJOR_VERSION , GIT_MINOR_VERSION, GIT_PATCH_VERSION, GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN};
-  can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2)};
-  can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2)};
+void send_git_version_message()
+{
+	const struct git_hash_data git_hash_data2 = { GIT_SHORTHASH,
+						      GIT_AUTHORHASH };
+	const struct git_version_data git_version_data2 = {
+		GIT_MAJOR_VERSION, GIT_MINOR_VERSION, GIT_PATCH_VERSION,
+		GIT_IS_UPSTREAM_CLEAN, GIT_IS_LOCAL_CLEAN
+	};
+	can_msg_t msg1 = { .id = 0x698, .len = sizeof(git_version_data2) };
+	can_msg_t msg2 = { .id = 0x699, .len = sizeof(git_hash_data2) };
 
-  memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
-  memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
+	memcpy(&msg1.data, &git_version_data2, sizeof(git_version_data2));
+	memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
 
-  queue_can_msg(msg1);
-  //queue_can_msg(msg2);
-  
+	queue_can_msg(msg1);
+	//queue_can_msg(msg2);
 }
 /* USER CODE END 4 */
 
@@ -816,29 +832,27 @@ void send_git_version_message() {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  mpu_t *mpu = (mpu_t *) argument;
-  assert(mpu);
-  toggle_yled(mpu);
+	mpu_t *mpu = (mpu_t *)argument;
+	assert(mpu);
+	toggle_yled(mpu);
 
-  /* Infinite loop */
-  for(;;) {
+	/* Infinite loop */
+	for (;;) {
+		/* Pet watchdog */
+		HAL_IWDG_Refresh(&hiwdg);
+		/* Toggle LED at certain frequency */
+		printf(".\n..\n");
+		toggle_yled(mpu);
+		toggle_rled(mpu);
 
-    /* Pet watchdog */
-    HAL_IWDG_Refresh(&hiwdg);
-    /* Toggle LED at certain frequency */
-    printf(".\n..\n");
-    toggle_yled(mpu);
-    toggle_rled(mpu);
+		// refresh the external watchdog so the car doesnt fault
+		pet_watchdog(mpu);
 
-    // refresh the external watchdog so the car doesnt fault
-    pet_watchdog(mpu);
-
-    
-    /* Send NERO state data continuously */
-    send_git_version_message();
-    osDelay(500);
-    //osDelay(YELLOW_LED_BLINK_DELAY);
-  }
+		/* Send NERO state data continuously */
+		send_git_version_message();
+		osDelay(500);
+		//osDelay(YELLOW_LED_BLINK_DELAY);
+	}
   /* USER CODE END 5 */
 }
 
@@ -870,11 +884,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -889,7 +902,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+	/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }

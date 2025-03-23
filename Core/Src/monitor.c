@@ -56,8 +56,8 @@ void read_pump_sens(pdu_t *pdu)
 	/* Convert to int and store in struct */
 	pump_data.pump0_voltage = pump0_voltage_real * 1000;
 	pump_data.pump1_voltage = pump1_voltage_real * 1000;
-	pump_data.pump0_voltage = (int16_t)roundf(temp_pump0);
-	pump_data.pump1_voltage = (int16_t)roundf(temp_pump1);
+	pump_data.pump0_temp = (int16_t)roundf(temp_pump0);
+	pump_data.pump1_temp = (int16_t)roundf(temp_pump1);
 
 	memcpy(msg.data, &pump_data, msg.len);
 	if (queue_can_msg(msg)) {
@@ -221,6 +221,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
 		read_current(pdu);
+		read_pump_sens(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);

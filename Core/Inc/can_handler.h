@@ -5,6 +5,7 @@
 #include "cmsis_os.h"
 #include "control.h"
 #include "dti.h"
+#include "bms.h"
 #include "stm32f4xx_hal.h"
 
 /**
