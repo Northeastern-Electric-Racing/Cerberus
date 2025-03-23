@@ -140,9 +140,22 @@ void vFaultHandler(void *pv_params)
 				  .len = 8,
 				  .data = { 0 } };
 
-		memcpy(msg.data, &(crit_fault), sizeof(crit_fault));
-		memcpy(msg.data + sizeof(crit_fault), &non_crit_fault,
-		       sizeof(non_crit_fault));
+		uint8_t crit_bytes[2];
+		uint8_t noncrit_bytes[2];
+
+		crit_bytes[0] = crit_fault;
+		crit_bytes[1] = crit_fault >> 8;
+		noncrit_bytes[0] = non_crit_fault;
+		noncrit_bytes[1] = non_crit_fault >> 8;
+
+		crit_bytes[0] = reverse_bits(crit_bytes[0]);
+		crit_bytes[1] = reverse_bits(crit_bytes[1]);
+		noncrit_bytes[0] = reverse_bits(noncrit_bytes[0]);
+		noncrit_bytes[1] = reverse_bits(noncrit_bytes[1]);
+
+		memcpy(msg.data, crit_bytes, sizeof(crit_bytes));
+		memcpy(msg.data + sizeof(crit_bytes), noncrit_bytes,
+		       sizeof(noncrit_bytes));
 
 		queue_can_msg(msg);
 	}
