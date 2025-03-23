@@ -122,9 +122,9 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Configure Shutdown Expander - Bank 0 */
 	uint8_t shutdown_config_bank0 = 0b11111111;
-	HAL_StatusTypeDef status =
-		tca9539_write_reg(pdu->shutdown_expander, TCA_CONFIGURATION_PORT_0,
-				  shutdown_config_bank0);
+	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
+						     TCA_CONFIGURATION_PORT_0,
+						     shutdown_config_bank0);
 	if (status != HAL_OK) {
 		printf("\n\rShutdown config fail - Bank 0\n\r");
 		free(pdu->shutdown_expander);
@@ -134,7 +134,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Configure Shutdown Expander - Bank 1 */
 	uint8_t shutdown_config_bank1 = 0b11111111;
-	status = tca9539_write_reg(pdu->shutdown_expander, TCA_CONFIGURATION_PORT_1,
+	status = tca9539_write_reg(pdu->shutdown_expander,
+				   TCA_CONFIGURATION_PORT_1,
 				   shutdown_config_bank1);
 	if (status != HAL_OK) {
 		printf("\n\rShutdown config fail - Bank 1\n\r");
@@ -151,14 +152,16 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize all outputs to 0 */
 	uint8_t ctrl_output_bank0 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0, ctrl_output_bank0);
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
+			  ctrl_output_bank0);
 	uint8_t ctrl_output_bank1 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1, ctrl_output_bank1);
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
+			  ctrl_output_bank1);
 
 	/* Configure Control Expander - Bank 0 */
 	uint8_t ctrl_config_bank0 = 0b00000001;
-	status =
-		tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0, ctrl_config_bank0);
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				   ctrl_config_bank0);
 	if (status != HAL_OK) {
 		printf("CTRL config fail - Bank 0\n");
 		free(pdu->ctrl_expander);
@@ -168,8 +171,8 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Configure Control Expander - Bank 1 */
 	uint8_t ctrl_config_bank1 = 0b11111111;
-	status =
-		tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1, ctrl_config_bank1);
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				   ctrl_config_bank1);
 	if (status != HAL_OK) {
 		printf("CTRL config fail - Bank 1\n");
 		free(pdu->ctrl_expander);
@@ -287,15 +290,16 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 		return stat;
 
 	uint8_t bank0_d = 0;
-	HAL_StatusTypeDef error =
-		tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_0, &bank0_d);
+	HAL_StatusTypeDef error = tca9539_read_reg(pdu->ctrl_expander,
+						   TCA_INPUT_PORT_0, &bank0_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
 
 	uint8_t bank1_d = 0;
-	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_1, &bank1_d);
+	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_1,
+				 &bank1_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
