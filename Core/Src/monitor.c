@@ -132,13 +132,15 @@ void vNonFunctionalDataCollection(void *pv_params)
 	mpu_t *mpu = args->mpu;
 	assert(mpu);
 	pdu_t *pdu = args->pdu;
-	assert(pdu);
+	//assert(pdu);
 
 	free(args);
 
 	for (;;) {
 		read_lv_sense(mpu);
-		read_fuse_data(pdu);
+		//read_fuse_data(pdu);
+		//read_current(pdu);
+		//read_pump_sens(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
