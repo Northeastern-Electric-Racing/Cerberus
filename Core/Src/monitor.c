@@ -123,13 +123,13 @@ void read_lv_sense(void *arg)
 	fault_data_t fault_data = { .fault_index.non_crit_fault =
 					    LV_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
-	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
+	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 3, .data = { 0 } };
 
 	uint16_t v_int;
-	uint32_t soc_int;
+	uint8_t soc_int;
 
 	struct __attribute__((__packed__)) {
-		uint32_t v;
+		uint16_t v;
 		uint8_t soc;
 	} lv_data;
 
@@ -146,7 +146,7 @@ void read_lv_sense(void *arg)
 		      (10000.0 / (10000.0 + 100000)) * 0.9963;
 
 	// get final voltage
-	v_int = (uint32_t)(v_dec * 10000.0);
+	v_int = (uint32_t)(v_dec * 100.0);
 
 	// Calculate SoC using logistic function
 	// - Normal charged voltage is 29.4V
@@ -213,15 +213,15 @@ void vNonFunctionalDataCollection(void *pv_params)
 	mpu_t *mpu = args->mpu;
 	assert(mpu);
 	pdu_t *pdu = args->pdu;
-	//assert(pdu);
+	assert(pdu);
 
 	free(args);
 
 	for (;;) {
 		read_lv_sense(mpu);
-		//read_fuse_data(pdu);
-		//read_current(pdu);
-		//read_pump_sens(pdu);
+		read_fuse_data(pdu);
+		read_current(pdu);
+		read_pump_sens(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
