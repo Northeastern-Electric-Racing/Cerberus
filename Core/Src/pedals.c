@@ -34,7 +34,7 @@ float torque_limit_percentage = 1.0;
 #define MAX_VOLTS	3.3 /* volts */
 
 #define PEDAL_DIFF_THRESH 10 /* percentage */
-#define PEDAL_FAULT_TIME  500 /* ms */
+#define PEDAL_FAULT_TIME  90 /* ms */
 
 #define APPS_THRESHOLD_BUF 0.1
 
@@ -430,7 +430,7 @@ void vProcessPedals(void *pv_params)
 	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
 	osTimerStart(send_pedal_data_timer, 100);
 
-	const uint16_t delay_time = 10; /* ms */
+	const uint16_t delay_time = 5; /* ms */
 	/* End application if we try to update motor at freq below this value */
 	assert(delay_time < MAX_COMMAND_DELAY);
 
@@ -457,7 +457,7 @@ void vProcessPedals(void *pv_params)
 			adc_to_volts(brake_avg), 0, MAX_VOLTS);
 		float accel_value = (accel1_norm - accel2_norm) / 2;
 
-		/* Turn brakelight on or off (calced with raw adc)*/
+		/* Turn brakelight on or off */
 		write_brakelight(pdu, brake_value > PEDAL_BRAKE_THRESH);
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
