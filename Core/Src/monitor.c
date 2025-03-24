@@ -363,14 +363,11 @@ void vShutdownMonitor(void *pv_params)
 					    SHUTDOWN_MONITOR_FAULT,
 				    .severity = NONCRITICAL };
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-				   .len = 2,
+				   .len = 1,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
 	for (;;) {
 		bitstream_t shutdown;
-		uint8_t bitstream_data[2];
-		bitstream_init(&shutdown, bitstream_data, 2);
-
 		if (read_shutdown(pdu, &shutdown)) {
 			fault_data.diag = "Failed to read shutdown buffer";
 			queue_fault(&fault_data);

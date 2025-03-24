@@ -120,21 +120,25 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_init(pdu->shutdown_expander, tca_i2c_write, tca_i2c_read,
 		     SHUTDOWN_ADDR);
 
-	// all shutdown expander things are inputs
-	uint8_t shutdown_config_directions = 0b00000000;
-	HAL_StatusTypeDef status =
-		tca9539_write_reg(pdu->shutdown_expander, TCA_DIRECTION_0_REG,
-				  shutdown_config_directions);
+	/* Configure Shutdown Expander - Bank 0 */
+	uint8_t shutdown_config_bank0 = 0b11111111;
+	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
+						     TCA_CONFIGURATION_PORT_0,
+						     shutdown_config_bank0);
 	if (status != HAL_OK) {
-		printf("\n\rshutdown write fail\n\r");
+		printf("\n\rShutdown config fail - Bank 0\n\r");
 		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
 	}
-	status = tca9539_write_reg(pdu->shutdown_expander, TCA_DIRECTION_1_REG,
-				   shutdown_config_directions);
+
+	/* Configure Shutdown Expander - Bank 1 */
+	uint8_t shutdown_config_bank1 = 0b11111111;
+	status = tca9539_write_reg(pdu->shutdown_expander,
+				   TCA_CONFIGURATION_PORT_1,
+				   shutdown_config_bank1);
 	if (status != HAL_OK) {
-		printf("\n\rshutdown wrtie 2 fail\n\r");
+		printf("\n\rShutdown config fail - Bank 1\n\r");
 		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
@@ -146,27 +150,31 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_init(pdu->ctrl_expander, tca_i2c_write, tca_i2c_read,
 		     CTRL_ADDR);
 
-	// write everything OFF, FAULT 1 is off
-	uint8_t buf = 0b00000010;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_0_REG, buf);
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_1_REG, buf);
+	/* Initialize all outputs to 0 */
+	uint8_t ctrl_output_bank0 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
+			  ctrl_output_bank0);
+	uint8_t ctrl_output_bank1 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
+			  ctrl_output_bank1);
 
-	// pin 0 to the right
-	buf = 0b01100000;
-	status =
-		tca9539_write_reg(pdu->ctrl_expander, TCA_DIRECTION_0_REG, buf);
+	/* Configure Control Expander - Bank 0 */
+	uint8_t ctrl_config_bank0 = 0b00000001;
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				   ctrl_config_bank0);
 	if (status != HAL_OK) {
-		printf("cntrl init fail\n");
+		printf("CTRL config fail - Bank 0\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
 	}
-	// pin 0 to the right
-	buf = 0b01111111;
-	status =
-		tca9539_write_reg(pdu->ctrl_expander, TCA_DIRECTION_1_REG, buf);
+
+	/* Configure Control Expander - Bank 1 */
+	uint8_t ctrl_config_bank1 = 0b11111111;
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				   ctrl_config_bank1);
 	if (status != HAL_OK) {
-		printf("cntrl init fail\n");
+		printf("CTRL config fail - Bank 1\n");
 		free(pdu->ctrl_expander);
 		free(pdu);
 		return NULL;
@@ -230,44 +238,39 @@ static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 	return 0;
 }
 
-int8_t write_pump_0(pdu_t *pdu, bool state)
-{
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL0, TCA_OUTPUT_0_REG);
-}
-
 int8_t write_pump_1(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_PUMP_CTRL1, TCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL_1, TCA_OUTPUT_PORT_0);
 }
 
-int8_t write_24V_12V_buck(pdu_t *pdu, bool state)
+int8_t write_pump_2(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_BUCK_CTRL, TCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_PUMP_CTRL_2, TCA_OUTPUT_PORT_0);
 }
 
 int8_t write_brakelight(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, TCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_BRKLIGHT_CTRL, TCA_OUTPUT_PORT_0);
 }
 
 int8_t write_fan_battbox(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, TCA_OUTPUT_0_REG);
+	return write_ctrl(pdu, state, PIN_FANBATTBOX_CTRL, TCA_OUTPUT_PORT_0);
 }
 
 int8_t write_rtds(pdu_t *pdu, bool state)
 {
-	return write_ctrl(pdu, state, PIN_RTD_CTRL, TCA_OUTPUT_1_REG);
-}
-
-int8_t write_radfan_0(pdu_t *pdu, bool state)
-{
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
+	return write_ctrl(pdu, state, PIN_RTDS_CTRL, TCA_OUTPUT_PORT_0);
 }
 
 int8_t write_radfan_1(pdu_t *pdu, bool state)
 {
-	return -1; // Replace with actual stuff when PDU Radfan CTRL is added to board
+	return write_ctrl(pdu, state, PIN_RADFAN_CTRL_1, TCA_OUTPUT_PORT_0);
+}
+
+int8_t write_radfan_2(pdu_t *pdu, bool state)
+{
+	return write_ctrl(pdu, state, PIN_RADFAN_CTRL_2, TCA_OUTPUT_PORT_0);
 }
 
 /* Read Pump Sensors ADC DMA */
@@ -287,15 +290,16 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 		return stat;
 
 	uint8_t bank0_d = 0;
-	HAL_StatusTypeDef error =
-		tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_0_REG, &bank0_d);
+	HAL_StatusTypeDef error = tca9539_read_reg(pdu->ctrl_expander,
+						   TCA_INPUT_PORT_0, &bank0_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
 
 	uint8_t bank1_d = 0;
-	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_1_REG, &bank1_d);
+	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_1,
+				 &bank1_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -306,17 +310,16 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 	bitstream_init(&fuses, fuse_data, 2);
 
 	// clang-format off
-	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_PUMP_FUSE_STAT0), 1); 		// Read Pin P00
-	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_SD_TO_BRB_FUSE_STAT), 1); 	// Read Pin P02
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1); 	// Read Pin P10
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1); 		// Read Pin P11
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BATTBOX_FUSE_STAT), 1); 		// Read Pin P12
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BUCK_FUSE_STAT), 1); 		// Read Pin P13
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_FANBATTBOX_STAT), 1); 		// Read Pin P14
-	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1); 		// Read Pin P15
-	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_DASHBOARD_FUSE_STAT), 1); 	// Read Pin P16
-	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BRKLIGHT_FUSE_STAT), 1); 	// Read Pin P17
-	bitstream_add(&fuses, 0, 6); 												// Extra (6 bits)
+	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BATTBOX_FUSE_STAT), 1);			// Read Pin P07
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1);		// Read Pin P10
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1);			// Read Pin P11
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_FANBATTBOX_FUSE_STAT), 1);		// Read Pin P12
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_DASHBOARD_FUSE_STAT), 1);		// Read Pin P13
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_BRKLIGHT_FUSE_STAT), 1);			// Read Pin P14
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_SD_TO_BRB_FUSE_STAT), 1);		// Read Pin P15
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1);			// Read Pin P16
+	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT2), 1);			// Read Pin P17
+	bitstream_add(&fuses, 0, 7); 													// Extra (7 bits)
 	// clang-format on
 
 	osMutexRelease(pdu->mutex);
@@ -335,8 +338,8 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	/* read pin over i2c */
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = tca9539_read_pin(pdu->shutdown_expander,
-						   TCA_INPUT_1_REG,
-						   PIN_TMS_SENSE, &config);
+						   TCA_INPUT_PORT_1,
+						   PIN_TSMS_SENSE, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -358,13 +361,13 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 
 	uint8_t bank0_d = 0;
 	HAL_StatusTypeDef error = tca9539_read_reg(pdu->shutdown_expander,
-						   TCA_INPUT_0_REG, &bank0_d);
+						   TCA_INPUT_PORT_0, &bank0_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
 	}
 	uint8_t bank1_d = 0;
-	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_1_REG,
+	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_PORT_1,
 				 &bank1_d);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
@@ -373,19 +376,17 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 
 	// clang-format off
 	bitstream_t shutdown;
-	uint8_t shutdown_data[2];
-	bitstream_init(&shutdown, shutdown_data, 2);
+	uint8_t shutdown_data[1];
+	bitstream_init(&shutdown, shutdown_data, 1);
 
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVD_GOOD), 1); 			// Read Pin P00
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_HVC_GOOD), 1); 			// Read Pin P01
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BOTS_GOOD), 1); 			// Read Pin P02
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_CKPT_BRB), 1); 			// Read Pin P03
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P04
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P05
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO0), 1); 		// Read Pin P06
-	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P07
-	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BSPD_GOOD), 1); 			// Read Pin P12
-	bitstream_add(&shutdown, 0, 7); 											// Extra (7 bits)
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P01
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P02
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P04
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BSPD_GOOD), 1); 			// Read Pin P05
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_MC_STAT), 1); 			// Read Pin P11
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BOTS_GOOD), 1); 			// Read Pin P15
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVD_INTLK_GOOD), 1); 		// Read Pin P16
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVC_INTLK_GOOD), 1); 		// Read Pin P17
 	// clang-format on
 
 	osMutexRelease(pdu->mutex);
@@ -444,7 +445,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status)
 	/* read pin over i2c */
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = tca9539_read_pin(pdu->ctrl_expander,
-						   TCA_INPUT_1_REG,
+						   TCA_INPUT_PORT_0,
 						   PIN_BRKLIGHT_CTRL, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
