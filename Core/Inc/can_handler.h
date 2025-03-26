@@ -24,6 +24,14 @@ void can1_callback(CAN_HandleTypeDef *hcan);
 int8_t queue_can_msg(can_msg_t msg);
 
 /**
+ * @brief Place a CAN message in a queue at a high priority.
+ * 
+ * @param msg CAN message to be sent.
+ * @return int8_t Error code.
+ */
+int8_t queue_prio_can_msg(can_msg_t msg);
+
+/**
  * @brief Initialize CAN line 1.
  * 
  * @param hcan Pointer to struct representing CAN hardware.
