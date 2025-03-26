@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "main.h"
 
 static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
@@ -79,6 +80,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 		sizeof(pdu->pump_sensors_dma_buf) / sizeof(uint16_t)));
 
 	/* Reset GPIO Expanders Before Init */
+
 	HAL_GPIO_WritePin(EXPAND_RST0_GPIO_Port, EXPAND_RST0_Pin,
 			  GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(EXPAND_RST1_GPIO_Port, EXPAND_RST1_Pin,
@@ -100,7 +102,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
 	if (init_ina(pdu, pdu->battbox_fans_current_sensor,
 		     BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
-		return NULL;
+		//return NULL;
 	}
 
 	/* Initialize Pumps Current Sensor */
