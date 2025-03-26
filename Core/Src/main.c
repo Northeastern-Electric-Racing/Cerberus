@@ -208,6 +208,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* Monitors */
+  /*
   non_func_data_args_t *nfd_args = malloc(sizeof(non_func_data_args_t));
   nfd_args->mpu = mpu;
   nfd_args->pdu = pdu;
@@ -218,6 +219,7 @@ int main(void)
   data_args->pdu = pdu;
   data_collection_thread = osThreadNew(vDataCollection, data_args, &data_collection_attributes);
   assert(data_collection_thread);
+  */
   // temp_monitor_handle = osThreadNew(vTempMonitor, mpu, &temp_monitor_attributes);
   // assert(temp_monitor_handle);
   //imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
@@ -240,6 +242,7 @@ int main(void)
   fault_handle = osThreadNew(vFaultHandler, NULL, &fault_handle_attributes);
   assert(fault_handle);
 
+  /*
   rtds_thread = osThreadNew(vRTDS, pdu, &rtds_attributes);
   assert(rtds_thread);
 
@@ -256,6 +259,7 @@ int main(void)
   sm_args->mpu = mpu;
   sm_director_handle = osThreadNew(vStateMachineDirector, sm_args, &sm_director_attributes);
   assert(sm_director_handle);
+  */    
   
   /* USER CODE END RTOS_THREADS */
 
