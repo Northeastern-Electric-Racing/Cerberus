@@ -97,7 +97,8 @@ int8_t queue_can_msg(can_msg_t msg)
 }
 
 /* TODO: Find what queue_and_set_flag (in embedded base) is used in, then change to support prio */
-int8_t queue_prio_can_msg(can_msg_t msg) {
+int8_t queue_prio_can_msg(can_msg_t msg)
+{
 	if (!can_outbound_queue)
 		return -1;
 
