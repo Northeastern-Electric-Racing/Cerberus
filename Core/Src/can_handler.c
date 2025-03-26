@@ -101,8 +101,8 @@ int8_t queue_prio_can_msg(can_msg_t msg) {
 	if (!can_outbound_queue) { return -1; }
 
 	/* Set the priority flag to 1U (Higher number = higher priority) */
-	osStatus_t status = osMessageQueuePut(queue, msg_ptr, 1U, 0U);
-	osThreadFlagsSet(thread_id, flags);
+	osStatus_t status = osMessageQueuePut(can_outbound_queue, msg, 1U, 0U);
+	osThreadFlagsSet(can_dispatch_handle, CAN_DISPATCH_FLAG);
 	return status;
 }
 
