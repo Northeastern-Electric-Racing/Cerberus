@@ -98,9 +98,9 @@ float get_torque_limit_percentage()
  */
 void pedal_fault_cb(void *arg)
 {
-	fault_data_t fault_data = { .fault_index.crit_fault =
-					    ONBOARD_PEDAL_FAULT,
-				    .severity = CRITICAL };
+	fault_data_t fault_data = {
+		.fault_id = ONBOARD_PEDAL_FAULT,
+	};
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
 }
@@ -187,9 +187,7 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val)
 {
-	static fault_data_t fault_data = { .fault_index.non_crit_fault =
-						   BSPD_PREFAULT,
-					   .severity = NONCRITICAL,
+	static fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
 					   .diag = "BSPD prefault triggered" };
 	static bool motor_disabled = false;
 

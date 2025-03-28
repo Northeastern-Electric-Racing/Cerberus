@@ -5,21 +5,16 @@
 #include <stdbool.h>
 
 typedef enum {
+	/* START CRIT FAULTS HERE */
+
 	ONBOARD_PEDAL_FAULT,
 	CAN_DISPATCH_FAULT,
 	CAN_ROUTING_FAULT,
 	BMS_CAN_MONITOR_FAULT,
-	MAX_CRITICAL_FAULT
-} crit_fault_t;
+	MAX_CRITICAL_FAULT,
 
-// Unused Fault Message IDs
-// DTI_ROUTING_FAULT
-// STEERINGIO_ROUTING_FAULT
-// STATE_RECEIVED_FAULT
-// INVALID_TRANSITION_FAULT
-// BUTTONS_MONITOR_FAULT
+	/* START NONCRIT FAULTS HERE */
 
-typedef enum {
 	ONBOARD_TEMP_FAULT,
 	IMU_FAULT,
 	FUSE_MONITOR_FAULT,
@@ -29,17 +24,18 @@ typedef enum {
 	RTDS_FAULT,
 	PUMP_SENSORS_FAULT,
 	PDU_CURRENT_FAULT,
-	MAX_NON_CRITICAL_FAULT
-} non_crit_fault_t;
+	MAX_NON_CRITICAL_FAULT,
+} fault_t;
 
-typedef enum { CRITICAL, NONCRITICAL } severity_t;
+// Unused Fault Message IDs
+// DTI_ROUTING_FAULT
+// STEERINGIO_ROUTING_FAULT
+// STATE_RECEIVED_FAULT
+// INVALID_TRANSITION_FAULT
+// BUTTONS_MONITOR_FAULT
 
 typedef struct {
-	severity_t severity;
-	union {
-		crit_fault_t crit_fault;
-		non_crit_fault_t non_crit_fault;
-	} fault_index;
+	fault_t fault_id;
 	char *diag;
 } fault_data_t;
 
