@@ -10,9 +10,10 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
-#include "pdu.h"
 #include "can.h"
 #include "debounce.h"
+#include "dti.h"
+#include "pdu.h"
 
 #define CONTROL_CANID_FANBATTBOX 0x4A1
 #define CONTROL_CANID_PUMP	 0x4A0
@@ -55,16 +56,22 @@ typedef struct {
 	uint16_t lower_temp; /* Lower Tempature Limit */
 } device_control_t;
 
+/* Holds arguments for control thread */
+typedef struct {
+	pdu_t *pdu;
+	dti_t *mc;
+} control_args_t;
+
 /**
  * @brief Main control loop
- * 
+ *
  * @param params Pointer to control_args_t struct
  */
 void vControl(void *params);
 
 /**
  * @brief Records the fan battbox state sent through CAN
- * 
+ *
  * @param calypso_states Pointer calypso states struct
  * @param msg CAN message sent
  */
@@ -72,7 +79,7 @@ void control_fanbattbox_record(can_msg_t msg);
 
 /**
  * @brief Records pump0 and pump1 states sent through CAN
- * 
+ *
  * @param calypso_states Pointer calypso states struct
  * @param msg CAN message sent
  */
@@ -80,7 +87,7 @@ void control_pump_record(can_msg_t msg);
 
 /**
  * @brief Records radfan1 and radfan2 states sent through CAN
- * 
+ *
  * @param calypso_states Pointer calypso states struct
  * @param msg CAN message sent
  */

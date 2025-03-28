@@ -15,17 +15,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "emrax.h"
 #include "bms.h"
 #include "can_handler.h"
+#include "emrax.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
 #define SAMPLES	       20
 static osMutexAttr_t dti_mutex_attributes;
-
-static uint16_t motorTemp = 0;
-
-static uint16_t controllerTemp = 0;
 
 dti_t *dti_init()
 {
@@ -33,6 +29,8 @@ dti_t *dti_init()
 	assert(mc);
 
 	mc->rpm = 0;
+	mc->contr_temp = 0;
+	mc->motor_temp = 0;
 
 	/* Create Mutex */
 	mc->mutex = osMutexNew(&dti_mutex_attributes);
@@ -111,8 +109,8 @@ void dti_set_current(int16_t current)
 
 	/* Send CAN message in big endian format */
 
-	//endian_swap(&current, sizeof(current));
-	//memcpy(msg.data, &current, msg.len);
+	// endian_swap(&current, sizeof(current));
+	// memcpy(msg.data, &current, msg.len);
 	int8_t msb = (int8_t)((current >> 8) & 0xFF);
 	int8_t lsb = (uint8_t)(current & 0xFF);
 
@@ -259,7 +257,7 @@ int32_t dti_get_rpm(dti_t *mc)
 	int32_t rpm;
 	osMutexAcquire(*mc->mutex, osWaitForever);
 	rpm = mc->rpm;
-	//printf("Rpm %ld",rpm);
+	// printf("Rpm %ld",rpm);
 	osMutexRelease(*mc->mutex);
 
 	return rpm;
@@ -290,7 +288,7 @@ void dti_record_rpm(dti_t *mc, can_msg_t msg)
 	osMutexRelease(*mc->mutex);
 }
 
-void dti_record_temp(dti_t *mc, can_msg_t msg)
+osStatus_t dti_record_temp(dti_t *mc, can_msg_t msg)
 {
 	uint16_t controllerTemp = (msg.data[0] << 8) + (msg.data[1]);
 	uint16_t motorTemp = (msg.data[2] << 8) + (msg.data[3]);
@@ -298,21 +296,31 @@ void dti_record_temp(dti_t *mc, can_msg_t msg)
 	controllerTemp /= 10;
 	motorTemp /= 10;
 
-	osMutexAcquire(*mc->mutex, osWaitForever);
+	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
+	if (stat)
+		return stat;
 	mc->contr_temp = controllerTemp;
 	mc->motor_temp = motorTemp;
-	osMutexRelease(*mc->mutex);
 
-	controllerTemp = controllerTemp;
-	motorTemp = motorTemp;
+	return osMutexRelease(mc->mutex);
 }
 
-uint16_t dti_get_motor_temp()
+osStatus_t dti_get_motor_temp(dti_t *mc, uint16_t *motorTemp)
 {
-	return motorTemp;
+	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
+	if (stat)
+		return stat;
+	memcpy(motorTemp, &mc->motor_temp, sizeof(mc->motor_temp));
+	return osMutexRelease(mc->mutex);
 }
 
-uint16_t dti_get_controller_temp()
+osStatus_t dti_get_controller_temp(dti_t *mc, uint16_t *controllerTemp)
 {
-	return controllerTemp;
+	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
+	if (stat)
+		return stat;
+
+	memcpy(controllerTemp, &mc->contr_temp, sizeof(mc->contr_temp));
+
+	return osMutexRelease(mc->mutex);
 }

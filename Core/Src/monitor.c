@@ -56,8 +56,8 @@ void read_pump_sens(pdu_t *pdu)
 	/* Convert to int and store in struct */
 	pump_data.pump0_voltage = pump0_voltage_real * 1000;
 	pump_data.pump1_voltage = pump1_voltage_real * 1000;
-	pump_data.pump0_voltage = (int16_t)roundf(temp_pump0);
-	pump_data.pump1_voltage = (int16_t)roundf(temp_pump1);
+	pump_data.pump0_temp = (int16_t)roundf(temp_pump0);
+	pump_data.pump1_temp = (int16_t)roundf(temp_pump1);
 
 	memcpy(msg.data, &pump_data, msg.len);
 	if (queue_can_msg(msg)) {
@@ -123,13 +123,13 @@ void read_lv_sense(void *arg)
 	fault_data_t fault_data = {
 		.fault_id = LV_MONITOR_FAULT,
 	};
-	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 5, .data = { 0 } };
+	can_msg_t lv_msg = { .id = CANID_LV_MONITOR, .len = 3, .data = { 0 } };
 
 	uint16_t v_int;
-	uint32_t soc_int;
+	uint8_t soc_int;
 
 	struct __attribute__((__packed__)) {
-		uint32_t v;
+		uint16_t v;
 		uint8_t soc;
 	} lv_data;
 
@@ -146,7 +146,7 @@ void read_lv_sense(void *arg)
 		      (10000.0 / (10000.0 + 100000)) * 0.9963;
 
 	// get final voltage
-	v_int = (uint32_t)(v_dec * 10000.0);
+	v_int = (uint32_t)(v_dec * 100.0);
 
 	// Calculate SoC using logistic function
 	// - Normal charged voltage is 29.4V
@@ -221,6 +221,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 		read_lv_sense(mpu);
 		read_fuse_data(pdu);
 		read_current(pdu);
+		read_pump_sens(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
@@ -362,14 +363,11 @@ void vShutdownMonitor(void *pv_params)
 		.fault_id = SHUTDOWN_MONITOR_FAULT,
 	};
 	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-				   .len = 2,
+				   .len = 1,
 				   .data = { 0 } };
 	pdu_t *pdu = (pdu_t *)pv_params;
 	for (;;) {
 		bitstream_t shutdown;
-		uint8_t bitstream_data[2];
-		bitstream_init(&shutdown, bitstream_data, 2);
-
 		if (read_shutdown(pdu, &shutdown)) {
 			fault_data.diag = "Failed to read shutdown buffer";
 			queue_fault(&fault_data);
