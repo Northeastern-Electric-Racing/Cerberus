@@ -18,7 +18,6 @@ typedef struct {
 	tca9539_t *ctrl_expander;
 
 	ina226_t *motor_controller_current_sensor;
-	ina226_t *battbox_fans_current_sensor;
 	ina226_t *pumps_current_sensor;
 	ina226_t *lv_boards_current_sensor;
 
@@ -139,7 +138,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_PUMP_FUSE_STAT2		 	7 // P17
 
 /* Shutdown Expander */
-#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_3
 #define PIN_CKPT_BRB_CLR    0 // P00
 #define PIN_BMS_GOOD	    1 // P01
 #define PIN_INERTIA_SW_GOOD 2 // P02

@@ -85,18 +85,12 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	HAL_GPIO_WritePin(GPIOC, CTRL_RESET_PIN, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, SHUTDOWN_RESET_PIN, GPIO_PIN_SET);
 	osDelay(1);
-	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
+	// FOR 3 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
+	// Batt Box Fan current sensors removed due to hardware issues
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
 	if (init_ina(pdu, pdu->motor_controller_current_sensor,
 		     MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
-		return NULL;
-	}
-
-	/* Initialize Battbox Fans Current Sensor */
-	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
-	if (init_ina(pdu, pdu->battbox_fans_current_sensor,
-		     BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
 		return NULL;
 	}
 
@@ -423,9 +417,6 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 {
 	if (read_current(pdu, pdu->motor_controller_current_sensor,
 			 motor_controller_current))
-		return -1;
-	if (read_current(pdu, pdu->battbox_fans_current_sensor,
-			 battbox_fans_current))
 		return -1;
 	if (read_current(pdu, pdu->pumps_current_sensor, pumps_current))
 		return -1;
