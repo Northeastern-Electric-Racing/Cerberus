@@ -415,6 +415,9 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *battbox_fans_current, float *pumps_current,
 			float *lv_boards_current)
 {
+	// setting to 0 since current sensor is nonfunctional
+	*battbox_fans_current = 0;
+
 	if (read_current(pdu, pdu->motor_controller_current_sensor,
 			 motor_controller_current))
 		return -1;
@@ -422,10 +425,6 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 		return -1;
 	if (read_current(pdu, pdu->lv_boards_current_sensor, lv_boards_current))
 		return -1;
-
-	// setting to 0 since current sensor is nonfunctional
-	*battbox_fans_current = 0; 
-
 	return 0;
 }
 
