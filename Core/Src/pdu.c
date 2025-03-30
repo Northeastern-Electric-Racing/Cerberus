@@ -112,7 +112,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
-	assert (pdu->lv_boards_current_sensor);
+	assert(pdu->lv_boards_current_sensor);
 	if (init_ina(pdu, pdu->lv_boards_current_sensor,
 		     LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
