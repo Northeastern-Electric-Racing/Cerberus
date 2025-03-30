@@ -88,6 +88,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	// FOR ALL 4 CURRENT SENSORS: Callibration constants taken from Altium on 11/6/24
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->motor_controller_current_sensor);
 	if (init_ina(pdu, pdu->motor_controller_current_sensor,
 		     MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
 		return NULL;
@@ -95,6 +96,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize Battbox Fans Current Sensor */
 	pdu->battbox_fans_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->battbox_fans_current_sensor);
 	if (init_ina(pdu, pdu->battbox_fans_current_sensor,
 		     BATTBOX_FANS_CURRENT_SENSOR_ADDR, 0.01f, 5.0f)) {
 		return NULL;
@@ -102,6 +104,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->pumps_current_sensor);
 	if (init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
 		     0.01f, 2.0f)) {
 		return NULL;
@@ -109,6 +112,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
+	assert (pdu->lv_boards_current_sensor);
 	if (init_ina(pdu, pdu->lv_boards_current_sensor,
 		     LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
