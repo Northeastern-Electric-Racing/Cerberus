@@ -18,6 +18,7 @@ typedef struct {
 	tca9539_t *ctrl_expander;
 
 	ina226_t *motor_controller_current_sensor;
+	ina226_t *battbox_fans_current_sensor;
 	ina226_t *pumps_current_sensor;
 	ina226_t *lv_boards_current_sensor;
 
@@ -119,7 +120,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 // clang-format off
 /* CTRL Expander */
-#define CTRL_ADDR		 			TCA_I2C_ADDR_0
+#define CTRL_ADDR		 			TCA_I2C_ADDR_2
 #define PIN_PUMP_CTRL_1		 		0 // P00
 #define PIN_PUMP_CTRL_2		 		1 // P01
 #define PIN_BRKLIGHT_CTRL			2 // P02
