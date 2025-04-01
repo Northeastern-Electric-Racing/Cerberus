@@ -14,6 +14,7 @@
 #include "debounce.h"
 #include "dti.h"
 #include "pdu.h"
+#include "bms.h"
 
 #define CONTROL_CANID_FANBATTBOX 0x4A1
 #define CONTROL_CANID_PUMP	 0x4A0
@@ -31,6 +32,9 @@
 
 #define RADFAN_UPPER_CONTROLLER_TEMP 50
 #define RADFAN_LOWER_CONTROLLER_TEMP 30
+
+#define FANBATTBOX_UPPER_TEMP 50
+#define FANBATTBOX_LOWER_TEMP 30
 
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;

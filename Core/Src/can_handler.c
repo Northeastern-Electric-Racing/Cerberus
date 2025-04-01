@@ -158,7 +158,6 @@ void vCanReceive(void *pv_params)
 		while (osOK ==
 		       osMessageQueueGet(can_inbound_queue, &msg, 0U, 0U)) {
 			switch (msg.id) {
-			/* Messages Relevant to Motor Controller */
 			case DTI_CANID_ERPM:
 				dti_record_rpm(mc, msg);
 				break;
@@ -167,6 +166,9 @@ void vCanReceive(void *pv_params)
 				break;
 			case BMS_DCL_MSG:
 				handle_dcl_msg();
+				break;
+			case BMS_CANID_CELL_TEMPS:
+				bms_record_battbox_temp(msg);
 				break;
 			case BUTTON_CANID_IO:
 				buttons_update(msg);
