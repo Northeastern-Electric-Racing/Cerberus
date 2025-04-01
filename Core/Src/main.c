@@ -177,10 +177,8 @@ int main(void)
 	assert(pdu);
 	dti_t *mc = dti_init();
 	assert(mc);
-  bms_t *bms = bms_init();
-  assert(bms);
 	init_can1(&hcan1);
-	init_bms();
+  bms_init();
 
 	printf("\n\n\nInit Success...\n\n\n");
 

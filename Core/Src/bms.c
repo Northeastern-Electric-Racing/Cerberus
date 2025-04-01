@@ -22,10 +22,8 @@ static void bms_fault_callback(void *args)
 	queue_fault(&fault_data);
 }
 
-bms_t *bms_init()
+void bms_init()
 {
-	assert(&bms);
-
 	bms.mutex = osMutexNew(&bms_mutex_attributes);
 	assert(bms.mutex);
 
@@ -33,6 +31,11 @@ bms_t *bms_init()
 
 	bms_timer = osTimerNew(bms_fault_callback, osTimerOnce, NULL, NULL);
 
+	assert(&bms);
+}
+
+bms_t *bms_get()
+{
 	return &bms;
 }
 

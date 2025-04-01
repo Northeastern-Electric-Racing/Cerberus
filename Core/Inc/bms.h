@@ -25,9 +25,14 @@ typedef struct {
 
 /*
 * @brief Initializes the BMS struct and mutex
+*/
+void bms_init();
+
+/*
+* @brief Gets the BMS struct
 * @return Pointer to the BMS struct
 */
-bms_t *bms_init();
+bms_t *bms_get();
 
 /*
 * @brief Gets the current battery box temperature
