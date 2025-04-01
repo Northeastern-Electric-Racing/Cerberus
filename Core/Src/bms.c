@@ -34,11 +34,6 @@ void bms_init()
 	assert(&bms);
 }
 
-bms_t *bms_get()
-{
-	return &bms;
-}
-
 void handle_dcl_msg()
 {
 	osTimerStart(bms_timer, BMS_CAN_MONITOR_DELAY);
