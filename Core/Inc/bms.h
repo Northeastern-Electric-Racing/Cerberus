@@ -24,12 +24,6 @@ typedef struct {
 void bms_init();
 
 /*
-* @brief Gets the BMS struct
-* @return Pointer to the BMS struct
-*/
-bms_t *bms_get();
-
-/*
 * @brief Gets the current battery box temperature
 * @return Battery box temperature (degrees Celsius)
 */
