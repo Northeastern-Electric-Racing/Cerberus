@@ -13,11 +13,6 @@
  */
 void handle_dcl_msg();
 
-/**
- * @brief initializes bms timer
- */
-void init_bms();
-
 typedef struct {
 	uint16_t battbox_temp;
 	osMutexId_t *mutex;
