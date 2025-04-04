@@ -120,7 +120,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 
 // clang-format off
 /* CTRL Expander */
-#define CTRL_ADDR		 			TCA_I2C_ADDR_0
+#define CTRL_ADDR		 			TCA_I2C_ADDR_2
 #define PIN_PUMP_CTRL_1		 		0 // P00
 #define PIN_PUMP_CTRL_2		 		1 // P01
 #define PIN_BRKLIGHT_CTRL			2 // P02
@@ -139,7 +139,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_PUMP_FUSE_STAT2		 	7 // P17
 
 /* Shutdown Expander */
-#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_1
+#define SHUTDOWN_ADDR	    TCA_I2C_ADDR_3
 #define PIN_CKPT_BRB_CLR    0 // P00
 #define PIN_BMS_GOOD	    1 // P01
 #define PIN_INERTIA_SW_GOOD 2 // P02
