@@ -24,10 +24,10 @@ typedef struct {
 void bms_init();
 
 /*
-* @brief Gets the current battery box temperature
-* @return Battery box temperature (degrees Celsius)
+* @brief Sets the current battery box temperature to the passed in variable
+* @returns Failed status if could not acquire mutex, ok otherwise
 */
-uint16_t bms_get_battbox_temp();
+osStatus_t bms_get_battbox_temp(uint16_t *temp);
 
 /*
  * @brief Gets the current battery box temperature

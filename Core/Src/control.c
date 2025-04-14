@@ -3,6 +3,7 @@
 
 #include "control.h"
 #include "state_machine.h"
+#include <stdio.h>
 
 bool calypso_states[NUM_DEVICES];
 

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "cerberus_conf.h"
 #include "fault.h"
@@ -39,14 +40,13 @@ void handle_dcl_msg()
 	osTimerStart(bms_timer, BMS_CAN_MONITOR_DELAY);
 }
 
-uint16_t bms_get_battbox_temp()
+osStatus_t bms_get_battbox_temp(uint16_t *temp)
 {
-	int16_t temp;
-	osMutexAcquire(bms.mutex, osWaitForever);
-	temp = bms.battbox_temp;
-	osMutexRelease(bms.mutex);
-
-	return temp;
+	osStatus_t stat = osMutexAcquire(bms.mutex, osWaitForever);
+	if (stat)
+		return stat;
+	memcpy(temp, &bms.battbox_temp, sizeof(bms.battbox_temp));
+	return osMutexRelease(bms.mutex);
 }
 
 void bms_record_battbox_temp(can_msg_t msg)

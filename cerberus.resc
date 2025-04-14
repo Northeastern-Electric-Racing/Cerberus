@@ -48,3 +48,6 @@ sysbus.pumpsTempAdc FeedSample 0xFF 12 -1
 # To see the can messages emitted run `candump vcan0` on host in a separate terminal
 # To initialize the vcan run `sudo modprobe vcan` and then `sudo ip link add dev vcan0 type vcan` and `sudo ip link set up vcan0`
 # sudo docker run --rm --network=host -it -v $(pwd):/mnt -w /mnt antmicro/renode renode -e "include @/mnt/wheel.resc"
+# Changes you may have to make: Add the clear bit into stm32f4xx_hal_can.c around line 331   CLEAR_BIT(hcan->Instance->MCR, CAN_MCR_SLEEP);
+# Delete OS Delays in pdu init and others that occur before the task scheduler has been started
+
