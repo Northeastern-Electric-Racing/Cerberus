@@ -3,6 +3,7 @@
 
 #include "control.h"
 #include "state_machine.h"
+#include <stdio.h>
 
 bool calypso_states[NUM_DEVICES];
 
@@ -111,6 +112,14 @@ void vControl(void *params)
 		.device_type = DEVICE_RADFAN1,
 	};
 
+	device_control_t fan_battbox = {
+		.pdu = pdu,
+		.control_func = write_fan_battbox,
+		.upper_temp = FANBATTBOX_UPPER_TEMP,
+		.lower_temp = FANBATTBOX_LOWER_TEMP,
+		.device_type = DEVICE_FANBATTBOX,
+	};
+
 	write_pump_1(pdu, false);
 	write_pump_2(pdu, false);
 
@@ -119,14 +128,15 @@ void vControl(void *params)
 		dti_get_motor_temp(mc, &motor_temp);
 		uint16_t controller_temp;
 		dti_get_controller_temp(mc, &controller_temp);
+		uint16_t battbox_temp;
+		bms_get_battbox_temp(&battbox_temp);
 
 		// Determine device state
 		control_device(&pump0, motor_temp);
 		control_device(&radfan0, motor_temp);
 		control_device(&pump1, controller_temp);
 		control_device(&radfan1, controller_temp);
-
-		write_fan_battbox(pdu, calypso_states[DEVICE_FANBATTBOX]);
+		control_device(&fan_battbox, battbox_temp);
 
 		osDelay(1000);
 	}

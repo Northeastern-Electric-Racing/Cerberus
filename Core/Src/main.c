@@ -178,7 +178,7 @@ int main(void)
 	dti_t *mc = dti_init();
 	assert(mc);
 	init_can1(&hcan1);
-	init_bms();
+  bms_init();
 
 	printf("\n\n\nInit Success...\n\n\n");
 
