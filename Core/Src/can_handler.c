@@ -94,10 +94,6 @@ int8_t queue_can_msg(can_msg_t msg)
 	if (!can_outbound_queue)
 		return -1;
 
-	size_t length = sizeof(msg.data) / sizeof(msg.data[0]);
-
-	//printf("id: %ld\n", msg.id);
-
 	return queue_and_set_flag(can_outbound_queue, &msg, can_dispatch_handle,
 				  CAN_DISPATCH_FLAG);
 }

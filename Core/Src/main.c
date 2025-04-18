@@ -146,7 +146,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-	// HAL_Delay(2000);
+	HAL_Delay(2000);
 
   /* USER CODE END Init */
 

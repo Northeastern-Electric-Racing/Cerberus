@@ -21,12 +21,12 @@
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY  10 /* ms */
-#define MAX_APPS1_VOLTS	     3.287 /* volts */
-#define MIN_APPS1_VOLTS	     1.754 /* volts */
-#define MAX_APPS2_VOLTS	     2.315 /* volts */
-#define MIN_APPS2_VOLTS	     0.779 /* volts */
-#define PEDAL_BRAKE_THRESH   0.42 /* percentage */
+#define PEDALS_SAMPLE_DELAY 10 /* ms */
+#define MAX_APPS1_VOLTS	    3.287 /* volts */
+#define MIN_APPS1_VOLTS	    1.754 /* volts */
+#define MAX_APPS2_VOLTS	    2.315 /* volts */
+#define MIN_APPS2_VOLTS	    0.779 /* volts */
+#define PEDAL_BRAKE_THRESH  0.42 /* percentage */
 
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
