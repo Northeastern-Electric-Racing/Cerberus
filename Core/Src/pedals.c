@@ -40,9 +40,16 @@ float torque_limit_percentage = 1.0;
 
 enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
+/**
+ * @brief Converts the adc to the voltage out of 5V (for rules)
+ * 
+ * @param raw_adc 
+ * @return float 
+ */
 static float adc_to_volts(uint32_t raw_adc)
 {
-	return raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
+	float v3_volts = raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
+	return ((2000 + 3000) / 3000) * v3_volts;
 }
 
 /**

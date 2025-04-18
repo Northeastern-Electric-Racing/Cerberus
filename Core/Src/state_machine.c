@@ -315,16 +315,16 @@ void vStateMachineDirector(void *pv_params)
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
 		    osOK) {
-			if (!check_state_change(new_state_req)) {
-				continue;
+			if (check_state_change(new_state_req)) {
+				if (new_state_req.id == NERO)
+					transition_nero_state(
+						new_state_req.state.nero, pdu,
+						mc, mpu);
+				else if (new_state_req.id == FUNCTIONAL)
+					transition_functional_state(
+						new_state_req.state.functional,
+						pdu, mc, mpu);
 			}
-			if (new_state_req.id == NERO)
-				transition_nero_state(new_state_req.state.nero,
-						      pdu, mc, mpu);
-			else if (new_state_req.id == FUNCTIONAL)
-				transition_functional_state(
-					new_state_req.state.functional, pdu, mc,
-					mpu);
 		}
 
 		// send nero data periodically
