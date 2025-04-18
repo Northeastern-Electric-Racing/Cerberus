@@ -14,6 +14,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "bms.h"
 #include "can_handler.h"
@@ -46,6 +47,11 @@ void dti_set_torque(int16_t torque)
 	/* We can't change motor speed super fast else we blow diff, therefore low pass filter */
 	// Static variables for the buffer and index
 	static float buffer[SAMPLES] = { 0 };
+
+	/* To disable current ramp up to dti uncomment sections
+	with samples_seen and use samples_seen in the sum and average calcs*/
+	//static float samples_seen = 0;
+
 	static int index = 0;
 
 	// Add the new value to the buffer
@@ -53,6 +59,12 @@ void dti_set_torque(int16_t torque)
 
 	// Increment the index, wrapping around if necessary
 	index = (index + 1) % SAMPLES;
+	/*
+	samples_seen += 1;
+	if (samples_seen > SAMPLES) {
+		samples_seen = SAMPLES;
+	}
+	*/
 
 	// Calculate the average of the buffer
 	float sum = 0.0;
@@ -67,6 +79,8 @@ void dti_set_torque(int16_t torque)
 
 	/* Motor controller expects AC current target to be received as multiplied by 10 */
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10);
+
+	printf("AC CURRENT: %d\n", ac_current);
 
 	// printf("Commanded Current: %d \r\n", ac_current);
 
