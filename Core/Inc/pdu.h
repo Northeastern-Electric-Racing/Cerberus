@@ -60,10 +60,9 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
  * @brief Read the status of the shutdown loop.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Bitstream to store shutdown data
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
+int8_t read_shutdown(pdu_t *pdu);
 
 /**
  * @brief Read the status of the shutdown loop.

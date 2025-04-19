@@ -357,32 +357,6 @@ const osThreadAttr_t shutdown_monitor_attributes = {
 	.priority = (osPriority_t)osPriorityHigh2,
 };
 
-void vShutdownMonitor(void *pv_params)
-{
-	fault_data_t fault_data = {
-		.fault_id = SHUTDOWN_MONITOR_FAULT,
-	};
-	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-				   .len = 1,
-				   .data = { 0 } };
-	pdu_t *pdu = (pdu_t *)pv_params;
-	for (;;) {
-		bitstream_t shutdown;
-		if (read_shutdown(pdu, &shutdown)) {
-			fault_data.diag = "Failed to read shutdown buffer";
-			queue_fault(&fault_data);
-		}
-
-		memcpy(shutdown_msg.data, &shutdown.data, shutdown_msg.len);
-		if (queue_can_msg(shutdown_msg)) {
-			fault_data.diag = "Failed to send CAN message";
-			queue_fault(&fault_data);
-		}
-
-		osDelay(SHUTDOWN_MONITOR_DELAY);
-	}
-}
-
 // osThreadId_t imu_monitor_handle;
 // const osThreadAttr_t imu_monitor_attributes = {
 // 	.name = "IMUMonitor",
@@ -393,7 +367,7 @@ void vShutdownMonitor(void *pv_params)
 // void vIMUMonitor(void *pv_params)
 // {
 // 	const uint8_t num_samples = 10;
-// 	static imu_data_t sensor_data;
+// 	static u_data_t sensor_data;
 // 	fault_data_t fault_data = { .fault_id = IMU_FAULT };
 // 	can_msg_t imu_accel_msg = { .id = CANID_IMU_ACCEL,
 // 				    .len = 6,

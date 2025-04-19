@@ -5,6 +5,8 @@
 #include "state_machine.h"
 #include <stdio.h>
 
+#define DEVICE_DEBOUNCE_TIME 10000
+
 bool calypso_states[NUM_DEVICES];
 
 osThreadId_t control_handle;
@@ -62,10 +64,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 	    is_timer_active(&device->timer)) {
 		if (temp > device->upper_temp) {
 			debounce(temp > device->upper_temp, &(device->timer),
-				 10000, set_device_on, device);
+				 DEVICE_DEBOUNCE_TIME, set_device_on, device);
 		} else {
 			debounce(temp < device->lower_temp, &(device->timer),
-				 10000, set_device_off, device);
+				 DEVICE_DEBOUNCE_TIME, set_device_off, device);
 		}
 	}
 }

@@ -1,5 +1,7 @@
 #include "pdu.h"
 #include "fault.h"
+#include "can_handler.h"
+#include "cerberus_conf.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -345,10 +347,18 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
+int8_t read_shutdown(pdu_t *pdu)
 {
 	if (!pdu)
 		return -1;
+
+	fault_data_t fault_data = {
+		.fault_id = SHUTDOWN_MONITOR_FAULT,
+	};
+
+	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
+		.len = 1,
+		.data = { 0 } };
 
 	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
 	if (stat)
@@ -383,6 +393,12 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVD_INTLK_GOOD), 1); 		// Read Pin P16
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVC_INTLK_GOOD), 1); 		// Read Pin P17
 	// clang-format on
+
+	memcpy(shutdown_msg.data, shutdown.data, shutdown_msg.len);
+	if (queue_can_msg(shutdown_msg)) {
+		fault_data.diag = "Failed to send CAN message";
+		queue_fault(&fault_data);
+	}
 
 	osMutexRelease(pdu->mutex);
 	return 0;
