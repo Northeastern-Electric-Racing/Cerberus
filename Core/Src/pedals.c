@@ -511,5 +511,6 @@ void vProcessPedals(void *pv_params)
 			dti_set_torque(0);
 			break;
 		}
+		osDelay(delay_time);
 	}
 }
