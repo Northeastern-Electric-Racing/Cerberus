@@ -277,7 +277,7 @@ void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
+int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2])
 {
 	if (!pdu)
 		return -1;
@@ -303,7 +303,6 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 	}
 
 	bitstream_t fuses;
-	uint8_t fuse_data[2];
 	bitstream_init(&fuses, fuse_data, 2);
 
 	// clang-format off
@@ -347,18 +346,10 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu)
+int8_t read_shutdown(pdu_t *pdu, uint8_t shutdown_data[1])
 {
 	if (!pdu)
 		return -1;
-
-	fault_data_t fault_data = {
-		.fault_id = SHUTDOWN_MONITOR_FAULT,
-	};
-
-	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
-		.len = 1,
-		.data = { 0 } };
 
 	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
 	if (stat)
@@ -381,7 +372,6 @@ int8_t read_shutdown(pdu_t *pdu)
 
 	// clang-format off
 	bitstream_t shutdown;
-	uint8_t shutdown_data[1];
 	bitstream_init(&shutdown, shutdown_data, 1);
 
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P01
@@ -393,12 +383,6 @@ int8_t read_shutdown(pdu_t *pdu)
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVD_INTLK_GOOD), 1); 		// Read Pin P16
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVC_INTLK_GOOD), 1); 		// Read Pin P17
 	// clang-format on
-
-	memcpy(shutdown_msg.data, shutdown.data, shutdown_msg.len);
-	if (queue_can_msg(shutdown_msg)) {
-		fault_data.diag = "Failed to send CAN message";
-		queue_fault(&fault_data);
-	}
 
 	osMutexRelease(pdu->mutex);
 	return 0;

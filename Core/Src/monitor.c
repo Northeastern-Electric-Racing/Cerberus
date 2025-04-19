@@ -117,9 +117,8 @@ void read_current(pdu_t *pdu)
 /**
  * @brief Read the open cell voltage of the LV batteries and send a CAN message with the result.
  */
-void read_lv_sense(void *arg)
+void read_lv_sense(mpu_t *mpu)
 {
-	mpu_t *mpu = (mpu_t *)arg;
 	fault_data_t fault_data = {
 		.fault_id = LV_MONITOR_FAULT,
 	};
@@ -180,22 +179,47 @@ void read_lv_sense(void *arg)
  * @brief Read data from the fuse monitor GPIO expander on the PDU and send a CAN message with the
  * resulting data.
  */
-void read_fuse_data(void *arg)
+void read_fuse_data(pdu_t *pdu)
 {
-	pdu_t *pdu = (pdu_t *)arg;
 	fault_data_t fault_data = {
 		.fault_id = FUSE_MONITOR_FAULT,
 	};
 	can_msg_t fuse_msg = { .id = CANID_FUSE, .len = 2, .data = { 0 } };
 
-	bitstream_t fuses;
-	if (read_fuses(pdu, &fuses)) {
+	uint8_t fuse_data[2];
+	if (read_fuses(pdu, fuse_data)) {
 		fault_data.diag = "Failed to read fuses";
 		queue_fault(&fault_data);
 	}
 
-	memcpy(fuse_msg.data, &fuses.data, fuse_msg.len);
+	memcpy(fuse_msg.data, fuse_data, fuse_msg.len);
 	if (queue_can_msg(fuse_msg)) {
+		fault_data.diag = "Failed to send CAN message";
+		queue_fault(&fault_data);
+	}
+}
+
+/**
+ * @brief Read data from the fuse monitor GPIO expander on the PDU and send a CAN message with the
+ * resulting data.
+ */
+void read_shutdown_data(pdu_t *pdu)
+{
+	fault_data_t fault_data = {
+		.fault_id = SHUTDOWN_MONITOR_FAULT,
+	};
+	can_msg_t shutdown_msg = { .id = CANID_SHUTDOWN_LOOP,
+				   .len = 1,
+				   .data = { 0 } };
+
+	uint8_t shutdown_data[1];
+	if (read_shutdown(pdu, shutdown_data)) {
+		fault_data.diag = "Failed to read fuses";
+		queue_fault(&fault_data);
+	}
+
+	memcpy(shutdown_msg.data, shutdown_data, shutdown_msg.len);
+	if (queue_can_msg(shutdown_msg)) {
 		fault_data.diag = "Failed to send CAN message";
 		queue_fault(&fault_data);
 	}
@@ -222,6 +246,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 		read_fuse_data(pdu);
 		read_current(pdu);
 		read_pump_sens(pdu);
+		read_shutdown_data(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);
@@ -349,13 +374,6 @@ void vDataCollection(void *pv_params)
 // 		osDelay(TEMP_SENS_SAMPLE_DELAY);
 // 	}
 // }
-
-osThreadId_t shutdown_monitor_handle;
-const osThreadAttr_t shutdown_monitor_attributes = {
-	.name = "ShutdownMonitor",
-	.stack_size = 64 * 8,
-	.priority = (osPriority_t)osPriorityHigh2,
-};
 
 // osThreadId_t imu_monitor_handle;
 // const osThreadAttr_t imu_monitor_attributes = {

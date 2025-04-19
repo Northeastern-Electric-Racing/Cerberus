@@ -45,7 +45,7 @@ int8_t write_radfan_2(pdu_t *pdu, bool state);
  * @param status Bitstream for storing fuse data
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream);
+int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2]);
 
 /**
  * @brief Read the state of the TSMS signal.
@@ -62,7 +62,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
  * @param pdu Pointer to struct representing the PDU
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu);
+int8_t read_shutdown(pdu_t *pdu, uint8_t shutdown_data[1]);
 
 /**
  * @brief Read the status of the shutdown loop.
