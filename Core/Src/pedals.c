@@ -120,7 +120,7 @@ void pedal_fault_cb(void *arg)
  * @param accel1 pedal 1 travel voltage reading 
  * @param accel2 pedal 2 travel voltage reading 
  */
-void calc_pedal_faults(float accel1, float accel2, float accel1_norm,
+bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 		       float accel2_norm)
 {
 	/* oc = Open Circuit */
@@ -152,6 +152,8 @@ void calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 	/* Pedal difference fault evaluation */
 	// Fault registered when greater than 10% is detected between the sensor readings
 	// to detect a short between the two sensors (outlined in 2025 ESF)
+	// printf("ACCEL1 NORM %f", accel1_norm);
+	// printf("ACCEL2 NORM %f", accel2_norm);
 	bool pedals_too_diff = fabs(accel1_norm - accel2_norm) >
 			       PEDAL_DIFF_THRESH;
 
@@ -160,8 +162,9 @@ void calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 		 "Pedal short fault - pedal values are too different");
 
 	if (open_circuit || short_circuit || pedals_too_diff) {
-		dti_set_torque(0);
+		return true;
 	}
+	return false;
 }
 
 /**
@@ -236,11 +239,12 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 static void linear_accel_to_torque(float accel)
 {
 	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
-	if (fabs(accel - 0.01) < 0.001) {
+	if (fabs(accel - 0.02) < 0.001) {
 		accel = 0;
 	}
 
 	/* Linearly map acceleration to torque */
+	printf("ACCEL %f\n", accel);
 	int16_t torque = (int16_t)(accel * MAX_TORQUE);
 
 	dti_set_torque(torque);
@@ -451,9 +455,9 @@ void vProcessPedals(void *pv_params)
 	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
 	osTimerStart(send_pedal_data_timer, 100);
 
-	const uint16_t delay_time = 5; /* ms */
+	const uint16_t delay_time = 10; /* ms */
 	/* End application if we try to update motor at freq below this value */
-	assert(delay_time < MAX_COMMAND_DELAY);
+	//assert(delay_time < MAX_COMMAND_DELAY);
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -461,18 +465,24 @@ void vProcessPedals(void *pv_params)
 		float accel1_volts = adc_to_volts(adc_data[ACCELPIN_1]);
 		float accel2_volts = adc_to_volts(adc_data[ACCELPIN_2]);
 
+		// printf("accel1 volts %f\n", accel1_volts);
+		// printf("accel2 volts %f\n", accel2_volts);
+
 		/* Normalize pedal values to be from 0-1 */
 		float accel1_norm = pedal_percent_pressed(
 			accel1_volts, MIN_APPS1_VOLTS, MAX_APPS1_VOLTS);
 		float accel2_norm = pedal_percent_pressed(
 			accel2_volts, MIN_APPS2_VOLTS, MAX_APPS2_VOLTS);
 
-		calc_pedal_faults(accel1_volts, accel2_volts, accel1_norm,
-				  accel2_norm);
+		bool possible_faults = calc_pedal_faults(
+			accel1_volts, accel2_volts, accel1_norm, accel2_norm);
 
 		/* same for brake values */
 		float brake_avg =
 			(adc_data[BRAKEPIN_1] + adc_data[BRAKEPIN_2]) / 2;
+
+		// printf("brake1 volts %f\n", adc_to_volts(adc_data[BRAKEPIN_1]));
+		// printf("brake2 volts %f\n", adc_to_volts(adc_data[BRAKEPIN_2]));
 		/* calc percent brake is pressed */
 		float brake_value = pedal_percent_pressed(
 			adc_to_volts(brake_avg), 0, MAX_VOLTS);
@@ -487,6 +497,16 @@ void vProcessPedals(void *pv_params)
 			dti_set_torque(0);
 			continue;
 		}
+
+		if (possible_faults) {
+			dti_set_torque(0);
+			osDelay(delay_time);
+			continue;
+		}
+
+		linear_accel_to_torque(accel_value);
+		osDelay(delay_time);
+		continue;
 
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
