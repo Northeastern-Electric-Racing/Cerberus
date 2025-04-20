@@ -504,12 +504,15 @@ void vProcessPedals(void *pv_params)
 			continue;
 		}
 
-		linear_accel_to_torque(accel_value);
+		float mph = dti_get_mph(mc);
+		func_state_t func_state = get_func_state();
+
+		if (func_state != FAULTED) {
+			linear_accel_to_torque(accel_value);
+		}
 		osDelay(delay_time);
 		continue;
 
-		float mph = dti_get_mph(mc);
-		func_state_t func_state = get_func_state();
 		switch (func_state) {
 		case F_EFFICIENCY:
 			handle_endurance(mc, mph, accel_value, brake_value);
