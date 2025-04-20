@@ -244,7 +244,6 @@ static void linear_accel_to_torque(float accel)
 	}
 
 	/* Linearly map acceleration to torque */
-	printf("ACCEL %f\n", accel);
 	int16_t torque = (int16_t)(accel * MAX_TORQUE);
 
 	dti_set_torque(torque);
@@ -459,6 +458,8 @@ void vProcessPedals(void *pv_params)
 	/* End application if we try to update motor at freq below this value */
 	//assert(delay_time < MAX_COMMAND_DELAY);
 
+	bool clearedFault = true;
+
 	for (;;) {
 		read_pedals(mpu, adc_data);
 
@@ -507,7 +508,15 @@ void vProcessPedals(void *pv_params)
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
 
-		if (func_state != FAULTED) {
+		if (func_state == FAULTED) {
+			clearedFault = false;
+		}
+
+		if (func_state != FAULTED && !clearedFault && accel_value < 0.01) {
+			clearedFault = true;
+		}
+
+		if (func_state != FAULTED && clearedFault) {
 			linear_accel_to_torque(accel_value);
 		}
 		osDelay(delay_time);

@@ -73,9 +73,9 @@ void dti_set_torque(int16_t torque)
 	}
 	float average = sum / SAMPLES;
 
-	if (torque == 0) {
-		average = 0;
-	}
+	// if (torque == 0) {
+	// 	average = 0;
+	// }
 
 	/* Motor controller expects AC current target to be received as multiplied by 10 */
 	int16_t ac_current = (((float)average / EMRAX_KT) * 10);
