@@ -155,7 +155,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 			  ctrl_output_bank1);
 
 	/* Configure Control Expander - Bank 0 */
-	uint8_t ctrl_config_bank0 = 0b00000001;
+	uint8_t ctrl_config_bank0 = 0b10000000;
 	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
 				   ctrl_config_bank0);
 	if (status != HAL_OK) {
