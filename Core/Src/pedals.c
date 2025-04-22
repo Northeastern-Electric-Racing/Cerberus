@@ -135,6 +135,9 @@ bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 	/* EV3.5.4: For analog acceleration control signals, this error checking must detect open circuit, short to 
 	ground and short to sensor power. */
 
+	printf("Accel 1 %f Accel 2 %f\n norm1 %f norm2 %f\n", accel1, accel2,
+	       accel1_norm, accel2_norm);
+
 	/* Pedal open circuit fault */
 	bool open_circuit = accel1 > MAX_VOLTS_UNSCALED - APPS_THRESHOLD_BUF ||
 			    accel2 > MAX_VOLTS_UNSCALED - APPS_THRESHOLD_BUF;
@@ -458,8 +461,6 @@ void vProcessPedals(void *pv_params)
 	/* End application if we try to update motor at freq below this value */
 	//assert(delay_time < MAX_COMMAND_DELAY);
 
-	bool clearedFault = true;
-
 	for (;;) {
 		read_pedals(mpu, adc_data);
 
@@ -475,8 +476,8 @@ void vProcessPedals(void *pv_params)
 		float accel2_norm = pedal_percent_pressed(
 			accel2_volts, MIN_APPS2_VOLTS, MAX_APPS2_VOLTS);
 
-		bool possible_faults = calc_pedal_faults(
-			accel1_volts, accel2_volts, accel1_norm, accel2_norm);
+		// bool possible_faults = calc_pedal_faults(
+		// 	accel1_volts, accel2_volts, accel1_norm, accel2_norm);
 
 		/* same for brake values */
 		float brake_avg =
@@ -499,28 +500,8 @@ void vProcessPedals(void *pv_params)
 			continue;
 		}
 
-		if (possible_faults) {
-			dti_set_torque(0);
-			osDelay(delay_time);
-			continue;
-		}
-
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
-
-		if (func_state == FAULTED) {
-			clearedFault = false;
-		}
-
-		if (func_state != FAULTED && !clearedFault && accel_value < 0.01) {
-			clearedFault = true;
-		}
-
-		if (func_state != FAULTED && clearedFault) {
-			linear_accel_to_torque(accel_value);
-		}
-		osDelay(delay_time);
-		continue;
 
 		switch (func_state) {
 		case F_EFFICIENCY:
