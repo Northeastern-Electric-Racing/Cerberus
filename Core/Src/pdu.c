@@ -374,11 +374,16 @@ int8_t read_shutdown(pdu_t *pdu, uint8_t shutdown_data[1])
 	bitstream_t shutdown;
 	bitstream_init(&shutdown, shutdown_data, 1);
 
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_CKPT_BRB_CLR), 1); 		// Read Pin P00
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P01
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_INERTIA_SW_GOOD), 1); 	// Read Pin P02
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO1), 1); 		// Read Pin P03
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_IMD_GOOD), 1); 			// Read Pin P04
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BSPD_GOOD), 1); 			// Read Pin P05
+	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_SPARE_GPIO2), 1); 		// Read Pin P05
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_MC_STAT), 1); 			// Read Pin P11
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_SPARE_IN), 1); 			// Read Pin P12
+	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_TSMS_SENSE), 1); 			// Read Pin P14
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_BOTS_GOOD), 1); 			// Read Pin P15
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVD_INTLK_GOOD), 1); 		// Read Pin P16
 	bitstream_add(&shutdown, EXTRACT_BIT(bank1_d, PIN_HVC_INTLK_GOOD), 1); 		// Read Pin P17

@@ -145,7 +145,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status);
 #define PIN_SPARE_GPIO1	    3 // P03
 #define PIN_IMD_GOOD	    4 // P04
 #define PIN_BSPD_GOOD	    5 // P05
-#define PIN_SHUTDOWN_06	    6 // P06 (X)
+#define PIN_SPARE_GPIO2	    6 // P06
 #define PIN_SHUTDOWN_07	    7 // P07 (X)
 #define PIN_SHUTDOWN_10	    0 // P10 (X)
 #define PIN_MC_STAT	    	1 // P11

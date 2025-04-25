@@ -96,6 +96,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	/* Make sure wheels are not spinning before changing modes */
 #ifndef TSMS_OVERRIDE
 	if (!get_tsms() && dti_get_mph(mc) > 1)
+	printf("TSMS check failed\n");
 		return 1;
 #endif
 	bool brake_state = true;
@@ -116,6 +117,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
 		if (read_brake_state(pdu, &brake_state)) {
+			printf("Brake check failed\n");
 			return 3;
 		}
 #ifdef TSMS_OVERRIDE
@@ -126,6 +128,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 #else
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
+			printf("Brakes not engaged and TSMS not on, so motor is not turned on.\n");
 			return 3;
 		}
 #endif
@@ -179,7 +182,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 			new_state.home_mode = false;
 		}
 	}
-
+	// !! Could be this
 	// Entering home mode
 	if (!current_nero_state.home_mode && new_state.home_mode) {
 		if (transition_functional_state(READY, pdu, mc, mpu))
