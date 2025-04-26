@@ -316,7 +316,8 @@ void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]) {
+int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4])
+{
 	if (!pdu)
 		return -1;
 
@@ -325,8 +326,8 @@ int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]) {
 		return stat;
 
 	uint8_t ctrl_bank0 = 0;
-	HAL_StatusTypeDef error = tca9539_read_reg(pdu->ctrl_expander,
-						   TCA_INPUT_PORT_0, &ctrl_bank0);
+	HAL_StatusTypeDef error = tca9539_read_reg(
+		pdu->ctrl_expander, TCA_INPUT_PORT_0, &ctrl_bank0);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
@@ -341,8 +342,8 @@ int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]) {
 	}
 
 	uint8_t shutdown_bank0 = 0;
-	error = tca9539_read_reg(pdu->shutdown_expander,
-						   TCA_INPUT_PORT_0, &shutdown_bank0);
+	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_PORT_0,
+				 &shutdown_bank0);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);
 		return error;
