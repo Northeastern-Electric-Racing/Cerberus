@@ -508,9 +508,8 @@ void vProcessPedals(void *pv_params)
 		} else {
 			brake_pressed = false;
 		}
-		write_brakelight(pdu, brake_pressed);
 		osMutexRelease(brake_state_mut);
-		
+		write_brakelight(pdu, brake_pressed);		
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
