@@ -10,6 +10,11 @@
 static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
 
+#define SHUTDOWN_CONFIG_B0 0b11111111
+#define SHUTDOWN_CONFIG_B1 0b11111111
+#define CTRL_CONFIG_B0	   0b10000000
+#define CTRL_CONFIG_B1	   0b11111111
+
 /* Wrappers for TCA9539 (GPIO Expander) */
 static inline uint8_t tca_i2c_write(uint16_t dev_address, uint8_t reg,
 				    uint8_t *data, uint8_t length)
@@ -70,6 +75,88 @@ int init_ina(pdu_t *pdu, ina226_t *ina, uint16_t dev_addr, float r_shunt,
 	return 0;
 }
 
+bool verify_tca_config(pdu_t *pdu)
+{
+	assert(pdu);
+	assert(pdu->shutdown_expander);
+	assert(pdu->ctrl_expander);
+
+	uint8_t buf;
+	HAL_StatusTypeDef status = tca9539_read_reg(
+		pdu->shutdown_expander, TCA_CONFIGURATION_PORT_0, &buf);
+	if (status != HAL_OK || buf != SHUTDOWN_CONFIG_B0) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->shutdown_expander,
+				  TCA_CONFIGURATION_PORT_1, &buf);
+	if (status != HAL_OK || buf != SHUTDOWN_CONFIG_B1) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				  &buf);
+	if (status != HAL_OK || buf != CTRL_CONFIG_B0) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				  &buf);
+	if (status != HAL_OK || buf != CTRL_CONFIG_B1) {
+		return false;
+	}
+
+	return true;
+}
+
+uint8_t write_tca_config(pdu_t *pdu)
+{
+	/* Configure Shutdown Expander - Bank 0 */
+	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
+						     TCA_CONFIGURATION_PORT_0,
+						     SHUTDOWN_CONFIG_B0);
+	if (status != HAL_OK) {
+		printf("\n\rShutdown config fail - Bank 0\n\r");
+		return status;
+	}
+
+	/* Configure Shutdown Expander - Bank 1 */
+	status = tca9539_write_reg(pdu->shutdown_expander,
+				   TCA_CONFIGURATION_PORT_1,
+				   SHUTDOWN_CONFIG_B1);
+	if (status != HAL_OK) {
+		printf("\n\rShutdown config fail - Bank 1\n\r");
+		return status;
+	}
+
+	/* Initialize all outputs to 0 */
+	uint8_t ctrl_output_bank0 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
+			  ctrl_output_bank0);
+	uint8_t ctrl_output_bank1 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
+			  ctrl_output_bank1);
+
+	/* Configure Control Expander - Bank 0 */
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				   CTRL_CONFIG_B0);
+	if (status != HAL_OK) {
+		printf("CTRL config fail - Bank 0\n");
+		return status;
+	}
+
+	/* Configure Control Expander - Bank 1 */
+	uint8_t ctrl_config_bank1 = 0b11111111;
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				   CTRL_CONFIG_B1);
+	if (status != HAL_OK) {
+		printf("CTRL config fail - Bank 1\n");
+		return status;
+	}
+
+	return 0;
+}
+
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
 	pdu_t *pdu = malloc(sizeof(pdu_t));
@@ -116,62 +203,15 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_init(pdu->shutdown_expander, tca_i2c_write, tca_i2c_read,
 		     SHUTDOWN_ADDR);
 
-	/* Configure Shutdown Expander - Bank 0 */
-	uint8_t shutdown_config_bank0 = 0b11111111;
-	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
-						     TCA_CONFIGURATION_PORT_0,
-						     shutdown_config_bank0);
-	if (status != HAL_OK) {
-		printf("\n\rShutdown config fail - Bank 0\n\r");
-		free(pdu->shutdown_expander);
-		free(pdu);
-		return NULL;
-	}
-
-	/* Configure Shutdown Expander - Bank 1 */
-	uint8_t shutdown_config_bank1 = 0b11111111;
-	status = tca9539_write_reg(pdu->shutdown_expander,
-				   TCA_CONFIGURATION_PORT_1,
-				   shutdown_config_bank1);
-	if (status != HAL_OK) {
-		printf("\n\rShutdown config fail - Bank 1\n\r");
-		free(pdu->shutdown_expander);
-		free(pdu);
-		return NULL;
-	}
-
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(tca9539_t));
 	assert(pdu->ctrl_expander);
 	tca9539_init(pdu->ctrl_expander, tca_i2c_write, tca_i2c_read,
 		     CTRL_ADDR);
 
-	/* Initialize all outputs to 0 */
-	uint8_t ctrl_output_bank0 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
-			  ctrl_output_bank0);
-	uint8_t ctrl_output_bank1 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
-			  ctrl_output_bank1);
-
-	/* Configure Control Expander - Bank 0 */
-	uint8_t ctrl_config_bank0 = 0b10000000;
-	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
-				   ctrl_config_bank0);
-	if (status != HAL_OK) {
-		printf("CTRL config fail - Bank 0\n");
+	if (write_tca_configs(pdu)) {
 		free(pdu->ctrl_expander);
-		free(pdu);
-		return NULL;
-	}
-
-	/* Configure Control Expander - Bank 1 */
-	uint8_t ctrl_config_bank1 = 0b11111111;
-	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
-				   ctrl_config_bank1);
-	if (status != HAL_OK) {
-		printf("CTRL config fail - Bank 1\n");
-		free(pdu->ctrl_expander);
+		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
 	}
@@ -425,5 +465,29 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 		return -1;
 	if (read_current(pdu, pdu->lv_boards_current_sensor, lv_boards_current))
 		return -1;
+	return 0;
+}
+
+int8_t read_brake_state(pdu_t *pdu, bool *status)
+{
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	/* read pin over i2c */
+	uint8_t config = 0;
+	HAL_StatusTypeDef error = tca9539_read_pin(pdu->ctrl_expander,
+						   TCA_INPUT_PORT_0,
+						   PIN_BRKLIGHT_CTRL, &config);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+	*status = config;
+
+	osMutexRelease(pdu->mutex);
 	return 0;
 }

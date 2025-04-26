@@ -78,6 +78,18 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *lv_boards_current);
 
 /**
+ * @brief Read the status of brakes
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param status Buffer that fuse data will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_brake_state(pdu_t *pdu, bool *status);
+
+uint8_t write_tca_config(pdu_t *pdu);
+bool verify_tca_config(pdu_t *pdu);
+
+/**
  * @brief Taskf for sounding RTDS.
  * 
  * @param arg Pointer to struct representing the PDU.

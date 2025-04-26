@@ -133,6 +133,10 @@ void vControl(void *params)
 		uint16_t battbox_temp;
 		bms_get_battbox_temp(&battbox_temp);
 
+		if (!verify_tca_config(pdu)) {
+			write_tca_config(pdu);
+		}
+
 		// Determine device state
 		control_device(&pump0, motor_temp);
 		control_device(&radfan0, motor_temp);
