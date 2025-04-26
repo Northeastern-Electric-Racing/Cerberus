@@ -225,6 +225,26 @@ void read_shutdown_data(pdu_t *pdu)
 	}
 }
 
+void read_expander_debug_data(pdu_t *pdu)
+{
+	// maybe add a fault but probably not
+
+	can_msg_t expander_debug_msg = { .id = CANID_EXPANDER_DEBUG,
+					 .len = 4,
+					 .data = { 0 } };
+
+	uint8_t expander_debug_data[4];
+	if (read_expander_debug(pdu, expander_debug_data)) {
+		printf("Failed to read expander debug data\n");
+	}
+
+	memcpy(expander_debug_msg.data, expander_debug_data,
+	       expander_debug_msg.len);
+	if (queue_can_msg(expander_debug_msg)) {
+		printf("Failed to send expander debug CAN message\n");
+	}
+}
+
 osThreadId_t non_functional_data_thead;
 const osThreadAttr_t non_functional_data_attributes = {
 	.name = "NonFunctionalDataCollection",
@@ -247,6 +267,7 @@ void vNonFunctionalDataCollection(void *pv_params)
 		read_current(pdu);
 		read_pump_sens(pdu);
 		read_shutdown_data(pdu);
+		read_expander_debug_data(pdu);
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);

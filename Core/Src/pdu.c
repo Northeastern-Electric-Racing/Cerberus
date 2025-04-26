@@ -316,6 +316,90 @@ void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
+int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]) {
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	uint8_t ctrl_bank0 = 0;
+	HAL_StatusTypeDef error = tca9539_read_reg(pdu->ctrl_expander,
+						   TCA_INPUT_PORT_0, &ctrl_bank0);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t ctrl_bank1 = 0;
+	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_1,
+				 &ctrl_bank1);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t shutdown_bank0 = 0;
+	error = tca9539_read_reg(pdu->shutdown_expander,
+						   TCA_INPUT_PORT_0, &shutdown_bank0);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t shutdown_bank1 = 0;
+	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_PORT_1,
+				 &shutdown_bank1);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	bitstream_t expander_debug;
+	bitstream_init(&expander_debug, expander_debug_data, 4);
+
+	// clang-format off
+	/* CTRL EXPANDER */
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_PUMP_CTRL_1), 1);			// Read Pin P00		// BANK 0
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_PUMP_CTRL_2), 1);			// Read Pin P01
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_BRKLIGHT_CTRL), 1);			// Read Pin P02
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_FANBATTBOX_CTRL), 1);		// Read Pin P03
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RTDS_CTRL), 1);				// Read Pin P04
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RADFAN_CTRL_1), 1);			// Read Pin P05
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RADFAN_CTRL_2), 1);			// Read Pin P06
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_BATTBOX_FUSE_STAT), 1);		// Read Pin P07
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_LV_BOARDS_FUSE_STAT), 1);	// Read Pin P10		// BANK 1
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_RADFAN_FUSE_STAT), 1);		// Read Pin P11
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_FANBATTBOX_FUSE_STAT), 1);	// Read Pin P12
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_DASHBOARD_FUSE_STAT), 1);	// Read Pin P13
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_BRKLIGHT_FUSE_STAT), 1);		// Read Pin P14
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_SD_TO_BRB_FUSE_STAT), 1);	// Read Pin P15
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_PUMP_FUSE_STAT1), 1);		// Read Pin P16
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_PUMP_FUSE_STAT2), 1);		// Read Pin P17
+	/* SHUTDOWN EXPANDER */
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_CKPT_BRB_CLR), 1);		// Read Pin P00		// BANK 0
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_BMS_GOOD), 1);			// Read Pin P01
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_INERTIA_SW_GOOD), 1);	// Read Pin P02
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SPARE_GPIO1), 1);		// Read Pin P03
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_IMD_GOOD), 1);			// Read Pin P04
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_BSPD_GOOD), 1);			// Read Pin P05
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SHUTDOWN_06), 1);		// Read Pin P06
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SHUTDOWN_07), 1);		// Read Pin P07
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SHUTDOWN_10), 1);		// Read Pin P10		// BANK 1
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_MC_STAT), 1);			// Read Pin P11
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SPARE_IN), 1);			// Read Pin P12
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SHUTDOWN_13), 1);		// Read Pin P13
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_TSMS_SENSE), 1);			// Read Pin P14
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_BOTS_GOOD), 1);			// Read Pin P15
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_HVD_INTLK_GOOD), 1);		// Read Pin P16
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_HVC_INTLK_GOOD), 1);		// Read Pin P17
+	// clang-format on
+
+	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
 int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2])
 {
 	if (!pdu)

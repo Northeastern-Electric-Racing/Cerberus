@@ -75,5 +75,6 @@
 #define CANID_PEDALS_MSG    0x504
 #define CANID_PDU_CURRENT   0x508
 #define CANID_PUMP_SENSORS  0x509
+#define CANID_EXPANDER_DEBUG 0x50A
 // Reserved for MPU debug message, see yaml for format
 #define CANID_EXTRA_MSG 0x701

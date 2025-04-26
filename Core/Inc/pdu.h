@@ -103,6 +103,15 @@ uint8_t write_tca_config(pdu_t *pdu);
 bool verify_tca_config(pdu_t *pdu);
 
 /**
+ * @brief Read the status of all expander debug pins (both ctrl and shutdown, in that order).
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param expander_debug_data Buffer that the data from both expanders will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]);
+
+/**
  * @brief Taskf for sounding RTDS.
  * 
  * @param arg Pointer to struct representing the PDU.
