@@ -45,7 +45,8 @@ enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 static bool brake_pressed = false;
 static osMutexId_t brake_state_mut;
 
-bool get_brake_state() {
+bool get_brake_state()
+{
 	bool temp;
 	osMutexAcquire(brake_state_mut, osWaitForever);
 	temp = brake_pressed;
@@ -502,15 +503,15 @@ void vProcessPedals(void *pv_params)
 		float accel_value = (accel1_norm + accel2_norm) / 2;
 
 		/* Turn brakelight on or off */
-		
+
 		osMutexAcquire(brake_state_mut, osWaitForever);
-		if (brake_value > PEDAL_BRAKE_THRESH) { 
+		if (brake_value > PEDAL_BRAKE_THRESH) {
 			brake_pressed = true;
 		} else {
 			brake_pressed = false;
 		}
 		osMutexRelease(brake_state_mut);
-		write_brakelight(pdu, brake_pressed);		
+		write_brakelight(pdu, brake_pressed);
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
