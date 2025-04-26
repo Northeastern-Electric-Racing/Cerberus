@@ -427,27 +427,3 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 		return -1;
 	return 0;
 }
-
-int8_t read_brake_state(pdu_t *pdu, bool *status)
-{
-	if (!pdu)
-		return -1;
-
-	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
-	if (stat)
-		return stat;
-
-	/* read pin over i2c */
-	uint8_t config = 0;
-	HAL_StatusTypeDef error = tca9539_read_pin(pdu->ctrl_expander,
-						   TCA_INPUT_PORT_0,
-						   PIN_BRKLIGHT_CTRL, &config);
-	if (error != HAL_OK) {
-		osMutexRelease(pdu->mutex);
-		return error;
-	}
-	*status = config;
-
-	osMutexRelease(pdu->mutex);
-	return 0;
-}

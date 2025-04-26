@@ -42,6 +42,17 @@ float torque_limit_percentage = 1.0;
 
 enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
+static bool brake_pressed = false;
+static osMutexId_t brake_state_mut;
+
+bool get_brake_state() {
+	bool temp;
+	osMutexAcquire(brake_state_mut, osWaitForever);
+	temp = brake_pressed;
+	osMutexRelease(brake_state_mut);
+	return temp;
+}
+
 /**
  * @brief Converts the adc to the voltage out of 5V (for rules)
  * 
@@ -490,7 +501,16 @@ void vProcessPedals(void *pv_params)
 		float accel_value = (accel1_norm + accel2_norm) / 2;
 
 		/* Turn brakelight on or off */
-		write_brakelight(pdu, brake_value > PEDAL_BRAKE_THRESH);
+		
+		osMutexAcquire(brake_state_mut, osWaitForever);
+		if (brake_value > PEDAL_BRAKE_THRESH) { 
+			brake_pressed = true;
+		} else {
+			brake_pressed = false;
+		}
+		write_brakelight(pdu, brake_pressed);
+		osMutexRelease(brake_state_mut);
+		
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */

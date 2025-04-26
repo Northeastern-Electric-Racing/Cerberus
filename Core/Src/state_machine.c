@@ -115,9 +115,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-		if (read_brake_state(pdu, &brake_state)) {
-			return 3;
-		}
+		brake_state = get_brake_state();
 #ifdef TSMS_OVERRIDE
 		if (!brake_state) {
 			return 3;
