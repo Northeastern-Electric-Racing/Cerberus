@@ -44,6 +44,7 @@ enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 static bool brake_pressed = false;
 static osMutexId_t brake_state_mut;
+static osMutexAttr_t brake_mutex_attributes;
 
 bool get_brake_state()
 {
@@ -472,6 +473,8 @@ void vProcessPedals(void *pv_params)
 	const uint16_t delay_time = 10; /* ms */
 	/* End application if we try to update motor at freq below this value */
 	//assert(delay_time < MAX_COMMAND_DELAY);
+
+	brake_state_mut = osMutexNew(&brake_mutex_attributes);
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
