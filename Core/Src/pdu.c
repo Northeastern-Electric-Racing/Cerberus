@@ -10,10 +10,10 @@
 static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
 
-#define SHUTDOWN_CONFIG_B0 0b11111111
-#define SHUTDOWN_CONFIG_B1 0b11111111
-#define CTRL_CONFIG_B0	   0b10000000
-#define CTRL_CONFIG_B1	   0b11111111
+#define SHUTDOWN_CONFIG_B0 0b11111111 /* Set to all inputs */
+#define SHUTDOWN_CONFIG_B1 0b11111111 /* Set to all inputs */
+#define CTRL_CONFIG_B0	   0b10000000 /* one fuse reading, others outputs */
+#define CTRL_CONFIG_B1	   0b11111111 /* all inputs */
 
 /* Wrappers for TCA9539 (GPIO Expander) */
 static inline uint8_t tca_i2c_write(uint16_t dev_address, uint8_t reg,
@@ -146,7 +146,6 @@ uint8_t write_tca_config(pdu_t *pdu)
 	}
 
 	/* Configure Control Expander - Bank 1 */
-	uint8_t ctrl_config_bank1 = 0b11111111;
 	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
 				   CTRL_CONFIG_B1);
 	if (status != HAL_OK) {
@@ -209,7 +208,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_init(pdu->ctrl_expander, tca_i2c_write, tca_i2c_read,
 		     CTRL_ADDR);
 
-	if (write_tca_configs(pdu)) {
+	if (write_tca_config(pdu)) {
 		free(pdu->ctrl_expander);
 		free(pdu->shutdown_expander);
 		free(pdu);

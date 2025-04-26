@@ -86,7 +86,20 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
  */
 int8_t read_brake_state(pdu_t *pdu, bool *status);
 
+/**
+ * @brief writes to config registers of the shutdown and ctrl expanders on pdu
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return error code
+ */
 uint8_t write_tca_config(pdu_t *pdu);
+
+/**
+ * @brief returns whether tca configs have been written too
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return true if correct config read, false otherwise
+ */
 bool verify_tca_config(pdu_t *pdu);
 
 /**
