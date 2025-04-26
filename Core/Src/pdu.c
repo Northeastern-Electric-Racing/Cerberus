@@ -345,7 +345,6 @@ int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2])
 	bitstream_init(&fuses, fuse_data, 2);
 
 	// clang-format off
-	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BRKLIGHT_CTRL), 1);				// Read Pin P02
 	bitstream_add(&fuses, EXTRACT_BIT(bank0_d, PIN_BATTBOX_FUSE_STAT), 1);			// Read Pin P07
 	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_LV_BOARDS_FUSE_STAT), 1);		// Read Pin P10
 	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_RADFAN_FUSE_STAT), 1);			// Read Pin P11
@@ -355,7 +354,7 @@ int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2])
 	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_SD_TO_BRB_FUSE_STAT), 1);		// Read Pin P15
 	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT1), 1);			// Read Pin P16
 	bitstream_add(&fuses, EXTRACT_BIT(bank1_d, PIN_PUMP_FUSE_STAT2), 1);			// Read Pin P17
-	bitstream_add(&fuses, 0, 6); 													// Extra (7 bits)
+	bitstream_add(&fuses, 0, 7); 													// Extra (7 bits)
 	// clang-format on
 
 	osMutexRelease(pdu->mutex);
