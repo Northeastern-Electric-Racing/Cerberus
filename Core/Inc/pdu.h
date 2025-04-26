@@ -78,15 +78,6 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *lv_boards_current);
 
 /**
- * @brief Taskf for sounding RTDS.
- * 
- * @param arg Pointer to struct representing the PDU.
- */
-void vRTDS(void *arg);
-extern osThreadId_t rtds_thread;
-extern const osThreadAttr_t rtds_attributes;
-
-/**
  * @brief Read the status of brakes
  * 
  * @param pdu Pointer to struct representing the PDU
@@ -94,6 +85,31 @@ extern const osThreadAttr_t rtds_attributes;
  * @return int8_t Error code.
  */
 int8_t read_brake_state(pdu_t *pdu, bool *status);
+
+/**
+ * @brief writes to config registers of the shutdown and ctrl expanders on pdu
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return error code
+ */
+uint8_t write_tca_config(pdu_t *pdu);
+
+/**
+ * @brief returns whether tca configs have been written too
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return true if correct config read, false otherwise
+ */
+bool verify_tca_config(pdu_t *pdu);
+
+/**
+ * @brief Taskf for sounding RTDS.
+ * 
+ * @param arg Pointer to struct representing the PDU.
+ */
+void vRTDS(void *arg);
+extern osThreadId_t rtds_thread;
+extern const osThreadAttr_t rtds_attributes;
 
 /* Current Sensors */
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x80

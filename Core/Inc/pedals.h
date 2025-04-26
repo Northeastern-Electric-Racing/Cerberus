@@ -65,4 +65,6 @@ void vProcessPedals(void *pv_params);
 extern osThreadId_t process_pedals_thread;
 extern const osThreadAttr_t process_pedals_attributes;
 
+bool get_brake_state();
+
 #endif
