@@ -129,8 +129,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 #endif
 		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 
-		/* Turn on high power peripherals */
-		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
 		break;
 	default:

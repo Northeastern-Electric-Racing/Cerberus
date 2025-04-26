@@ -22,18 +22,18 @@
 
 /* Pedal tuning */
 #define PEDALS_SAMPLE_DELAY 10 /* ms */
-#define MAX_APPS1_VOLTS	    3.12 /* volts */
-#define MIN_APPS1_VOLTS	    1.754 /* volts */
-#define MAX_APPS2_VOLTS	    2.26 /* volts */
-#define MIN_APPS2_VOLTS	    0.81 /* volts */
-#define PEDAL_BRAKE_THRESH  0.42 /* percentage */
+#define MAX_APPS1_VOLTS	    3.09 /* volts */
+#define MIN_APPS1_VOLTS	    1.73 /* volts */
+#define MAX_APPS2_VOLTS	    2.27 /* volts */
+#define MIN_APPS2_VOLTS	    0.90 /* volts */
+#define PEDAL_BRAKE_THRESH  0.19 /* percentage */
 
 /* Torque Tuning */
-#define MAX_TORQUE 40 /* Nm */
+#define MAX_TORQUE 220 /* Nm */
 
 /* Endurance Mode Thresholds */
-#define REGEN_THRESHOLD	       0.01
-#define ACCELERATION_THRESHOLD 0.05
+#define REGEN_THRESHOLD	       0.10
+#define ACCELERATION_THRESHOLD 0.25
 
 /* Maximum AC braking current */
 #define MAX_REGEN_CURRENT 20

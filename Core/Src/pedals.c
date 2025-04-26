@@ -35,7 +35,7 @@ float torque_limit_percentage = 1.0;
 #define MAX_VOLTS	   3.3 /* volts */
 #define MAX_VOLTS_UNSCALED 5.0
 
-#define PEDAL_DIFF_THRESH 0.10 /* percentage */
+#define PEDAL_DIFF_THRESH 0.20 /* percentage */
 #define PEDAL_FAULT_TIME  90 /* ms */
 
 #define APPS_THRESHOLD_BUF 0.1
@@ -255,8 +255,11 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 static void linear_accel_to_torque(float accel)
 {
 	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
-	if (fabs(accel - 0.02) < 0.001) {
-		accel = 0;
+	if (fabs(accel - 0.06) < 0.001) {
+		accel = 0.0;
+	}
+	if (accel > 1) {
+		accel = 1.0;
 	}
 
 	/* Linearly map acceleration to torque */
@@ -525,7 +528,7 @@ void vProcessPedals(void *pv_params)
 
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
-
+		
 		switch (func_state) {
 		case F_EFFICIENCY:
 			handle_endurance(mc, mph, accel_value, brake_value);
@@ -538,11 +541,11 @@ void vProcessPedals(void *pv_params)
 #endif
 			break;
 		case F_PIT:
-			handle_pit(mph, accel_value);
-			break;
+			// handle_pit(mph, accel_value);
+			// break;
 		case REVERSE:
-			handle_reverse(mph, accel_value);
-			break;
+			// handle_reverse(mph, accel_value);
+			// break;
 		default:
 			dti_set_torque(0);
 			break;

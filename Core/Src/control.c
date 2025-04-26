@@ -42,15 +42,20 @@ static void control_device(device_control_t *device, uint16_t temp)
 	bool hv = get_active();
 
 	// turn on pumps when hv is on / turn off when faulted
-	if (device->device_type == DEVICE_PUMP0 ||
-	    device->device_type == DEVICE_PUMP1) {
-		if (hv) {
-			set_device_on(device);
-			return;
-		} else if (get_func_state() == FAULTED) {
-			set_device_off(device);
-			return;
-		}
+	// if (device->device_type == DEVICE_PUMP0 ||
+	//     device->device_type == DEVICE_PUMP1) {
+	// 	if (hv) {
+	// 		set_device_on(device);
+	// 		return;
+	// 	} else
+	if (get_func_state() == FAULTED) {
+		set_device_off(device);
+		return;
+	}
+
+	uint16_t upper_temp = device->upper_temp;
+	if (!hv) {
+		upper_temp -= 10;
 	}
 
 	// turn on device if calypso sent message to turn it on
@@ -60,7 +65,7 @@ static void control_device(device_control_t *device, uint16_t temp)
 	}
 
 	// set device state based on temps with debounce
-	if (temp > device->upper_temp || temp < device->lower_temp ||
+	if (temp > upper_temp || temp < device->lower_temp ||
 	    is_timer_active(&device->timer)) {
 		if (temp > device->upper_temp) {
 			debounce(temp > device->upper_temp, &(device->timer),
@@ -84,7 +89,7 @@ void vControl(void *params)
 
 	device_control_t pump0 = {
 		.pdu = pdu,
-		.control_func = write_pump_1,
+		.control_func = write_pump_2,
 		.upper_temp = PUMP_UPPER_MOTOR_TEMP,
 		.lower_temp = PUMP_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_PUMP0,
@@ -92,7 +97,7 @@ void vControl(void *params)
 
 	device_control_t radfan0 = {
 		.pdu = pdu,
-		.control_func = write_radfan_1,
+		.control_func = write_radfan_2,
 		.upper_temp = RADFAN_UPPER_MOTOR_TEMP,
 		.lower_temp = RADFAN_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_RADFAN0,
@@ -100,7 +105,7 @@ void vControl(void *params)
 
 	device_control_t pump1 = {
 		.pdu = pdu,
-		.control_func = write_pump_2,
+		.control_func = write_pump_1,
 		.upper_temp = PUMP_UPPER_CONTROLLER_TEMP,
 		.lower_temp = PUMP_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_PUMP1,
@@ -108,7 +113,7 @@ void vControl(void *params)
 
 	device_control_t radfan1 = {
 		.pdu = pdu,
-		.control_func = write_radfan_2,
+		.control_func = write_radfan_1,
 		.upper_temp = RADFAN_UPPER_CONTROLLER_TEMP,
 		.lower_temp = RADFAN_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_RADFAN1,
