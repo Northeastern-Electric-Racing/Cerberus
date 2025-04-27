@@ -94,10 +94,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
-#ifndef TSMS_OVERRIDE
-	if (!get_tsms() && dti_get_mph(mc) > 1)
-		return 1;
-#endif
 	bool brake_state = true;
 
 	/* Catching state transitions */
