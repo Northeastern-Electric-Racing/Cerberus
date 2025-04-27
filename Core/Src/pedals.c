@@ -38,8 +38,7 @@ float torque_limit_percentage = 1.0;
 #define PEDAL_DIFF_THRESH 0.20 /* percentage */
 #define PEDAL_FAULT_TIME  90 /* ms */
 
-#define APPS_THRESHOLD_BUF 0.1
-
+#define APPS_THRESHOLD_BUF 0.45
 enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 static bool brake_pressed = false;
@@ -147,9 +146,6 @@ bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 
 	/* EV3.5.4: For analog acceleration control signals, this error checking must detect open circuit, short to 
 	ground and short to sensor power. */
-
-	printf("Accel 1 %f Accel 2 %f\n norm1 %f norm2 %f\n", accel1, accel2,
-	       accel1_norm, accel2_norm);
 
 	/* Pedal open circuit fault */
 	bool open_circuit = accel1 > MAX_VOLTS_UNSCALED - APPS_THRESHOLD_BUF ||
@@ -494,8 +490,8 @@ void vProcessPedals(void *pv_params)
 		float accel2_norm = pedal_percent_pressed(
 			accel2_volts, MIN_APPS2_VOLTS, MAX_APPS2_VOLTS);
 
-		// bool possible_faults = calc_pedal_faults(
-		// 	accel1_volts, accel2_volts, accel1_norm, accel2_norm);
+		bool possible_faults = calc_pedal_faults(
+			accel1_volts, accel2_volts, accel1_norm, accel2_norm);
 
 		/* same for brake values */
 		float brake_avg =

@@ -89,7 +89,7 @@ void vControl(void *params)
 
 	device_control_t pump0 = {
 		.pdu = pdu,
-		.control_func = write_pump_2,
+		.control_func = write_pump_1,
 		.upper_temp = PUMP_UPPER_MOTOR_TEMP,
 		.lower_temp = PUMP_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_PUMP0,
@@ -105,7 +105,7 @@ void vControl(void *params)
 
 	device_control_t pump1 = {
 		.pdu = pdu,
-		.control_func = write_pump_1,
+		.control_func = write_pump_2,
 		.upper_temp = PUMP_UPPER_CONTROLLER_TEMP,
 		.lower_temp = PUMP_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_PUMP1,

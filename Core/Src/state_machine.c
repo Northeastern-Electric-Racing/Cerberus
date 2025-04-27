@@ -87,21 +87,21 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	if (new_state == FAULTED) {
 		/* Turn off high power peripherals */
 		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+			(nero_state_t){ .nero_index = OFF, .home_mode = true };
 		write_fault(mpu, true);
 
 		printf("FAULTED\r\n");
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
-	bool brake_state = true;
+	bool brake_state;
 
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
 		/* Turn off high power peripherals */
 		write_fault(mpu, false);
-		printf("READY\r\n");
+		printf("READY\n");
 		break;
 	case F_REVERSE:
 #ifdef DISABLE_REVERSE
@@ -111,6 +111,11 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
+		if (cerberus_state.functional == FAULTED) {
+			printf("Cannot drive from a fault!\n");
+			return 3;
+		}
+
 		brake_state = get_brake_state();
 #ifdef TSMS_OVERRIDE
 		if (!brake_state) {
@@ -173,7 +178,7 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	}
 
 	// Entering home mode
-	if (!current_nero_state.home_mode && new_state.home_mode) {
+	if (get_active() && !current_nero_state.home_mode && new_state.home_mode) {
 		if (transition_functional_state(READY, pdu, mc, mpu))
 			return 1;
 	}

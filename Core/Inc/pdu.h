@@ -30,12 +30,16 @@ typedef struct {
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc);
 
 /* Functions to Control PDU */
+/// MOTOR PUMP
 int8_t write_pump_1(pdu_t *pdu, bool state);
+/// MC PUMP
 int8_t write_pump_2(pdu_t *pdu, bool state);
 int8_t write_brakelight(pdu_t *pdu, bool state);
 int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
+/// MC FAN
 int8_t write_radfan_1(pdu_t *pdu, bool state);
+/// MOTOR FAN
 int8_t write_radfan_2(pdu_t *pdu, bool state);
 
 /**
