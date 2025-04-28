@@ -31,6 +31,7 @@ void bms_init()
 	bms.battbox_temp = 0;
 
 	bms_timer = osTimerNew(bms_fault_callback, osTimerOnce, NULL, NULL);
+	osTimerStart(bms_timer, BMS_CAN_MONITOR_DELAY);
 
 	assert(&bms);
 }
