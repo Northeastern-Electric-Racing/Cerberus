@@ -13,6 +13,7 @@
 #define STATE_TRANS_QUEUE_SIZE 4
 
 #define SEND_NERO_TIMEOUT 500 /*in millis*/
+#define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
 
 // #define DISABLE_REVERSE
 
@@ -35,6 +36,9 @@ const osThreadAttr_t sm_director_attributes = {
 };
 
 static osMessageQueueId_t state_trans_queue;
+static osTimerId_t ts_rising_timer;
+static bool is_ts_rising = false;
+static bool enter_drive_enabled = false;
 
 static void send_nero_msg(dti_t *mc)
 {
@@ -111,6 +115,11 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
+		if (!enter_drive_enabled) {
+			printf("Must wait before entering drive!");
+			return 3;
+		}
+
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
 			return 3;
@@ -284,6 +293,11 @@ int fault()
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
+void *rising_ts_cb(void *args) {
+	enter_drive_enabled = true;
+}
+
+
 void vStateMachineDirector(void *pv_params)
 {
 	cerberus_state.functional = READY;
@@ -305,6 +319,8 @@ void vStateMachineDirector(void *pv_params)
 
 	free(args);
 
+	osTimerNew(rising_ts_cb, osTimerOnce,  NULL, NULL);
+
 	/* Write to GPIO expander to set initial state */
 	write_fault(mpu, false);
 
@@ -322,6 +338,14 @@ void vStateMachineDirector(void *pv_params)
 						new_state_req.state.functional,
 						pdu, mc, mpu);
 			}
+		}
+
+		if (!is_ts_rising && get_tsms()) {
+			is_ts_rising = true;
+			osTimerStart(ts_rising_timer, TS_RISING_BLOCK_TIMEOUT);
+		} else if (!get_tsms()) {
+			is_ts_rising = false;
+			enter_drive_enabled = false;
 		}
 
 		// send nero data periodically
