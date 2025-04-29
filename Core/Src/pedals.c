@@ -251,7 +251,7 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 static void linear_accel_to_torque(float accel)
 {
 	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
-	if (fabs(accel - 0.06) < 0.001) {
+	if (accel < 0.03) {
 		accel = 0.0;
 	}
 	if (accel > 1) {
@@ -517,9 +517,9 @@ void vProcessPedals(void *pv_params)
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
-			osDelay(delay_time);
-			dti_set_torque(0);
-			continue;
+			// osDelay(delay_time);
+			// dti_set_torque(0);
+			// continue;
 		}
 
 		float mph = dti_get_mph(mc);
