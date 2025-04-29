@@ -149,6 +149,11 @@ void vControl(void *params)
 		control_device(&radfan1, controller_temp);
 		control_device(&fan_battbox, battbox_temp);
 
+		printf("CALYPSO: %d %d %d %d\n", calypso_states[DEVICE_PUMP0],
+		       calypso_states[DEVICE_PUMP1],
+		       calypso_states[DEVICE_RADFAN0],
+		       calypso_states[DEVICE_RADFAN1]);
+
 		osDelay(1000);
 	}
 }
@@ -166,6 +171,7 @@ void control_pump_record(can_msg_t msg)
 
 void control_radfan_record(can_msg_t msg)
 {
+	printf("MSG %d %d", msg.data[0], msg.data[1]);
 	calypso_states[DEVICE_RADFAN0] = msg.data[0] > 0;
 	calypso_states[DEVICE_RADFAN1] = msg.data[1] > 0;
 }
