@@ -184,6 +184,7 @@ void vCanReceive(void *pv_params)
 				break;
 			case CONTROL_CANID_PUMP:
 				control_pump_record(msg);
+				break;
 			case CONTROL_CANID_RADFAN:
 				printf("CONTROLLING RADFAN\n");
 				control_radfan_record(msg);
