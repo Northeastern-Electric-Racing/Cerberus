@@ -501,11 +501,10 @@ void vProcessPedals(void *pv_params)
 		// printf("brake2 volts %f\n", adc_to_volts(adc_data[BRAKEPIN_2]));
 		/* calc percent brake is pressed */
 		float brake_value = pedal_percent_pressed(
-			adc_to_volts(brake_avg), 0, MAX_VOLTS);
+			adc_to_volts(brake_avg), 0.5, MAX_VOLTS_UNSCALED);
 		float accel_value = (accel1_norm + accel2_norm) / 2;
 
 		/* Turn brakelight on or off */
-
 		osMutexAcquire(brake_state_mut, osWaitForever);
 		if (brake_value > PEDAL_BRAKE_THRESH) {
 			brake_pressed = true;
