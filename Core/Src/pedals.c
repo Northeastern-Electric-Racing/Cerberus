@@ -63,6 +63,7 @@ bool get_brake_state()
 static float adc_to_volts(uint32_t raw_adc)
 {
 	float v3_volts = raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
+	// undo 2k + 3k voltage divider on APPS lines
 	return ((2000.0 + 3000) / 3000) * v3_volts;
 }
 
@@ -250,7 +251,7 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
 static void linear_accel_to_torque(float accel)
 {
-	/* Sometimes, the pedal travel jumps to 1% even if it is not pressed. */
+	/* Sometimes, the pedal travel jumps to 3% even if it is not pressed. */
 	if (accel < 0.03) {
 		accel = 0.0;
 	}
@@ -417,7 +418,7 @@ void accel_pedal_regen_braking(float accel_val)
  * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(dti_t *mc, float mph, float accel_val, float brake_val)
+void handle_endurance(float mph, float accel_val, float brake_val)
 {
 #ifdef USE_BRAKE_REGEN
 	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
@@ -526,7 +527,7 @@ void vProcessPedals(void *pv_params)
 
 		switch (func_state) {
 		case F_EFFICIENCY:
-			handle_endurance(mc, mph, accel_value, brake_value);
+			handle_endurance(mph, accel_value, brake_value);
 			break;
 		case F_PERFORMANCE:
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER

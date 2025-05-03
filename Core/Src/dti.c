@@ -21,7 +21,8 @@
 #include "emrax.h"
 
 #define CAN_QUEUE_SIZE 5 /* messages */
-#define SAMPLES	       3
+#define SAMPLES \
+	3 /* determines number of torque request samples to average for dti*/
 static osMutexAttr_t dti_mutex_attributes;
 
 dti_t *dti_init()

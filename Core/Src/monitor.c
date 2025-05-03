@@ -19,6 +19,8 @@
 static bool tsms = false;
 osMutexId_t tsms_mutex;
 
+// #define DEBUG_EXPANDER
+
 /**
  * @brief Read voltage of Pump Sensors and send a CAN message with the result.
  */
@@ -267,7 +269,9 @@ void vNonFunctionalDataCollection(void *pv_params)
 		read_current(pdu);
 		read_pump_sens(pdu);
 		read_shutdown_data(pdu);
+#ifdef DEBUG_EXPANDER
 		read_expander_debug_data(pdu);
+#endif
 
 		/* delay for 1000 ms (1k ticks at 1000 Hz tickrate) */
 		osDelay(1000);

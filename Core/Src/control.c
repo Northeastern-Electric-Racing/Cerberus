@@ -40,8 +40,9 @@ static void set_device_off(void *params)
 static void control_device(device_control_t *device, uint16_t temp)
 {
 	assert(device);
-	bool hv = get_active();
 
+	/* uncomment this section for pumps to be on whenever ts is on */
+	//bool hv = get_active();
 	// turn on pumps when hv is on / turn off when faulted
 	// if (device->device_type == DEVICE_PUMP0 ||
 	//     device->device_type == DEVICE_PUMP1) {
@@ -127,6 +128,9 @@ void vControl(void *params)
 
 	write_pump_1(pdu, false);
 	write_pump_2(pdu, false);
+	write_radfan_1(pdu, false);
+	write_radfan_2(pdu, false);
+	write_fan_battbox(pdu, false);
 
 	for (;;) {
 		uint16_t motor_temp;

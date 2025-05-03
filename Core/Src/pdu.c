@@ -10,6 +10,9 @@
 static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
 
+
+// NOTE: all tca register commands are reversed
+// i.e. to set 8th pin, change first bit
 #define SHUTDOWN_CONFIG_B0 0b11111111 /* Set to all inputs */
 #define SHUTDOWN_CONFIG_B1 0b11111111 /* Set to all inputs */
 #define CTRL_CONFIG_B0	   0b10000000 /* one fuse reading, others outputs */
