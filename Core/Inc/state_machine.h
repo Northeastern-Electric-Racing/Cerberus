@@ -1,7 +1,7 @@
 #ifndef STATE_MACHINE_H
 #define STATE_MACHINE_H
 
-// #define TSMS_OVERRIDE Uncomment to remove all checks for state machine
+// #define TSMS_OVERRIDE //Uncomment to remove all checks for state machine
 // #define IGNORE_FAULT
 
 #include "pdu.h"

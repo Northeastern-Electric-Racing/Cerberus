@@ -537,11 +537,11 @@ void vProcessPedals(void *pv_params)
 #endif
 			break;
 		case F_PIT:
-			// handle_pit(mph, accel_value);
-			// break;
+			handle_pit(mph, accel_value);
+			break;
 		case REVERSE:
-			// handle_reverse(mph, accel_value);
-			// break;
+			handle_reverse(mph, accel_value);
+			break;
 		default:
 			dti_set_torque(0);
 			break;

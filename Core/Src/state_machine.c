@@ -48,6 +48,7 @@ static void send_nero_msg(dti_t *mc)
 		uint8_t mph;
 		uint8_t tsms;
 		uint8_t torque_lim_percentage;
+		uint8_t direction;
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
@@ -57,6 +58,7 @@ static void send_nero_msg(dti_t *mc)
 	/* Percentage from 0 - 1, multiplied by 100 */
 	nero_data.torque_lim_percentage =
 		(uint8_t)(get_torque_limit_percentage() * 100);
+	nero_data.direction = cerberus_state.functional != F_REVERSE;
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
@@ -115,11 +117,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-		if (!enter_drive_enabled) {
-			printf("Must wait before entering drive!");
-			return 3;
-		}
-
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
 			return 3;
@@ -132,6 +129,11 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		}
 		printf("Ignoring tsms\n\n");
 #else
+		if (!enter_drive_enabled) {
+			printf("Must wait before entering drive!");
+			return 3;
+		}
+
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
 			return 3;
