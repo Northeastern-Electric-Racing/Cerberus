@@ -54,10 +54,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 		return;
 	}
 
-	uint16_t upper_temp = device->upper_temp;
-	if (!hv) {
-		upper_temp -= 10;
-	}
+	// uint16_t upper_temp = device->upper_temp;
+	// if (!hv) {
+	// 	upper_temp -= 10;
+	// }
 
 	// turn on device if calypso sent message to turn it on
 	if (calypso_states[device->device_type]) {
@@ -66,7 +66,7 @@ static void control_device(device_control_t *device, uint16_t temp)
 	}
 
 	// set device state based on temps with debounce
-	if (temp > upper_temp || temp < device->lower_temp ||
+	if (temp > device->upper_temp || temp < device->lower_temp ||
 	    is_timer_active(&device->timer)) {
 		if (temp > device->upper_temp) {
 			debounce(temp > device->upper_temp, &(device->timer),
