@@ -54,11 +54,6 @@ static void control_device(device_control_t *device, uint16_t temp)
 		return;
 	}
 
-	// uint16_t upper_temp = device->upper_temp;
-	// if (!hv) {
-	// 	upper_temp -= 10;
-	// }
-
 	// turn on device if calypso sent message to turn it on
 	if (calypso_states[device->device_type]) {
 		set_device_on(device);
