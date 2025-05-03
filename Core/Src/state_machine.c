@@ -12,7 +12,7 @@
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
-#define SEND_NERO_TIMEOUT 500 /*in millis*/
+#define SEND_NERO_TIMEOUT	500 /*in millis*/
 #define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
 
 // #define DISABLE_REVERSE
@@ -187,7 +187,8 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	}
 
 	// Entering home mode
-	if (get_active() && !current_nero_state.home_mode && new_state.home_mode) {
+	if (get_active() && !current_nero_state.home_mode &&
+	    new_state.home_mode) {
 		if (transition_functional_state(READY, pdu, mc, mpu))
 			return 1;
 	}
@@ -293,10 +294,10 @@ int fault()
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
-void rising_ts_cb(void *args) {
+void rising_ts_cb(void *args)
+{
 	enter_drive_enabled = true;
 }
-
 
 void vStateMachineDirector(void *pv_params)
 {
@@ -319,7 +320,7 @@ void vStateMachineDirector(void *pv_params)
 
 	free(args);
 
-	ts_rising_timer = osTimerNew(rising_ts_cb, osTimerOnce,  NULL, NULL);
+	ts_rising_timer = osTimerNew(rising_ts_cb, osTimerOnce, NULL, NULL);
 
 	/* Write to GPIO expander to set initial state */
 	write_fault(mpu, false);
