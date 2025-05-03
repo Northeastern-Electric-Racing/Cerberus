@@ -231,7 +231,7 @@ const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 void vRTDS(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
-	assert(pdu);	
+	assert(pdu);
 
 	fault_data_t rtds_fault = {
 		.fault_id = RTDS_FAULT,
