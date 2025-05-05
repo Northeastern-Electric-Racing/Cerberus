@@ -179,6 +179,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	// Batt Box Fan current sensors removed due to hardware issues
 	/* Initialize Motor Controller Current Sensor */
 	pdu->motor_controller_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->motor_controller_current_sensor);
 	if (init_ina(pdu, pdu->motor_controller_current_sensor,
 		     MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR, 0.01f, 3.0f)) {
 		return NULL;
@@ -186,6 +187,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->pumps_current_sensor);
 	if (init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
 		     0.01f, 2.0f)) {
 		return NULL;
@@ -193,6 +195,7 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
+	assert(pdu->lv_boards_current_sensor);
 	if (init_ina(pdu, pdu->lv_boards_current_sensor,
 		     LV_BOARDS_CURRENT_SENSOR_ADDR, 0.01f, 1.25f)) {
 		return NULL;
