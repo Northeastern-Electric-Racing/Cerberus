@@ -1,5 +1,7 @@
 #include "pdu.h"
 #include "fault.h"
+#include "can_handler.h"
+#include "cerberus_conf.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +9,13 @@
 
 static osMutexAttr_t pdu_mutex_attributes;
 extern I2C_HandleTypeDef hi2c2;
+
+// NOTE: all tca register commands are reversed
+// i.e. to set 8th pin, change first bit
+#define SHUTDOWN_CONFIG_B0 0b11111111 /* Set to all inputs */
+#define SHUTDOWN_CONFIG_B1 0b11111111 /* Set to all inputs */
+#define CTRL_CONFIG_B0	   0b10000000 /* one fuse reading, others outputs */
+#define CTRL_CONFIG_B1	   0b11111111 /* all inputs */
 
 /* Wrappers for TCA9539 (GPIO Expander) */
 static inline uint8_t tca_i2c_write(uint16_t dev_address, uint8_t reg,
@@ -68,6 +77,87 @@ int init_ina(pdu_t *pdu, ina226_t *ina, uint16_t dev_addr, float r_shunt,
 	return 0;
 }
 
+bool verify_tca_config(pdu_t *pdu)
+{
+	assert(pdu);
+	assert(pdu->shutdown_expander);
+	assert(pdu->ctrl_expander);
+
+	uint8_t buf;
+	HAL_StatusTypeDef status = tca9539_read_reg(
+		pdu->shutdown_expander, TCA_CONFIGURATION_PORT_0, &buf);
+	if (status != HAL_OK || buf != SHUTDOWN_CONFIG_B0) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->shutdown_expander,
+				  TCA_CONFIGURATION_PORT_1, &buf);
+	if (status != HAL_OK || buf != SHUTDOWN_CONFIG_B1) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				  &buf);
+	if (status != HAL_OK || buf != CTRL_CONFIG_B0) {
+		return false;
+	}
+
+	status = tca9539_read_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				  &buf);
+	if (status != HAL_OK || buf != CTRL_CONFIG_B1) {
+		return false;
+	}
+
+	return true;
+}
+
+uint8_t write_tca_config(pdu_t *pdu)
+{
+	/* Configure Shutdown Expander - Bank 0 */
+	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
+						     TCA_CONFIGURATION_PORT_0,
+						     SHUTDOWN_CONFIG_B0);
+	if (status != HAL_OK) {
+		printf("\n\rShutdown config fail - Bank 0\n\r");
+		return status;
+	}
+
+	/* Configure Shutdown Expander - Bank 1 */
+	status = tca9539_write_reg(pdu->shutdown_expander,
+				   TCA_CONFIGURATION_PORT_1,
+				   SHUTDOWN_CONFIG_B1);
+	if (status != HAL_OK) {
+		printf("\n\rShutdown config fail - Bank 1\n\r");
+		return status;
+	}
+
+	/* Initialize all outputs to 0 */
+	uint8_t ctrl_output_bank0 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
+			  ctrl_output_bank0);
+	uint8_t ctrl_output_bank1 = 0b00000000;
+	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
+			  ctrl_output_bank1);
+
+	/* Configure Control Expander - Bank 0 */
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
+				   CTRL_CONFIG_B0);
+	if (status != HAL_OK) {
+		printf("CTRL config fail - Bank 0\n");
+		return status;
+	}
+
+	/* Configure Control Expander - Bank 1 */
+	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
+				   CTRL_CONFIG_B1);
+	if (status != HAL_OK) {
+		printf("CTRL config fail - Bank 1\n");
+		return status;
+	}
+
+	return 0;
+}
+
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 {
 	pdu_t *pdu = malloc(sizeof(pdu_t));
@@ -114,62 +204,15 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	tca9539_init(pdu->shutdown_expander, tca_i2c_write, tca_i2c_read,
 		     SHUTDOWN_ADDR);
 
-	/* Configure Shutdown Expander - Bank 0 */
-	uint8_t shutdown_config_bank0 = 0b11111111;
-	HAL_StatusTypeDef status = tca9539_write_reg(pdu->shutdown_expander,
-						     TCA_CONFIGURATION_PORT_0,
-						     shutdown_config_bank0);
-	if (status != HAL_OK) {
-		printf("\n\rShutdown config fail - Bank 0\n\r");
-		free(pdu->shutdown_expander);
-		free(pdu);
-		return NULL;
-	}
-
-	/* Configure Shutdown Expander - Bank 1 */
-	uint8_t shutdown_config_bank1 = 0b11111111;
-	status = tca9539_write_reg(pdu->shutdown_expander,
-				   TCA_CONFIGURATION_PORT_1,
-				   shutdown_config_bank1);
-	if (status != HAL_OK) {
-		printf("\n\rShutdown config fail - Bank 1\n\r");
-		free(pdu->shutdown_expander);
-		free(pdu);
-		return NULL;
-	}
-
 	/* Initialize Control GPIO Expander */
 	pdu->ctrl_expander = malloc(sizeof(tca9539_t));
 	assert(pdu->ctrl_expander);
 	tca9539_init(pdu->ctrl_expander, tca_i2c_write, tca_i2c_read,
 		     CTRL_ADDR);
 
-	/* Initialize all outputs to 0 */
-	uint8_t ctrl_output_bank0 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_0,
-			  ctrl_output_bank0);
-	uint8_t ctrl_output_bank1 = 0b00000000;
-	tca9539_write_reg(pdu->ctrl_expander, TCA_OUTPUT_PORT_1,
-			  ctrl_output_bank1);
-
-	/* Configure Control Expander - Bank 0 */
-	uint8_t ctrl_config_bank0 = 0b00000001;
-	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_0,
-				   ctrl_config_bank0);
-	if (status != HAL_OK) {
-		printf("CTRL config fail - Bank 0\n");
+	if (write_tca_config(pdu)) {
 		free(pdu->ctrl_expander);
-		free(pdu);
-		return NULL;
-	}
-
-	/* Configure Control Expander - Bank 1 */
-	uint8_t ctrl_config_bank1 = 0b11111111;
-	status = tca9539_write_reg(pdu->ctrl_expander, TCA_CONFIGURATION_PORT_1,
-				   ctrl_config_bank1);
-	if (status != HAL_OK) {
-		printf("CTRL config fail - Bank 1\n");
-		free(pdu->ctrl_expander);
+		free(pdu->shutdown_expander);
 		free(pdu);
 		return NULL;
 	}
@@ -275,7 +318,92 @@ void read_pump_sensors(pdu_t *pdu, uint16_t pump_sensors_buf[2])
 	       sizeof(pdu->pump_sensors_dma_buf));
 }
 
-int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
+int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4])
+{
+	if (!pdu)
+		return -1;
+
+	osStatus_t stat = osMutexAcquire(pdu->mutex, MUTEX_TIMEOUT);
+	if (stat)
+		return stat;
+
+	uint8_t ctrl_bank0 = 0;
+	HAL_StatusTypeDef error = tca9539_read_reg(
+		pdu->ctrl_expander, TCA_INPUT_PORT_0, &ctrl_bank0);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t ctrl_bank1 = 0;
+	error = tca9539_read_reg(pdu->ctrl_expander, TCA_INPUT_PORT_1,
+				 &ctrl_bank1);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t shutdown_bank0 = 0;
+	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_PORT_0,
+				 &shutdown_bank0);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	uint8_t shutdown_bank1 = 0;
+	error = tca9539_read_reg(pdu->shutdown_expander, TCA_INPUT_PORT_1,
+				 &shutdown_bank1);
+	if (error != HAL_OK) {
+		osMutexRelease(pdu->mutex);
+		return error;
+	}
+
+	bitstream_t expander_debug;
+	bitstream_init(&expander_debug, expander_debug_data, 4);
+
+	// clang-format off
+	/* CTRL EXPANDER */
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_PUMP_CTRL_1), 1);			// Read Pin P00		// BANK 0
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_PUMP_CTRL_2), 1);			// Read Pin P01
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_BRKLIGHT_CTRL), 1);			// Read Pin P02
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_FANBATTBOX_CTRL), 1);		// Read Pin P03
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RTDS_CTRL), 1);				// Read Pin P04
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RADFAN_CTRL_1), 1);			// Read Pin P05
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_RADFAN_CTRL_2), 1);			// Read Pin P06
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank0, PIN_BATTBOX_FUSE_STAT), 1);		// Read Pin P07
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_LV_BOARDS_FUSE_STAT), 1);	// Read Pin P10		// BANK 1
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_RADFAN_FUSE_STAT), 1);		// Read Pin P11
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_FANBATTBOX_FUSE_STAT), 1);	// Read Pin P12
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_DASHBOARD_FUSE_STAT), 1);	// Read Pin P13
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_BRKLIGHT_FUSE_STAT), 1);		// Read Pin P14
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_SD_TO_BRB_FUSE_STAT), 1);	// Read Pin P15
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_PUMP_FUSE_STAT1), 1);		// Read Pin P16
+	bitstream_add(&expander_debug, EXTRACT_BIT(ctrl_bank1, PIN_PUMP_FUSE_STAT2), 1);		// Read Pin P17
+	/* SHUTDOWN EXPANDER */
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_CKPT_BRB_CLR), 1);		// Read Pin P00		// BANK 0
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_BMS_GOOD), 1);			// Read Pin P01
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_INERTIA_SW_GOOD), 1);	// Read Pin P02
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SPARE_GPIO1), 1);		// Read Pin P03
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_IMD_GOOD), 1);			// Read Pin P04
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_BSPD_GOOD), 1);			// Read Pin P05
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SHUTDOWN_06), 1);		// Read Pin P06
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank0, PIN_SHUTDOWN_07), 1);		// Read Pin P07
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SHUTDOWN_10), 1);		// Read Pin P10		// BANK 1
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_MC_STAT), 1);			// Read Pin P11
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SPARE_IN), 1);			// Read Pin P12
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_SHUTDOWN_13), 1);		// Read Pin P13
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_TSMS_SENSE), 1);			// Read Pin P14
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_BOTS_GOOD), 1);			// Read Pin P15
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_HVD_INTLK_GOOD), 1);		// Read Pin P16
+	bitstream_add(&expander_debug, EXTRACT_BIT(shutdown_bank1, PIN_HVC_INTLK_GOOD), 1);		// Read Pin P17
+	// clang-format on
+
+	osMutexRelease(pdu->mutex);
+	return 0;
+}
+
+int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2])
 {
 	if (!pdu)
 		return -1;
@@ -301,7 +429,6 @@ int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream)
 	}
 
 	bitstream_t fuses;
-	uint8_t fuse_data[2];
 	bitstream_init(&fuses, fuse_data, 2);
 
 	// clang-format off
@@ -345,7 +472,7 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status)
 	return 0;
 }
 
-int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
+int8_t read_shutdown(pdu_t *pdu, uint8_t shutdown_data[1])
 {
 	if (!pdu)
 		return -1;
@@ -371,7 +498,6 @@ int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream)
 
 	// clang-format off
 	bitstream_t shutdown;
-	uint8_t shutdown_data[1];
 	bitstream_init(&shutdown, shutdown_data, 1);
 
 	bitstream_add(&shutdown, EXTRACT_BIT(bank0_d, PIN_BMS_GOOD), 1); 			// Read Pin P01
@@ -440,7 +566,7 @@ int8_t read_brake_state(pdu_t *pdu, bool *status)
 	/* read pin over i2c */
 	uint8_t config = 0;
 	HAL_StatusTypeDef error = tca9539_read_pin(pdu->ctrl_expander,
-						   TCA_INPUT_PORT_0,
+						   TCA_OUTPUT_PORT_0,
 						   PIN_BRKLIGHT_CTRL, &config);
 	if (error != HAL_OK) {
 		osMutexRelease(pdu->mutex);

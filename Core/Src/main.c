@@ -227,8 +227,6 @@ int main(void)
 	// assert(temp_monitor_handle);
 	//imu_monitor_handle = osThreadNew(vIMUMonitor, mpu, &imu_monitor_attributes);
 	//assert(imu_monitor_handle);
-	// shutdown_monitor_handle = osThreadNew(vShutdownMonitor, pdu, &shutdown_monitor_attributes);
-	// assert(shutdown_monitor_handle);
 
 	/* Control File Thread */
   control_args_t *control_args = malloc(sizeof(control_args_t));

@@ -37,8 +37,9 @@ static void clear_fault(void *args)
 		non_crit_fault &= ~fault_index;
 	}
 
-	// unfault car if all critical faults are cleared
-	if (crit_fault == 0) {
+	// unfault car if all critical faults are cleared, we are faulted, and the current fault is critical
+	if (crit_fault == 0 && get_func_state() == FAULTED &&
+	    *fault_id < MAX_CRITICAL_FAULT) {
 		set_ready_mode();
 	}
 

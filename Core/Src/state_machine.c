@@ -12,7 +12,8 @@
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
-#define SEND_NERO_TIMEOUT 500 /*in millis*/
+#define SEND_NERO_TIMEOUT	500 /*in millis*/
+#define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
 
 // #define DISABLE_REVERSE
 
@@ -35,6 +36,9 @@ const osThreadAttr_t sm_director_attributes = {
 };
 
 static osMessageQueueId_t state_trans_queue;
+static osTimerId_t ts_rising_timer;
+static bool is_ts_rising = false;
+static bool enter_drive_enabled = false;
 
 static void send_nero_msg(dti_t *mc)
 {
@@ -44,6 +48,7 @@ static void send_nero_msg(dti_t *mc)
 		uint8_t mph;
 		uint8_t tsms;
 		uint8_t torque_lim_percentage;
+		uint8_t direction;
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
@@ -53,6 +58,7 @@ static void send_nero_msg(dti_t *mc)
 	/* Percentage from 0 - 1, multiplied by 100 */
 	nero_data.torque_lim_percentage =
 		(uint8_t)(get_torque_limit_percentage() * 100);
+	nero_data.direction = cerberus_state.functional != F_REVERSE;
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
@@ -87,25 +93,21 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	if (new_state == FAULTED) {
 		/* Turn off high power peripherals */
 		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = false };
+			(nero_state_t){ .nero_index = OFF, .home_mode = true };
 		write_fault(mpu, true);
 
 		printf("FAULTED\r\n");
 	}
 
 	/* Make sure wheels are not spinning before changing modes */
-#ifndef TSMS_OVERRIDE
-	if (!get_tsms() && dti_get_mph(mc) > 1)
-		return 1;
-#endif
-	bool brake_state = true;
+	bool brake_state;
 
 	/* Catching state transitions */
 	switch (new_state) {
 	case READY:
 		/* Turn off high power peripherals */
 		write_fault(mpu, false);
-		printf("READY\r\n");
+		printf("READY\n");
 		break;
 	case F_REVERSE:
 #ifdef DISABLE_REVERSE
@@ -115,15 +117,23 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-		if (read_brake_state(pdu, &brake_state)) {
+		if (cerberus_state.functional == FAULTED) {
+			printf("Cannot drive from a fault!\n");
 			return 3;
 		}
+
+		brake_state = get_brake_state();
 #ifdef TSMS_OVERRIDE
 		if (!brake_state) {
 			return 3;
 		}
 		printf("Ignoring tsms\n\n");
 #else
+		if (!enter_drive_enabled) {
+			printf("Must wait before entering drive!");
+			return 3;
+		}
+
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
 			return 3;
@@ -131,8 +141,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 #endif
 		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 
-		/* Turn on high power peripherals */
-		write_fault(mpu, false);
 		printf("ACTIVE STATE\r\n");
 		break;
 	default:
@@ -181,7 +189,8 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 	}
 
 	// Entering home mode
-	if (!current_nero_state.home_mode && new_state.home_mode) {
+	if (get_active() && !current_nero_state.home_mode &&
+	    new_state.home_mode) {
 		if (transition_functional_state(READY, pdu, mc, mpu))
 			return 1;
 	}
@@ -287,6 +296,11 @@ int fault()
 		(state_req_t){ .id = FUNCTIONAL, .state.functional = FAULTED });
 }
 
+void rising_ts_cb(void *args)
+{
+	enter_drive_enabled = true;
+}
+
 void vStateMachineDirector(void *pv_params)
 {
 	cerberus_state.functional = READY;
@@ -308,6 +322,8 @@ void vStateMachineDirector(void *pv_params)
 
 	free(args);
 
+	ts_rising_timer = osTimerNew(rising_ts_cb, osTimerOnce, NULL, NULL);
+
 	/* Write to GPIO expander to set initial state */
 	write_fault(mpu, false);
 
@@ -315,16 +331,24 @@ void vStateMachineDirector(void *pv_params)
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
 				      pdMS_TO_TICKS(SEND_NERO_TIMEOUT)) ==
 		    osOK) {
-			if (!check_state_change(new_state_req)) {
-				continue;
+			if (check_state_change(new_state_req)) {
+				if (new_state_req.id == NERO)
+					transition_nero_state(
+						new_state_req.state.nero, pdu,
+						mc, mpu);
+				else if (new_state_req.id == FUNCTIONAL)
+					transition_functional_state(
+						new_state_req.state.functional,
+						pdu, mc, mpu);
 			}
-			if (new_state_req.id == NERO)
-				transition_nero_state(new_state_req.state.nero,
-						      pdu, mc, mpu);
-			else if (new_state_req.id == FUNCTIONAL)
-				transition_functional_state(
-					new_state_req.state.functional, pdu, mc,
-					mpu);
+		}
+
+		if (!is_ts_rising && get_tsms()) {
+			is_ts_rising = true;
+			osTimerStart(ts_rising_timer, TS_RISING_BLOCK_TIMEOUT);
+		} else if (!get_tsms()) {
+			is_ts_rising = false;
+			enter_drive_enabled = false;
 		}
 
 		// send nero data periodically

@@ -65,4 +65,11 @@ void vProcessPedals(void *pv_params);
 extern osThreadId_t process_pedals_thread;
 extern const osThreadAttr_t process_pedals_attributes;
 
+/**
+ * @brief reads whether the brake is currently engaged
+ * 
+ * @return true if brake engaged, false otherwise
+ */
+bool get_brake_state();
+
 #endif

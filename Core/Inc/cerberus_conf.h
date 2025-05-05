@@ -21,21 +21,19 @@
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY  10 /* ms */
-#define MAX_APPS1_VOLTS	     3.0 /* volts */
-#define MIN_APPS1_VOLTS	     1.5 /* volts */
-#define MAX_APPS2_VOLTS	     2.0 /* volts */
-#define MIN_APPS2_VOLTS	     0.5 /* volts */
-#define APPS1_VOLTAGE_OFFSET 1.5 /* volts */
-#define APPS2_VOLTAGE_OFFSET 0.5 /* volts */
-#define PEDAL_BRAKE_THRESH   0.42 /* percentage */
+#define PEDALS_SAMPLE_DELAY 10 /* ms */
+#define MAX_APPS1_VOLTS	    3.02 /* volts */
+#define MIN_APPS1_VOLTS	    1.75 /* volts */
+#define MAX_APPS2_VOLTS	    2.28 /* volts */
+#define MIN_APPS2_VOLTS	    1.01 /* volts */
+#define PEDAL_BRAKE_THRESH  0.12 /* percentage */
 
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
 
 /* Endurance Mode Thresholds */
-#define REGEN_THRESHOLD	       0.01
-#define ACCELERATION_THRESHOLD 0.05
+#define REGEN_THRESHOLD	       0.10
+#define ACCELERATION_THRESHOLD 0.25
 
 /* Maximum AC braking current */
 #define MAX_REGEN_CURRENT 20
@@ -64,18 +62,19 @@
 #define WATCHDOG_Pin	    GPIO_PIN_15
 #define WATCHDOG_GPIO_Port  GPIOB
 
-#define CANID_TEMP_SENSOR   0x004
-#define CANID_TORQUE_MSG    0x005
-#define CANID_OUTBOUND_MSG  0xA55
-#define CANID_FUSE	    0x111
-#define CANID_SHUTDOWN_LOOP 0x123
-#define CANID_IMU_ACCEL	    0x506
-#define CANID_IMU_GYRO	    0x507
-#define CANID_NERO_MSG	    0x501
-#define CANID_FAULT_MSG	    0x502
-#define CANID_LV_MONITOR    0x503
-#define CANID_PEDALS_MSG    0x504
-#define CANID_PDU_CURRENT   0x508
-#define CANID_PUMP_SENSORS  0x509
+#define CANID_TEMP_SENSOR    0x004
+#define CANID_TORQUE_MSG     0x005
+#define CANID_OUTBOUND_MSG   0xA55
+#define CANID_FUSE	     0x111
+#define CANID_SHUTDOWN_LOOP  0x123
+#define CANID_IMU_ACCEL	     0x506
+#define CANID_IMU_GYRO	     0x507
+#define CANID_NERO_MSG	     0x501
+#define CANID_FAULT_MSG	     0x502
+#define CANID_LV_MONITOR     0x503
+#define CANID_PEDALS_MSG     0x504
+#define CANID_PDU_CURRENT    0x508
+#define CANID_PUMP_SENSORS   0x509
+#define CANID_EXPANDER_DEBUG 0x50A
 // Reserved for MPU debug message, see yaml for format
 #define CANID_EXTRA_MSG 0x701
