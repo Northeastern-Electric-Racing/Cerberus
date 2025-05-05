@@ -121,7 +121,6 @@ void set_regen_limit(uint8_t limit)
 {
 	regen_limit = limit;
 
-	// Make sure the percentage is within the valid range
 	if (regen_limit > MAX_REGEN_CURRENT) {
 		regen_limit = MAX_REGEN_CURRENT;
 	} else if (regen_limit < 0.0) {
