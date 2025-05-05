@@ -395,8 +395,7 @@ void brake_pedal_regen(float brake_val)
 	// The brake travel ADC value at which we want maximum regen
 	static const float travel_scaling_max = 1000;
 	// % of max brake pressure * ac current limit
-	float brake_current =
-		(brake_val / travel_scaling_max) * regen_limit;
+	float brake_current = (brake_val / travel_scaling_max) * regen_limit;
 	if (brake_current > regen_limit) {
 		// clamp for safety
 		brake_current = regen_limit;
@@ -437,8 +436,8 @@ void accel_pedal_regen_torque(float accel_val)
 void accel_pedal_regen_braking(float accel_val)
 {
 	/* Calculate AC current target for regenerative braking */
-	float regen_current = (regen_limit / REGEN_THRESHOLD) *
-			      (REGEN_THRESHOLD - accel_val);
+	float regen_current =
+		(regen_limit / REGEN_THRESHOLD) * (REGEN_THRESHOLD - accel_val);
 
 	if (regen_current > regen_limit) {
 		regen_current = regen_limit;
