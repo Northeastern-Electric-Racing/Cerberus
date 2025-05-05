@@ -28,7 +28,10 @@
 #define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
+#define REGEN_INCREMENT_STEP 5 /* AC Amps */
+
 float torque_limit_percentage = 1.0;
+uint8_t regen_limit = 20;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	   4096
@@ -96,6 +99,36 @@ void decrease_torque_limit()
 	}
 }
 
+void increase_regen_limit()
+{
+	if (regen_limit + REGEN_INCREMENT_STEP > MAX_REGEN_CURRENT) {
+		regen_limit = MAX_REGEN_CURRENT;
+	} else {
+		regen_limit += REGEN_INCREMENT_STEP;
+	}
+}
+
+void decrease_regen_limit()
+{
+	if (regen_limit - 0.1 < 0) {
+		regen_limit = 0;
+	} else {
+		regen_limit -= REGEN_INCREMENT_STEP;
+	}
+}
+
+void set_regen_limit(uint8_t limit)
+{
+	regen_limit = limit;
+
+	// Make sure the percentage is within the valid range
+	if (regen_limit > MAX_REGEN_CURRENT) {
+		regen_limit = MAX_REGEN_CURRENT;
+	} else if (regen_limit < 0.0) {
+		regen_limit = 0.0;
+	}
+}
+
 void set_torque_limit(float percentage)
 {
 	torque_limit_percentage = percentage;
@@ -111,6 +144,11 @@ void set_torque_limit(float percentage)
 float get_torque_limit_percentage()
 {
 	return torque_limit_percentage;
+}
+
+uint8_t get_regen_limit()
+{
+	return regen_limit;
 }
 
 /**
@@ -358,10 +396,10 @@ void brake_pedal_regen(float brake_val)
 	static const float travel_scaling_max = 1000;
 	// % of max brake pressure * ac current limit
 	float brake_current =
-		(brake_val / travel_scaling_max) * MAX_REGEN_CURRENT;
-	if (brake_current > MAX_REGEN_CURRENT) {
+		(brake_val / travel_scaling_max) * regen_limit;
+	if (brake_current > regen_limit) {
 		// clamp for safety
-		brake_current = MAX_REGEN_CURRENT;
+		brake_current = regen_limit;
 	}
 
 	// current must be delivered to DTI as a multiple of 10
@@ -376,7 +414,8 @@ void brake_pedal_regen(float brake_val)
 void accel_pedal_regen_torque(float accel_val)
 {
 	/* Coefficient to map accel pedal travel % to the max torque */
-	static const float coeff = MAX_TORQUE / (1 - ACCELERATION_THRESHOLD);
+	float coeff = (MAX_TORQUE * torque_limit_percentage) /
+		      (1 - ACCELERATION_THRESHOLD);
 
 	/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
 	uint16_t torque =
@@ -398,11 +437,11 @@ void accel_pedal_regen_torque(float accel_val)
 void accel_pedal_regen_braking(float accel_val)
 {
 	/* Calculate AC current target for regenerative braking */
-	float regen_current = (MAX_REGEN_CURRENT / REGEN_THRESHOLD) *
+	float regen_current = (regen_limit / REGEN_THRESHOLD) *
 			      (REGEN_THRESHOLD - accel_val);
 
-	if (regen_current > MAX_REGEN_CURRENT) {
-		regen_current = MAX_REGEN_CURRENT;
+	if (regen_current > regen_limit) {
+		regen_current = regen_limit;
 	}
 
 	/* Send regen current to motor controller */

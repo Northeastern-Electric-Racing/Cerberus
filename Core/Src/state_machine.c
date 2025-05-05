@@ -49,6 +49,7 @@ static void send_nero_msg(dti_t *mc)
 		uint8_t tsms;
 		uint8_t torque_lim_percentage;
 		uint8_t direction;
+		uint8_t regen_lim;
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
@@ -59,6 +60,7 @@ static void send_nero_msg(dti_t *mc)
 	nero_data.torque_lim_percentage =
 		(uint8_t)(get_torque_limit_percentage() * 100);
 	nero_data.direction = cerberus_state.functional != F_REVERSE;
+	nero_data.regen_lim = (uint8_t)get_regen_limit();
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
@@ -139,7 +141,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 			return 3;
 		}
 #endif
-		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+
+		if (get_tsms()) {
+			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+		}
 
 		printf("ACTIVE STATE\r\n");
 		break;

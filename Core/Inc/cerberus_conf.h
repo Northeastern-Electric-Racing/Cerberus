@@ -33,10 +33,10 @@
 
 /* Endurance Mode Thresholds */
 #define REGEN_THRESHOLD	       0.10
-#define ACCELERATION_THRESHOLD 0.25
+#define ACCELERATION_THRESHOLD 0.15
 
 /* Maximum AC braking current */
-#define MAX_REGEN_CURRENT 20
+#define MAX_REGEN_CURRENT 50
 
 #define STEERING_WHEEL_DEBOUNCE 10 /* ms */
 
