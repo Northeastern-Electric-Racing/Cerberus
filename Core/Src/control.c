@@ -3,6 +3,10 @@
 
 #include "control.h"
 #include "state_machine.h"
+#include <stdio.h>
+
+#define DEVICE_ON_DEBOUNCE_TIME	 1000
+#define DEVICE_OFF_DEBOUNCE_TIME 15000
 
 bool calypso_states[NUM_DEVICES];
 
@@ -36,18 +40,19 @@ static void set_device_off(void *params)
 static void control_device(device_control_t *device, uint16_t temp)
 {
 	assert(device);
-	bool hv = get_active();
 
+	/* uncomment this section for pumps to be on whenever ts is on */
+	//bool hv = get_active();
 	// turn on pumps when hv is on / turn off when faulted
-	if (device->device_type == DEVICE_PUMP0 ||
-	    device->device_type == DEVICE_PUMP1) {
-		if (hv) {
-			set_device_on(device);
-			return;
-		} else if (get_func_state() == FAULTED) {
-			set_device_off(device);
-			return;
-		}
+	// if (device->device_type == DEVICE_PUMP0 ||
+	//     device->device_type == DEVICE_PUMP1) {
+	// 	if (hv) {
+	// 		set_device_on(device);
+	// 		return;
+	// 	} else
+	if (get_func_state() == FAULTED) {
+		set_device_off(device);
+		return;
 	}
 
 	// turn on device if calypso sent message to turn it on
@@ -61,10 +66,12 @@ static void control_device(device_control_t *device, uint16_t temp)
 	    is_timer_active(&device->timer)) {
 		if (temp > device->upper_temp) {
 			debounce(temp > device->upper_temp, &(device->timer),
-				 10000, set_device_on, device);
+				 DEVICE_ON_DEBOUNCE_TIME, set_device_on,
+				 device);
 		} else {
 			debounce(temp < device->lower_temp, &(device->timer),
-				 10000, set_device_off, device);
+				 DEVICE_OFF_DEBOUNCE_TIME, set_device_off,
+				 device);
 		}
 	}
 }
@@ -89,7 +96,7 @@ void vControl(void *params)
 
 	device_control_t radfan0 = {
 		.pdu = pdu,
-		.control_func = write_radfan_1,
+		.control_func = write_radfan_2,
 		.upper_temp = RADFAN_UPPER_MOTOR_TEMP,
 		.lower_temp = RADFAN_LOWER_MOTOR_TEMP,
 		.device_type = DEVICE_RADFAN0,
@@ -105,28 +112,44 @@ void vControl(void *params)
 
 	device_control_t radfan1 = {
 		.pdu = pdu,
-		.control_func = write_radfan_2,
+		.control_func = write_radfan_1,
 		.upper_temp = RADFAN_UPPER_CONTROLLER_TEMP,
 		.lower_temp = RADFAN_LOWER_CONTROLLER_TEMP,
 		.device_type = DEVICE_RADFAN1,
 	};
 
+	device_control_t fan_battbox = {
+		.pdu = pdu,
+		.control_func = write_fan_battbox,
+		.upper_temp = FANBATTBOX_UPPER_TEMP,
+		.lower_temp = FANBATTBOX_LOWER_TEMP,
+		.device_type = DEVICE_FANBATTBOX,
+	};
+
 	write_pump_1(pdu, false);
 	write_pump_2(pdu, false);
+	write_radfan_1(pdu, false);
+	write_radfan_2(pdu, false);
+	write_fan_battbox(pdu, false);
 
 	for (;;) {
 		uint16_t motor_temp;
 		dti_get_motor_temp(mc, &motor_temp);
 		uint16_t controller_temp;
 		dti_get_controller_temp(mc, &controller_temp);
+		uint16_t battbox_temp;
+		bms_get_battbox_temp(&battbox_temp);
+
+		if (!verify_tca_config(pdu)) {
+			write_tca_config(pdu);
+		}
 
 		// Determine device state
 		control_device(&pump0, motor_temp);
 		control_device(&radfan0, motor_temp);
 		control_device(&pump1, controller_temp);
 		control_device(&radfan1, controller_temp);
-
-		write_fan_battbox(pdu, calypso_states[DEVICE_FANBATTBOX]);
+		control_device(&fan_battbox, battbox_temp);
 
 		osDelay(1000);
 	}

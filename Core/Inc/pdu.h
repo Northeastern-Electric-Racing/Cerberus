@@ -30,12 +30,16 @@ typedef struct {
 pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc);
 
 /* Functions to Control PDU */
+/// MOTOR PUMP
 int8_t write_pump_1(pdu_t *pdu, bool state);
+/// MC PUMP
 int8_t write_pump_2(pdu_t *pdu, bool state);
 int8_t write_brakelight(pdu_t *pdu, bool state);
 int8_t write_fan_battbox(pdu_t *pdu, bool state);
 int8_t write_rtds(pdu_t *pdu, bool state);
+/// MC FAN
 int8_t write_radfan_1(pdu_t *pdu, bool state);
+/// MOTOR FAN
 int8_t write_radfan_2(pdu_t *pdu, bool state);
 
 /**
@@ -45,7 +49,7 @@ int8_t write_radfan_2(pdu_t *pdu, bool state);
  * @param status Bitstream for storing fuse data
  * @return int8_t Error code resulting from reading GPIO expander pins over I2C or mutex acquisition
  */
-int8_t read_fuses(pdu_t *pdu, bitstream_t *bitstream);
+int8_t read_fuses(pdu_t *pdu, uint8_t fuse_data[2]);
 
 /**
  * @brief Read the state of the TSMS signal.
@@ -60,10 +64,9 @@ int8_t read_tsms_sense(pdu_t *pdu, bool *status);
  * @brief Read the status of the shutdown loop.
  * 
  * @param pdu Pointer to struct representing the PDU
- * @param status Bitstream to store shutdown data
  * @return int8_t Result of reading pins on the shutdown monitor GPIO expander of the PDU or result of mutex acquisition
  */
-int8_t read_shutdown(pdu_t *pdu, bitstream_t *bitstream);
+int8_t read_shutdown(pdu_t *pdu, uint8_t shutdown_data[1]);
 
 /**
  * @brief Read the status of the shutdown loop.
@@ -79,15 +82,6 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 			float *lv_boards_current);
 
 /**
- * @brief Taskf for sounding RTDS.
- * 
- * @param arg Pointer to struct representing the PDU.
- */
-void vRTDS(void *arg);
-extern osThreadId_t rtds_thread;
-extern const osThreadAttr_t rtds_attributes;
-
-/**
  * @brief Read the status of brakes
  * 
  * @param pdu Pointer to struct representing the PDU
@@ -95,6 +89,40 @@ extern const osThreadAttr_t rtds_attributes;
  * @return int8_t Error code.
  */
 int8_t read_brake_state(pdu_t *pdu, bool *status);
+
+/**
+ * @brief writes to config registers of the shutdown and ctrl expanders on pdu
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return error code
+ */
+uint8_t write_tca_config(pdu_t *pdu);
+
+/**
+ * @brief returns whether tca configs have been written too
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @return true if correct config read, false otherwise
+ */
+bool verify_tca_config(pdu_t *pdu);
+
+/**
+ * @brief Read the status of all expander debug pins (both ctrl and shutdown, in that order).
+ * 
+ * @param pdu Pointer to struct representing the PDU
+ * @param expander_debug_data Buffer that the data from both expanders will be written to
+ * @return int8_t Error code.
+ */
+int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]);
+
+/**
+ * @brief Taskf for sounding RTDS.
+ * 
+ * @param arg Pointer to struct representing the PDU.
+ */
+void vRTDS(void *arg);
+extern osThreadId_t rtds_thread;
+extern const osThreadAttr_t rtds_attributes;
 
 /* Current Sensors */
 #define MOTOR_CONTROLLER_CURRENT_SENSOR_ADDR 0x80
