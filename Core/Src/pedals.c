@@ -64,7 +64,7 @@ bool get_brake_state()
  * @param raw_adc 
  * @return float 
  */
-static float adc_to_volts(uint32_t raw_adc)
+float adc_to_volts(uint32_t raw_adc)
 {
 	float v3_volts = raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
 	// undo 2k + 3k voltage divider on APPS lines
