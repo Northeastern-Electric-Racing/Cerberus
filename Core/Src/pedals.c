@@ -513,7 +513,7 @@ void handle_launch_control(float mph, float accel_val)
 	float max_delta_adjusted = deltaMPHPS_max * (delta_ms / 1000.0f);
 
 	if (delta_mph > max_delta_adjusted) {
-		dti_set_torque(prev_accel / 2);
+		linear_accel_to_torque(prev_accel / 2);
 	} else {
 		linear_accel_to_torque(accel_val);
 	}
