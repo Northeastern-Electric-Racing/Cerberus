@@ -381,29 +381,6 @@ static void handle_reverse(float mph, float accel)
 	dti_set_torque(-1 * derate_torque(mph, accel));
 }
 
-/* Comment out to use single pedal mode */
-//#define USE_BRAKE_REGEN 1
-
-/**
- * @brief Calculate and send regen braking AC current target based on brake pedal travel.
- * 
- * @param brake_val The reading of the brake pressure sensors.
- */
-void brake_pedal_regen(float brake_val)
-{
-	// The brake travel ADC value at which we want maximum regen
-	static const float travel_scaling_max = 1000;
-	// % of max brake pressure * ac current limit
-	float brake_current = (brake_val / travel_scaling_max) * regen_limit;
-	if (brake_current > regen_limit) {
-		// clamp for safety
-		brake_current = regen_limit;
-	}
-
-	// current must be delivered to DTI as a multiple of 10
-	dti_send_brake_current((uint16_t)(brake_current * 10));
-}
-
 /**
  * @brief Calculate and send torque command to motor controller.
  * 
@@ -452,19 +429,10 @@ void accel_pedal_regen_braking(float accel_val)
  * @param mc pointer to struct containing dti data
  * @param mph mph of the car
  * @param accel_val adjusted value of the acceleration pedal
- * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(float mph, float accel_val, float brake_val)
+void handle_endurance(float mph, float accel_val)
 {
-#ifdef USE_BRAKE_REGEN
-	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
-		brake_pedal_regen(brake_val);
-	} else {
-		// accelerating, limit torque
-		linear_accel_to_torque(accel_val, torque);
-	}
-#else
 	/* Factor for converting MPH to KMH */
 	static const float MPH_TO_KMH = 1.609;
 
@@ -477,8 +445,6 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 		dti_set_torque(0);
 	}
-
-#endif
 }
 
 osThreadId_t process_pedals_thread;
@@ -564,7 +530,7 @@ void vProcessPedals(void *pv_params)
 
 		switch (func_state) {
 		case F_EFFICIENCY:
-			handle_endurance(mph, accel_value, brake_value);
+			handle_endurance(mph, accel_value);
 			break;
 		case F_PERFORMANCE:
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
