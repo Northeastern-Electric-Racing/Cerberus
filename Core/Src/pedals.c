@@ -32,6 +32,7 @@
 
 float torque_limit_percentage = 1.0;
 uint8_t regen_limit = 20;
+static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	   4096
@@ -148,6 +149,16 @@ float get_torque_limit_percentage()
 uint8_t get_regen_limit()
 {
 	return regen_limit;
+}
+
+void toggle_launch_control()
+{
+	launch_control_enabled = !launch_control_enabled;
+}
+
+bool get_launch_control_enabled()
+{
+	return launch_control_enabled;
 }
 
 /**
@@ -481,6 +492,36 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 #endif
 }
 
+const float deltaMPHPS_max =
+	22.0f; // Miles per hour per second, based on matlab accel numbers
+
+void handle_launch_control(float mph, float accel_val)
+{
+	static float last_mph = 0.0f;
+	static uint32_t prevTime = 0;
+
+	if (prevTime == 0) { // Initialize time
+		prevTime = HAL_GetTick();
+		return;
+	}
+
+	uint32_t now = HAL_GetTick();
+	uint32_t delta_ms = now - prevTime;
+
+	float delta_mph = mph - last_mph;
+	float max_delta_adjusted = deltaMPHPS_max * (delta_ms / 1000.0f);
+
+	if (delta_mph > max_delta_adjusted) {
+		dti_set_torque(0);
+	} else {
+		linear_accel_to_torque(accel_val);
+	}
+
+	// Update for next cycle
+	prevTime = now;
+	last_mph = mph;
+}
+
 osThreadId_t process_pedals_thread;
 const osThreadAttr_t process_pedals_attributes = {
 	.name = "PedalMonitor",
@@ -567,11 +608,15 @@ void vProcessPedals(void *pv_params)
 			handle_endurance(mph, accel_value, brake_value);
 			break;
 		case F_PERFORMANCE:
+			if (launch_control_enabled) {
+				handle_launch_control(mph, accel_value);
+			} else {
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-			linear_accel_to_torque(accel_value);
+				linear_accel_to_torque(accel_value);
 #else
-			power_regression_accel_to_torque(accel_value);
+				power_regression_accel_to_torque(accel_value);
 #endif
+			}
 			break;
 		case F_PIT:
 			handle_pit(mph, accel_value);

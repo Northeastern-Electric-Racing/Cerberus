@@ -97,4 +97,14 @@ extern const osThreadAttr_t process_pedals_attributes;
  */
 bool get_brake_state();
 
+/**
+ * @brief Toggles launch control for performance mode
+ */
+void toggle_launch_control();
+
+/**
+ * @brief Returns the current state of launch control
+ */
+bool get_launch_control();
+
 #endif

@@ -50,6 +50,7 @@ static void send_nero_msg(dti_t *mc)
 		uint8_t torque_lim_percentage;
 		uint8_t direction;
 		uint8_t regen_lim;
+		uint8_t launch_control_enabled;
 	} nero_data;
 
 	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
@@ -61,6 +62,7 @@ static void send_nero_msg(dti_t *mc)
 		(uint8_t)(get_torque_limit_percentage() * 100);
 	nero_data.direction = cerberus_state.functional != F_REVERSE;
 	nero_data.regen_lim = (uint8_t)get_regen_limit();
+	nero_data.launch_control_enabled = (uint8_t)get_launch_control();
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
 
