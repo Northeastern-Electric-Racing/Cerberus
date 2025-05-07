@@ -64,7 +64,7 @@ DMA_HandleTypeDef hdma_adc1;
 DMA_HandleTypeDef hdma_adc2;
 DMA_HandleTypeDef hdma_adc3;
 
-CAN_HandleTypeDef hcan1;
+CAN_HandleTypeDef hcan2;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -89,7 +89,6 @@ osMessageQueueId_t imu_queue;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_CAN1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_ADC1_Init(void);
@@ -97,6 +96,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_IWDG_Init(void);
 static void MX_ADC2_Init(void);
+static void MX_CAN2_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -160,7 +160,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_CAN1_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_ADC1_Init();
@@ -168,6 +167,7 @@ int main(void)
   MX_ADC3_Init();
   MX_IWDG_Init();
   MX_ADC2_Init();
+  MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
 
 	/* Create Interfaces to Represent Relevant Hardware */
@@ -177,7 +177,7 @@ int main(void)
 	assert(pdu);
 	dti_t *mc = dti_init();
 	assert(mc);
-	init_can1(&hcan1);
+	init_can2(&hcan2);
   bms_init();
 
 	printf("\n\n\nInit Success...\n\n\n");
@@ -237,7 +237,7 @@ int main(void)
 
 	/* Messaging */
 	can_dispatch_handle =
-		osThreadNew(vCanDispatch, &hcan1, &can_dispatch_attributes);
+		osThreadNew(vCanDispatch, NULL, &can_dispatch_attributes);
 	assert(can_dispatch_handle);
 
 	can_receive_thread =
@@ -528,39 +528,39 @@ static void MX_ADC3_Init(void)
 }
 
 /**
-  * @brief CAN1 Initialization Function
+  * @brief CAN2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_CAN1_Init(void)
+static void MX_CAN2_Init(void)
 {
 
-  /* USER CODE BEGIN CAN1_Init 0 */
+  /* USER CODE BEGIN CAN2_Init 0 */
 
-  /* USER CODE END CAN1_Init 0 */
+  /* USER CODE END CAN2_Init 0 */
 
-  /* USER CODE BEGIN CAN1_Init 1 */
+  /* USER CODE BEGIN CAN2_Init 1 */
 
-  /* USER CODE END CAN1_Init 1 */
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 6;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = ENABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  /* USER CODE END CAN2_Init 1 */
+  hcan2.Instance = CAN2;
+  hcan2.Init.Prescaler = 6;
+  hcan2.Init.Mode = CAN_MODE_NORMAL;
+  hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_11TQ;
+  hcan2.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan2.Init.TimeTriggeredMode = DISABLE;
+  hcan2.Init.AutoBusOff = ENABLE;
+  hcan2.Init.AutoWakeUp = DISABLE;
+  hcan2.Init.AutoRetransmission = DISABLE;
+  hcan2.Init.ReceiveFifoLocked = DISABLE;
+  hcan2.Init.TransmitFifoPriority = DISABLE;
+  if (HAL_CAN_Init(&hcan2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN CAN1_Init 2 */
+  /* USER CODE BEGIN CAN2_Init 2 */
 
-  /* USER CODE END CAN1_Init 2 */
+  /* USER CODE END CAN2_Init 2 */
 
 }
 

@@ -13,7 +13,7 @@
  * 
  * @param hcan Pointer to struct representing CAN hardware.
  */
-void can1_callback(CAN_HandleTypeDef *hcan);
+void can2_callback(CAN_HandleTypeDef *hcan);
 
 /**
  * @brief Place a CAN message in a queue.
@@ -28,7 +28,7 @@ int8_t queue_can_msg(can_msg_t msg);
  * 
  * @param hcan Pointer to struct representing CAN hardware.
  */
-void init_can1(CAN_HandleTypeDef *hcan);
+void init_can2(CAN_HandleTypeDef *hcan);
 
 /**
  * @brief Task for sending CAN messages.

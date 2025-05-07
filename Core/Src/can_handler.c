@@ -20,7 +20,7 @@
 static osMessageQueueId_t can_outbound_queue;
 static osMessageQueueId_t can_inbound_queue;
 
-can_t *can1;
+can_t *can2;
 
 /* Relevant Info for Initializing CAN 1 */
 static uint16_t id_list_1[4] = {
@@ -35,19 +35,19 @@ static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
 
 static uint16_t id_list_3[4] = { BMS_CANID_CELL_TEMPS };
 
-void init_can1(CAN_HandleTypeDef *hcan)
+void init_can2(CAN_HandleTypeDef *hcan)
 {
 	assert(hcan);
 
 	/* Create PDU struct */
-	can1 = malloc(sizeof(can_t));
-	assert(can1);
+	can2 = malloc(sizeof(can_t));
+	assert(can2);
 
-	can1->hcan = hcan;
-	assert(!can_init(can1));
-	assert(!can_add_filter_standard(can1, id_list_1));
-	assert(!can_add_filter_standard(can1, id_list_2));
-	assert(!can_add_filter_standard(can1, id_list_3));
+	can2->hcan = hcan;
+	assert(!can_init(can2));
+	assert(!can_add_filter_standard(can2, id_list_1));
+	assert(!can_add_filter_standard(can2, id_list_2));
+	assert(!can_add_filter_standard(can2, id_list_3));
 
 	can_outbound_queue =
 		osMessageQueueNew(CAN_MSG_QUEUE_SIZE, sizeof(can_msg_t), NULL);
@@ -56,7 +56,7 @@ void init_can1(CAN_HandleTypeDef *hcan)
 }
 
 /* Callback to be called when we get a CAN message */
-void can1_callback(CAN_HandleTypeDef *hcan)
+void can2_callback(CAN_HandleTypeDef *hcan)
 {
 	fault_data_t fault_data = {
 		.fault_id = CAN_ROUTING_FAULT,
@@ -114,9 +114,6 @@ void vCanDispatch(void *pv_params)
 	can_msg_t msg_from_queue;
 	HAL_StatusTypeDef msg_status;
 
-	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)pv_params;
-	assert(hcan);
-
 	for (;;) {
 		osThreadFlagsWait(CAN_DISPATCH_FLAG, osFlagsWaitAny,
 				  osWaitForever);
@@ -124,11 +121,11 @@ void vCanDispatch(void *pv_params)
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
 					 NULL, 0U) == osOK) {
 			/* Wait if CAN outbound queue is full */
-			while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
+			while (HAL_CAN_GetTxMailboxesFreeLevel(can2->hcan) == 0) {
 				osDelay(1);
 			}
 
-			msg_status = can_send_msg(can1, &msg_from_queue);
+			msg_status = can_send_msg(can2, &msg_from_queue);
 
 			if (msg_status == HAL_ERROR) {
 				fault_data.diag = "Failed to send CAN message";
