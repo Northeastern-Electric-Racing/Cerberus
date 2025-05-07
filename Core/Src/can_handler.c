@@ -121,7 +121,8 @@ void vCanDispatch(void *pv_params)
 		while (osMessageQueueGet(can_outbound_queue, &msg_from_queue,
 					 NULL, 0U) == osOK) {
 			/* Wait if CAN outbound queue is full */
-			while (HAL_CAN_GetTxMailboxesFreeLevel(can2->hcan) == 0) {
+			while (HAL_CAN_GetTxMailboxesFreeLevel(can2->hcan) ==
+			       0) {
 				osDelay(1);
 			}
 
