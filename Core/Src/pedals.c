@@ -499,6 +499,7 @@ void handle_launch_control(float mph, float accel_val)
 {
 	static float last_mph = 0.0f;
 	static uint32_t prevTime = 0;
+	static float prev_accel = 0;
 
 	if (prevTime == 0) { // Initialize time
 		prevTime = HAL_GetTick();
@@ -512,7 +513,7 @@ void handle_launch_control(float mph, float accel_val)
 	float max_delta_adjusted = deltaMPHPS_max * (delta_ms / 1000.0f);
 
 	if (delta_mph > max_delta_adjusted) {
-		dti_set_torque(0);
+		dti_set_torque(prev_accel / 2);
 	} else {
 		linear_accel_to_torque(accel_val);
 	}
@@ -520,6 +521,7 @@ void handle_launch_control(float mph, float accel_val)
 	// Update for next cycle
 	prevTime = now;
 	last_mph = mph;
+	prev_accel = accel_val;
 }
 
 osThreadId_t process_pedals_thread;
