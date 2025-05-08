@@ -12,7 +12,7 @@ void tearDown(void) {
 
 // A simple random test
 void test_random(void) {
-    TEST_ASSERT_EQUAL_INT(15, (int)adc_to_volts(1802)); 
+    TEST_ASSERT_EQUAL_INT(15, 2); 
 }
 
 

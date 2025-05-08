@@ -2,14 +2,14 @@
 #define PDU_H
 
 #include <stdbool.h>
-#include "cmsis_os.h"
+#include "cmsis_os_test.h"
 #include "tca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "bitstream.h"
 #include "c_utils.h"
-#include "stm32f4xx_hal.h"
+#include "stm32xx_hal.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;

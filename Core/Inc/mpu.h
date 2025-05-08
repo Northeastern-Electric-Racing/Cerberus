@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 
-#include "cmsis_os.h"
-#include "stm32f4xx_hal.h"
+#include "cmsis_os_test.h"
+#include "stm32xx_hal.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
