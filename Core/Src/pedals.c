@@ -156,7 +156,7 @@ void toggle_launch_control()
 	launch_control_enabled = !launch_control_enabled;
 }
 
-bool get_launch_control_enabled()
+bool get_launch_control()
 {
 	return launch_control_enabled;
 }

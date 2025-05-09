@@ -13,6 +13,8 @@ osTimerId bms_timer;
 static osMutexAttr_t bms_mutex_attributes;
 static bms_t bms;
 
+#define IGNORE_BMS
+
 static void bms_fault_callback(void *args)
 {
 	fault_data_t fault_data = {
@@ -30,8 +32,10 @@ void bms_init()
 
 	bms.battbox_temp = 0;
 
+#ifndef IGNORE_BMS
 	bms_timer = osTimerNew(bms_fault_callback, osTimerOnce, NULL, NULL);
 	osTimerStart(bms_timer, BMS_CAN_MONITOR_DELAY);
+#endif
 
 	assert(&bms);
 }

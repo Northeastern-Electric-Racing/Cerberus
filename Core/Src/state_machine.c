@@ -121,18 +121,22 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
+
+		brake_state = get_brake_state();
+#ifdef TSMS_OVERRIDE
+		if (get_tsms() &&
+		    (!brake_state ||
+		     cerberus_state.functional ==
+			     FAULTED)) { // only enforce brake / fault if tsms is actually on
+			return 3;
+		}
+		printf("Ignoring tsms\n\n");
+#else
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
 			return 3;
 		}
 
-		brake_state = get_brake_state();
-#ifdef TSMS_OVERRIDE
-		if (!brake_state) {
-			return 3;
-		}
-		printf("Ignoring tsms\n\n");
-#else
 		if (!enter_drive_enabled) {
 			printf("Must wait before entering drive!");
 			return 3;
