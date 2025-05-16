@@ -79,7 +79,7 @@ void set_regen_limit(uint8_t limit);
  * 
  * @return regen limit
  */
-uint8_t get_regen_limit();
+uint16_t get_regen_limit();
 
 /**
  * @brief Task for reading pedal data, calculating pedal faults, and sending drive commands to the DTI.

@@ -28,10 +28,10 @@
 #define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
-#define REGEN_INCREMENT_STEP 5 /* AC Amps */
+#define REGEN_INCREMENT_STEP 10 /* AC Amps */
 
 float torque_limit_percentage = 1.0;
-uint8_t regen_limit = 20;
+uint16_t regen_limit = 400;
 static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
@@ -146,7 +146,7 @@ float get_torque_limit_percentage()
 	return torque_limit_percentage;
 }
 
-uint8_t get_regen_limit()
+uint16_t get_regen_limit()
 {
 	return regen_limit;
 }
@@ -423,12 +423,10 @@ void brake_pedal_regen(float brake_val)
 void accel_pedal_regen_torque(float accel_val)
 {
 	/* Coefficient to map accel pedal travel % to the max torque */
-	float coeff = (MAX_TORQUE * torque_limit_percentage) /
-		      (1 - ACCELERATION_THRESHOLD);
+	float coeff = (MAX_TORQUE * torque_limit_percentage);
 
 	/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
-	uint16_t torque =
-		coeff * accel_val - (accel_val * ACCELERATION_THRESHOLD);
+	uint16_t torque = coeff * (accel_val - ACCELERATION_THRESHOLD);
 
 	/* Limit torque percentage wise in endurance mode */
 	if (torque > MAX_TORQUE * torque_limit_percentage) {
