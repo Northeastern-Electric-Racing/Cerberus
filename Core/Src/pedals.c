@@ -31,7 +31,7 @@
 #define REGEN_INCREMENT_STEP 10 /* AC Amps */
 
 float torque_limit_percentage = 1.0;
-uint16_t regen_limit = 400;
+uint16_t regen_limit = 100;
 static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
@@ -389,7 +389,7 @@ static void handle_pit(float mph, float accel)
  */
 static void handle_reverse(float mph, float accel)
 {
-	dti_set_torque(-1 * derate_torque(mph, accel));
+	dti_set_torque(-1 * derate_torque(fabs(mph), accel));
 }
 
 /**
