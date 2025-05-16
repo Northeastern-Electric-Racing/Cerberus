@@ -53,7 +53,7 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_ENTER:
 		printf("Enter button pressed \n");
-		if (get_func_state() == PERFORMANCE) {
+		if (get_func_state() == F_PERFORMANCE) {
 			toggle_launch_control();
 		}
 		select_nero_index();

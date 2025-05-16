@@ -72,7 +72,7 @@ void decrease_regen_limit();
  * @param limit The new regen limit. Acceptable values are between 0 and MAX_REGEN_CURRENT
  * 
  */
-void set_regen_limit(uint8_t limit);
+void set_regen_limit(uint16_t limit);
 
 /**
  * @brief Get the current regen limit

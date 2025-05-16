@@ -111,14 +111,14 @@ void increase_regen_limit()
 
 void decrease_regen_limit()
 {
-	if (regen_limit - 0.1 < 0) {
+	if (regen_limit - REGEN_INCREMENT_STEP < 0) {
 		regen_limit = 0;
 	} else {
 		regen_limit -= REGEN_INCREMENT_STEP;
 	}
 }
 
-void set_regen_limit(uint8_t limit)
+void set_regen_limit(uint16_t limit)
 {
 	regen_limit = limit;
 
@@ -390,29 +390,6 @@ static void handle_pit(float mph, float accel)
 static void handle_reverse(float mph, float accel)
 {
 	dti_set_torque(-1 * derate_torque(mph, accel));
-}
-
-/* Comment out to use single pedal mode */
-//#define USE_BRAKE_REGEN 1
-
-/**
- * @brief Calculate and send regen braking AC current target based on brake pedal travel.
- * 
- * @param brake_val The reading of the brake pressure sensors.
- */
-void brake_pedal_regen(float brake_val)
-{
-	// The brake travel ADC value at which we want maximum regen
-	static const float travel_scaling_max = 1000;
-	// % of max brake pressure * ac current limit
-	float brake_current = (brake_val / travel_scaling_max) * regen_limit;
-	if (brake_current > regen_limit) {
-		// clamp for safety
-		brake_current = regen_limit;
-	}
-
-	// current must be delivered to DTI as a multiple of 10
-	dti_send_brake_current((uint16_t)(brake_current * 10));
 }
 
 /**
