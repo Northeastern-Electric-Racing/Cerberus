@@ -469,6 +469,7 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 
 const float deltaMPHPS_max =
 	22.0f; // Miles per hour per second, based on matlab accel numbers
+const float max_limiting_mph = 30;
 
 void handle_launch_control(float mph, float accel_val)
 {
@@ -487,7 +488,7 @@ void handle_launch_control(float mph, float accel_val)
 	float delta_mph = mph - last_mph;
 	float max_delta_adjusted = deltaMPHPS_max * (delta_ms / 1000.0f);
 
-	if (delta_mph > max_delta_adjusted) {
+	if (mph < max_limiting_mph && delta_mph > max_delta_adjusted) {
 		linear_accel_to_torque(prev_accel / 2);
 	} else {
 		linear_accel_to_torque(accel_val);
