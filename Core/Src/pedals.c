@@ -457,7 +457,7 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 	/* Pedal is in acceleration range. Set forward torque target. */
 	if (accel_val >= ACCELERATION_THRESHOLD) {
 		accel_pedal_regen_torque(accel_val);
-	} else if (mph * MPH_TO_KMH > 2 && accel_val <= REGEN_THRESHOLD) {
+	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
 		accel_pedal_regen_braking(accel_val);
 	} else {
 		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
