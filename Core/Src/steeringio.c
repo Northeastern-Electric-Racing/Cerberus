@@ -39,14 +39,23 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_UP:
 		printf("Up button pressed \n");
+		if (get_func_state() == F_EFFICIENCY) {
+			increase_regen_limit();
+		}
 		decrement_nero_index();
 		break;
 	case BUTTON_DOWN:
 		printf("Down button pressed \n");
+		if (get_func_state() == F_EFFICIENCY) {
+			decrease_regen_limit();
+		}
 		increment_nero_index();
 		break;
 	case BUTTON_ENTER:
 		printf("Enter button pressed \n");
+		if (get_func_state() == F_PERFORMANCE) {
+			toggle_launch_control();
+		}
 		select_nero_index();
 		break;
 	case BUTTON_SPARE:

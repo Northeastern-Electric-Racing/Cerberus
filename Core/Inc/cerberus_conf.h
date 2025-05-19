@@ -36,7 +36,7 @@
 #define ACCELERATION_THRESHOLD 0.25
 
 /* Maximum AC braking current */
-#define MAX_REGEN_CURRENT 20
+#define MAX_REGEN_CURRENT 300
 
 #define STEERING_WHEEL_DEBOUNCE 10 /* ms */
 

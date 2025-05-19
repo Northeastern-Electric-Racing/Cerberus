@@ -56,6 +56,31 @@ void set_torque_limit(float percentage);
  */
 float get_torque_limit_percentage();
 
+/*
+ * Increases the regen limit by the REGEN_INCREMENT_STEP
+*/
+void increase_regen_limit();
+
+/*
+ * Decreases the regen limit by the REGEN_INCREMENT_STEP
+*/
+void decrease_regen_limit();
+
+/**
+ * @brief Sets the regen limit to a specific value
+ * 
+ * @param limit The new regen limit. Acceptable values are between 0 and MAX_REGEN_CURRENT
+ * 
+ */
+void set_regen_limit(uint16_t limit);
+
+/**
+ * @brief Get the current regen limit
+ * 
+ * @return regen limit
+ */
+uint16_t get_regen_limit();
+
 /**
  * @brief Task for reading pedal data, calculating pedal faults, and sending drive commands to the DTI.
  * 
@@ -71,5 +96,15 @@ extern const osThreadAttr_t process_pedals_attributes;
  * @return true if brake engaged, false otherwise
  */
 bool get_brake_state();
+
+/**
+ * @brief Toggles launch control for performance mode
+ */
+void toggle_launch_control();
+
+/**
+ * @brief Returns the current state of launch control
+ */
+bool get_launch_control();
 
 #endif

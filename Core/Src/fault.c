@@ -66,13 +66,13 @@ static void process_fault(fault_data_t fault_data)
 		non_crit_fault |= (uint32_t)(1 << index);
 	}
 
-	uint32_t *fault_id = malloc(sizeof(uint32_t));
-	assert(fault_id);
-
-	*fault_id = fault_data.fault_id;
-
 	// Create Timers
 	if (!timers[index]) {
+		uint32_t *fault_id = malloc(sizeof(uint32_t));
+		assert(fault_id);
+
+		*fault_id = fault_data.fault_id;
+
 		timers[index] =
 			osTimerNew(clear_fault, osTimerOnce, fault_id, NULL);
 	}

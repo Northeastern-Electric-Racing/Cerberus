@@ -12,7 +12,7 @@
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
-#define SEND_NERO_TIMEOUT	500 /*in millis*/
+#define SEND_NERO_TIMEOUT	200 /*in millis*/
 #define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
 
 // #define DISABLE_REVERSE
@@ -42,27 +42,23 @@ static bool enter_drive_enabled = false;
 
 static void send_nero_msg(dti_t *mc)
 {
-	struct __attribute__((__packed__)) {
-		uint8_t home_mode;
-		uint8_t nero_index;
-		uint8_t mph;
-		uint8_t tsms;
-		uint8_t torque_lim_percentage;
-		uint8_t direction;
-	} nero_data;
+	bitstream_t nero_msg;
+	uint8_t bitstream_data[6];
+	bitstream_init(&nero_msg, bitstream_data,
+		       6); // Create 5-byte bitstream
 
-	nero_data.home_mode = (uint8_t)get_nero_state().home_mode;
-	nero_data.nero_index = (uint8_t)get_nero_state().nero_index;
-	nero_data.mph = dti_get_mph(mc);
-	nero_data.tsms = (uint8_t)get_tsms();
-	/* Percentage from 0 - 1, multiplied by 100 */
-	nero_data.torque_lim_percentage =
-		(uint8_t)(get_torque_limit_percentage() * 100);
-	nero_data.direction = cerberus_state.functional != F_REVERSE;
+	bitstream_add(&nero_msg, get_nero_state().home_mode, 4);
+	bitstream_add(&nero_msg, get_nero_state().nero_index, 4);
+	bitstream_add(&nero_msg, dti_get_mph(mc) * 10, 16);
+	bitstream_add(&nero_msg, get_tsms(), 1);
+	bitstream_add(&nero_msg, get_torque_limit_percentage() * 100, 7);
+	bitstream_add(&nero_msg, cerberus_state.functional != F_REVERSE, 1);
+	bitstream_add(&nero_msg, get_regen_limit(), 10);
+	bitstream_add(&nero_msg, get_launch_control(), 1);
 
-	can_msg_t msg = { .id = 0x501, .len = sizeof(nero_data) };
+	can_msg_t msg = { .id = 0x501, .len = sizeof(bitstream_data) };
 
-	memcpy(&msg.data, &nero_data, sizeof(nero_data));
+	memcpy(msg.data, &bitstream_data, sizeof(bitstream_data));
 
 	/* Send CAN message */
 	queue_can_msg(msg);
@@ -117,18 +113,22 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
+
+		brake_state = get_brake_state();
+#ifdef TSMS_OVERRIDE
+		if (get_tsms() &&
+		    (!brake_state ||
+		     cerberus_state.functional ==
+			     FAULTED)) { // only enforce brake / fault if tsms is actually on
+			return 3;
+		}
+		printf("Ignoring tsms\n\n");
+#else
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
 			return 3;
 		}
 
-		brake_state = get_brake_state();
-#ifdef TSMS_OVERRIDE
-		if (!brake_state) {
-			return 3;
-		}
-		printf("Ignoring tsms\n\n");
-#else
 		if (!enter_drive_enabled) {
 			printf("Must wait before entering drive!");
 			return 3;
@@ -139,7 +139,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 			return 3;
 		}
 #endif
-		osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+
+		if (get_tsms()) {
+			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+		}
 
 		printf("ACTIVE STATE\r\n");
 		break;

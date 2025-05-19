@@ -25,7 +25,7 @@ typedef enum {
 
 /**
  * @brief Emum that maps to NERO indexes to the menu on the NERO screen.
- * 
+ * Cannot be above 15 due to CAN send limits
  */
 typedef enum {
 	OFF,

@@ -28,7 +28,11 @@
 #define MIN_COMMAND_FREQ  60 /* Hz */
 #define MAX_COMMAND_DELAY 1000 / MIN_COMMAND_FREQ /* ms */
 
+#define REGEN_INCREMENT_STEP 10 /* AC Amps */
+
 float torque_limit_percentage = 1.0;
+uint16_t regen_limit = 100;
+static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
 #define MAX_ADC_VAL_12b	   4096
@@ -96,6 +100,35 @@ void decrease_torque_limit()
 	}
 }
 
+void increase_regen_limit()
+{
+	if (regen_limit + REGEN_INCREMENT_STEP > MAX_REGEN_CURRENT) {
+		regen_limit = MAX_REGEN_CURRENT;
+	} else {
+		regen_limit += REGEN_INCREMENT_STEP;
+	}
+}
+
+void decrease_regen_limit()
+{
+	if (regen_limit - REGEN_INCREMENT_STEP < 0) {
+		regen_limit = 0;
+	} else {
+		regen_limit -= REGEN_INCREMENT_STEP;
+	}
+}
+
+void set_regen_limit(uint16_t limit)
+{
+	regen_limit = limit;
+
+	if (regen_limit > MAX_REGEN_CURRENT) {
+		regen_limit = MAX_REGEN_CURRENT;
+	} else if (regen_limit < 0.0) {
+		regen_limit = 0.0;
+	}
+}
+
 void set_torque_limit(float percentage)
 {
 	torque_limit_percentage = percentage;
@@ -111,6 +144,21 @@ void set_torque_limit(float percentage)
 float get_torque_limit_percentage()
 {
 	return torque_limit_percentage;
+}
+
+uint16_t get_regen_limit()
+{
+	return regen_limit;
+}
+
+void toggle_launch_control()
+{
+	launch_control_enabled = !launch_control_enabled;
+}
+
+bool get_launch_control()
+{
+	return launch_control_enabled;
 }
 
 /**
@@ -341,31 +389,7 @@ static void handle_pit(float mph, float accel)
  */
 static void handle_reverse(float mph, float accel)
 {
-	dti_set_torque(-1 * derate_torque(mph, accel));
-}
-
-/* Comment out to use single pedal mode */
-//#define USE_BRAKE_REGEN 1
-
-/**
- * @brief Calculate and send regen braking AC current target based on brake pedal travel.
- * 
- * @param brake_val The reading of the brake pressure sensors.
- */
-void brake_pedal_regen(float brake_val)
-{
-	// The brake travel ADC value at which we want maximum regen
-	static const float travel_scaling_max = 1000;
-	// % of max brake pressure * ac current limit
-	float brake_current =
-		(brake_val / travel_scaling_max) * MAX_REGEN_CURRENT;
-	if (brake_current > MAX_REGEN_CURRENT) {
-		// clamp for safety
-		brake_current = MAX_REGEN_CURRENT;
-	}
-
-	// current must be delivered to DTI as a multiple of 10
-	dti_send_brake_current((uint16_t)(brake_current * 10));
+	dti_set_torque(-1 * derate_torque(fabs(mph), accel));
 }
 
 /**
@@ -376,11 +400,10 @@ void brake_pedal_regen(float brake_val)
 void accel_pedal_regen_torque(float accel_val)
 {
 	/* Coefficient to map accel pedal travel % to the max torque */
-	static const float coeff = MAX_TORQUE / (1 - ACCELERATION_THRESHOLD);
+	float coeff = (MAX_TORQUE * torque_limit_percentage);
 
 	/* Makes acceleration pedal more sensitive since domain is compressed but range is the same */
-	uint16_t torque =
-		coeff * accel_val - (accel_val * ACCELERATION_THRESHOLD);
+	uint16_t torque = coeff * (accel_val - ACCELERATION_THRESHOLD);
 
 	/* Limit torque percentage wise in endurance mode */
 	if (torque > MAX_TORQUE * torque_limit_percentage) {
@@ -398,11 +421,11 @@ void accel_pedal_regen_torque(float accel_val)
 void accel_pedal_regen_braking(float accel_val)
 {
 	/* Calculate AC current target for regenerative braking */
-	float regen_current = (MAX_REGEN_CURRENT / REGEN_THRESHOLD) *
-			      (REGEN_THRESHOLD - accel_val);
+	float regen_current =
+		(regen_limit / REGEN_THRESHOLD) * (REGEN_THRESHOLD - accel_val);
 
-	if (regen_current > MAX_REGEN_CURRENT) {
-		regen_current = MAX_REGEN_CURRENT;
+	if (regen_current > regen_limit) {
+		regen_current = regen_limit;
 	}
 
 	/* Send regen current to motor controller */
@@ -442,6 +465,39 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 	}
 
 #endif
+}
+
+const float deltaMPHPS_max =
+	22.0f; // Miles per hour per second, based on matlab accel numbers
+const float max_limiting_mph = 30;
+
+void handle_launch_control(float mph, float accel_val)
+{
+	static float last_mph = 0.0f;
+	static uint32_t prevTime = 0;
+	static float prev_accel = 0;
+
+	if (prevTime == 0) { // Initialize time
+		prevTime = HAL_GetTick();
+		return;
+	}
+
+	uint32_t now = HAL_GetTick();
+	uint32_t delta_ms = now - prevTime;
+
+	float delta_mph = mph - last_mph;
+	float max_delta_adjusted = deltaMPHPS_max * (delta_ms / 1000.0f);
+
+	if (mph < max_limiting_mph && delta_mph > max_delta_adjusted) {
+		linear_accel_to_torque(prev_accel / 2);
+	} else {
+		linear_accel_to_torque(accel_val);
+	}
+
+	// Update for next cycle
+	prevTime = now;
+	last_mph = mph;
+	prev_accel = accel_val;
 }
 
 osThreadId_t process_pedals_thread;
@@ -530,11 +586,15 @@ void vProcessPedals(void *pv_params)
 			handle_endurance(mph, accel_value, brake_value);
 			break;
 		case F_PERFORMANCE:
+			if (launch_control_enabled) {
+				handle_launch_control(mph, accel_value);
+			} else {
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-			linear_accel_to_torque(accel_value);
+				linear_accel_to_torque(accel_value);
 #else
-			power_regression_accel_to_torque(accel_value);
+				power_regression_accel_to_torque(accel_value);
 #endif
+			}
 			break;
 		case F_PIT:
 			handle_pit(mph, accel_value);
