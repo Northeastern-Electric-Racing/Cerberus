@@ -1,8 +1,9 @@
 #ifndef CERBERUS_FAULT_H
 #define CERBERUS_FAULT_H
 
-#include "cmsis_os.h"
+#include "cmsis_os_test.h"
 #include <stdbool.h>
+#include "stm32xx_hal.h"
 
 typedef enum {
 	/* START CRIT FAULTS HERE */
