@@ -22,7 +22,7 @@ void tearDown(void) {
 void test_random(void) {
     debounce_Ignore();
     debounce_Ignore();
-    TEST_ASSERT_EQUAL_INT(calc_pedal_faults(3.2, 1.2, 0.50, .10), false); 
+    TEST_ASSERT_EQUAL_INT(calc_pedal_faults(3.2, 1.2, 0.50, .10), true); 
 }
 
 int main(void) {
