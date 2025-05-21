@@ -107,4 +107,11 @@ void toggle_launch_control();
  */
 bool get_launch_control();
 
+/**
+ * @brief determines if APPS should fault based on pedal readings
+ */
+bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
+		       float accel2_norm);
+
+
 #endif

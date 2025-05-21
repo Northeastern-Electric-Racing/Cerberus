@@ -1,6 +1,14 @@
 #include "unity.h"
-#include "cerberus_test.h"
+#include "mock_stub_functions.h"
+#include "mock_debounce.h"
+#include "mock_c_utils.h"
+#include "mock_pdu.h"
+#include "mock_state_machine.h"
+#include "mock_mpu.h"
+#include "mock_can_handler.h"
 #include "pedals.h"
+
+#include <stdbool.h>
 
 void setUp(void) {
     // set stuff up here
@@ -12,7 +20,9 @@ void tearDown(void) {
 
 // A simple random test
 void test_random(void) {
-    TEST_ASSERT_EQUAL_INT(15, 2); 
+    debounce_Ignore();
+    debounce_Ignore();
+    TEST_ASSERT_EQUAL_INT(calc_pedal_faults(3.2, 1.2, 0.50, .10), false); 
 }
 
 int main(void) {

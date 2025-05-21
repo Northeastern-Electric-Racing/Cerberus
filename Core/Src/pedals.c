@@ -141,9 +141,9 @@ void set_torque_limit(float percentage)
 	}
 }
 
-float get_torque_limit_percentage()
+int get_torque_limit_percentage()
 {
-	return torque_limit_percentage;
+	return 1;
 }
 
 uint16_t get_regen_limit()
