@@ -233,9 +233,6 @@ const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 					 /* The task will run infrequently */
 					 .priority = osPriorityRealtime7 };
 
-void set_rtds_flag() {
-	osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
-}
 
 void vRTDS(void *arg)
 {
@@ -281,6 +278,10 @@ static int8_t write_ctrl(pdu_t *pdu, bool state, uint8_t pin, uint8_t reg)
 
 	osMutexRelease(pdu->mutex);
 	return 0;
+}
+
+void sound_rtds() {
+	osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
 }
 
 int8_t write_pump_1(pdu_t *pdu, bool state)

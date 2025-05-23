@@ -2,7 +2,7 @@
 #define PDU_H
 
 #include <stdbool.h>
-#include "cmsis_os_test.h"
+#include "ner_cmsis_os.h"
 #include "tca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
@@ -106,7 +106,10 @@ uint8_t write_tca_config(pdu_t *pdu);
  */
 bool verify_tca_config(pdu_t *pdu);
 
-void set_rtds_flag();
+/**
+ * @brief sounds the rtds by setting its thread flag
+ */
+void sound_rtds();
 
 /**
  * @brief Read the status of all expander debug pins (both ctrl and shutdown, in that order).

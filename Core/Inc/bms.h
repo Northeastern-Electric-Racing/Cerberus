@@ -1,7 +1,7 @@
 #ifndef BMS_H
 #define BMS_H
 
-#include "cmsis_os_test.h"
+#include "ner_cmsis_os.h"
 #include "can.h"
 
 #define BMS_CANID_CELL_TEMPS 0x84 /* BMS CELL TEMPERATURES */

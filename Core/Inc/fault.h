@@ -1,7 +1,7 @@
 #ifndef CERBERUS_FAULT_H
 #define CERBERUS_FAULT_H
 
-#include "cmsis_os_test.h"
+#include "ner_cmsis_os.h"
 #include <stdbool.h>
 #include "stm32xx_hal.h"
 
