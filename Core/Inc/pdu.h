@@ -121,6 +121,11 @@ void sound_rtds();
 int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]);
 
 /**
+ * @brief sounds rtds by settings its thread flag
+ */
+void sound_rtds();
+
+/**
  * @brief Taskf for sounding RTDS.
  * 
  * @param arg Pointer to struct representing the PDU.

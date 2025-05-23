@@ -113,5 +113,4 @@ bool get_launch_control();
 bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 		       float accel2_norm);
 
-
 #endif

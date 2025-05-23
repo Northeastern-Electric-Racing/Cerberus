@@ -141,7 +141,7 @@ void set_torque_limit(float percentage)
 	}
 }
 
-int get_torque_limit_percentage()
+float get_torque_limit_percentage()
 {
 	return 1;
 }
