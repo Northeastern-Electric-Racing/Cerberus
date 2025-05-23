@@ -134,6 +134,16 @@ int set_ready_mode();
  */
 int fault();
 
+/**
+ * @brief tranitions the functional state based on current sate
+ * 
+ * @param new_state state that is requesting transition
+ * @param pdu pdu interface
+ * @param mc dti interface
+ * @param mpu mpu interface
+ * 
+ * @return error code
+ */
 int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu);
 

@@ -140,7 +140,9 @@ int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 			return 3;
 		}
 #endif	
-		sound_rtds();
+		if (get_tsms()) {
+			sound_rtds();
+		}
 		printf("ACTIVE STATE\r\n");
 		break;
 	default:
