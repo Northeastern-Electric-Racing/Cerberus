@@ -106,6 +106,8 @@ uint8_t write_tca_config(pdu_t *pdu);
  */
 bool verify_tca_config(pdu_t *pdu);
 
+void set_rtds_flag();
+
 /**
  * @brief Read the status of all expander debug pins (both ctrl and shutdown, in that order).
  * 

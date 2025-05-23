@@ -134,4 +134,7 @@ int set_ready_mode();
  */
 int fault();
 
+int transition_functional_state(func_state_t new_state, pdu_t *pdu,
+				       dti_t *mc, mpu_t *mpu);
+
 #endif

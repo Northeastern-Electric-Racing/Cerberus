@@ -82,7 +82,7 @@ nero_state_t get_nero_state()
 	return cerberus_state.nero;
 }
 
-static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
+int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
 	/* Special case: should be able to fault no matter what conditions */
@@ -138,12 +138,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		if (!brake_state || !get_tsms()) {
 			return 3;
 		}
-#endif
-
-		if (get_tsms()) {
-			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
-		}
-
+#endif	
+		set_rtds_flag();
 		printf("ACTIVE STATE\r\n");
 		break;
 	default:

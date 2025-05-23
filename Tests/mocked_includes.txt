@@ -1,6 +1,5 @@
 Core/Inc/dti.h
 Core/Inc/fault.h
-Core/Inc/state_machine.h
 Core/Inc/pdu.h
 Core/Inc/mpu.h
 Core/Inc/can_handler.h

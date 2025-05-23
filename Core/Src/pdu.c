@@ -233,6 +233,10 @@ const osThreadAttr_t rtds_attributes = { .name = "RtdsThread",
 					 /* The task will run infrequently */
 					 .priority = osPriorityRealtime7 };
 
+void set_rtds_flag() {
+	osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+}
+
 void vRTDS(void *arg)
 {
 	pdu_t *pdu = (pdu_t *)arg;
