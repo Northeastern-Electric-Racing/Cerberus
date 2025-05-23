@@ -107,11 +107,6 @@ uint8_t write_tca_config(pdu_t *pdu);
 bool verify_tca_config(pdu_t *pdu);
 
 /**
- * @brief sounds the rtds by setting its thread flag
- */
-void sound_rtds();
-
-/**
  * @brief Read the status of all expander debug pins (both ctrl and shutdown, in that order).
  * 
  * @param pdu Pointer to struct representing the PDU

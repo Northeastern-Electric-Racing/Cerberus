@@ -64,7 +64,7 @@ bool get_brake_state()
  * @param raw_adc 
  * @return float 
  */
-float adc_to_volts(uint32_t raw_adc)
+static float adc_to_volts(uint32_t raw_adc)
 {
 	float v3_volts = raw_adc * MAX_VOLTS / MAX_ADC_VAL_12b;
 	// undo 2k + 3k voltage divider on APPS lines
@@ -143,7 +143,7 @@ void set_torque_limit(float percentage)
 
 float get_torque_limit_percentage()
 {
-	return 1;
+	return torque_limit_percentage;
 }
 
 uint16_t get_regen_limit()
