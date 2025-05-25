@@ -174,7 +174,7 @@ void vCanReceive(void *pv_params)
 				bms_record_battbox_temp(msg);
 				break;
 			case BUTTON_CANID_IO:
-				buttons_update(msg);
+				buttons_update(msg, mc);
 				break;
 			case DIAL_CANID_IO:
 				dial_update(msg);

@@ -31,7 +31,7 @@
 #define REGEN_INCREMENT_STEP 10 /* AC Amps */
 
 float torque_limit_percentage = 1.0;
-uint16_t regen_limit = 100;
+uint16_t regen_limit = 0;
 static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
@@ -590,9 +590,13 @@ void vProcessPedals(void *pv_params)
 				handle_launch_control(mph, accel_value);
 			} else {
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
+			if (regen_limit > 0) {
 				linear_accel_to_torque(accel_value);
+			} else {
+				accel_pedal_regen_torque(accel_value);
+			}			
 #else
-				power_regression_accel_to_torque(accel_value);
+			power_regression_accel_to_torque(accel_value);
 #endif
 			}
 			break;

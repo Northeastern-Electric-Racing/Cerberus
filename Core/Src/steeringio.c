@@ -14,7 +14,7 @@ static void set_torque_limit_wrapper(float percentage)
 	}
 }
 
-void buttons_update(can_msg_t msg)
+void buttons_update(can_msg_t msg, dti_t *mc)
 {
 	uint8_t button_id = msg.data[0];
 
@@ -39,14 +39,14 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_UP:
 		printf("Up button pressed \n");
-		if (get_func_state() == F_EFFICIENCY) {
+		if (get_func_state() == F_EFFICIENCY || (dti_get_mph(mc) <= 0 && get_func_state() == F_PERFORMANCE)) {
 			increase_regen_limit();
 		}
 		decrement_nero_index();
 		break;
 	case BUTTON_DOWN:
 		printf("Down button pressed \n");
-		if (get_func_state() == F_EFFICIENCY) {
+		if (get_func_state() == F_EFFICIENCY || (dti_get_mph(mc) <= 0 && get_func_state() == F_PERFORMANCE)) {
 			decrease_regen_limit();
 		}
 		increment_nero_index();

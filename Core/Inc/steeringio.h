@@ -2,6 +2,7 @@
 #define STEERING_H
 
 #include "can.h"
+#include "dti.h"
 
 #define BUTTON_CANID_IO 0x680
 #define DIAL_CANID_IO	0x681
@@ -31,7 +32,7 @@ typedef enum {
  *
  * @param can_msg can message containing data update
  */
-void buttons_update(can_msg_t can_msg);
+void buttons_update(can_msg_t can_msg, dti_t *mc);
 
 /**
  * @brief Update the status of the active steering wheel dial switch.
