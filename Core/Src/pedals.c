@@ -441,7 +441,7 @@ void accel_pedal_regen_braking(float accel_val)
  * @param brake_val adjusted value of the brake pedal
  * @param torque pointer to torque value
  */
-void handle_endurance(float mph, float accel_val, float brake_val)
+void handle_endurance(float mph, float accel_val, float brake_val, bool launch_control)
 {
 #ifdef USE_BRAKE_REGEN
 	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
@@ -456,7 +456,12 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 
 	/* Pedal is in acceleration range. Set forward torque target. */
 	if (accel_val >= ACCELERATION_THRESHOLD) {
-		accel_pedal_regen_torque(accel_val);
+		if (launch_control) {
+			float norm_accel_val = (accel_val - 0.25) / 0.75; 
+			handle_launch_control(mph, norm_accel_val);
+		} else {
+			accel_pedal_regen_torque(accel_val);
+		}
 	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
 		accel_pedal_regen_braking(accel_val);
 	} else {
@@ -583,18 +588,15 @@ void vProcessPedals(void *pv_params)
 
 		switch (func_state) {
 		case F_EFFICIENCY:
-			handle_endurance(mph, accel_value, brake_value);
+			handle_endurance(mph, accel_value, brake_value, false);
 			break;
 		case F_PERFORMANCE:
-			if (launch_control_enabled) {
-				handle_launch_control(mph, accel_value);
-			} else {
 #ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-			if (regen_limit > 0) {
-				linear_accel_to_torque(accel_value);
-			} else {
-				accel_pedal_regen_torque(accel_value);
-			}			
+		if (regen_limit > 0) {
+			handle_endurance(mph, accel_value, brake_value, launch_control_enabled);
+		} else {
+			linear_accel_to_torque(accel_value);
+		}
 #else
 			power_regression_accel_to_torque(accel_value);
 #endif
