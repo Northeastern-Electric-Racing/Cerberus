@@ -1,5 +1,4 @@
 
-#include "unity.h"
 #include "mock_mpu.h"
 #include "mock_pdu.h"
 #include "test_state_machine.h"
