@@ -7,6 +7,15 @@
 #include "pdu.h"
 #include "mpu.h"
 #include "dti.h"
+#include "steeringio.h"
+
+typedef uint8_t (*InitFunction_t)(mpu_t *mpu);
+typedef void (*ButtonCallbackFunc_t)(void);
+typedef struct {
+	func_state_t state;
+	InitFunction_t init_func;
+	ButtonCallbackFunc_t button_cbs[MAX_STEERING_BUTTONS];
+} state_handler_t;
 
 /**
  * @brief Enum defining the functional states of the car.
@@ -133,5 +142,7 @@ int set_ready_mode();
  * @return int Error code resulting from queueing a state transition
  */
 int fault();
+
+void sm_button_cb(steeringio_button_t button_id);
 
 #endif

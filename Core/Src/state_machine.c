@@ -15,10 +15,84 @@
 #define SEND_NERO_TIMEOUT	200 /*in millis*/
 #define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
 
-// #define DISABLE_REVERSE
 
 /* Internal State of Vehicle */
+
 static state_t cerberus_state;
+static state_handler_t functional_states[MAX_FUNC_STATES];
+
+const bool valid_transition_from_to[MAX_FUNC_STATES][MAX_FUNC_STATES] = {
+	/*   READY,     FAULTED,      ACTIVE STATES,  */
+	{ true, true, true, true, true, true }, /* READY */
+	{ true, true, false, false, false, false }, /* FAULTED */
+	{ true, true, false, false, false, false }, /* ACTIVE STATES */
+	{ true, true, false, false, false, false },
+	{ true, true, false, false, false, false },
+	{ true, true, false, false, false, false } 
+};
+
+void sm_button_cb(steeringio_button_t button_id) {
+	if (functional_states[cerberus_state.functional].button_cbs[button_id] == NULL) {
+		return;
+	}
+	functional_states[cerberus_state.functional].button_cbs[button_id]();
+}
+
+static uint8_t init_ready(mpu_t* mpu) {
+	write_fault(mpu, false);
+	return 0;
+}
+
+static uint8_t init_active(mpu_t* mpu) {
+	if (!get_tsms() && !get_brake_state() && !enter_drive_enabled) {
+		return 1;
+	}
+	osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+	return 0;
+}
+
+static uint8_t init_faulted(mpu_t* mpu) {
+	cerberus_state.nero =
+			(nero_state_t){ .nero_index = OFF, .home_mode = true };
+	write_fault(mpu, false);
+	return 0;
+}
+
+static void ready_left_cb() {
+	decrement_nero_index();
+}
+
+static void ready_right_cb() {
+	increment_nero_index();
+}
+
+static void ready_enter_cb() {
+	select_nero_index();
+}
+
+static void endurance_up_cb() {
+	increase_regen_limit();
+}
+
+static void endurance_down_cb() {
+	decrease_regen_limit();
+}
+
+static void endurance_right_cb() {
+	increase_regen_limit();
+}
+
+static void endurance_left_cb() {
+	decrease_regen_limit();
+}
+
+static void performance_enter_cb() {
+	toggle_launch_control();
+}
+
+static void escape_cb() {
+	set_home_mode();
+}
 
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
@@ -85,70 +159,16 @@ nero_state_t get_nero_state()
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
-	/* Special case: should be able to fault no matter what conditions */
-	if (new_state == FAULTED) {
-		/* Turn off high power peripherals */
-		cerberus_state.nero =
-			(nero_state_t){ .nero_index = OFF, .home_mode = true };
-		write_fault(mpu, true);
+	if (new_state == cerberus_state.functional) {
+		return 1;
+	} 
 
-		printf("FAULTED\r\n");
+	if (!valid_transition_from_to[cerberus_state.functional][new_state]) {
+		return 1;
 	}
 
-	/* Make sure wheels are not spinning before changing modes */
-	bool brake_state;
-
-	/* Catching state transitions */
-	switch (new_state) {
-	case READY:
-		/* Turn off high power peripherals */
-		write_fault(mpu, false);
-		printf("READY\n");
-		break;
-	case F_REVERSE:
-#ifdef DISABLE_REVERSE
-		printf("Reverse is disabled.");
-		return 4;
-#endif
-	case F_PIT:
-	case F_PERFORMANCE:
-	case F_EFFICIENCY:
-
-		brake_state = get_brake_state();
-#ifdef TSMS_OVERRIDE
-		if (get_tsms() &&
-		    (!brake_state ||
-		     cerberus_state.functional ==
-			     FAULTED)) { // only enforce brake / fault if tsms is actually on
-			return 3;
-		}
-		printf("Ignoring tsms\n\n");
-#else
-		if (cerberus_state.functional == FAULTED) {
-			printf("Cannot drive from a fault!\n");
-			return 3;
-		}
-
-		if (!enter_drive_enabled) {
-			printf("Must wait before entering drive!");
-			return 3;
-		}
-
-		/* Only turn on motor if brakes engaged and tsms is on */
-		if (!brake_state || !get_tsms()) {
-			return 3;
-		}
-#endif
-
-		if (get_tsms()) {
-			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
-		}
-
-		printf("ACTIVE STATE\r\n");
-		break;
-	default:
-		// Do Nothing
-		break;
+	if (!functional_states[cerberus_state.functional].init_func(mpu)) {
+		return 1;
 	}
 
 	cerberus_state.functional = new_state;
@@ -159,7 +179,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 				 mpu_t *mpu)
 {
-	nero_state_t current_nero_state = get_nero_state();
+	nero_state_t current_nero_state = cerberus_state.nero;
 
 	// If we are not in home mode, we should not change the nero index
 	if (!new_state.home_mode)
@@ -327,8 +347,38 @@ void vStateMachineDirector(void *pv_params)
 
 	ts_rising_timer = osTimerNew(rising_ts_cb, osTimerOnce, NULL, NULL);
 
-	/* Write to GPIO expander to set initial state */
-	write_fault(mpu, false);
+	functional_states[READY].init_func = init_ready;
+	functional_states[READY].button_cbs[BUTTON_UP] = ready_right_cb;
+	functional_states[READY].button_cbs[BUTTON_DOWN] = ready_left_cb;
+	functional_states[READY].button_cbs[BUTTON_RIGHT] = ready_right_cb;
+	functional_states[READY].button_cbs[BUTTON_LEFT] = ready_left_cb;
+	functional_states[READY].button_cbs[BUTTON_ENTER] = ready_enter_cb;
+
+	functional_states[FAULTED].init_func = init_faulted;
+
+	functional_states[F_PERFORMANCE].init_func = init_active;
+	functional_states[F_PERFORMANCE].button_cbs[BUTTON_ENTER] = performance_enter_cb;
+	functional_states[F_PERFORMANCE].button_cbs[BUTTON_ESC] = escape_cb;
+
+	functional_states[F_PERFORMANCE].init_func = init_active;
+	functional_states[F_EFFICIENCY].button_cbs[BUTTON_UP] = endurance_up_cb;
+	functional_states[F_EFFICIENCY].button_cbs[BUTTON_DOWN] = endurance_down_cb;
+	functional_states[F_EFFICIENCY].button_cbs[BUTTON_RIGHT] = endurance_right_cb;
+	functional_states[F_EFFICIENCY].button_cbs[BUTTON_LEFT] = endurance_left_cb;
+	functional_states[F_PERFORMANCE].button_cbs[BUTTON_ESC] = escape_cb;
+
+	functional_states[F_PERFORMANCE].init_func = init_active;
+	functional_states[F_PERFORMANCE].button_cbs[BUTTON_ENTER] = performance_enter_cb;
+	functional_states[F_PERFORMANCE].button_cbs[BUTTON_ESC] = escape_cb;
+
+	functional_states[F_PIT].init_func = init_active;
+	functional_states[F_PIT].button_cbs[BUTTON_ESC] = escape_cb;
+
+	functional_states[F_REVERSE].init_func = init_active;
+	functional_states[F_REVERSE].button_cbs[BUTTON_ESC] = escape_cb;
+	
+	// call initial state
+	functional_states[cerberus_state.functional].init_func(mpu);
 
 	for (;;) {
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,
