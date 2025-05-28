@@ -9,13 +9,6 @@
 #include "dti.h"
 #include "steeringio.h"
 
-typedef uint8_t (*InitFunction_t)(mpu_t *mpu);
-typedef void (*ButtonCallbackFunc_t)(void);
-typedef struct {
-	func_state_t state;
-	InitFunction_t init_func;
-	ButtonCallbackFunc_t button_cbs[MAX_STEERING_BUTTONS];
-} state_handler_t;
 
 /**
  * @brief Enum defining the functional states of the car.
@@ -31,6 +24,14 @@ typedef enum {
 	FAULTED,
 	MAX_FUNC_STATES
 } func_state_t;
+
+typedef uint8_t (*InitFunction_t)(mpu_t *mpu);
+typedef void (*ButtonCallbackFunc_t)(void);
+typedef struct {
+	func_state_t state;
+	InitFunction_t init_func;
+	ButtonCallbackFunc_t button_cbs[MAX_STEERING_BUTTONS];
+} state_handler_t;
 
 /**
  * @brief Emum that maps to NERO indexes to the menu on the NERO screen.

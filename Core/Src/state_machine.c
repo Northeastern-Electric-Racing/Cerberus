@@ -14,6 +14,10 @@
 
 #define SEND_NERO_TIMEOUT	200 /*in millis*/
 #define TS_RISING_BLOCK_TIMEOUT 3000 /*in millis*/
+static osMessageQueueId_t state_trans_queue;
+static osTimerId_t ts_rising_timer;
+static bool is_ts_rising = false;
+static bool enter_drive_enabled = false;
 
 
 /* Internal State of Vehicle */
@@ -108,11 +112,6 @@ const osThreadAttr_t sm_director_attributes = {
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityRealtime7,
 };
-
-static osMessageQueueId_t state_trans_queue;
-static osTimerId_t ts_rising_timer;
-static bool is_ts_rising = false;
-static bool enter_drive_enabled = false;
 
 static void send_nero_msg(dti_t *mc)
 {
