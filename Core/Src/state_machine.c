@@ -114,6 +114,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
 
+		disable_launch_control();
+
 		brake_state = get_brake_state();
 #ifdef TSMS_OVERRIDE
 		if (get_tsms() &&
