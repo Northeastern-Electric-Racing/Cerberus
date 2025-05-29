@@ -156,6 +156,11 @@ void toggle_launch_control()
 	launch_control_enabled = !launch_control_enabled;
 }
 
+void disable_launch_control()
+{
+	launch_control_enabled = false;
+}
+
 bool get_launch_control()
 {
 	return launch_control_enabled;
@@ -432,46 +437,6 @@ void accel_pedal_regen_braking(float accel_val)
 	dti_set_regen((uint16_t)(regen_current * 10));
 }
 
-/**
- * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
- * 
- * @param mc pointer to struct containing dti data
- * @param mph mph of the car
- * @param accel_val adjusted value of the acceleration pedal
- * @param brake_val adjusted value of the brake pedal
- * @param torque pointer to torque value
- */
-void handle_endurance(float mph, float accel_val, float brake_val, bool launch_control)
-{
-#ifdef USE_BRAKE_REGEN
-	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
-		brake_pedal_regen(brake_val);
-	} else {
-		// accelerating, limit torque
-		linear_accel_to_torque(accel_val, torque);
-	}
-#else
-	/* Factor for converting MPH to KMH */
-	static const float MPH_TO_KMH = 1.609;
-
-	/* Pedal is in acceleration range. Set forward torque target. */
-	if (accel_val >= ACCELERATION_THRESHOLD) {
-		if (launch_control) {
-			float norm_accel_val = (accel_val - 0.25) / 0.75; 
-			handle_launch_control(mph, norm_accel_val);
-		} else {
-			accel_pedal_regen_torque(accel_val);
-		}
-	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
-		accel_pedal_regen_braking(accel_val);
-	} else {
-		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
-		dti_set_torque(0);
-	}
-
-#endif
-}
-
 const float deltaMPHPS_max =
 	22.0f; // Miles per hour per second, based on matlab accel numbers
 const float max_limiting_mph = 30;
@@ -511,6 +476,46 @@ const osThreadAttr_t process_pedals_attributes = {
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityRealtime,
 };
+
+/**
+ * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
+ * 
+ * @param mc pointer to struct containing dti data
+ * @param mph mph of the car
+ * @param accel_val adjusted value of the acceleration pedal
+ * @param brake_val adjusted value of the brake pedal
+ * @param torque pointer to torque value
+ */
+void handle_endurance(float mph, float accel_val, float brake_val, bool launch_control)
+{
+#ifdef USE_BRAKE_REGEN
+	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
+		brake_pedal_regen(brake_val);
+	} else {
+		// accelerating, limit torque
+		linear_accel_to_torque(accel_val, torque);
+	}
+#else
+	/* Factor for converting MPH to KMH */
+	static const float MPH_TO_KMH = 1.609;
+
+	/* Pedal is in acceleration range. Set forward torque target. */
+	if (accel_val >= ACCELERATION_THRESHOLD) {
+		if (launch_control) {
+			float norm_accel_val = (accel_val - 0.25) / 0.75; 
+			handle_launch_control(mph, norm_accel_val);
+		} else {
+			accel_pedal_regen_torque(accel_val);
+		}
+	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
+		accel_pedal_regen_braking(accel_val);
+	} else {
+		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
+		dti_set_torque(0);
+	}
+
+#endif
+}
 
 void vProcessPedals(void *pv_params)
 {
@@ -600,7 +605,6 @@ void vProcessPedals(void *pv_params)
 #else
 			power_regression_accel_to_torque(accel_value);
 #endif
-			}
 			break;
 		case F_PIT:
 			handle_pit(mph, accel_value);

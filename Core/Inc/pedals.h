@@ -107,4 +107,9 @@ void toggle_launch_control();
  */
 bool get_launch_control();
 
+/**
+ * @brief turn off launch control
+ */
+void disable_launch_control();
+
 #endif
