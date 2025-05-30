@@ -49,7 +49,7 @@ static void send_nero_msg(dti_t *mc)
 
 	bitstream_add(&nero_msg, get_nero_state().home_mode, 4);
 	bitstream_add(&nero_msg, get_nero_state().nero_index, 4);
-	bitstream_add(&nero_msg, dti_get_mph(mc) * 10, 16);
+	bitstream_add_signed(&nero_msg, dti_get_mph(mc) * 10, 16);
 	bitstream_add(&nero_msg, get_tsms(), 1);
 	bitstream_add(&nero_msg, get_torque_limit_percentage() * 100, 7);
 	bitstream_add(&nero_msg, cerberus_state.functional != F_REVERSE, 1);
