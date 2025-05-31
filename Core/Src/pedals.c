@@ -141,6 +141,8 @@ void set_regen_limit(uint16_t limit)
 		regen_limits[func_state - F_PERFORMANCE] = MAX_REGEN_CURRENT;
 	} else if (limit < 0.0) {
 		regen_limits[func_state - F_PERFORMANCE] = 0.0;
+	} else {
+		regen_limits[func_state - F_PERFORMANCE] = limit;
 	}
 }
 
