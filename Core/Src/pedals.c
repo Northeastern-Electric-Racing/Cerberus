@@ -39,10 +39,12 @@ static bool launch_control_enabled = false;
 #define MAX_VOLTS	   3.3 /* volts */
 #define MAX_VOLTS_UNSCALED 5.0
 
-#define PEDAL_DIFF_THRESH 0.20 /* percentage */
-#define PEDAL_FAULT_TIME  90 /* ms */
+#define PEDAL_DIFF_THRESH 0.10 /* percentage */
+#define PEDAL_FAULT_TIME  95 /* ms */
+#define BRAKE_FAULT_TIME  300 /* ms */
 
-#define APPS_THRESHOLD_BUF 0.45
+#define APPS_THRESHOLD_BUF  0.45
+#define BRAKE_THRESHOLD_BUF 0.25
 enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
 static bool brake_pressed = false;
@@ -229,6 +231,44 @@ bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 }
 
 /**
+ * @brief Determine if there has been a brake sensor fault
+ * 
+ * @param brake1 sensor 1 voltage reading (out of 5V)
+ * @param accel2 sensor 2 voltage reading (out of 5V)
+ */
+bool calc_brake_faults(float brake1, float brake2)
+{
+	/* oc = Open Circuit */
+	static nertimer_t oc_fault_timer;
+
+	/* sc = Short Circuit */
+	static nertimer_t sc_fault_timer;
+
+	/* EV3.5.4: For analog acceleration control signals, this error checking must detect open circuit, short to 
+	ground and short to sensor power. */
+
+	/* Pedal open circuit fault */
+	bool open_circuit =
+		brake1 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF ||
+		brake2 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF;
+	debounce(open_circuit, &oc_fault_timer, BRAKE_FAULT_TIME,
+		 &pedal_fault_cb, "Brake open circuit fault - max brake value");
+
+	/* Pedal short circuit to gnd */
+	bool short_circuit =
+		brake1 < BRAKE_SENSOR_IRREGULAR_LOW - BRAKE_THRESHOLD_BUF ||
+		brake2 < BRAKE_SENSOR_IRREGULAR_LOW - BRAKE_THRESHOLD_BUF;
+	debounce(short_circuit, &sc_fault_timer, BRAKE_FAULT_TIME,
+		 &pedal_fault_cb,
+		 "Brake grounded circuit fault - 0 brake value");
+
+	if (open_circuit || short_circuit) {
+		return true;
+	}
+	return false;
+}
+
+/**
  * @brief Function to send raw pedal data over CAN.
  * 
  * @param arg A pointer to an array of 4 unsigned 32 bit integers.
@@ -269,8 +309,10 @@ void send_pedal_data(void *arg)
 /**
  * @brief Determine if power to the motor controller should be disabled based on brake and accelerator pedal travel.
  * 
+ * Will queue fault
+ * 
  * @param accel_val Percent travel of the accelerator pedal from 0-1
- * @param brake_val Brake pressure sensor reading
+ * @param brake_val Brake pressure sensor reading, 0-1
  * @return bool True for prefault conditions met, false for no prefault
  */
 bool calc_bspd_prefault(float accel_val, float brake_val)
@@ -537,6 +579,8 @@ void vProcessPedals(void *pv_params)
 
 		float accel1_volts = adc_to_volts(adc_data[ACCELPIN_1]);
 		float accel2_volts = adc_to_volts(adc_data[ACCELPIN_2]);
+		float brake1_volts = adc_to_volts(adc_data[BRAKEPIN_1]);
+		float brake2_volts = adc_to_volts(adc_data[BRAKEPIN_2]);
 
 		// printf("accel1 volts %f\n", accel1_volts);
 		// printf("accel2 volts %f\n", accel2_volts);
@@ -547,8 +591,10 @@ void vProcessPedals(void *pv_params)
 		float accel2_norm = pedal_percent_pressed(
 			accel2_volts, MIN_APPS2_VOLTS, MAX_APPS2_VOLTS);
 
-		bool possible_faults = calc_pedal_faults(
+		bool possible_pedal_faults = calc_pedal_faults(
 			accel1_volts, accel2_volts, accel1_norm, accel2_norm);
+		bool possible_brake_faults =
+			calc_brake_faults(brake1_volts, brake2_volts);
 
 		/* same for brake values */
 		float brake_avg =
@@ -573,9 +619,9 @@ void vProcessPedals(void *pv_params)
 
 		if (calc_bspd_prefault(accel_value, brake_value)) {
 			/* Prefault triggered */
-			// osDelay(delay_time);
-			// dti_set_torque(0);
-			// continue;
+			dti_set_torque(0);
+			osDelay(delay_time);
+			continue;
 		}
 
 		float mph = dti_get_mph(mc);
@@ -600,8 +646,9 @@ void vProcessPedals(void *pv_params)
 			handle_pit(mph, accel_value);
 			break;
 		case REVERSE:
-			handle_reverse(mph, accel_value);
-			break;
+			// EV.3.1.1 no reverse at FSAE
+			//handle_reverse(mph, accel_value);
+			//break;
 		default:
 			dti_set_torque(0);
 			break;
