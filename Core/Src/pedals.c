@@ -324,7 +324,7 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 	/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
 	to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 
-	if (brake_val > PEDAL_BRAKE_THRESH && accel_val > 0.25) {
+	if (brake_val > PEDAL_HARD_BRAKE_THRESH && accel_val > 0.25) {
 		motor_disabled = true;
 		queue_fault(&fault_data);
 	}
