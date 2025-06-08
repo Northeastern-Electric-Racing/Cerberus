@@ -315,7 +315,7 @@ void send_pedal_data(void *arg)
  * @param brake_val Brake pressure sensor reading, 0-1
  * @return bool True for prefault conditions met, false for no prefault
  */
-bool calc_bspd_prefault(float accel_val, float brake_val)
+bool calc_bspd_prefault(float accel_val, float brake_val, float dc_current)
 {
 	static fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
 					   .diag = "BSPD prefault triggered" };
@@ -325,6 +325,12 @@ bool calc_bspd_prefault(float accel_val, float brake_val)
 	to the motor(s). Re-enable when accelerator has less than 5% pedal travel. */
 
 	if (brake_val > PEDAL_HARD_BRAKE_THRESH && accel_val > 0.25) {
+		motor_disabled = true;
+		queue_fault(&fault_data);
+	}
+
+	// prevent a fault
+	if (brake_val > PEDAL_HARD_BRAKE_THRESH && dc_current > 10) {
 		motor_disabled = true;
 		queue_fault(&fault_data);
 	}
@@ -617,7 +623,10 @@ void vProcessPedals(void *pv_params)
 		osMutexRelease(brake_state_mut);
 		write_brakelight(pdu, brake_pressed);
 
-		if (calc_bspd_prefault(accel_value, brake_value)) {
+		int16_t dc_current;
+		dti_get_dc_current(mc, &dc_current);
+
+		if (calc_bspd_prefault(accel_value, brake_value, dc_current)) {
 			/* Prefault triggered */
 			dti_set_torque(0);
 			osDelay(delay_time);
