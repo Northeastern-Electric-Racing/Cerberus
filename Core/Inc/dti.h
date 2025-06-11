@@ -164,5 +164,4 @@ osStatus_t dti_record_currents(dti_t *mc, can_msg_t msg);
 
 osStatus_t dti_get_dc_current(dti_t *mc, int16_t *dc_current);
 
-
 #endif

@@ -336,7 +336,8 @@ osStatus_t dti_get_controller_temp(dti_t *mc, uint16_t *controllerTemp)
 	return osMutexRelease(mc->mutex);
 }
 
-osStatus_t dti_record_currents(dti_t *mc, can_msg_t msg ) {
+osStatus_t dti_record_currents(dti_t *mc, can_msg_t msg)
+{
 	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
 	if (stat)
 		return stat;
