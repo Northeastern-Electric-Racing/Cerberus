@@ -317,7 +317,7 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val, float dc_current)
 {
-	static fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
+	static const fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
 					   .diag = "BSPD prefault triggered" };
 	static bool motor_disabled = false;
 
