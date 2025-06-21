@@ -1,6 +1,7 @@
 name: Unit Test Check
 
-on: [push]
+on:
+  pull_request:
 
 jobs:
   test-check:
@@ -12,7 +13,6 @@ jobs:
       with:
         submodules: recursive
     - name: Run UNITY Testing files
-      - name: Run UNITY Testing files
         run: |
         if ! docker compose run --rm ner-gcc-arm \
           bash -c "python3 Drivers/Embedded-Base/ner_environment/build_system/test_runner.py"; then
