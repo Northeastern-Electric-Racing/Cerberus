@@ -1,6 +1,7 @@
 name: Unit Test Check
 
 on:
+  push:
   pull_request:
 
 jobs:
@@ -8,16 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - name: Checkout code
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Run UNITY Testing files
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run UNITY Testing files
         run: |
-        if ! docker compose run --rm ner-gcc-arm \
-          bash -c "python3 Drivers/Embedded-Base/ner_environment/build_system/test_runner.py"; then
-          echo "Unit tests failed."
-          exit 1
-        fi
-
-
+          if ! docker compose run --rm ner-gcc-arm \
+            bash -c "python3 Drivers/Embedded-Base/ner_environment/build_system/test_runner.py"; then
+            echo "Unit tests failed."
+            exit 1
+          fi
