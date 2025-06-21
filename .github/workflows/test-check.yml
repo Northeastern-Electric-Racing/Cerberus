@@ -15,7 +15,7 @@ jobs:
       - name: Run UNITY Testing files
         run: |
         if ! docker compose run --rm ner-gcc-arm \
-          bash -c "cd Drivers/Embedded-Base/ner_enviornment/build_sytem && python3 test_runner.py"; then
+          bash -c "python3 Drivers/Embedded-Base/ner_environment/build_system/test_runner.py"; then
           echo "Unit tests failed."
           exit 1
         fi
