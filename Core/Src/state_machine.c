@@ -83,8 +83,8 @@ nero_state_t get_nero_state()
 	return cerberus_state.nero;
 }
 
-int transition_functional_state(func_state_t new_state, pdu_t *pdu,
-				       dti_t *mc, mpu_t *mpu)
+int transition_functional_state(func_state_t new_state, pdu_t *pdu, dti_t *mc,
+				mpu_t *mpu)
 {
 	/* Special case: should be able to fault no matter what conditions */
 	if (new_state == FAULTED) {
@@ -139,7 +139,7 @@ int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		if (!brake_state || !get_tsms()) {
 			return 3;
 		}
-#endif	
+#endif
 		if (get_tsms()) {
 			sound_rtds();
 		}
