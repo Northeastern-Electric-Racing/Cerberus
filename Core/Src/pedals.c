@@ -628,9 +628,9 @@ void vProcessPedals(void *pv_params)
 
 		if (calc_bspd_prefault(accel_value, brake_value, dc_current)) {
 			/* Prefault triggered */
-			dti_set_torque(0);
-			osDelay(delay_time);
-			continue;
+			// dti_set_torque(0);
+			// osDelay(delay_time);
+			// continue;
 		}
 
 		float mph = dti_get_mph(mc);
@@ -656,8 +656,8 @@ void vProcessPedals(void *pv_params)
 			break;
 		case REVERSE:
 			// EV.3.1.1 no reverse at FSAE
-			//handle_reverse(mph, accel_value);
-			//break;
+			handle_reverse(mph, accel_value);
+			break;
 		default:
 			dti_set_torque(0);
 			break;
