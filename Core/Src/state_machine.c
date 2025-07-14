@@ -19,6 +19,7 @@
 
 /* Internal State of Vehicle */
 static state_t cerberus_state;
+static osTimerId_t reverse_sound_timer;
 
 typedef struct {
 	enum { FUNCTIONAL, NERO } id;
@@ -82,6 +83,14 @@ nero_state_t get_nero_state()
 	return cerberus_state.nero;
 }
 
+void sound_reverse_callback(void *pdu)
+{
+	static bool sound = false;
+
+	write_rtds(pdu, sound);
+	sound = !sound;
+}
+
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
@@ -97,6 +106,8 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 
 	/* Make sure wheels are not spinning before changing modes */
 	bool brake_state;
+	osTimerStop(reverse_sound_timer);
+	write_rtds(pdu, false);
 
 	/* Catching state transitions */
 	switch (new_state) {
@@ -110,6 +121,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		printf("Reverse is disabled.");
 		return 4;
 #endif
+		osTimerStart(reverse_sound_timer, pdMS_TO_TICKS(500));
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
@@ -329,6 +341,8 @@ void vStateMachineDirector(void *pv_params)
 
 	/* Write to GPIO expander to set initial state */
 	write_fault(mpu, false);
+	reverse_sound_timer =
+		osTimerNew(sound_reverse_callback, osTimerPeriodic, pdu, NULL);
 
 	for (;;) {
 		if (osMessageQueueGet(state_trans_queue, &new_state_req, NULL,

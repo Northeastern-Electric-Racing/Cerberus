@@ -317,8 +317,9 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val, float dc_current)
 {
-	static fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
-					   .diag = "BSPD prefault triggered" };
+	static const fault_data_t fault_data = {
+		.fault_id = BSPD_PREFAULT, .diag = "BSPD prefault triggered"
+	};
 	static bool motor_disabled = false;
 
 	/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power
@@ -628,9 +629,9 @@ void vProcessPedals(void *pv_params)
 
 		if (calc_bspd_prefault(accel_value, brake_value, dc_current)) {
 			/* Prefault triggered */
-			dti_set_torque(0);
-			osDelay(delay_time);
-			continue;
+			// dti_set_torque(0);
+			// osDelay(delay_time);
+			// continue;
 		}
 
 		float mph = dti_get_mph(mc);
@@ -656,8 +657,8 @@ void vProcessPedals(void *pv_params)
 			break;
 		case REVERSE:
 			// EV.3.1.1 no reverse at FSAE
-			//handle_reverse(mph, accel_value);
-			//break;
+			handle_reverse(mph, accel_value);
+			break;
 		default:
 			dti_set_torque(0);
 			break;
