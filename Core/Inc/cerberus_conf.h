@@ -27,7 +27,7 @@
 #define MAX_APPS2_VOLTS		2.28 /* volts */
 #define MIN_APPS2_VOLTS		1.07 /* volts */
 #define PEDAL_BRAKE_THRESH	0.20 /* percentage */
-#define PEDAL_HARD_BRAKE_THRESH 0.32 /* percentage */
+#define PEDAL_HARD_BRAKE_THRESH 0.50 /* percentage */
 
 /* brake sensor thresholds */
 #define BRAKE_SENSOR_IRREGULAR_HIGH 4.5

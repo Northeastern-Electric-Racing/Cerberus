@@ -39,7 +39,7 @@ static bool launch_control_enabled = false;
 #define MAX_VOLTS	   3.3 /* volts */
 #define MAX_VOLTS_UNSCALED 5.0
 
-#define PEDAL_DIFF_THRESH 0.10 /* percentage */
+#define PEDAL_DIFF_THRESH 0.20 /* percentage */
 #define PEDAL_FAULT_TIME  95 /* ms */
 #define BRAKE_FAULT_TIME  300 /* ms */
 
