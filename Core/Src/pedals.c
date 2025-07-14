@@ -317,8 +317,9 @@ void send_pedal_data(void *arg)
  */
 bool calc_bspd_prefault(float accel_val, float brake_val, float dc_current)
 {
-	static const fault_data_t fault_data = { .fault_id = BSPD_PREFAULT,
-					   .diag = "BSPD prefault triggered" };
+	static const fault_data_t fault_data = {
+		.fault_id = BSPD_PREFAULT, .diag = "BSPD prefault triggered"
+	};
 	static bool motor_disabled = false;
 
 	/* EV.4.7: If brakes are engaged and APPS signals more than 25% pedal travel, disable power

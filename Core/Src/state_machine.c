@@ -94,7 +94,6 @@ void sound_reverse_callback(void *pdu)
 static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 				       dti_t *mc, mpu_t *mpu)
 {
-
 	/* Special case: should be able to fault no matter what conditions */
 	if (new_state == FAULTED) {
 		/* Turn off high power peripherals */
@@ -122,7 +121,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		printf("Reverse is disabled.");
 		return 4;
 #endif
-	osTimerStart(reverse_sound_timer, pdMS_TO_TICKS(500));
+		osTimerStart(reverse_sound_timer, pdMS_TO_TICKS(500));
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
