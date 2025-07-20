@@ -9,6 +9,7 @@
 #include "monitor.h"
 #include "pedals.h"
 #include "can_handler.h"
+#include "pdu.h"
 
 #define STATE_TRANS_QUEUE_SIZE 4
 
@@ -91,8 +92,8 @@ void sound_reverse_callback(void *pdu)
 	sound = !sound;
 }
 
-static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
-				       dti_t *mc, mpu_t *mpu)
+int transition_functional_state(func_state_t new_state, pdu_t *pdu, dti_t *mc,
+				mpu_t *mpu)
 {
 	/* Special case: should be able to fault no matter what conditions */
 	if (new_state == FAULTED) {
@@ -151,11 +152,9 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 			return 3;
 		}
 #endif
-
 		if (get_tsms()) {
-			osThreadFlagsSet(rtds_thread, SOUND_RTDS_FLAG);
+			sound_rtds();
 		}
-
 		printf("ACTIVE STATE\r\n");
 		break;
 	default:

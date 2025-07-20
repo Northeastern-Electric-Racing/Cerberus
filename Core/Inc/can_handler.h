@@ -2,11 +2,11 @@
 #define CAN_HANDLER_H
 
 #include "can.h"
-#include "cmsis_os.h"
+#include "ner_cmsis_os.h"
 #include "control.h"
 #include "dti.h"
 #include "bms.h"
-#include "stm32f4xx_hal.h"
+#include "stm32xx_hal.h"
 
 /**
  * @brief Callback to be called when a message is received on CAN line 1.

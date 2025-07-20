@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "cmsis_os.h"
+#include "ner_cmsis_os.h"
 #include "mpu.h"
 #include "pdu.h"
 

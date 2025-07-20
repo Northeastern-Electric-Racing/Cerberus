@@ -2,14 +2,14 @@
 #define PDU_H
 
 #include <stdbool.h>
-#include "cmsis_os.h"
+#include "ner_cmsis_os.h"
 #include "tca9539.h"
 #include "INA226.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "bitstream.h"
 #include "c_utils.h"
-#include "stm32f4xx_hal.h"
+#include "stm32xx_hal.h"
 
 typedef struct {
 	I2C_HandleTypeDef *hi2c;
@@ -114,6 +114,11 @@ bool verify_tca_config(pdu_t *pdu);
  * @return int8_t Error code.
  */
 int8_t read_expander_debug(pdu_t *pdu, uint8_t expander_debug_data[4]);
+
+/**
+ * @brief sounds rtds by settings its thread flag
+ */
+void sound_rtds();
 
 /**
  * @brief Taskf for sounding RTDS.

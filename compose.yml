@@ -2,7 +2,7 @@ name: cerberus
 
 services:
     ner-gcc-arm:
-        image: ghcr.io/northeastern-electric-racing/embedded-base:main
+        image: ghcr.io/northeastern-electric-racing/embedded-base:unity-testing
         build: .
         network_mode: host
         privileged: true
