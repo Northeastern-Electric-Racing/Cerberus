@@ -144,7 +144,7 @@ int fault();
  * 
  * @return error code
  */
-int transition_functional_state(func_state_t new_state, pdu_t *pdu,
-				       dti_t *mc, mpu_t *mpu);
+int transition_functional_state(func_state_t new_state, pdu_t *pdu, dti_t *mc,
+				mpu_t *mpu);
 
 #endif

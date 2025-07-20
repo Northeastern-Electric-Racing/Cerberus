@@ -188,10 +188,10 @@ pdu_t *init_pdu(I2C_HandleTypeDef *hi2c, ADC_HandleTypeDef *pump_sensors_adc)
 	/* Initialize Pumps Current Sensor */
 	pdu->pumps_current_sensor = malloc(sizeof(ina226_t));
 	assert(pdu->pumps_current_sensor);
-	if (init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
-		     0.01f, 2.0f)) {
-		return NULL;
-	}
+	// if (init_ina(pdu, pdu->pumps_current_sensor, PUMPS_CURRENT_SENSOR_ADDR,
+	// 	     0.01f, 2.0f)) {
+	// 	return NULL;
+	// }
 
 	/* Initialize LV Boards Current Sensor */
 	pdu->lv_boards_current_sensor = malloc(sizeof(ina226_t));
@@ -551,11 +551,10 @@ int8_t read_all_current(pdu_t *pdu, float *motor_controller_current,
 {
 	// setting to 0 since current sensor is nonfunctional
 	*battbox_fans_current = 0;
+	*pumps_current = 0;
 
 	if (read_current(pdu, pdu->motor_controller_current_sensor,
 			 motor_controller_current))
-		return -1;
-	if (read_current(pdu, pdu->pumps_current_sensor, pumps_current))
 		return -1;
 	if (read_current(pdu, pdu->lv_boards_current_sensor, lv_boards_current))
 		return -1;

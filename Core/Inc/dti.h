@@ -154,4 +154,14 @@ osStatus_t dti_get_motor_temp(dti_t *mc, uint16_t *motorTemp);
  */
 osStatus_t dti_get_controller_temp(dti_t *mc, uint16_t *controllerTemp);
 
+/**
+ * @brief Record the currents from DTI
+ *
+ * @param mc Pointer to DTI struct
+ * @param msg CAN message containing currents data
+ */
+osStatus_t dti_record_currents(dti_t *mc, can_msg_t msg);
+
+osStatus_t dti_get_dc_current(dti_t *mc, int16_t *dc_current);
+
 #endif

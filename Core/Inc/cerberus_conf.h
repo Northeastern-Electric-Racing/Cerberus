@@ -21,12 +21,17 @@
 #define FAULT_HANDLE_DELAY
 
 /* Pedal tuning */
-#define PEDALS_SAMPLE_DELAY 10 /* ms */
-#define MAX_APPS1_VOLTS	    3.02 /* volts */
-#define MIN_APPS1_VOLTS	    1.75 /* volts */
-#define MAX_APPS2_VOLTS	    2.28 /* volts */
-#define MIN_APPS2_VOLTS	    1.01 /* volts */
-#define PEDAL_BRAKE_THRESH  0.12 /* percentage */
+#define PEDALS_SAMPLE_DELAY	10 /* ms */
+#define MAX_APPS1_VOLTS		3.03 /* volts */
+#define MIN_APPS1_VOLTS		1.81 /* volts */
+#define MAX_APPS2_VOLTS		2.28 /* volts */
+#define MIN_APPS2_VOLTS		1.07 /* volts */
+#define PEDAL_BRAKE_THRESH	0.20 /* percentage */
+#define PEDAL_HARD_BRAKE_THRESH 0.50 /* percentage */
+
+/* brake sensor thresholds */
+#define BRAKE_SENSOR_IRREGULAR_HIGH 4.5
+#define BRAKE_SENSOR_IRREGULAR_LOW  0.5
 
 /* Torque Tuning */
 #define MAX_TORQUE 220 /* Nm */
@@ -36,7 +41,7 @@
 #define ACCELERATION_THRESHOLD 0.25
 
 /* Maximum AC braking current */
-#define MAX_REGEN_CURRENT 300
+#define MAX_REGEN_CURRENT 250
 
 #define STEERING_WHEEL_DEBOUNCE 10 /* ms */
 

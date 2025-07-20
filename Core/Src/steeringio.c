@@ -14,7 +14,7 @@ static void set_torque_limit_wrapper(float percentage)
 	}
 }
 
-void buttons_update(can_msg_t msg)
+void buttons_update(can_msg_t msg, dti_t *mc)
 {
 	uint8_t button_id = msg.data[0];
 
@@ -35,7 +35,9 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_ESC:
 		printf("Esc button pressed \n");
-		set_home_mode();
+		if (fabs(dti_get_mph(mc)) < 1) {
+			set_home_mode();
+		}
 		break;
 	case BUTTON_UP:
 		printf("Up button pressed \n");
@@ -53,7 +55,8 @@ void buttons_update(can_msg_t msg)
 		break;
 	case BUTTON_ENTER:
 		printf("Enter button pressed \n");
-		if (get_func_state() == F_PERFORMANCE) {
+		if (get_func_state() == F_PERFORMANCE &&
+		    fabs(dti_get_mph(mc)) < 1) {
 			toggle_launch_control();
 		}
 		select_nero_index();
