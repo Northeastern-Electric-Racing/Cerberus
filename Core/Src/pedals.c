@@ -284,7 +284,7 @@ bool calc_brake_faults(float brake1, float brake2)
  */
 void send_pedal_data(void *arg)
 {
-	uint32_t *pedal_vals = (pedal_data_t *)arg;
+	pedal_data_t *pedal_vals = (pedal_data_t *)arg;
 
 	can_msg_t pedals_msg = { .id = CANID_PEDALS_MSG,
 				 .len = 12,
@@ -300,15 +300,15 @@ void send_pedal_data(void *arg)
 	} pedal_data;
 
 	pedal_data.accel_1 =
-		(uint16_t)(pedal_data.accel_1 * 100);
+		(uint16_t)(pedal_vals->accel1_volts * 100);
 	pedal_data.accel_2 =
-		(uint16_t)(pedal_data.accel_2 * 100);
+		(uint16_t)(pedal_vals->accel2_volts * 100);
 	pedal_data.brake_1 =
-		(uint16_t)(pedal_data.brake_1 * 100);
+		(uint16_t)(pedal_vals->brake1_volts * 100);
 	pedal_data.brake_2 =
-		(uint16_t)(pedal_data.brake_2 * 100);
-	pedal_data.accel_norm = (uint16_t)(pedal_data.accel_norm * 100);
-	pedal_data.brake_norm = (uint16_t)(pedal_data.brake_norm * 100);
+		(uint16_t)(pedal_vals->brake2_volts * 100);
+	pedal_data.accel_norm = (uint16_t)(pedal_vals->accel_norm * 100);
+	pedal_data.brake_norm = (uint16_t)(pedal_vals->brake_norm * 100);
 
 	endian_swap(&pedal_data.accel_1, sizeof(pedal_data.accel_1));
 	endian_swap(&pedal_data.accel_2, sizeof(pedal_data.accel_2));
