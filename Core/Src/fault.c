@@ -42,8 +42,6 @@ static void clear_fault(void *args)
 	    *fault_id < MAX_CRITICAL_FAULT) {
 		set_ready_mode();
 	}
-
-	free(fault_id);
 }
 
 /**

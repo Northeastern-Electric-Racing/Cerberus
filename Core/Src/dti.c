@@ -335,3 +335,29 @@ osStatus_t dti_get_controller_temp(dti_t *mc, uint16_t *controllerTemp)
 
 	return osMutexRelease(mc->mutex);
 }
+
+osStatus_t dti_record_currents(dti_t *mc, can_msg_t msg)
+{
+	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
+	if (stat)
+		return stat;
+
+	int16_t ac_current = (msg.data[0] << 8) + (msg.data[1]) / 10;
+	int16_t dc_current = (msg.data[2] << 8) + (msg.data[3]) / 10;
+
+	mc->ac_current = ac_current;
+	mc->dc_current = dc_current;
+
+	return osMutexRelease(mc->mutex);
+}
+
+osStatus_t dti_get_dc_current(dti_t *mc, int16_t *dc_current)
+{
+	osStatus_t stat = osMutexAcquire(mc->mutex, osWaitForever);
+	if (stat)
+		return stat;
+
+	memcpy(dc_current, &mc->dc_current, sizeof(mc->dc_current));
+
+	return osMutexRelease(mc->mutex);
+}
