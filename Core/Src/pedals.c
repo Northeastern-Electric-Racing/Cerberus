@@ -286,39 +286,52 @@ void send_pedal_data(void *arg)
 {
 	pedal_data_t *pedal_vals = (pedal_data_t *)arg;
 
-	can_msg_t pedals_msg = { .id = CANID_PEDALS_MSG,
-				 .len = 12,
-				 .data = { 0 } };
+	can_msg_t pedals_volts_msg = { .id = CANID_PEDALS_VOLTS_MSG,
+		.len = 8,
+		.data = { 0 } };
+	
+	can_msg_t pedals_norm_msg = { .id = CAN_ID_PEDALS_NORM_MSG, 
+		.len = 4,
+		.data = { 0 }};
 
 	struct __attribute__((__packed__)) {
 		uint16_t accel_1;
 		uint16_t accel_2;
 		uint16_t brake_1;
 		uint16_t brake_2;
+	} pedal_volts_data;
+
+	struct __attribute((__packed__))
+	{
 		uint16_t accel_norm;
 		uint16_t brake_norm;
-	} pedal_data;
+	} pedal_norm_data;
 
-	pedal_data.accel_1 =
+	pedal_volts_data.accel_1 =
 		(uint16_t)(pedal_vals->accel1_volts * 100);
-	pedal_data.accel_2 =
+	pedal_volts_data.accel_2 =
 		(uint16_t)(pedal_vals->accel2_volts * 100);
-	pedal_data.brake_1 =
+	pedal_volts_data.brake_1 =
 		(uint16_t)(pedal_vals->brake1_volts * 100);
-	pedal_data.brake_2 =
+	pedal_volts_data.brake_2 =
 		(uint16_t)(pedal_vals->brake2_volts * 100);
-	pedal_data.accel_norm = (uint16_t)(pedal_vals->accel_norm * 100);
-	pedal_data.brake_norm = (uint16_t)(pedal_vals->brake_norm * 100);
 
-	endian_swap(&pedal_data.accel_1, sizeof(pedal_data.accel_1));
-	endian_swap(&pedal_data.accel_2, sizeof(pedal_data.accel_2));
-	endian_swap(&pedal_data.brake_1, sizeof(pedal_data.brake_1));
-	endian_swap(&pedal_data.brake_2, sizeof(pedal_data.brake_2));
-	endian_swap(&pedal_data.accel_norm, sizeof(pedal_data.accel_norm));
-	endian_swap(&pedal_data.brake_norm, sizeof(pedal_data.brake_norm));
+	endian_swap(&pedal_volts_data.accel_1, sizeof(pedal_volts_data.accel_1));
+	endian_swap(&pedal_volts_data.accel_2, sizeof(pedal_volts_data.accel_2));
+	endian_swap(&pedal_volts_data.brake_1, sizeof(pedal_volts_data.brake_1));
+	endian_swap(&pedal_volts_data.brake_2, sizeof(pedal_volts_data.brake_2));
 
-	memcpy(pedals_msg.data, &pedal_data, pedals_msg.len);
-	queue_can_msg(pedals_msg);
+	pedal_norm_data.accel_norm = (uint16_t)(pedal_vals->accel_norm * 100);
+	pedal_norm_data.brake_norm = (uint16_t)(pedal_vals->brake_norm * 100);
+
+	endian_swap(&pedal_norm_data.accel_norm, sizeof(pedal_norm_data.accel_norm));
+	endian_swap(&pedal_norm_data.brake_norm, sizeof(pedal_norm_data.brake_norm));
+
+	memcpy(pedals_volts_msg.data, &pedal_volts_data, pedals_volts_msg.len);
+	queue_can_msg(pedals_volts_msg);
+
+	memcpy(pedals_norm_msg.data, &pedal_norm_data, pedals_norm_msg.len);
+	queue_can_msg(pedals_norm_msg);
 }
 
 /**
