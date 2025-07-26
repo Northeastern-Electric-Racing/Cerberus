@@ -86,7 +86,7 @@ nero_state_t get_nero_state()
 void sound_reverse_callback(void *pdu)
 {
 	static bool sound = false;
-
+	
 	write_rtds(pdu, sound);
 	sound = !sound;
 }
@@ -125,8 +125,6 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_PIT:
 	case F_PERFORMANCE:
 	case F_EFFICIENCY:
-
-		disable_launch_control();
 
 		brake_state = get_brake_state();
 #ifdef TSMS_OVERRIDE
@@ -366,6 +364,7 @@ void vStateMachineDirector(void *pv_params)
 			is_ts_rising = true;
 			osTimerStart(ts_rising_timer, TS_RISING_BLOCK_TIMEOUT);
 		} else if (!get_tsms()) {
+			osTimerStop(ts_rising_timer);
 			is_ts_rising = false;
 			enter_drive_enabled = false;
 		}

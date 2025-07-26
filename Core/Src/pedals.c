@@ -56,7 +56,6 @@ static bool brake_pressed = false;
 static osMutexId_t brake_state_mut;
 static osMutexAttr_t brake_mutex_attributes;
 
-
 bool get_brake_state()
 {
 	bool temp;
@@ -109,9 +108,9 @@ void decrease_torque_limit()
 }
 
 void increase_regen_limit()
-{	
+{
 	func_state_t func_state = get_func_state();
-	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY) 
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
 		return;
 	uint16_t regen_limit = get_regen_limit();
 	if (regen_limit + REGEN_INCREMENT_STEP > MAX_REGEN_CURRENT) {
@@ -124,7 +123,7 @@ void increase_regen_limit()
 void decrease_regen_limit()
 {
 	func_state_t func_state = get_func_state();
-	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY) 
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
 		return;
 	uint16_t regen_limit = get_regen_limit();
 	if (regen_limit - REGEN_INCREMENT_STEP < 0) {
@@ -137,8 +136,8 @@ void decrease_regen_limit()
 void set_regen_limit(uint16_t limit)
 {
 	func_state_t func_state = get_func_state();
-	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY) 
-		return;	
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
+		return;
 	if (limit > MAX_REGEN_CURRENT) {
 		regen_limits[func_state - F_PERFORMANCE] = MAX_REGEN_CURRENT;
 	} else if (limit < 0.0) {
@@ -177,11 +176,6 @@ uint16_t get_regen_limit()
 void toggle_launch_control()
 {
 	launch_control_enabled = !launch_control_enabled;
-}
-
-void disable_launch_control()
-{
-	launch_control_enabled = false;
 }
 
 bool get_launch_control()
@@ -542,16 +536,10 @@ void handle_launch_control(float mph, float accel_val)
 	prev_accel = accel_val;
 }
 
-osThreadId_t process_pedals_thread;
-const osThreadAttr_t process_pedals_attributes = {
-	.name = "PedalMonitor",
-	.stack_size = 128 * 8,
-	.priority = (osPriority_t)osPriorityRealtime,
-};
-
-void handle_performance(float mph, float accel_val, float brake_val) {
-	#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-		uint16_t regen_limit = get_regen_limit();
+void handle_performance(float mph, float accel_val, float brake_val)
+{
+#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
+	uint16_t regen_limit = get_regen_limit();
 	if (regen_limit <= 0.01) {
 		linear_accel_to_torque(accel_val);
 		return;
@@ -559,8 +547,7 @@ void handle_performance(float mph, float accel_val, float brake_val) {
 
 	if (accel_val >= ACCELERATION_THRESHOLD) {
 		if (launch_control_enabled) {
-			float norm_accel_val = (accel_val - 0.25) / 0.75; 
-			handle_launch_control(mph, norm_accel_val);
+			handle_launch_control(mph, (accel_val - 0.25) / 0.75);
 		} else {
 			accel_pedal_regen_torque(accel_val);
 		}
@@ -571,9 +558,16 @@ void handle_performance(float mph, float accel_val, float brake_val) {
 		dti_set_torque(0);
 	}
 #else
-			power_regression_accel_to_torque(accel_val);
+	power_regression_accel_to_torque(accel_val);
 #endif
 }
+
+osThreadId_t process_pedals_thread;
+const osThreadAttr_t process_pedals_attributes = {
+	.name = "PedalMonitor",
+	.stack_size = 128 * 8,
+	.priority = (osPriority_t)osPriorityRealtime,
+};
 
 /**
  * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
@@ -632,7 +626,7 @@ void vProcessPedals(void *pv_params)
 	//assert(delay_time < MAX_COMMAND_DELAY);
 
 	brake_state_mut = osMutexNew(&brake_mutex_attributes);
-	
+
 	drive_handles[READY] = NULL;
 	drive_handles[FAULTED] = NULL;
 	drive_handles[F_PIT] = handle_pit;
@@ -699,7 +693,8 @@ void vProcessPedals(void *pv_params)
 		if (drive_handles[func_state] == NULL) {
 			dti_set_torque(0);
 		} else {
-			drive_handles[func_state](mph, accel_value, brake_value);
+			drive_handles[func_state](mph, accel_value,
+						  brake_value);
 		}
 
 		osDelay(delay_time);
