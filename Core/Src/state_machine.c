@@ -86,7 +86,7 @@ nero_state_t get_nero_state()
 void sound_reverse_callback(void *pdu)
 {
 	static bool sound = false;
-	
+
 	write_rtds(pdu, sound);
 	sound = !sound;
 }
