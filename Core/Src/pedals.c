@@ -34,7 +34,7 @@ typedef void (*drive_handle_func)(float mph, float accel_val, float break_val);
 static drive_handle_func drive_handles[MAX_FUNC_STATES];
 
 float torque_limit_percentage = 1.0;
-uint16_t regen_limits[2] = { 0 }; // [PERFORMANCE, ENDURANCE]
+uint16_t regen_limits[2] = { 0, 50 }; // [PERFORMANCE, ENDURANCE]
 static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
@@ -580,15 +580,6 @@ const osThreadAttr_t process_pedals_attributes = {
  */
 void handle_endurance(float mph, float accel_val, float brake_val)
 {
-#ifdef USE_BRAKE_REGEN
-	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
-		brake_pedal_regen(brake_val);
-	} else {
-		// accelerating, limit torque
-		linear_accel_to_torque(accel_val, torque);
-	}
-#else
-
 	/* Pedal is in acceleration range. Set forward torque target. */
 	if (accel_val >= ACCELERATION_THRESHOLD) {
 		accel_pedal_regen_torque(accel_val);
@@ -598,8 +589,6 @@ void handle_endurance(float mph, float accel_val, float brake_val)
 		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
 		dti_set_torque(0);
 	}
-
-#endif
 }
 
 void vProcessPedals(void *pv_params)
