@@ -51,6 +51,15 @@ static bool brake_pressed = false;
 static osMutexId_t brake_state_mut;
 static osMutexAttr_t brake_mutex_attributes;
 
+typedef struct {
+	float accel1_volts;
+	float accel2_volts;
+	float brake1_volts;
+	float brake2_volts;
+	float accel_norm;
+	float brake_norm;
+} pedal_data_t;
+
 bool get_brake_state()
 {
 	bool temp;
@@ -275,35 +284,55 @@ bool calc_brake_faults(float brake1, float brake2)
  */
 void send_pedal_data(void *arg)
 {
-	uint32_t *adc_data = (uint32_t *)arg;
+	pedal_data_t *pedal_vals = (pedal_data_t *)arg;
 
-	can_msg_t pedals_msg = { .id = CANID_PEDALS_MSG,
-				 .len = 8,
-				 .data = { 0 } };
+	can_msg_t pedals_volts_msg = { .id = CANID_PEDALS_VOLTS_MSG,
+				       .len = 8,
+				       .data = { 0 } };
+
+	can_msg_t pedals_norm_msg = { .id = CAN_ID_PEDALS_NORM_MSG,
+				      .len = 4,
+				      .data = { 0 } };
 
 	struct __attribute__((__packed__)) {
 		uint16_t accel_1;
 		uint16_t accel_2;
 		uint16_t brake_1;
 		uint16_t brake_2;
-	} voltage_data;
+	} pedal_volts_data;
 
-	voltage_data.accel_1 =
-		(uint16_t)(adc_to_volts(adc_data[ACCELPIN_1]) * 100);
-	voltage_data.accel_2 =
-		(uint16_t)(adc_to_volts(adc_data[ACCELPIN_2]) * 100);
-	voltage_data.brake_1 =
-		(uint16_t)(adc_to_volts(adc_data[BRAKEPIN_1]) * 100);
-	voltage_data.brake_2 =
-		(uint16_t)(adc_to_volts(adc_data[BRAKEPIN_2]) * 100);
+	struct __attribute((__packed__)) {
+		uint16_t accel_norm;
+		uint16_t brake_norm;
+	} pedal_norm_data;
 
-	endian_swap(&voltage_data.accel_1, sizeof(voltage_data.accel_1));
-	endian_swap(&voltage_data.accel_2, sizeof(voltage_data.accel_2));
-	endian_swap(&voltage_data.brake_1, sizeof(voltage_data.brake_1));
-	endian_swap(&voltage_data.brake_2, sizeof(voltage_data.brake_2));
+	pedal_volts_data.accel_1 = (uint16_t)(pedal_vals->accel1_volts * 100);
+	pedal_volts_data.accel_2 = (uint16_t)(pedal_vals->accel2_volts * 100);
+	pedal_volts_data.brake_1 = (uint16_t)(pedal_vals->brake1_volts * 100);
+	pedal_volts_data.brake_2 = (uint16_t)(pedal_vals->brake2_volts * 100);
 
-	memcpy(pedals_msg.data, &voltage_data, pedals_msg.len);
-	queue_can_msg(pedals_msg);
+	endian_swap(&pedal_volts_data.accel_1,
+		    sizeof(pedal_volts_data.accel_1));
+	endian_swap(&pedal_volts_data.accel_2,
+		    sizeof(pedal_volts_data.accel_2));
+	endian_swap(&pedal_volts_data.brake_1,
+		    sizeof(pedal_volts_data.brake_1));
+	endian_swap(&pedal_volts_data.brake_2,
+		    sizeof(pedal_volts_data.brake_2));
+
+	pedal_norm_data.accel_norm = (uint16_t)(pedal_vals->accel_norm * 100);
+	pedal_norm_data.brake_norm = (uint16_t)(pedal_vals->brake_norm * 100);
+
+	endian_swap(&pedal_norm_data.accel_norm,
+		    sizeof(pedal_norm_data.accel_norm));
+	endian_swap(&pedal_norm_data.brake_norm,
+		    sizeof(pedal_norm_data.brake_norm));
+
+	memcpy(pedals_volts_msg.data, &pedal_volts_data, pedals_volts_msg.len);
+	queue_can_msg(pedals_volts_msg);
+
+	memcpy(pedals_norm_msg.data, &pedal_norm_data, pedals_norm_msg.len);
+	queue_can_msg(pedals_norm_msg);
 }
 
 /**
@@ -568,9 +597,11 @@ void vProcessPedals(void *pv_params)
 
 	free(args);
 
+	pedal_data_t pedal_data;
+
 	uint32_t adc_data[4];
-	osTimerId_t send_pedal_data_timer =
-		osTimerNew(&send_pedal_data, osTimerPeriodic, adc_data, NULL);
+	osTimerId_t send_pedal_data_timer = osTimerNew(
+		&send_pedal_data, osTimerPeriodic, &pedal_data, NULL);
 
 	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
 	osTimerStart(send_pedal_data_timer, 100);
@@ -613,6 +644,13 @@ void vProcessPedals(void *pv_params)
 		float brake_value = pedal_percent_pressed(
 			adc_to_volts(brake_avg), 0, MAX_VOLTS_UNSCALED);
 		float accel_value = (accel1_norm + accel2_norm) / 2;
+
+		pedal_data.accel1_volts = accel1_volts;
+		pedal_data.accel2_volts = accel2_volts;
+		pedal_data.brake1_volts = brake1_volts;
+		pedal_data.brake2_volts = brake2_volts;
+		pedal_data.accel_norm = accel_value;
+		pedal_data.brake_norm = brake_value;
 
 		/* Turn brakelight on or off */
 		osMutexAcquire(brake_state_mut, osWaitForever);

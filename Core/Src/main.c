@@ -803,6 +803,7 @@ struct __attribute__((__packed__)) git_hash_data {
  */
 void send_git_version_message()
 {
+  /*
 	const struct git_hash_data git_hash_data2 = { GIT_SHORTHASH,
 						      GIT_AUTHORHASH };
 	const struct git_version_data git_version_data2 = {
@@ -816,6 +817,7 @@ void send_git_version_message()
 	memcpy(&msg2.data, &git_hash_data2, sizeof(git_hash_data2));
 
 	queue_can_msg(msg1);
+  */
 	//queue_can_msg(msg2);
 }
 /* USER CODE END 4 */
