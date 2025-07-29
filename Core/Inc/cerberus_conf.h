@@ -67,19 +67,20 @@
 #define WATCHDOG_Pin	    GPIO_PIN_15
 #define WATCHDOG_GPIO_Port  GPIOB
 
-#define CANID_TEMP_SENSOR    0x004
-#define CANID_TORQUE_MSG     0x005
-#define CANID_OUTBOUND_MSG   0xA55
-#define CANID_FUSE	     0x111
-#define CANID_SHUTDOWN_LOOP  0x123
-#define CANID_IMU_ACCEL	     0x506
-#define CANID_IMU_GYRO	     0x507
-#define CANID_NERO_MSG	     0x501
-#define CANID_FAULT_MSG	     0x502
-#define CANID_LV_MONITOR     0x503
-#define CANID_PEDALS_MSG     0x504
-#define CANID_PDU_CURRENT    0x508
-#define CANID_PUMP_SENSORS   0x509
-#define CANID_EXPANDER_DEBUG 0x50A
+#define CANID_TEMP_SENSOR      0x004
+#define CANID_TORQUE_MSG       0x005
+#define CANID_OUTBOUND_MSG     0xA55
+#define CANID_FUSE	       0x111
+#define CANID_SHUTDOWN_LOOP    0x123
+#define CANID_IMU_ACCEL	       0x506
+#define CANID_IMU_GYRO	       0x507
+#define CANID_NERO_MSG	       0x501
+#define CANID_FAULT_MSG	       0x502
+#define CANID_LV_MONITOR       0x503
+#define CANID_PEDALS_VOLTS_MSG 0x504
+#define CAN_ID_PEDALS_NORM_MSG 0x505
+#define CANID_PDU_CURRENT      0x508
+#define CANID_PUMP_SENSORS     0x509
+#define CANID_EXPANDER_DEBUG   0x50A
 // Reserved for MPU debug message, see yaml for format
 #define CANID_EXTRA_MSG 0x701
