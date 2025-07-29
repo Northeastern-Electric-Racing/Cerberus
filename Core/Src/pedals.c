@@ -30,8 +30,11 @@
 
 #define REGEN_INCREMENT_STEP 10 /* AC Amps */
 
+typedef void (*drive_handle_func)(float mph, float accel_val, float break_val);
+static drive_handle_func drive_handles[MAX_FUNC_STATES];
+
 float torque_limit_percentage = 1.0;
-uint16_t regen_limit = 100;
+uint16_t regen_limits[2] = { 0, 50 }; // [PERFORMANCE, ENDURANCE]
 static bool launch_control_enabled = false;
 
 /* Parameters for the pedal monitoring task */
@@ -47,6 +50,8 @@ static bool launch_control_enabled = false;
 #define BRAKE_THRESHOLD_BUF 0.25
 enum { ACCELPIN_1, ACCELPIN_2, BRAKEPIN_1, BRAKEPIN_2 };
 
+/* Factor for converting MPH to KMH */
+static const float MPH_TO_KMH = 1.609;
 static bool brake_pressed = false;
 static osMutexId_t brake_state_mut;
 static osMutexAttr_t brake_mutex_attributes;
@@ -113,30 +118,41 @@ void decrease_torque_limit()
 
 void increase_regen_limit()
 {
+	func_state_t func_state = get_func_state();
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
+		return;
+	uint16_t regen_limit = get_regen_limit();
 	if (regen_limit + REGEN_INCREMENT_STEP > MAX_REGEN_CURRENT) {
-		regen_limit = MAX_REGEN_CURRENT;
+		set_regen_limit(MAX_REGEN_CURRENT);
 	} else {
-		regen_limit += REGEN_INCREMENT_STEP;
+		set_regen_limit(regen_limit += REGEN_INCREMENT_STEP);
 	}
 }
 
 void decrease_regen_limit()
 {
+	func_state_t func_state = get_func_state();
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
+		return;
+	uint16_t regen_limit = get_regen_limit();
 	if (regen_limit - REGEN_INCREMENT_STEP < 0) {
-		regen_limit = 0;
+		set_regen_limit(0);
 	} else {
-		regen_limit -= REGEN_INCREMENT_STEP;
+		set_regen_limit(regen_limit -= REGEN_INCREMENT_STEP);
 	}
 }
 
 void set_regen_limit(uint16_t limit)
 {
-	regen_limit = limit;
-
-	if (regen_limit > MAX_REGEN_CURRENT) {
-		regen_limit = MAX_REGEN_CURRENT;
-	} else if (regen_limit < 0.0) {
-		regen_limit = 0.0;
+	func_state_t func_state = get_func_state();
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY)
+		return;
+	if (limit > MAX_REGEN_CURRENT) {
+		regen_limits[func_state - F_PERFORMANCE] = MAX_REGEN_CURRENT;
+	} else if (limit < 0.0) {
+		regen_limits[func_state - F_PERFORMANCE] = 0.0;
+	} else {
+		regen_limits[func_state - F_PERFORMANCE] = limit;
 	}
 }
 
@@ -159,7 +175,11 @@ float get_torque_limit_percentage()
 
 uint16_t get_regen_limit()
 {
-	return regen_limit;
+	func_state_t func_state = get_func_state();
+	if (func_state != F_PERFORMANCE && func_state != F_EFFICIENCY) {
+		return 0;
+	}
+	return regen_limits[get_func_state() - F_PERFORMANCE];
 }
 
 void toggle_launch_control()
@@ -454,9 +474,9 @@ static int16_t derate_torque(float mph, float accel)
  * @param mph Current speed of the car.
  * @param accel % pedal travel of the accelerator pedal.
  */
-static void handle_pit(float mph, float accel)
+static void handle_pit(float mph, float accel_val, float brake_val)
 {
-	dti_set_torque(derate_torque(mph, accel));
+	dti_set_torque(derate_torque(mph, accel_val));
 }
 
 /**
@@ -465,9 +485,9 @@ static void handle_pit(float mph, float accel)
  * @param mph Current speed of the car.
  * @param accel % pedal travel of the accelerator pedal.
  */
-static void handle_reverse(float mph, float accel)
+static void handle_reverse(float mph, float accel_val, float brake_val)
 {
-	dti_set_torque(-1 * derate_torque(fabs(mph), accel));
+	dti_set_torque(-1 * derate_torque(fabs(mph), accel_val));
 }
 
 /**
@@ -498,6 +518,8 @@ void accel_pedal_regen_torque(float accel_val)
  */
 void accel_pedal_regen_braking(float accel_val)
 {
+	uint16_t regen_limit = get_regen_limit();
+
 	/* Calculate AC current target for regenerative braking */
 	float regen_current =
 		(regen_limit / REGEN_THRESHOLD) * (REGEN_THRESHOLD - accel_val);
@@ -508,41 +530,6 @@ void accel_pedal_regen_braking(float accel_val)
 
 	/* Send regen current to motor controller */
 	dti_set_regen((uint16_t)(regen_current * 10));
-}
-
-/**
- * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
- * 
- * @param mc pointer to struct containing dti data
- * @param mph mph of the car
- * @param accel_val adjusted value of the acceleration pedal
- * @param brake_val adjusted value of the brake pedal
- * @param torque pointer to torque value
- */
-void handle_endurance(float mph, float accel_val, float brake_val)
-{
-#ifdef USE_BRAKE_REGEN
-	if (brake_val > PEDAL_BRAKE_THRESH && (mph * 1.609) > 5) {
-		brake_pedal_regen(brake_val);
-	} else {
-		// accelerating, limit torque
-		linear_accel_to_torque(accel_val, torque);
-	}
-#else
-	/* Factor for converting MPH to KMH */
-	static const float MPH_TO_KMH = 1.609;
-
-	/* Pedal is in acceleration range. Set forward torque target. */
-	if (accel_val >= ACCELERATION_THRESHOLD) {
-		accel_pedal_regen_torque(accel_val);
-	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
-		accel_pedal_regen_braking(accel_val);
-	} else {
-		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
-		dti_set_torque(0);
-	}
-
-#endif
 }
 
 const float deltaMPHPS_max =
@@ -578,12 +565,60 @@ void handle_launch_control(float mph, float accel_val)
 	prev_accel = accel_val;
 }
 
+void handle_performance(float mph, float accel_val, float brake_val)
+{
+#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
+	uint16_t regen_limit = get_regen_limit();
+	if (regen_limit <= 0.01) {
+		linear_accel_to_torque(accel_val);
+		return;
+	}
+
+	if (accel_val >= ACCELERATION_THRESHOLD) {
+		if (launch_control_enabled) {
+			handle_launch_control(mph, (accel_val - 0.25) / 0.75);
+		} else {
+			accel_pedal_regen_torque(accel_val);
+		}
+	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
+		accel_pedal_regen_braking(accel_val);
+	} else {
+		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
+		dti_set_torque(0);
+	}
+#else
+	power_regression_accel_to_torque(accel_val);
+#endif
+}
+
 osThreadId_t process_pedals_thread;
 const osThreadAttr_t process_pedals_attributes = {
 	.name = "PedalMonitor",
 	.stack_size = 128 * 8,
 	.priority = (osPriority_t)osPriorityRealtime,
 };
+
+/**
+ * @brief Torque calculations for efficiency mode. If the driver is braking, do regenerative braking.
+ * 
+ * @param mc pointer to struct containing dti data
+ * @param mph mph of the car
+ * @param accel_val adjusted value of the acceleration pedal
+ * @param brake_val adjusted value of the brake pedal
+ * @param torque pointer to torque value
+ */
+void handle_endurance(float mph, float accel_val, float brake_val)
+{
+	/* Pedal is in acceleration range. Set forward torque target. */
+	if (accel_val >= ACCELERATION_THRESHOLD) {
+		accel_pedal_regen_torque(accel_val);
+	} else if (mph * MPH_TO_KMH > 5 && accel_val <= REGEN_THRESHOLD) {
+		accel_pedal_regen_braking(accel_val);
+	} else {
+		/* Pedal travel is between thresholds, so there should not be acceleration or braking */
+		dti_set_torque(0);
+	}
+}
 
 void vProcessPedals(void *pv_params)
 {
@@ -611,6 +646,13 @@ void vProcessPedals(void *pv_params)
 	//assert(delay_time < MAX_COMMAND_DELAY);
 
 	brake_state_mut = osMutexNew(&brake_mutex_attributes);
+
+	drive_handles[READY] = NULL;
+	drive_handles[FAULTED] = NULL;
+	drive_handles[F_PIT] = handle_pit;
+	drive_handles[F_REVERSE] = handle_reverse;
+	drive_handles[F_PERFORMANCE] = handle_performance;
+	drive_handles[F_EFFICIENCY] = handle_endurance;
 
 	for (;;) {
 		read_pedals(mpu, adc_data);
@@ -675,32 +717,13 @@ void vProcessPedals(void *pv_params)
 		float mph = dti_get_mph(mc);
 		func_state_t func_state = get_func_state();
 
-		switch (func_state) {
-		case F_EFFICIENCY:
-			handle_endurance(mph, accel_value, brake_value);
-			break;
-		case F_PERFORMANCE:
-			if (launch_control_enabled) {
-				handle_launch_control(mph, accel_value);
-			} else {
-#ifndef POWER_REGRESSION_PEDAL_TORQUE_TRANSFER
-				linear_accel_to_torque(accel_value);
-#else
-				power_regression_accel_to_torque(accel_value);
-#endif
-			}
-			break;
-		case F_PIT:
-			handle_pit(mph, accel_value);
-			break;
-		case REVERSE:
-			// EV.3.1.1 no reverse at FSAE
-			handle_reverse(mph, accel_value);
-			break;
-		default:
+		if (drive_handles[func_state] == NULL) {
 			dti_set_torque(0);
-			break;
+		} else {
+			drive_handles[func_state](mph, accel_value,
+						  brake_value);
 		}
+
 		osDelay(delay_time);
 	}
 }
