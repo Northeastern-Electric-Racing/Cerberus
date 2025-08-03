@@ -61,6 +61,15 @@ static void control_device(device_control_t *device, uint16_t temp)
 		return;
 	}
 
+	if (device->device_type == DEVICE_RADFAN0 || device->device_type == DEVICE_RADFAN1) {
+		if (fabs(dti_get_mph(device->mc)) <= 0.1 && temp > device->upper_temp) {
+			set_device_on(device);
+		} else if (temp < device->lower_temp) {
+			set_device_off(device);
+		}
+		return;
+	}
+
 	// set device state based on temps with debounce
 	if (temp > device->upper_temp || temp < device->lower_temp ||
 	    is_timer_active(&device->timer)) {
@@ -88,6 +97,7 @@ void vControl(void *params)
 
 	device_control_t pump0 = {
 		.pdu = pdu,
+		.mc = mc,
 		.control_func = write_pump_1,
 		.upper_temp = PUMP_UPPER_MOTOR_TEMP,
 		.lower_temp = PUMP_LOWER_MOTOR_TEMP,
@@ -96,6 +106,7 @@ void vControl(void *params)
 
 	device_control_t radfan0 = {
 		.pdu = pdu,
+		.mc = mc,
 		.control_func = write_radfan_2,
 		.upper_temp = RADFAN_UPPER_MOTOR_TEMP,
 		.lower_temp = RADFAN_LOWER_MOTOR_TEMP,
@@ -104,6 +115,7 @@ void vControl(void *params)
 
 	device_control_t pump1 = {
 		.pdu = pdu,
+		.mc = mc,
 		.control_func = write_pump_2,
 		.upper_temp = PUMP_UPPER_CONTROLLER_TEMP,
 		.lower_temp = PUMP_LOWER_CONTROLLER_TEMP,
@@ -112,6 +124,7 @@ void vControl(void *params)
 
 	device_control_t radfan1 = {
 		.pdu = pdu,
+		.mc = mc,
 		.control_func = write_radfan_1,
 		.upper_temp = RADFAN_UPPER_CONTROLLER_TEMP,
 		.lower_temp = RADFAN_LOWER_CONTROLLER_TEMP,
@@ -120,6 +133,7 @@ void vControl(void *params)
 
 	device_control_t fan_battbox = {
 		.pdu = pdu,
+		.mc = mc,
 		.control_func = write_fan_battbox,
 		.upper_temp = FANBATTBOX_UPPER_TEMP,
 		.lower_temp = FANBATTBOX_LOWER_TEMP,
@@ -146,10 +160,10 @@ void vControl(void *params)
 
 		// Determine device state
 		control_device(&pump0, motor_temp);
-		control_device(&radfan0, motor_temp);
 		control_device(&pump1, controller_temp);
-		control_device(&radfan1, controller_temp);
 		control_device(&fan_battbox, battbox_temp);
+		control_device(&radfan0, motor_temp);
+		control_device(&radfan1, controller_temp);
 
 		osDelay(1000);
 	}

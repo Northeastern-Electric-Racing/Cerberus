@@ -23,7 +23,7 @@
 /* Tempeature Constants for Devices */
 #define PUMP_UPPER_MOTOR_TEMP	45
 #define PUMP_LOWER_MOTOR_TEMP	35
-#define RADFAN_UPPER_MOTOR_TEMP 45
+#define RADFAN_UPPER_MOTOR_TEMP 65
 #define RADFAN_LOWER_MOTOR_TEMP 35
 
 #define PUMP_UPPER_CONTROLLER_TEMP   45
@@ -51,6 +51,7 @@ typedef enum {
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
 	pdu_t *pdu;
+	dti_t *mc;
 	control_func_t control_func; /* function to set device state */
 	device_type_t device_type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */
