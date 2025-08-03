@@ -61,8 +61,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 		return;
 	}
 
-	if (device->device_type == DEVICE_RADFAN0 || device->device_type == DEVICE_RADFAN1) {
-		if (fabs(dti_get_mph(device->mc)) <= 0.1 && temp > device->upper_temp) {
+	if (device->device_type == DEVICE_RADFAN0 ||
+	    device->device_type == DEVICE_RADFAN1) {
+		if (fabs(dti_get_mph(device->mc)) <= 0.1 &&
+		    temp > device->upper_temp) {
 			set_device_on(device);
 		} else if (temp < device->lower_temp) {
 			set_device_off(device);
@@ -71,18 +73,11 @@ static void control_device(device_control_t *device, uint16_t temp)
 	}
 
 	// set device state based on temps with debounce
-	if (temp > device->upper_temp || temp < device->lower_temp ||
-	    is_timer_active(&device->timer)) {
-		if (temp > device->upper_temp) {
-			debounce(temp > device->upper_temp, &(device->timer),
-				 DEVICE_ON_DEBOUNCE_TIME, set_device_on,
-				 device);
-		} else {
-			debounce(temp < device->lower_temp, &(device->timer),
-				 DEVICE_OFF_DEBOUNCE_TIME, set_device_off,
-				 device);
-		}
-	}
+	debounce(temp > device->upper_temp, &(device->timer),
+		 DEVICE_ON_DEBOUNCE_TIME, set_device_on, device);
+
+	debounce(temp < device->lower_temp, &(device->timer),
+		 DEVICE_OFF_DEBOUNCE_TIME, set_device_off, device);
 }
 
 void vControl(void *params)
