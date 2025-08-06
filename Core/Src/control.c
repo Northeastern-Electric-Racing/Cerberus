@@ -50,10 +50,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 	// 		set_device_on(device);
 	// 		return;
 	// 	} else
-	if (get_func_state() == FAULTED) {
-		set_device_off(device);
-		return;
-	}
+	// if (get_func_state() == FAULTED) {
+	// 	set_device_off(device);
+	// 	return;
+	// }
 
 	// turn on device if calypso sent message to turn it on
 	if (calypso_states[device->device_type]) {
@@ -61,14 +61,14 @@ static void control_device(device_control_t *device, uint16_t temp)
 		return;
 	}
 
-	if (device->device_type == DEVICE_RADFAN0 || device->device_type == DEVICE_RADFAN1) {
-		if (fabs(dti_get_mph(device->mc)) <= 0.1 && temp > device->upper_temp) {
-			set_device_on(device);
-		} else if (temp < device->lower_temp) {
-			set_device_off(device);
-		}
-		return;
-	}
+	// if (device->device_type == DEVICE_RADFAN0 || device->device_type == DEVICE_RADFAN1) {
+	// 	if (fabs(dti_get_mph(device->mc)) <= 0.1 && temp > device->upper_temp) {
+	// 		set_device_on(device);
+	// 	} else if (temp < device->lower_temp) {
+	// 		set_device_off(device);
+	// 	}
+	// 	return;
+	// }
 
 	// set device state based on temps with debounce
 	if (temp > device->upper_temp || temp < device->lower_temp ||
