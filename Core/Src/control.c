@@ -50,10 +50,10 @@ static void control_device(device_control_t *device, uint16_t temp)
 	// 		set_device_on(device);
 	// 		return;
 	// 	} else
-	// if (get_func_state() == FAULTED) {
-	// 	set_device_off(device);
-	// 	return;
-	// }
+	if (get_func_state() == FAULTED) {
+	 	set_device_off(device);
+	 	return;
+	}
 
 	// turn on device if calypso sent message to turn it on
 	if (calypso_states[device->device_type]) {
