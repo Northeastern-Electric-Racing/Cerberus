@@ -33,7 +33,8 @@ static uint16_t id_list_1[4] = {
 static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
 				 CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
-static uint16_t id_list_3[4] = { BMS_CANID_CELL_TEMPS, DTI_CANID_CURRENTS, 0x49A };
+static uint16_t id_list_3[4] = { BMS_CANID_CELL_TEMPS, DTI_CANID_CURRENTS,
+				 0x49A };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
