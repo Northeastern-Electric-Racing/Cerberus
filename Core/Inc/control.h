@@ -21,18 +21,18 @@
 #define CONTROL_CANID_RADFAN	 0x499
 
 /* Tempeature Constants for Devices */
-#define PUMP_UPPER_MOTOR_TEMP	55
-#define PUMP_LOWER_MOTOR_TEMP	45
-#define RADFAN_UPPER_MOTOR_TEMP 55
-#define RADFAN_LOWER_MOTOR_TEMP 45
+#define PUMP_UPPER_MOTOR_TEMP	45
+#define PUMP_LOWER_MOTOR_TEMP	35
+#define RADFAN_UPPER_MOTOR_TEMP 65
+#define RADFAN_LOWER_MOTOR_TEMP 35 	
 
-#define PUMP_UPPER_CONTROLLER_TEMP   55
-#define PUMP_LOWER_CONTROLLER_TEMP   45
-#define RADFAN_UPPER_CONTROLLER_TEMP 55
-#define RADFAN_LOWER_CONTROLLER_TEMP 45
+#define PUMP_UPPER_CONTROLLER_TEMP   45
+#define PUMP_LOWER_CONTROLLER_TEMP   35
+#define RADFAN_UPPER_CONTROLLER_TEMP 45
+#define RADFAN_LOWER_CONTROLLER_TEMP 35
 
-#define FANBATTBOX_UPPER_TEMP 42
-#define FANBATTBOX_LOWER_TEMP 38
+#define FANBATTBOX_UPPER_TEMP 50	
+#define FANBATTBOX_LOWER_TEMP 30
 
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
@@ -51,7 +51,6 @@ typedef enum {
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
 	pdu_t *pdu;
-	dti_t *mc;
 	control_func_t control_func; /* function to set device state */
 	device_type_t device_type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */
