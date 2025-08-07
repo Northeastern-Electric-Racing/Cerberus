@@ -171,7 +171,7 @@ bool get_launch_control()
 void pedal_open_circuit_fault_cb(void *arg)
 {
 	fault_data_t fault_data = {
-		.fault_id = ONBOARD_PEDAL_OC_FAULT,
+		.fault_id = ONBOARD_PEDAL_OPEN_CIRCUIT_FAULT,
 	};
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
@@ -185,7 +185,7 @@ void pedal_open_circuit_fault_cb(void *arg)
 void pedal_short_circuit_fault_cb(void *arg)
 {
 	fault_data_t fault_data = {
-		.fault_id = ONBOARD_PEDAL_SC_FAULT,
+		.fault_id = ONBOARD_PEDAL_SHORT_CIRCUIT_FAULT,
 	};
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
@@ -199,7 +199,7 @@ void pedal_short_circuit_fault_cb(void *arg)
 void pedal_difference_fault_cb(void *arg)
 {
 	fault_data_t fault_data = {
-		.fault_id = ONBOARD_PEDAL_DIFF_FAULT,
+		.fault_id = ONBOARD_PEDAL_DIFFERENCE_FAULT,
 	};
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
