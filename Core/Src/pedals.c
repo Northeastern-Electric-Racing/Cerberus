@@ -608,7 +608,7 @@ void vProcessPedals(void *pv_params)
 		osTimerNew(&send_pedal_data, osTimerPeriodic, adc_data, NULL);
 
 	/* Send CAN messages with raw pedal readings, we do not care if it fails*/
-	osTimerStart(send_pedal_data_timer, 100);
+	osTimerStart(send_pedal_data_timer, 20);
 
 	const uint16_t delay_time = 10; /* ms */
 	/* End application if we try to update motor at freq below this value */
