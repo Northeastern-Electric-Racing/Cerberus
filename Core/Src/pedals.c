@@ -193,14 +193,42 @@ bool get_launch_control()
 }
 
 /**
- * @brief Callback for pedal fault debouncing.
+ * @brief Callback for pedal open circuit fault debouncing.
  * 
  * @param arg The fault message as a char*.
  */
-void pedal_fault_cb(void *arg)
+void pedal_open_circuit_fault_cb(void *arg)
 {
 	fault_data_t fault_data = {
-		.fault_id = ONBOARD_PEDAL_FAULT,
+		.fault_id = ONBOARD_PEDAL_OPEN_CIRCUIT_FAULT,
+	};
+	fault_data.diag = (char *)arg;
+	queue_fault(&fault_data);
+}
+
+/**
+ * @brief Callback for pedal short circuit fault debouncing.
+ * 
+ * @param arg The fault message as a char*.
+ */
+void pedal_short_circuit_fault_cb(void *arg)
+{
+	fault_data_t fault_data = {
+		.fault_id = ONBOARD_PEDAL_SHORT_CIRCUIT_FAULT,
+	};
+	fault_data.diag = (char *)arg;
+	queue_fault(&fault_data);
+}
+
+/**
+ * @brief Callback for pedal difference fault debouncing.
+ * 
+ * @param arg The fault message as a char*.
+ */
+void pedal_difference_fault_cb(void *arg)
+{
+	fault_data_t fault_data = {
+		.fault_id = ONBOARD_PEDAL_DIFFERENCE_FAULT,
 	};
 	fault_data.diag = (char *)arg;
 	queue_fault(&fault_data);
@@ -231,14 +259,14 @@ bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 	bool open_circuit = accel1 > MAX_VOLTS_UNSCALED - APPS_THRESHOLD_BUF ||
 			    accel2 > MAX_VOLTS_UNSCALED - APPS_THRESHOLD_BUF;
 	debounce(open_circuit, &oc_fault_timer, PEDAL_FAULT_TIME,
-		 &pedal_fault_cb,
+		 &pedal_open_circuit_fault_cb,
 		 "Pedal open circuit fault - max acceleration value");
 
 	/* Pedal short circuit to gnd */
 	bool short_circuit = accel1 < MIN_APPS1_VOLTS - APPS_THRESHOLD_BUF ||
 			     accel2 < MIN_APPS2_VOLTS - APPS_THRESHOLD_BUF;
 	debounce(short_circuit, &sc_fault_timer, PEDAL_FAULT_TIME,
-		 &pedal_fault_cb,
+		 &pedal_short_circuit_fault_cb,
 		 "Pedal grounded circuit fault - no acceleration value");
 
 	/* Pedal difference fault evaluation */
@@ -250,7 +278,7 @@ bool calc_pedal_faults(float accel1, float accel2, float accel1_norm,
 			       PEDAL_DIFF_THRESH;
 
 	debounce(pedals_too_diff, &diff_fault_timer, PEDAL_FAULT_TIME,
-		 &pedal_fault_cb,
+		 &pedal_difference_fault_cb,
 		 "Pedal short fault - pedal values are too different");
 
 	if (open_circuit || short_circuit || pedals_too_diff) {
@@ -281,14 +309,15 @@ bool calc_brake_faults(float brake1, float brake2)
 		brake1 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF ||
 		brake2 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF;
 	debounce(open_circuit, &oc_fault_timer, BRAKE_FAULT_TIME,
-		 &pedal_fault_cb, "Brake open circuit fault - max brake value");
+		 &pedal_open_circuit_fault_cb,
+		 "Brake open circuit fault - max brake value");
 
 	/* Pedal short circuit to gnd */
 	bool short_circuit =
 		brake1 < BRAKE_SENSOR_IRREGULAR_LOW - BRAKE_THRESHOLD_BUF ||
 		brake2 < BRAKE_SENSOR_IRREGULAR_LOW - BRAKE_THRESHOLD_BUF;
 	debounce(short_circuit, &sc_fault_timer, BRAKE_FAULT_TIME,
-		 &pedal_fault_cb,
+		 &pedal_short_circuit_fault_cb,
 		 "Brake grounded circuit fault - 0 brake value");
 
 	if (open_circuit || short_circuit) {
