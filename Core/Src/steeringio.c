@@ -35,20 +35,24 @@ void buttons_update(can_msg_t msg, dti_t *mc)
 		break;
 	case BUTTON_ESC:
 		printf("Esc button pressed \n");
-		if (fabs(dti_get_mph(mc)) < 1) {
+		if (fabs(dti_get_mph(mc)) <= 0.1) {
 			set_home_mode();
 		}
 		break;
 	case BUTTON_UP:
 		printf("Up button pressed \n");
-		if (get_func_state() == F_EFFICIENCY) {
+		if (get_func_state() == F_EFFICIENCY ||
+		    (fabs(dti_get_mph(mc)) <= 0.1 && get_brake_state() &&
+		     get_func_state() == F_PERFORMANCE)) {
 			increase_regen_limit();
 		}
 		decrement_nero_index();
 		break;
 	case BUTTON_DOWN:
 		printf("Down button pressed \n");
-		if (get_func_state() == F_EFFICIENCY) {
+		if (get_func_state() == F_EFFICIENCY ||
+		    (fabs(dti_get_mph(mc)) <= 0.1 && get_brake_state() &&
+		     get_func_state() == F_PERFORMANCE)) {
 			decrease_regen_limit();
 		}
 		increment_nero_index();
@@ -56,7 +60,7 @@ void buttons_update(can_msg_t msg, dti_t *mc)
 	case BUTTON_ENTER:
 		printf("Enter button pressed \n");
 		if (get_func_state() == F_PERFORMANCE &&
-		    fabs(dti_get_mph(mc)) < 1) {
+		    fabs(dti_get_mph(mc)) <= 0.1) {
 			toggle_launch_control();
 		}
 		select_nero_index();

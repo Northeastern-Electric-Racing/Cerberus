@@ -364,6 +364,7 @@ void vStateMachineDirector(void *pv_params)
 			is_ts_rising = true;
 			osTimerStart(ts_rising_timer, TS_RISING_BLOCK_TIMEOUT);
 		} else if (!get_tsms()) {
+			osTimerStop(ts_rising_timer);
 			is_ts_rising = false;
 			enter_drive_enabled = false;
 		}
