@@ -280,7 +280,8 @@ bool calc_brake_faults(float brake1, float brake2)
 		brake1 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF ||
 		brake2 > BRAKE_SENSOR_IRREGULAR_HIGH + BRAKE_THRESHOLD_BUF;
 	debounce(open_circuit, &oc_fault_timer, BRAKE_FAULT_TIME,
-		 &pedal_open_circuit_fault_cb, "Brake open circuit fault - max brake value");
+		 &pedal_open_circuit_fault_cb,
+		 "Brake open circuit fault - max brake value");
 
 	/* Pedal short circuit to gnd */
 	bool short_circuit =
