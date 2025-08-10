@@ -33,7 +33,8 @@ static uint16_t id_list_1[4] = {
 static uint16_t id_list_2[4] = { DIAL_CANID_IO, CONTROL_CANID_FANBATTBOX,
 				 CONTROL_CANID_PUMP, CONTROL_CANID_RADFAN };
 
-static uint16_t id_list_3[4] = { BMS_CANID_CELL_TEMPS, DTI_CANID_CURRENTS };
+static uint16_t id_list_3[4] = { BMS_CANID_CELL_TEMPS, DTI_CANID_CURRENTS,
+				 0x49A };
 
 void init_can1(CAN_HandleTypeDef *hcan)
 {
@@ -150,8 +151,11 @@ const osThreadAttr_t can_receive_attributes = {
 
 void vCanReceive(void *pv_params)
 {
-	dti_t *mc = (dti_t *)pv_params;
+	control_args_t *args = (control_args_t *)pv_params;
+	dti_t *mc = args->mc;
 	assert(mc);
+	pdu_t *pdu = args->pdu;
+	assert(pdu);
 
 	can_msg_t msg;
 
@@ -187,8 +191,13 @@ void vCanReceive(void *pv_params)
 				break;
 			case CONTROL_CANID_RADFAN:
 				control_radfan_record(msg);
+				break;
 			case DTI_CANID_CURRENTS:
 				dti_record_currents(mc, msg);
+				break;
+			case 0x49A:
+				write_rtds(pdu, msg.data[0]);
+				break;
 			default:
 				break;
 			}

@@ -132,7 +132,7 @@ extern const osThreadAttr_t rtds_attributes;
 
 /* Misc */
 #define MUTEX_TIMEOUT	osWaitForever /* ms */
-#define RTDS_DURATION	1750 /* ms at 1kHz tick rate */
+#define RTDS_DURATION	30000 /* ms at 1kHz tick rate */
 #define SOUND_RTDS_FLAG 1U
 
 /* Function that approximates the pump sensor temperature. Takes in resistance and outputs temperature. */

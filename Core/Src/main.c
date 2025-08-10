@@ -241,7 +241,7 @@ int main(void)
 	assert(can_dispatch_handle);
 
 	can_receive_thread =
-		osThreadNew(vCanReceive, mc, &can_receive_attributes);
+		osThreadNew(vCanReceive, control_args, &can_receive_attributes);
 	assert(can_receive_thread);
 
 	/* Control Logic */

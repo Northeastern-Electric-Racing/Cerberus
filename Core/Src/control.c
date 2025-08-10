@@ -146,10 +146,10 @@ void vControl(void *params)
 
 		// Determine device state
 		control_device(&pump0, motor_temp);
-		control_device(&radfan0, motor_temp);
 		control_device(&pump1, controller_temp);
-		control_device(&radfan1, controller_temp);
 		control_device(&fan_battbox, battbox_temp);
+		control_device(&radfan0, motor_temp);
+		control_device(&radfan1, controller_temp);
 
 		osDelay(1000);
 	}

@@ -53,8 +53,7 @@ osStatus_t bms_get_battbox_temp(uint16_t *temp)
 void bms_record_battbox_temp(can_msg_t msg)
 {
 	osMutexAcquire(bms.mutex, osWaitForever);
-	bms.battbox_temp =
-		(msg.data[0] << 8) +
-		msg.data[1]; // Get "BMS/Cells/Temp_High_Value" (first two bytes of the "Cell Temperatures" CAN message)
+	bms.battbox_temp = ((msg.data[6] << 8) | msg.data[7]) /
+			   100; //  Get "BMS/Cells/Temp_Avg_Value"
 	osMutexRelease(bms.mutex);
 }
