@@ -19,19 +19,6 @@
 #define CONTROL_CANID_PUMP	 0x4A0
 #define CONTROL_CANID_RADFAN	 0x499
 
-/* Tempeature Constants for Devices */
-#define PUMP_UPPER_MOTOR_TEMP 50
-#define PUMP_LOWER_MOTOR_TEMP 30
-
-#define RADFAN_UPPER_MOTOR_TEMP 50
-#define RADFAN_LOWER_MOTOR_TEMP 30
-
-#define PUMP_UPPER_CONTROLLER_TEMP 50
-#define PUMP_LOWER_CONTROLLER_TEMP 30
-
-#define RADFAN_UPPER_CONTROLLER_TEMP 50
-#define RADFAN_LOWER_CONTROLLER_TEMP 30
-
 extern osThreadId_t control_handle;
 extern const osThreadAttr_t control_attributes;
 
@@ -46,14 +33,29 @@ typedef enum {
 	NUM_DEVICES,
 } device_type_t;
 
+// sub-struct holding upper and lower temperature bounds.
+typedef struct {
+	uint8_t upper_motor_temp_bound;
+	uint8_t lower_motor_temp_bound;
+} device_temp_bounds_t;
+
+// struct holding the temperature bounds for a single device for each possible state.
+typedef struct {
+	device_temp_bounds_t ready;
+	device_temp_bounds_t f_reverse;
+	device_temp_bounds_t f_pit;
+	device_temp_bounds_t f_performance;
+	device_temp_bounds_t f_efficiency;
+	device_temp_bounds_t faulted;
+} device_config_t;
+
 /* Holds all the information needed to determine and set the state of a device */
 typedef struct {
 	pdu_t *pdu;
 	control_func_t control_func; /* function to set device state */
 	device_type_t device_type; /* Device Type (Pump or Radfan) */
 	nertimer_t timer; /* Debounce Timer */
-	uint16_t upper_temp; /* Upper Tempature Limit */
-	uint16_t lower_temp; /* Lower Tempature Limit */
+	device_config_t temp_bounds; /* temperature bounds */
 } device_control_t;
 
 /* Holds arguments for control thread */
