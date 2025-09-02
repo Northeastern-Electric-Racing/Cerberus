@@ -12,6 +12,7 @@ device_temp_bounds_t const pump0_F_PIT = { 20, 10 };
 device_temp_bounds_t const pump0_F_PERFORMANCE = { 20, 10 };
 device_temp_bounds_t const pump0_F_EFFICIENCY = { 20, 10 };
 device_temp_bounds_t const pump0_FAULTED = { 20, 10 };
+device_temp_bounds_t const pump0_STANDARD = { 20, 10 };
 
 device_temp_bounds_t const pump1_READY = { 20, 10 };
 device_temp_bounds_t const pump1_F_REVERSE = { 20, 10 };
@@ -19,6 +20,7 @@ device_temp_bounds_t const pump1_F_PIT = { 20, 10 };
 device_temp_bounds_t const pump1_F_PERFORMANCE = { 20, 10 };
 device_temp_bounds_t const pump1_F_EFFICIENCY = { 20, 10 };
 device_temp_bounds_t const pump1_FAULTED = { 20, 10 };
+device_temp_bounds_t const pump1_STANDARD = { 20, 10 };
 
 device_temp_bounds_t const radfan0_READY = { 20, 10 };
 device_temp_bounds_t const radfan0_F_REVERSE = { 20, 10 };
@@ -26,6 +28,7 @@ device_temp_bounds_t const radfan0_F_PIT = { 20, 10 };
 device_temp_bounds_t const radfan0_F_PERFORMANCE = { 20, 10 };
 device_temp_bounds_t const radfan0_F_EFFICIENCY = { 20, 10 };
 device_temp_bounds_t const radfan0_FAULTED = { 20, 10 };
+device_temp_bounds_t const radfan0_STANDARD = { 20, 10 };
 
 device_temp_bounds_t const radfan1_READY = { 20, 10 };
 device_temp_bounds_t const radfan1_F_REVERSE = { 20, 10 };
@@ -33,6 +36,7 @@ device_temp_bounds_t const radfan1_F_PIT = { 20, 10 };
 device_temp_bounds_t const radfan1_F_PERFORMANCE = { 20, 10 };
 device_temp_bounds_t const radfan1_F_EFFICIENCY = { 20, 10 };
 device_temp_bounds_t const radfan1_FAULTED = { 20, 10 };
+device_temp_bounds_t const radfan1_STANDARD = { 20, 10 };
 
 device_temp_bounds_t const fanBattBox_READY = { 20, 10 };
 device_temp_bounds_t const fanBattBox_F_REVERSE = { 20, 10 };
@@ -40,26 +44,32 @@ device_temp_bounds_t const fanBattBox_F_PIT = { 20, 10 };
 device_temp_bounds_t const fanBattBox_F_PERFORMANCE = { 20, 10 };
 device_temp_bounds_t const fanBattBox_F_EFFICIENCY = { 20, 10 };
 device_temp_bounds_t const fanBattBox_FAULTED = { 20, 10 };
+device_temp_bounds_t const fanBattBox_STANDARD = { 20, 10 };
 
 device_config_t pump0_config = { pump0_READY,	     pump0_F_REVERSE,
 				 pump0_F_PIT,	     pump0_F_PERFORMANCE,
-				 pump0_F_EFFICIENCY, pump0_FAULTED };
+				 pump0_F_EFFICIENCY, pump0_FAULTED,
+				 pump0_STANDARD };
 
 device_config_t pump1_config = { pump1_READY,	     pump1_F_REVERSE,
 				 pump1_F_PIT,	     pump1_F_PERFORMANCE,
-				 pump1_F_EFFICIENCY, pump1_FAULTED };
+				 pump1_F_EFFICIENCY, pump1_FAULTED,
+				 pump1_STANDARD };
 
 device_config_t radfan0_config = { radfan0_READY,	 radfan0_F_REVERSE,
 				   radfan0_F_PIT,	 radfan0_F_PERFORMANCE,
-				   radfan0_F_EFFICIENCY, radfan0_FAULTED };
+				   radfan0_F_EFFICIENCY, radfan0_FAULTED,
+				   radfan0_STANDARD };
 
 device_config_t radfan1_config = { radfan1_READY,	 radfan1_F_REVERSE,
 				   radfan1_F_PIT,	 radfan1_F_PERFORMANCE,
-				   radfan1_F_EFFICIENCY, radfan1_FAULTED };
+				   radfan1_F_EFFICIENCY, radfan1_FAULTED,
+				   radfan1_STANDARD };
 
 device_config_t fanBattBox_config = {
 	fanBattBox_READY,	  fanBattBox_F_REVERSE,	   fanBattBox_F_PIT,
-	fanBattBox_F_PERFORMANCE, fanBattBox_F_EFFICIENCY, fanBattBox_FAULTED
+	fanBattBox_F_PERFORMANCE, fanBattBox_F_EFFICIENCY, fanBattBox_FAULTED,
+	fanBattBox_STANDARD
 };
 
 osThreadId_t control_handle;

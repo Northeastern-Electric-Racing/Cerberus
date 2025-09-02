@@ -47,6 +47,7 @@ typedef struct {
 	device_temp_bounds_t f_performance;
 	device_temp_bounds_t f_efficiency;
 	device_temp_bounds_t faulted;
+	device_temp_bounds_t standard;
 } device_config_t;
 
 /* Holds all the information needed to determine and set the state of a device */
