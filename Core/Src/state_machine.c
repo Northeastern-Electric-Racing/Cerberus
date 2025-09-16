@@ -135,10 +135,10 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		     cerberus_state.functional ==
 			     FAULTED)) { // only enforce brake / fault if tsms is actually on
 			if (!brake_state) {
-				cerberus_state.transition_error |= (1 << ENTER_DRIVE_BREAKS_NOT_ENGAGED);
+				cerberus_state.transition_error |= ENTER_DRIVE_BREAKS_NOT_ENGAGED;
 			}
 			if (cerberus_state.functional == FAULTED) {
-				cerberus_state.transition_error |= (1 << DRIVE_FROM_FAULT);
+				cerberus_state.transition_error |= DRIVE_FROM_FAULT;
 			}
 			return 3;
 		}
@@ -146,23 +146,23 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 #else
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
-			cerberus_state.transition_error |= (1 << DRIVE_FROM_FAULT);
+			cerberus_state.transition_error |= DRIVE_FROM_FAULT;
 			return 3;
 		}
 
 		if (!enter_drive_enabled) {
 			printf("Must wait before entering drive!");
-			cerberus_state.transition_error |= (1 << ENTER_DRIVE_DISABLED);
+			cerberus_state.transition_error |= ENTER_DRIVE_DISABLED;
 			return 3;
 		}
 
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
 			if (!brake_state) {
-				cerberus_state.transition_error |= (1 << ENTER_DRIVE_BREAKS_NOT_ENGAGED);
+				cerberus_state.transition_error |= ENTER_DRIVE_BREAKS_NOT_ENGAGED;
 			}
 			if (!get_tsms()) {
-				cerberus_state.transition_error |= (1 << ENTER_DRIVE_TSMS_OFF);
+				cerberus_state.transition_error |= ENTER_DRIVE_TSMS_OFF;
 			}
 			return 3;
 		}
@@ -213,10 +213,10 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 #ifndef TSMS_OVERRIDE
 			if (get_tsms() || dti_get_mph(mc) >= 1) {
 				if (get_tsms()) {
-					cerberus_state.transition_error |= (1 << ENTER_GAMES_TSMS_ON);
+					cerberus_state.transition_error |= ENTER_GAMES_TSMS_ON;
 				}
 				if (dti_get_mph(mc) >= 1) {
-					cerberus_state.transition_error |= (1 << ENTER_GAMES_WHILE_MOVING);
+					cerberus_state.transition_error |= ENTER_GAMES_WHILE_MOVING;
 				}
 				return 1;
 			}
@@ -341,7 +341,7 @@ void rising_ts_cb(void *args)
 void vStateMachineDirector(void *pv_params)
 {
 	cerberus_state.functional = READY;
-	cerberus_state.transition_error = NO_ERROR;
+	cerberus_state.transition_error = START_TRANSITION_OK;
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
 
