@@ -44,7 +44,7 @@ static bool enter_drive_enabled = false;
 static void send_nero_msg(dti_t *mc)
 {
 	bitstream_t nero_msg;
-	uint8_t bitstream_data[6];
+	uint8_t bitstream_data[7];
 	bitstream_init(&nero_msg, bitstream_data,
 		       6); // Create 5-byte bitstream
 
