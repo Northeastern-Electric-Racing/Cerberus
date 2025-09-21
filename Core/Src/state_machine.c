@@ -144,15 +144,15 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		}
 		printf("Ignoring tsms\n\n");
 #else
+		cerberus_state.transition_error |= (cerberus_state.functional == FAULTED ? DRIVE_FROM_FAULT : 0);
+		cerberus_state.transition_error |= (!enter_drive_enabled ? ENTER_DRIVE_DISABLED : 0);
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
-			cerberus_state.transition_error |= DRIVE_FROM_FAULT;
 			return 3;
 		}
 
 		if (!enter_drive_enabled) {
 			printf("Must wait before entering drive!");
-			cerberus_state.transition_error |= ENTER_DRIVE_DISABLED;
 			return 3;
 		}
 
