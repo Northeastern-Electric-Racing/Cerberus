@@ -44,9 +44,9 @@ static bool enter_drive_enabled = false;
 static void send_nero_msg(dti_t *mc)
 {
 	bitstream_t nero_msg;
-	uint8_t bitstream_data[6];
+	uint8_t bitstream_data[7];
 	bitstream_init(&nero_msg, bitstream_data,
-		       6); // Create 5-byte bitstream
+		       7); // Create 5-byte bitstream
 
 	bitstream_add(&nero_msg, get_nero_state().home_mode, 4);
 	bitstream_add(&nero_msg, get_nero_state().nero_index, 4);
@@ -56,6 +56,7 @@ static void send_nero_msg(dti_t *mc)
 	bitstream_add(&nero_msg, cerberus_state.functional != F_REVERSE, 1);
 	bitstream_add(&nero_msg, get_regen_limit(), 10);
 	bitstream_add(&nero_msg, get_launch_control(), 1);
+	bitstream_add(&nero_msg, cerberus_state.transition_error, 8);
 
 	can_msg_t msg = { .id = 0x501, .len = sizeof(bitstream_data) };
 
@@ -119,6 +120,7 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 	case F_REVERSE:
 #ifdef DISABLE_REVERSE
 		printf("Reverse is disabled.");
+		cerberus_state.transition_error = (1 << REVERSE_DISABLED);
 		return 4;
 #endif
 		osTimerStart(reverse_sound_timer, pdMS_TO_TICKS(500));
@@ -132,10 +134,18 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 		    (!brake_state ||
 		     cerberus_state.functional ==
 			     FAULTED)) { // only enforce brake / fault if tsms is actually on
+			if (!brake_state) {
+				cerberus_state.transition_error |= ENTER_DRIVE_BREAKS_NOT_ENGAGED;
+			}
+			if (cerberus_state.functional == FAULTED) {
+				cerberus_state.transition_error |= DRIVE_FROM_FAULT;
+			}
 			return 3;
 		}
 		printf("Ignoring tsms\n\n");
 #else
+		cerberus_state.transition_error |= (cerberus_state.functional == FAULTED ? DRIVE_FROM_FAULT : 0);
+		cerberus_state.transition_error |= (!enter_drive_enabled ? ENTER_DRIVE_DISABLED : 0);
 		if (cerberus_state.functional == FAULTED) {
 			printf("Cannot drive from a fault!\n");
 			return 3;
@@ -148,6 +158,12 @@ static int transition_functional_state(func_state_t new_state, pdu_t *pdu,
 
 		/* Only turn on motor if brakes engaged and tsms is on */
 		if (!brake_state || !get_tsms()) {
+			if (!brake_state) {
+				cerberus_state.transition_error |= ENTER_DRIVE_BREAKS_NOT_ENGAGED;
+			}
+			if (!get_tsms()) {
+				cerberus_state.transition_error |= ENTER_DRIVE_TSMS_OFF;
+			}
 			return 3;
 		}
 #endif
@@ -196,6 +212,12 @@ static int transition_nero_state(nero_state_t new_state, pdu_t *pdu, dti_t *mc,
 		if (new_state.nero_index == GAMES) {
 #ifndef TSMS_OVERRIDE
 			if (get_tsms() || dti_get_mph(mc) >= 1) {
+				if (get_tsms()) {
+					cerberus_state.transition_error |= ENTER_GAMES_TSMS_ON;
+				}
+				if (dti_get_mph(mc) >= 1) {
+					cerberus_state.transition_error |= ENTER_GAMES_WHILE_MOVING;
+				}
 				return 1;
 			}
 #endif
@@ -319,6 +341,7 @@ void rising_ts_cb(void *args)
 void vStateMachineDirector(void *pv_params)
 {
 	cerberus_state.functional = READY;
+	cerberus_state.transition_error = START_TRANSITION_OK;
 	cerberus_state.nero.nero_index = 0;
 	cerberus_state.nero.home_mode = true;
 

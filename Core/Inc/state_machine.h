@@ -38,6 +38,17 @@ typedef enum {
 	MAX_NERO_STATES
 } nero_menu_t;
 
+typedef enum {
+	START_TRANSITION_OK = 0,
+	REVERSE_DISABLED = 1 << 0,
+	DRIVE_FROM_FAULT = 1 << 1,
+	ENTER_DRIVE_DISABLED = 1 << 2,
+	ENTER_DRIVE_TSMS_OFF = 1 << 3,
+	ENTER_DRIVE_BREAKS_NOT_ENGAGED = 1 << 4,
+	ENTER_GAMES_TSMS_ON = 1 << 5,
+	ENTER_GAMES_WHILE_MOVING = 1 << 6
+} state_transition_error_t;
+
 typedef struct {
 	nero_menu_t nero_index;
 	bool home_mode;
@@ -50,6 +61,7 @@ typedef struct {
 typedef struct {
 	func_state_t functional;
 	nero_state_t nero;
+	uint8_t transition_error;
 } state_t;
 
 typedef struct {
